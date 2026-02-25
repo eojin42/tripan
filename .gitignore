@@ -1,21 +1,9 @@
 HELP.md
 .gradle
-build/
+/build/
 !gradle/wrapper/gradle-wrapper.jar
 !**/src/main/**/build/
 !**/src/test/**/build/
-
-### STS ###
-.apt_generated
-.classpath
-.factorypath
-.project
-.settings
-.springBeans
-.sts4-cache
-bin/
-!**/src/main/**/bin/
-!**/src/test/**/bin/
 
 ### IntelliJ IDEA ###
 .idea
@@ -35,3 +23,15 @@ out/
 
 ### VS Code ###
 .vscode/
+
+### Spring Boot 설정 파일 제외 ###
+application.yml
+application-*.yml
+application-*.properties
+
+### 빌드 디렉토리 무시 ###
+**/WEB-INF/views/api/**
+
+KakaoAuthService.java
+MailSender.java
+.settings/org.eclipse.buildship.core.prefs
