@@ -63,11 +63,12 @@ public class MemberServiceImpl implements MemberService {
 			mapper.insertMember1(dto);
 			mapper.insertMember2(dto);
 			*/
+			
+			dto.setRole("ROLE_USER");
 			mapper.insertMember12(dto); // member1, member2 테이블 동시에
 			
 			// 권한저장
-			// dto.setAuthority("USER");
-			mapper.insertAuthority(dto);
+			// mapper.insertAuthority(dto);
 			
 		} catch (Exception e) {
 			log.info("insertMember : ", e);

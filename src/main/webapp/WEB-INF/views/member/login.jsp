@@ -14,6 +14,35 @@
 	<jsp:include page="/WEB-INF/views/layout/header.jsp"/>
 </header>
 <style>
+	/* 에러 메시지 스타일 */
+	.alert-message {
+	  display: flex;
+	  align-items: center;
+	  justify-content: center;
+	  gap: 8px;
+	  background-color: rgba(255, 118, 117, 0.1); /* 부드러운 코랄/레드 배경 */
+	  color: #D63031; /* 가독성 좋은 붉은 텍스트 */
+	  padding: 12px 16px;
+	  border-radius: var(--radius-sm);
+	  font-size: 13.5px;
+	  font-weight: 700;
+	  margin-bottom: 20px;
+	  border: 1px solid rgba(255, 118, 117, 0.3);
+	  animation: shake 0.4s ease-in-out;
+	}
+	
+	.alert-message svg {
+	  width: 16px;
+	  height: 16px;
+	  flex-shrink: 0;
+	}
+	
+	/* 가벼운 시각적 피드백 (흔들림 애니메이션) */
+	@keyframes shake {
+	  0%, 100% { transform: translateX(0); }
+	  25% { transform: translateX(-4px); }
+	  75% { transform: translateX(4px); }
+	}
     .login-section {
       min-height: 100vh;
       display: flex;
@@ -38,7 +67,7 @@
       font-weight: 900;
       letter-spacing: -1px;
       margin-bottom: 8px;
-      background: linear-gradient(135deg, var(--vivid-coral), var(--electric-blue));
+      background: linear-gradient(135deg, var(--point-coral), var(--point-blue));
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
     }
@@ -153,6 +182,17 @@
     <div class="login-card reveal">
       <div class="login-logo">Tripan</div>
       <p class="login-desc">우리만의 여행을 시작해 볼까요?</p>
+      
+      <c:if test="${not empty message}">
+	    <div class="alert-message">
+	      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+	        <circle cx="12" cy="12" r="10"></circle>
+	        <line x1="12" y1="8" x2="12" y2="12"></line>
+	        <line x1="12" y1="16" x2="12.01" y2="16"></line>
+	      </svg>
+	      <span>${message}</span>
+	    </div>
+	  </c:if>
 
       <form action="${pageContext.request.contextPath}/member/login" method="POST">
 		  <div class="form-group">
@@ -176,10 +216,9 @@
       </button>
 
       <div class="login-footer">
-        아직 계정이 없으신가요? <a href="${pageContext.request.contextPath}/member/join">회원가입</a>
+        아직 계정이 없으신가요? <a href="${pageContext.request.contextPath}/member/account">회원가입</a>
       </div>
       
-      <div>${message}</div>
     </div>
   </main>
 
