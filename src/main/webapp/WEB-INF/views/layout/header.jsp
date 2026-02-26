@@ -33,7 +33,7 @@
       <ul class="nav-menu">
         <li class="nav-item"><a href="#" class="nav-link">AI 플래너</a></li>
         <li class="nav-item"><a href="#" class="nav-link">숙소·맛집 추천</a></li>
-        <li class="nav-item"><a href="#" class="nav-link">여행 커뮤니티</a></li>
+        <li><a href="${pageContext.request.contextPath}/community/feed">커뮤니티 피드</a></li>
         <li class="nav-item"><a href="#" class="nav-link">가계부·N빵</a></li>
       </ul>
     </div>
