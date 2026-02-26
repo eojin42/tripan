@@ -29,7 +29,8 @@ public class LoginFailureHandler implements AuthenticationFailureHandler{
 	@Override
 	public void onAuthenticationFailure(HttpServletRequest request, HttpServletResponse response,
 			AuthenticationException exception) throws IOException, ServletException {
-		String login_id = request.getParameter("login_id");
+		String login_id = request.getParameter("loginId");
+		
 		
 		String msg = "로그인 실패";
 		try {
