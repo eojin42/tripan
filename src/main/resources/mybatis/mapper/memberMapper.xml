@@ -57,4 +57,29 @@
 			</choose>
 		</where>
 	</update>
+	
+	<insert id="insertMember12" parameterType="com.tripan.app.domain.dto.MemberDto">
+	    <selectKey keyProperty="memberId" resultType="Long" order="BEFORE">
+	        SELECT member_seq.NEXTVAL FROM dual
+	    </selectKey>
+	
+	    INSERT ALL
+	    INTO member1 (
+	        MEMBER_ID, LOGIN_ID, EMAIL, PASSWORD, USERNAME, 
+	        STATUS, ROLE, GENDER, FAILURE_CNT, 
+	        PROVIDER, PROVIDER_ID, BIRTHDAY
+	    ) VALUES (
+	        #{memberId}, #{loginId}, #{email}, #{password}, #{name}, 
+	        '1', #{role}, #{gender, jdbcType=VARCHAR}, 0, 
+	        #{snsProvider, jdbcType=VARCHAR}, #{snsId, jdbcType=VARCHAR}, #{birth, jdbcType=VARCHAR}
+	    )
+	    INTO member2 (
+	        MEMBER_ID, NICKNAME, PROFILE_IMAGE, PHONE_NUMBER, 
+	        PREFERRED_REGION, UPDATED_AT, LAST_LOGIN_AT
+	    ) VALUES (
+	        #{memberId}, #{nickname, jdbcType=VARCHAR}, #{profilePhoto, jdbcType=VARCHAR}, #{tel, jdbcType=VARCHAR}, 
+	        #{preferredRegion, jdbcType=VARCHAR}, SYSDATE, SYSDATE
+	    )
+	    SELECT * FROM dual
+	</insert>
 </mapper>
