@@ -277,3 +277,156 @@ footer {
   .footer-links { justify-content: flex-start; gap: 40px; flex-direction: column;}
   .footer-bottom { flex-direction: column; gap: 16px; align-items: center; text-align: center; }
 }
+
+/* --- ✨ 헤더 통합 검색창 스타일 --- */
+.header-search {
+  display: flex;
+  align-items: center;
+  background: rgba(255, 255, 255, 0.4); 
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  border-radius: var(--radius-pill);
+  padding: 8px 16px;
+  gap: 8px;
+  transition: all 0.3s var(--bounce);
+  
+  /* ✨ 이 부분을 추가해서 검색창을 오른쪽으로 밀어줍니다! */
+  margin-left: 40px; 
+}
+
+/* 스크롤 시 검색창 스타일 변경 (이미지처럼 연한 회색 배경) */
+nav.scrolled .header-search {
+  background: #F1F5F9; 
+  border-color: transparent;
+}
+
+.header-search:hover,
+.header-search:focus-within {
+  background: rgba(255, 255, 255, 0.6);
+  border-color: var(--point-blue);
+  box-shadow: 0 4px 12px rgba(137, 207, 240, 0.2);
+}
+
+nav.scrolled .header-search:hover,
+nav.scrolled .header-search:focus-within {
+  background: #E2E8F0;
+  border-color: transparent;
+}
+
+/* 돋보기 아이콘 */
+.header-search .search-icon {
+  width: 16px;
+  height: 16px;
+  color: var(--text-gray);
+  transition: color 0.3s;
+}
+.header-search:focus-within .search-icon {
+  color: var(--point-blue);
+}
+
+/* 검색 입력 필드 (길이 대폭 연장) */
+.header-search input {
+  border: none;
+  background: transparent;
+  outline: none;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-black);
+  
+  /* ✨ 노란색 선으로 그려주신 만큼 기본 길이를 대폭 늘렸습니다 (380px) */
+  width: 380px; 
+  
+  font-family: var(--font-sans);
+  transition: width 0.3s var(--bounce);
+}
+
+.header-search input::placeholder {
+  color: var(--text-gray);
+}
+
+/* 클릭(포커스) 시 검색창이 부드럽게 더 늘어나는 효과 */
+.header-search input:focus {
+  /* ✨ 클릭했을 때 자연스럽게 조금 더 늘어납니다 (450px) */
+  width: 450px; 
+}
+
+/* 클릭(포커스) 시 검색창이 부드럽게 더 늘어나는 효과 */
+.header-search input:focus {
+  /* ✨ 클릭했을 때 늘어나는 길이도 연장해줍니다 (180px -> 300px) */
+  width: 300px; 
+}
+
+/* 클릭(포커스) 시 검색창이 부드럽게 늘어나는 효과 */
+.header-search input:focus {
+  width: 180px; 
+}
+
+/* 모바일 화면에서는 검색창 숨기기 (공간 부족 방지) */
+@media (max-width: 1024px) {
+  .header-search {
+    display: none;
+  }
+}
+
+
+/* --- ✨ 헤더 드롭다운 메뉴 스타일 --- */
+.dropdown-menu {
+  position: absolute; 
+  top: 100%; /* 네비게이션 아이템 바로 아래에 위치 */
+  left: 50%; 
+  transform: translateX(-50%) translateY(10px) scale(0.95);
+  background: rgba(255, 255, 255, 0.98); 
+  backdrop-filter: blur(20px); 
+  -webkit-backdrop-filter: blur(20px);
+  border-radius: 20px; 
+  box-shadow: 0 20px 40px rgba(45, 55, 72, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.6);
+  padding: 12px; 
+  min-width: 230px;
+  opacity: 0; 
+  visibility: hidden; 
+  pointer-events: none;
+  transition: all 0.3s var(--bounce);
+  display: flex; 
+  flex-direction: column; 
+  gap: 4px; 
+  z-index: 1100;
+}
+
+/* 마우스 오버 시 메뉴 나타남 */
+.nav-item:hover .dropdown-menu { 
+  opacity: 1; 
+  visibility: visible; 
+  pointer-events: auto; 
+  transform: translateX(-50%) translateY(0) scale(1); 
+}
+
+/* 드롭다운 내부 링크 스타일 */
+.dropdown-menu a {
+  font-size: 14px; 
+  font-weight: 600; 
+  color: var(--text-dark); 
+  padding: 12px 16px; 
+  border-radius: 12px; 
+  transition: all 0.2s; 
+  display: flex; 
+  align-items: center; 
+  justify-content: space-between;
+  text-decoration: none;
+}
+
+/* 호버 시 우측 화살표(→) 아이콘 나타나는 애니메이션 */
+.dropdown-menu a::after { 
+  content: '→'; 
+  opacity: 0; 
+  transform: translateX(-10px); 
+  transition: all 0.3s; 
+  font-size: 12px; 
+}
+.dropdown-menu a:hover { 
+  background: var(--bg-light); 
+  color: var(--point-blue); 
+}
+.dropdown-menu a:hover::after { 
+  opacity: 1; 
+  transform: translateX(0); 
+}
