@@ -1,6 +1,7 @@
 <%@ page contentType="text/html; charset=UTF-8" %>
 <%@ taglib prefix="c" uri="jakarta.tags.core"%>
 <%@ taglib prefix="fmt" uri="jakarta.tags.fmt"%>
+<%@ taglib prefix="sec" uri="http://www.springframework.org/security/tags" %>
 <!DOCTYPE html>
 <html lang="ko">
 <head>
@@ -196,9 +197,13 @@
     </div>
     <div class="nav-right">
       <div class="search-bar">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#333" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
         <input type="text" placeholder="핫플, 숙소, 유저 검색">
       </div>
-      <a href="${pageContext.request.contextPath}/member/login" class="btn-login">로그인</a>
+      <sec:authorize access="isAnonymous()">
+        <a href="${pageContext.request.contextPath}/member/login" class="btn-login">로그인</a>
+      </sec:authorize>
+      <sec:authorize access="isAuthenticated()">
+        <a href="${pageContext.request.contextPath}/member/logout" class="btn-login" style="background: var(--vivid-coral);">로그아웃</a>
+      </sec:authorize>
     </div>
   </nav>

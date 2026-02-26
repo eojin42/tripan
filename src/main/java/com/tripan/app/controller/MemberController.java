@@ -9,6 +9,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 
 import com.tripan.app.service.MemberService;
 
+import jakarta.servlet.http.HttpServletRequest; // 💡 추가!
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -23,17 +24,19 @@ public class MemberController {
 	private String uploadPath;
 	
 	@RequestMapping(value = "login", method = {RequestMethod.GET, RequestMethod.POST})
-	public String loginForm(@RequestParam(name = "error", required = false) String error, 
+	public String loginForm(HttpServletRequest req, 
+            @RequestParam(name = "error", required = false) String error, 
 			Model model) {
 		
+        String referer = req.getHeader("Referer");
+        if (referer != null && !referer.contains("/member/login")) {
+            req.getSession().setAttribute("prevPage", referer);
+        }
+
 		if(error != null) {
 			model.addAttribute("message", "아이디 또는 패스워드가 일치하지 않습니다.");
 		}
 		
 		return "member/login";
 	}
-
-	
-
-	
 }
