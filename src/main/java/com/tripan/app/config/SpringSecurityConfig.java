@@ -40,7 +40,7 @@ public class SpringSecurityConfig {
 				.anyRequest().authenticated()
 				)
 		.formLogin(login -> login
-				//.loginPage("/member/login")
+				.loginPage("/member/login")
 				.loginProcessingUrl("/member/login")
 				.usernameParameter("loginId")
 				.passwordParameter("password")

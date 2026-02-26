@@ -14,94 +14,177 @@
 <header>
 	<jsp:include page="/WEB-INF/views/layout/header.jsp"/>
 </header>
-
-<main>
-	<div class="section bg-light">
-		<div class="container">
-
-			<div class="row justify-content-center" data-aos="fade-up" data-aos-delay="200">
-				<div class="col-md-5">
-					<div class="bg-white box-shadow my-5 p-5">
-						<h3 class="text-center pt-3"><i class="bi bi-lock"></i> 회원 로그인</h3>
-	                    
-						<form name="loginForm" action="" method="post" class="row g-3 mb-2">
-							<div class="col-12">
-								<label class="mb-1">아이디</label>
-								<input type="text" name="login_id" class="form-control" placeholder="아이디">
-							</div>
-							<div class="col-12">
-								<label class="mb-1">패스워드</label>
-								<input type="password" name="password" class="form-control" autocomplete="off" 
-									placeholder="패스워드">
-							</div>
-							<div class="col-12">
-								<div class="form-check">
-									<input class="form-check-input rememberMe" type="checkbox" id="rememberMe">
-									<label class="form-check-label" for="rememberMe"> 아이디 저장</label>
-								</div>
-							</div>
-							<div class="col-12 text-center">
-								<button type="button" class="btn-accent btn-lg w-100" onclick="sendLogin();">&nbsp;Login&nbsp;<i class="bi bi-check2"></i></button>
-							</div>
-							<div class="col-12 d-flex justify-content-between">
-								<button type="button" class="btn-light flex-fill me-2"><i class="bi bi-chat-fill kakao-icon"></i> 카카오</button>
-								<button type="button" class="btn-light flex-fill me-2"><span class="naver-icon">N</span> 네이버</button>
-								<button type="button" class="btn-light flex-fill"><i class="bi bi-google google-icon"></i> 구 글</button>
-							</div>
-						</form>
-	                    
-						<div>
-							<p class="form-control-plaintext text-center text-danger">${message}</p>
-						</div>
-
-						<div class="mt-3">
-							<p class="text-center">
-								<a href="${pageContext.request.contextPath}/" class="me-2 border-link-right">아이디 찾기</a>
-								<a href="${pageContext.request.contextPath}/member/pwdFind" class="me-2 border-link-right">패스워드 찾기</a>
-								<a href="${pageContext.request.contextPath}/member/account" class="border-link-right">회원가입</a>
-							</p>
-						</div>
-	                    
-					</div>
-	
-				</div>
-			</div>
-
-		</div>
-	</div>
-</main>
-
-<script type="text/javascript">
-function sendLogin() {
-    const f = document.loginForm;
-    
-    if( ! f.login_id.value.trim() ) {
-        f.login_id.focus();
-        return;
+<style>
+    /* 로그인 페이지 전용 스타일 */
+    .login-section {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background-color: var(--bg-light); /* 기존 배경색 활용 */
+      padding: 120px 20px 60px; /* 헤더 높이 고려 */
     }
 
-    if( ! f.password.value.trim() ) {
-        f.password.focus();
-        return;
+    .login-card {
+      background: var(--bg-white);
+      width: 100%;
+      max-width: 420px;
+      padding: 48px 32px;
+      border-radius: var(--radius-lg); /* 32px 둥근 모서리 */
+      box-shadow: 0 16px 40px rgba(0, 0, 0, 0.08);
+      text-align: center;
     }
 
-    const saveIdChk = document.getElementById("rememberMe").checked;
-	if (saveIdChk) {
-		localStorage.setItem("savedLoginId", f.login_id.value.trim());
-	} else {
-		localStorage.removeItem("savedLoginId");
-	}	    
+    .login-logo {
+      font-size: 32px;
+      font-weight: 900;
+      letter-spacing: -1px;
+      margin-bottom: 8px;
+      background: linear-gradient(135deg, var(--vivid-coral), var(--electric-blue));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .login-desc {
+      color: var(--text-gray);
+      font-size: 15px;
+      font-weight: 600;
+      margin-bottom: 32px;
+    }
+
+    .form-group {
+      margin-bottom: 16px;
+      text-align: left;
+    }
+
+    .form-input {
+      width: 100%;
+      padding: 16px;
+      border: 1px solid var(--border-light);
+      border-radius: var(--radius-sm);
+      font-size: 15px;
+      font-family: var(--font-sans);
+      transition: all 0.3s ease;
+      background-color: var(--bg-light);
+    }
+
+    .form-input:focus {
+      outline: none;
+      border-color: var(--electric-blue);
+      background-color: var(--bg-white);
+      box-shadow: 0 0 0 3px rgba(77, 150, 255, 0.1);
+    }
+
+    .btn-submit {
+      width: 100%;
+      padding: 16px;
+      background: var(--text-black);
+      color: var(--bg-white);
+      border: none;
+      border-radius: var(--radius-sm);
+      font-size: 16px;
+      font-weight: 800;
+      cursor: pointer;
+      transition: all 0.3s var(--bounce);
+      margin-top: 8px;
+    }
+
+    .btn-submit:hover {
+      background: var(--electric-blue);
+      transform: translateY(-2px);
+      box-shadow: 0 8px 16px rgba(77, 150, 255, 0.2);
+    }
+
+    .social-divider {
+      display: flex;
+      align-items: center;
+      margin: 24px 0;
+      color: var(--text-gray);
+      font-size: 13px;
+      font-weight: 600;
+    }
+
+    .social-divider::before,
+    .social-divider::after {
+      content: "";
+      flex: 1;
+      border-bottom: 1px solid var(--border-light);
+    }
+
+    .social-divider span {
+      padding: 0 12px;
+    }
+
+    .btn-social {
+      width: 100%;
+      padding: 14px;
+      border-radius: var(--radius-sm);
+      font-size: 15px;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      cursor: pointer;
+      margin-bottom: 12px;
+      transition: opacity 0.3s ease;
+      border: none;
+    }
+
+    .btn-social:hover { opacity: 0.9; }
     
-    f.action = '${pageContext.request.contextPath}/member/login';
-    f.submit();
-}
-</script>
+    .btn-kakao { background-color: #FEE500; color: #000000; }
+    .btn-google { background-color: #FFFFFF; color: var(--text-dark); border: 1px solid var(--border-light); }
 
-<footer>
-	<jsp:include page="/WEB-INF/views/layout/footer.jsp"/>
-</footer>
+    .login-footer {
+      margin-top: 24px;
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--text-gray);
+    }
 
-<jsp:include page="/WEB-INF/views/layout/footerResources.jsp"/>
+    .login-footer a {
+      color: var(--electric-blue);
+      margin-left: 8px;
+    }
+  </style>
+</head>
+<body>
+
+  <main class="login-section">
+    <div class="login-card reveal">
+      <div class="login-logo">Tripan</div>
+      <p class="login-desc">우리만의 여행을 시작해 볼까요?</p>
+
+      <form action="${pageContext.request.contextPath}/loginProc" method="POST">
+        <div class="form-group">
+          <input type="email" name="username" class="form-input" placeholder="이메일 주소" required>
+        </div>
+        <div class="form-group">
+          <input type="password" name="password" class="form-input" placeholder="비밀번호" required>
+        </div>
+        
+        <button type="submit" class="btn-submit">이메일로 로그인</button>
+      </form>
+
+      <div class="social-divider">
+        <span>또는 3초 만에 시작하기</span>
+      </div>
+
+      <button class="btn-social btn-kakao">
+        카카오로 시작하기
+      </button>
+      <button class="btn-social btn-google">
+        Google로 시작하기
+      </button>
+
+      <div class="login-footer">
+        아직 계정이 없으신가요? <a href="${pageContext.request.contextPath}/member/join">회원가입</a>
+      </div>
+    </div>
+  </main>
+
+  <jsp:include page="/WEB-INF/views/layout/footer.jsp"/>
 
 </body>
 </html>
