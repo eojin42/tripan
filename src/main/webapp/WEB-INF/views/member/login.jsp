@@ -154,16 +154,15 @@
       <div class="login-logo">Tripan</div>
       <p class="login-desc">우리만의 여행을 시작해 볼까요?</p>
 
-      <form action="${pageContext.request.contextPath}/loginProc" method="POST">
-        <div class="form-group">
-          <input name="username" class="form-input" placeholder="아이디" required>
-        </div>
-        <div class="form-group">
-          <input type="password" name="password" class="form-input" placeholder="비밀번호" required>
-        </div>
-        
-        <button type="submit" class="btn-submit">로그인</button>
-      </form>
+      <form action="${pageContext.request.contextPath}/member/login" method="POST">
+		  <div class="form-group">
+		    <input name="loginId" class="form-input" placeholder="아이디" required>
+		  </div>
+		  <div class="form-group">
+		    <input type="password" name="password" class="form-input" placeholder="비밀번호" required>
+		  </div>
+		  <button type="submit" class="btn-submit">로그인</button>
+		</form>
 
       <div class="social-divider">
         <span>또는 3초 만에 시작하기</span>
