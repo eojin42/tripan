@@ -178,6 +178,8 @@
       <div class="login-footer">
         아직 계정이 없으신가요? <a href="${pageContext.request.contextPath}/member/join">회원가입</a>
       </div>
+      
+      <div>${message}</div>
     </div>
   </main>
 
