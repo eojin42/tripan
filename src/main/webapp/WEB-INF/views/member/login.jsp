@@ -156,13 +156,13 @@
 
       <form action="${pageContext.request.contextPath}/loginProc" method="POST">
         <div class="form-group">
-          <input type="email" name="username" class="form-input" placeholder="이메일 주소" required>
+          <input name="username" class="form-input" placeholder="아이디" required>
         </div>
         <div class="form-group">
           <input type="password" name="password" class="form-input" placeholder="비밀번호" required>
         </div>
         
-        <button type="submit" class="btn-submit">이메일로 로그인</button>
+        <button type="submit" class="btn-submit">로그인</button>
       </form>
 
       <div class="social-divider">
