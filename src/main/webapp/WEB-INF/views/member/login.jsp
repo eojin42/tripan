@@ -6,7 +6,6 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>hShop</title>
 <jsp:include page="/WEB-INF/views/layout/headerResources.jsp"/>
 </head>
 <body>
@@ -15,14 +14,13 @@
 	<jsp:include page="/WEB-INF/views/layout/header.jsp"/>
 </header>
 <style>
-    /* 로그인 페이지 전용 스타일 */
     .login-section {
       min-height: 100vh;
       display: flex;
       align-items: center;
       justify-content: center;
-      background-color: var(--bg-light); /* 기존 배경색 활용 */
-      padding: 120px 20px 60px; /* 헤더 높이 고려 */
+      background-color: var(--bg-light); 
+      padding: 120px 20px 60px; 
     }
 
     .login-card {
@@ -30,7 +28,7 @@
       width: 100%;
       max-width: 420px;
       padding: 48px 32px;
-      border-radius: var(--radius-lg); /* 32px 둥근 모서리 */
+      border-radius: var(--radius-lg); 
       box-shadow: 0 16px 40px rgba(0, 0, 0, 0.08);
       text-align: center;
     }
