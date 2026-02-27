@@ -6,7 +6,7 @@
 		SELECT m1.member_id, m1.login_id, m1.password, m1.username, m1.email,
 			   m1.status, m1.role, NVL(m1.failure_cnt, 0) failure_cnt,
 			   m1.provider AS sns_provider, m1.provider_id AS sns_id,
-			   m2.nickname, m2.profile_image AS profile_photo, m2.phone_number AS tel
+			   m2.nickname, m2.profile_image AS profile_photo, m2.phone_number AS phoneNumber
 		FROM member1 m1
 		LEFT OUTER JOIN member2 m2 ON m1.member_id = m2.member_id
 		WHERE m1.login_id = #{login_id}
@@ -16,7 +16,7 @@
 		SELECT m1.member_id, m1.login_id, m1.password, m1.username, m1.email,
 			   m1.status, m1.role, NVL(m1.failure_cnt, 0) failure_cnt,
 			   m1.provider AS sns_provider, m1.provider_id AS sns_id,
-			   m2.nickname, m2.profile_image AS profile_photo, m2.phone_number AS tel
+			   m2.nickname, m2.profile_image AS profile_photo, m2.phone_number AS phoneNumber
 		FROM member1 m1
 		LEFT OUTER JOIN member2 m2 ON m1.member_id = m2.member_id
 		WHERE m1.login_id = #{login_id}
@@ -71,15 +71,27 @@
         ) VALUES (
             #{memberId}, #{loginId}, #{email}, #{password}, #{name}, 
             1, #{role}, #{gender, jdbcType=VARCHAR}, 0, 
-            #{snsProvider, jdbcType=VARCHAR}, #{snsId, jdbcType=VARCHAR}, #{birth, jdbcType=VARCHAR}
+            #{snsProvider, jdbcType=VARCHAR}, #{snsId, jdbcType=VARCHAR}, #{birthday, jdbcType=VARCHAR}
         )
         INTO member2 (
             MEMBER_ID, NICKNAME, PROFILE_IMAGE, PHONE_NUMBER, 
             PREFERRED_REGION, UPDATED_AT, LAST_LOGIN_AT
         ) VALUES (
-            #{memberId}, #{nickname, jdbcType=VARCHAR}, #{profilePhoto, jdbcType=VARCHAR}, #{tel, jdbcType=VARCHAR}, 
+            #{memberId}, #{nickname, jdbcType=VARCHAR}, #{profilePhoto, jdbcType=VARCHAR}, #{phoneNumber, jdbcType=VARCHAR}, 
             #{preferredRegion, jdbcType=VARCHAR}, SYSDATE, SYSDATE
         )
         SELECT * FROM dual
     </insert>
+    
+    <update id="updateMember1" parameterType="com.tripan.app.domain.dto.MemberDto">
+    	UPDATE member1 SET email=#{email}, password=#{password}, username=#{userName}, birthday=#{birthday}
+    	WHERE member_id = #{memberId}
+    </update>
+    
+    <update id="updateMember2" parameterType="com.tripan.app.domain.dto.MemberDto">
+    	UPDATE member2 SET nickName = #{nickName}, profile_image = #{profileImage}, bio = #{bio}, phone_number = #{phoneNumber},
+				preferred_region=#{preferredRegion}, updated_at=SYSDATE
+    	WHERE member_id = #{memberId}
+    </update>
+    
 </mapper>

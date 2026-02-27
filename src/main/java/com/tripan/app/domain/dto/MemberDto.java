@@ -17,16 +17,17 @@ public class MemberDto {
 	private String password;
 	private String snsProvider;
 	private String snsId;
-	private String tel;
+	private String phoneNumber;
 	private String email;
 	private String preferredRegion;
+	private String bio;
 	
 	private String ipInfo;
 	private String logDate;
 	private Long logId;
 	
 	private String name;
-	private String birth;
+	private String birthday;
 	private String gender;
 	
 	private int status;
