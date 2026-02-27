@@ -45,7 +45,7 @@
 	</update>
 
 	<update id="updateMemberEnabled" parameterType="map">
-		UPDATE member1 SET status = 'INACTIVE'
+		UPDATE member1 SET status = #{enabled}
 		<where>
 			<choose>
 				<when test="login_id != null">

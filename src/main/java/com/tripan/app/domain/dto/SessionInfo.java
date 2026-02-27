@@ -17,7 +17,7 @@ public class SessionInfo {
 	private String password;
 	private String username;
 	private String email;
-	private String status;
+	private int status;
 	private String role;
 	private int failureCnt;
 	

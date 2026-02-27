@@ -29,7 +29,7 @@ public class MemberDto {
 	private String birth;
 	private String gender;
 	
-	private String status;
+	private int status;
 	private String role;
 	private Long equippedBadgeId;
 	
