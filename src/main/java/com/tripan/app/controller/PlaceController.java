@@ -15,12 +15,19 @@ public class PlaceController {
         return "curation/magazine_list";
     }
     
+    @GetMapping({"/magazine_detail"})
+    public String magazine_detail(Model model) {
+     
+        return "curation/magazine_detail";
+    }
+    
 
     @GetMapping({"/detail"})
     public String detail(Model model) {
      
         return "curation/detail";
     }
+    
     
     @GetMapping({"/place_list"})
     public String place_list(Model model) {
