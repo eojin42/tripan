@@ -197,7 +197,7 @@
             <p>당신의 취향을 기록하고, 새로운 여정을 제안합니다.</p>
         </header>
 
-        <section class="hero-container" onclick="location.href='${pageContext.request.contextPath}/magazine/detail'">
+        <section class="hero-container">
             <div class="hero-frame">
                 <img src="https://images.unsplash.com/photo-1499793983690-e29da59ef1c2?auto=format&fit=crop&w=1600" alt="Jeju">
             </div>
@@ -205,7 +205,7 @@
                 <span class="cat">EDITOR'S CHOICE</span>
                 <h2>제주, 온전한 쉼을 위한<br>비밀스러운 공간들</h2>
                 <p>파도 소리만 들리는 프라이빗한 숙소부터 숨겨진 로컬 맛집까지, 당신의 지친 일상을 위로할 완벽한 가이드. Tripan이 선별한 제주의 진짜 모습을 만나보세요.</p>
-                <a href="${pageContext.request.contextPath}/magazine/detail" class="btn-read">STORY VIEW</a>
+                <a href="${pageContext.request.contextPath}/curation/magazine_detail" class="btn-read">STORY VIEW</a>
             </div>
         </section>
 
