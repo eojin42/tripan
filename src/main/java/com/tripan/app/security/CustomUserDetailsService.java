@@ -53,7 +53,7 @@ public class CustomUserDetailsService implements UserDetailsService{
 		
 		return CustomUserDetails.builder()
 				.sessionInfo(info)
-				.disabled(!"ACTIVE".equals(member.getStatus()))
+				.disabled(member.getStatus() == 0)
 				.roles(authorities)
 				.build();	
 	}
