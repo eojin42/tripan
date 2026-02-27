@@ -37,7 +37,7 @@
           <h2 style="font-size: 28px; font-weight: 900; margin-bottom: 8px;">실시간 인기 피드 🔥</h2>
           <p style="font-size: 15px; font-weight: 600; color: var(--text-dark);">지금 이 순간 가장 많이 담겨진 여행 코스</p>
         </div>
-        <button class="btn-more">전체보기 →</button>
+        <button class="btn-more" onclick="location.href='${pageContext.request.contextPath}/curation/magazine_list'">전체보기 →</button>
       </div>
       
       <div class="carousel-wrapper reveal">
@@ -114,7 +114,7 @@
           <h2 style="font-size: 28px; font-weight: 900; margin-bottom: 8px;">최근 살펴본 핫플 리스트 👀</h2>
           <p style="font-size: 15px; font-weight: 600; color: var(--text-dark);">나의 동선에 맞춰 추천된 감성 숙소</p>
         </div>
-        <button class="btn-more">더보기 →</button>
+        <button class="btn-more" onclick="location.href='${pageContext.request.contextPath}/curation/magazine_list'">더보기 →</button>
       </div>
       
       <div class="carousel-wrapper reveal">
@@ -163,7 +163,7 @@
           <h2 style="font-size: 28px; font-weight: 900; margin-bottom: 8px;">Tripan TOP 10 🏆</h2>
           <p style="font-size: 15px; font-weight: 600; color: var(--text-dark);">유저 평점이 증명하는 믿고 가는 스테이</p>
         </div>
-        <button class="btn-more">랭킹 전체보기 →</button>
+        <button class="btn-more" onclick="location.href='${pageContext.request.contextPath}/curation/place_list'">랭킹 전체보기 →</button>
       </div>
       
       <div class="carousel-wrapper reveal">
