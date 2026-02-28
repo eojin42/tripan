@@ -37,7 +37,7 @@
           <h2 style="font-size: 28px; font-weight: 900; margin-bottom: 8px;">실시간 인기 피드 🔥</h2>
           <p style="font-size: 15px; font-weight: 600; color: var(--text-dark);">지금 이 순간 가장 많이 담겨진 여행 코스</p>
         </div>
-        <button class="btn-more" onclick="location.href='${pageContext.request.contextPath}/curation/magazine_list'">전체보기 →</button>
+        <button class="btn-more" onclick="location.href='${pageContext.request.contextPath}/feed/feed_list'">전체보기 →</button>
       </div>
       
       <div class="carousel-wrapper reveal">
