@@ -16,7 +16,34 @@ public class CommunityController {
 
     @GetMapping({"", "/", "/feed"})
     public String handleCommunityFeed(Model model) {
-     
-        return "community/feed";
+
+    	return "community/feed";
+    	
+    }
+
+    @GetMapping("/freeboard")
+    public String handleCommunityFreeboard(Model model) {
+
+    	model.addAttribute("activeTab", "freeboard");
+    	
+        return "community/feed"; 
+    }
+
+    @GetMapping("/fragment/feed")
+    public String fragmentFeed(Model model) {
+        
+        return "community/fragment/feed_list"; 
+    }
+
+    @GetMapping("/fragment/hot")
+    public String fragmentHot(Model model) {
+        
+        return "community/fragment/hot_list"; 
+    }
+
+    @GetMapping("/fragment/freeboard")
+    public String fragmentFreeboard(Model model) {
+        
+        return "community/fragment/freeboard_list"; 
     }
 }
