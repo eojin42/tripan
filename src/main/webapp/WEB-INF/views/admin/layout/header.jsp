@@ -20,7 +20,7 @@
     background: rgba(255, 255, 255, 0.85); 
     backdrop-filter: blur(24px); 
     -webkit-backdrop-filter: blur(24px);
-    border-radius: 100px; /* 헤더를 동그랗게 만들어줍니다 */
+    border-radius: 100px; 
     box-shadow: 0 8px 32px rgba(45, 55, 72, 0.05);
     display: flex; 
     align-items: center; 
@@ -128,7 +128,12 @@
         onclick="location.href='${pageContext.request.contextPath}/admin/bookings'">예약 내역</li>
 
       <li class="nav-item ${param.activePage == 'cs' ? 'active' : ''}"
-        onclick="location.href='${pageContext.request.contextPath}/admin/cs'">회원/CS 관리</li>
+        onclick="location.href='${pageContext.request.contextPath}/admin/cs'">회원/CS 관리
+         <div class="dropdown-panel">
+          <a href="#"><span class="dp-icon">👤</span>회원관리</a>
+          <a href="#"><span class="dp-icon">🚨</span>cs관리</a>
+        </div>
+        </li>
     </ul>
   </div>
 
