@@ -46,4 +46,10 @@ public class CommunityController {
         
         return "community/fragment/freeboard_list"; 
     }
+    
+    @GetMapping("/chat/openlounge")
+    public String openlounge(Model model) {
+        
+        return "community/chat/openlounge"; 
+    }
 }
