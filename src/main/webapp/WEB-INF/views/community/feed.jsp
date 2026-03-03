@@ -91,7 +91,7 @@
     .live-dot { width: 8px; height: 8px; background: #FF6B6B; border-radius: 50%; box-shadow: 0 0 8px #FF6B6B; animation: pulse 1.5s infinite; }
 
     /* --- [Center] 메인 피드 (상단 여백 제거하여 좌/우와 높이 맞춤) --- */
-    .feed-main { display: flex; flex-direction: column; gap: 24px; } /* 카드 사이 간격 */
+    .feed-main { display: flex; flex-direction: column; gap: 24px; margin: 0px auto;} /* 카드 사이 간격 */
     
     .feed-card { padding: 0; overflow: hidden; margin-bottom: 0; }
     .feed-author { display: flex; align-items: center; justify-content: space-between; padding: 20px; }
@@ -166,9 +166,9 @@
         </div>
         <div class="profile-name">${sessionScope.member.nickname != null ? sessionScope.member.nickname : '여행자'} 님</div>
         <div class="profile-stats">
-          <div class="stat-box">게시물 <strong>12</strong></div>
-          <div class="stat-box">팔로워 <strong>248</strong></div>
-          <div class="stat-box">팔로잉 <strong>156</strong></div>
+          <div class="stat-box">게시물 <strong>0</strong></div>
+          <div class="stat-box">팔로워 <strong>0</strong></div>
+          <div class="stat-box">팔로잉 <strong>0</strong></div>
         </div>
       </div>
 

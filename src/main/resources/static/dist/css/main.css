@@ -114,8 +114,7 @@ nav.scrolled .header-search:hover, nav.scrolled .header-search:focus-within { ba
   left: 50%; 
   transform: translateX(-50%) translateY(10px) scale(0.95); 
   
-  /* 기본 배경: 반투명 유리 질감 */
-  background: rgba(255, 255, 255, 0.65); 
+  background: rgba(255, 255, 255, 1); 
   backdrop-filter: blur(28px); 
   -webkit-backdrop-filter: blur(28px); 
   
