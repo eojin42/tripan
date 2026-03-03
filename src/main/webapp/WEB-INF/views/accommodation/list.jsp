@@ -2,187 +2,273 @@
 <%@ taglib prefix="c" uri="jakarta.tags.core"%>
 <%@ taglib prefix="fmt" uri="jakarta.tags.fmt"%>
 
+<c:if test="${not empty param.checkin and not empty param.checkout}">
+    <fmt:parseDate value="${param.checkin}" var="inDate" pattern="yyyy-MM-dd"/>
+    <fmt:parseDate value="${param.checkout}" var="outDate" pattern="yyyy-MM-dd"/>
+    <fmt:formatDate value="${inDate}" var="inStr" pattern="M.d"/>
+    <fmt:formatDate value="${outDate}" var="outStr" pattern="M.d"/>
+    
+    <fmt:formatDate value="${inDate}" var="inDay" pattern="E"/>
+    <fmt:formatDate value="${outDate}" var="outDay" pattern="E"/>
+</c:if>
+
+<c:set var="adultCnt" value="${empty param.adult ? 0 : param.adult}" />
+<c:set var="childCnt" value="${empty param.child ? 0 : param.child}" />
+<c:set var="totalGuest" value="${adultCnt + childCnt}" />
+
 <jsp:include page="../layout/header.jsp" />
 
 <style>
-  .list-page-container {
-    max-width: 1400px;
-    margin: 140px auto 100px;
-    padding: 0 5%;
-    display: grid;
-    grid-template-columns: 280px 1fr;
-    gap: 40px;
-  }
-
-  /* 좌측 필터 영역 */
-  .filter-sidebar {
-    background: var(--bg-white);
-    padding: 32px 24px;
-    border-radius: var(--radius-lg);
-    box-shadow: 0 12px 24px rgba(45, 55, 72, 0.04);
-    border: 1px solid var(--border-light);
-    height: fit-content;
-    position: sticky;
-    top: 100px;
-  }
-
-  .filter-group {
-    margin-bottom: 32px;
-    border-bottom: 1px solid var(--bg-light);
-    padding-bottom: 24px;
+  /* 컨테이너 */
+  .list-container { 
+    max-width: 1400px; 
+    margin: 160px auto 100px; 
+    padding: 0 40px; 
   }
   
-  .filter-group:last-child {
-    border-bottom: none;
-    margin-bottom: 0;
-    padding-bottom: 0;
+  /* --- [핵심 1] 통합 검색바 스타일 (사진 2번 스타일) --- */
+  .list-search-bar {
+    position: relative;
+    display: flex; 
+    justify-content: center; 
+    margin-bottom: 40px;
+  }
+  
+  .unified-search-bar {
+    display: flex;
+    align-items: center;
+    background: white;
+    border: 1px solid #E2E8F0;
+    border-radius: 100px; /* 둥근 알약 모양 */
+    box-shadow: 0 4px 20px rgba(0,0,0,0.05); /* 부드러운 그림자 */
+    padding: 4px;
+    transition: all 0.3s ease;
+  }
+  
+  .unified-search-bar:hover {
+    box-shadow: 0 8px 24px rgba(0,0,0,0.08);
+    transform: translateY(-2px);
   }
 
-  .filter-title {
-    font-size: 16px;
-    font-weight: 900;
-    color: var(--text-black);
-    margin-bottom: 16px;
-  }
-
-  .check-label {
+  /* 검색 섹션 (지역/일정/인원) */
+  .search-segment {
     display: flex;
     align-items: center;
     gap: 12px;
-    font-size: 14px;
-    font-weight: 600;
-    color: var(--text-dark);
-    margin-bottom: 12px;
+    padding: 14px 32px;
     cursor: pointer;
+    position: relative;
+    color: var(--text-black);
+    font-size: 15px;
+    font-weight: 700;
+    transition: background 0.2s;
+    border-radius: 50px; /* 호버 시 둥글게 */
+  }
+  
+  .search-segment:hover {
+    background-color: #F8F9FA;
+  }
+  
+  /* 아이콘 스타일 */
+  .search-segment svg {
+    width: 20px; height: 20px;
+    color: var(--text-gray); /* 기본 회색 */
+  }
+  
+  /* 활성화 되었을 때 (값이 있을 때) */
+  .search-segment.active {
+    color: var(--point-blue);
+  }
+  .search-segment.active svg {
+    color: var(--point-blue);
   }
 
-  .check-label input[type="checkbox"] {
-    width: 18px;
-    height: 18px;
-    accent-color: var(--point-blue);
-    cursor: pointer;
+  /* ✨ 세로 구분선 (Divider) */
+  .search-segment:not(:last-child)::after {
+    content: '';
+    position: absolute;
+    right: 0;
+    top: 25%;
+    height: 50%; /* 높이 절반 */
+    width: 1px;
+    background-color: #E2E8F0;
   }
 
-  /* 우측 숙소 그리드 영역 */
-  .acc-grid-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 24px;
+  /* 우측 필터 아이콘 (절대 위치) */
+  .btn-filter-icon {
+    position: absolute;
+    right: 0;
+    top: 50%; transform: translateY(-50%);
+    width: 48px; height: 48px; border-radius: 50%; border: 1px solid #E2E8F0;
+    display: flex; align-items: center; justify-content: center; cursor: pointer;
+    background: white; transition: all 0.2s;
   }
+  .btn-filter-icon:hover { background: #F7FAFC; border-color: var(--text-black); }
 
-  .acc-grid-header h1 {
-    font-size: 24px;
-    font-weight: 900;
+  /* 카테고리 메뉴 */
+  .category-nav {
+    display: flex; gap: 32px; overflow-x: auto; padding-bottom: 16px; margin-bottom: 30px;
+    border-bottom: 1px solid #F1F3F5; scrollbar-width: none;
   }
+  .cat-item {
+    display: flex; flex-direction: column; align-items: center; gap: 8px;
+    min-width: 64px; cursor: pointer; opacity: 0.6; transition: opacity 0.2s;
+  }
+  .cat-item:hover, .cat-item.active { opacity: 1; }
+  .cat-item span { font-size: 13px; font-weight: 700; color: var(--text-black); white-space: nowrap; }
+  .cat-item.active { border-bottom: 2px solid var(--text-black); padding-bottom: 10px; margin-bottom: -18px; }
 
-  .acc-grid {
+  /* --- [핵심 2] 숙소 그리드 (3열 배치) --- */
+  .stay-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-    gap: 32px;
+    grid-template-columns: repeat(3, 1fr); /* 🚀 3개씩 배치 */
+    gap: 40px 32px; /* 세로간격 40px, 가로간격 32px */
   }
-
-  /* 리스트용 카드 약간 수정 */
-  .grid-card {
-    width: 100%;
-    min-width: unset;
+  
+  .stay-item { cursor: pointer; transition: transform 0.2s; }
+  .stay-item:hover { transform: translateY(-4px); }
+  
+  .stay-thumb {
+    width: 100%; aspect-ratio: 4/3; border-radius: 16px; overflow: hidden; margin-bottom: 16px;
+    position: relative; background: #eee;
   }
+  .stay-thumb img { width: 100%; height: 100%; object-fit: cover; transition: transform 0.4s; }
+  .stay-item:hover .stay-thumb img { transform: scale(1.05); }
+  
+  .stay-meta h3 { font-size: 18px; font-weight: 800; margin-bottom: 6px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .stay-desc { font-size: 14px; color: var(--text-gray); margin-bottom: 8px; }
+  .stay-price { font-size: 17px; font-weight: 800; }
+  .stay-discount { color: var(--point-blue); margin-right: 4px; }
 
-  @media (max-width: 992px) {
-    .list-page-container {
-      grid-template-columns: 1fr;
-    }
-    .filter-sidebar {
-      position: relative;
-      top: 0;
-    }
+  /* 반응형 */
+  @media (max-width: 1200px) { 
+    .stay-grid { grid-template-columns: repeat(3, 1fr); } 
+  }
+  @media (max-width: 992px) { 
+    .stay-grid { grid-template-columns: repeat(2, 1fr); } 
+    .unified-search-bar { width: 100%; justify-content: space-between; }
+    .search-segment { padding: 12px 16px; font-size: 14px; }
+    .btn-filter-icon { position: static; transform: none; margin-left: 12px; }
+    .list-search-bar { justify-content: space-between; }
+  }
+  @media (max-width: 600px) { 
+    .stay-grid { grid-template-columns: 1fr; } 
+    .list-container { padding: 0 20px; margin-top: 120px; } 
+    .search-segment span { display: none; } /* 모바일엔 아이콘만 */
   }
 </style>
 
-<main class="reveal active">
-  <div class="list-page-container">
+<main class="list-container reveal active">
+  
+  <div class="list-search-bar">
     
-    <aside class="filter-sidebar">
-      <form action="${pageContext.request.contextPath}/accommodation/list" method="GET" id="filterForm">
-        
-        <div class="filter-group">
-          <h3 class="filter-title">숙소 유형</h3>
-          <label class="check-label"><input type="checkbox" name="type" value="hotel"> 호텔/리조트</label>
-          <label class="check-label"><input type="checkbox" name="type" value="pension"> 펜션/풀빌라</label>
-          <label class="check-label"><input type="checkbox" name="type" value="guest"> 게스트하우스</label>
-          <label class="check-label"><input type="checkbox" name="type" value="camping"> 캠핑/글램핑</label>
-        </div>
-
-        <div class="filter-group">
-          <h3 class="filter-title">가격대 (1박 기준)</h3>
-          <label class="check-label"><input type="checkbox" name="price" value="under10"> 10만원 이하</label>
-          <label class="check-label"><input type="checkbox" name="price" value="10to20"> 10만원 ~ 20만원</label>
-          <label class="check-label"><input type="checkbox" name="price" value="20to30"> 20만원 ~ 30만원</label>
-          <label class="check-label"><input type="checkbox" name="price" value="over30"> 30만원 이상</label>
-        </div>
-
-        <div class="filter-group">
-          <h3 class="filter-title">인기 시설</h3>
-          <label class="check-label"><input type="checkbox" name="amenity" value="pool"> 수영장</label>
-          <label class="check-label"><input type="checkbox" name="amenity" value="bbq"> 바베큐장</label>
-          <label class="check-label"><input type="checkbox" name="amenity" value="parking"> 무료 주차</label>
-          <label class="check-label"><input type="checkbox" name="amenity" value="wifi"> 와이파이</label>
-        </div>
-        
-        <button type="submit" class="btn-more" style="width: 100%; text-align: center; background: var(--text-black); color: white;">
-          필터 적용하기
-        </button>
-
-      </form>
-    </aside>
-
-    <section class="acc-grid-area">
-      <div class="acc-grid-header">
-        <h1>강릉 지역 숙소 <span style="color: var(--point-blue);">128</span>개</h1>
-        
-        <select style="padding: 10px 16px; border-radius: var(--radius-pill); border: 1px solid var(--border-light); font-weight: 700; outline: none; background: white;">
-          <option>추천순</option>
-          <option>평점 높은 순</option>
-          <option>리뷰 많은 순</option>
-          <option>가격 낮은 순</option>
-        </select>
-      </div>
-
-      <div class="acc-grid">
-        <div class="list-item stay-card grid-card" onclick="location.href='${pageContext.request.contextPath}/accommodation/detail?id=1'">
-          <div class="list-img"><img src="https://images.unsplash.com/photo-1520250497591-112f2f40a3f4?auto=format&fit=crop&w=600&q=80"></div>
-          <div class="list-info">
-            <span class="tag">#오션뷰 #인피니티풀</span>
-            <h4 style="margin-top: 8px;">스테이 폴라리스 (강릉)</h4>
-            <p class="desc">강문해변 도보 5분 거리</p>
-            <p class="stay-price">₩ 180,000 <span>⭐ 4.9</span></p>
-          </div>
-        </div>
-
-        <div class="list-item stay-card grid-card">
-          <div class="list-img"><img src="https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&w=600&q=80"></div>
-          <div class="list-info">
-            <span class="tag">#독채 #프라이빗</span>
-            <h4 style="margin-top: 8px;">강릉 씨마크 리조트</h4>
-            <p class="desc">전 객실 파노라마 오션뷰</p>
-            <p class="stay-price">₩ 420,000 <span>⭐ 4.9</span></p>
-          </div>
-        </div>
-        
-        <div class="list-item stay-card grid-card">
-          <div class="list-img"><img src="https://images.unsplash.com/photo-1582719508461-905c673771fd?auto=format&fit=crop&w=600&q=80"></div>
-          <div class="list-info">
-            <span class="tag">#가성비 #조식제공</span>
-            <h4 style="margin-top: 8px;">세인트존스 호텔</h4>
-            <p class="desc">반려동물 동반 가능 객실 보유</p>
-            <p class="stay-price">₩ 125,000 <span>⭐ 4.6</span></p>
-          </div>
-        </div>
-        </div>
+    <div class="unified-search-bar">
       
-    </section>
+      <div class="search-segment ${not empty param.regions ? 'active' : ''}" onclick="openModal('region')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+        <span>${not empty param.regions ? param.regions : '서울'}</span>
+      </div>
+      
+      <div class="search-segment ${not empty param.checkin ? 'active' : ''}" onclick="openModal('date')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+        <span>
+          <c:choose>
+             <c:when test="${not empty param.checkin}">
+               1박 ${inStr}(${inDay}) - ${outStr}(${outDay})
+             </c:when>
+             <c:otherwise>일정</c:otherwise>
+          </c:choose>
+        </span>
+      </div>
+      
+      <div class="search-segment ${totalGuest > 0 ? 'active' : ''}" onclick="openModal('guest')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+        <span>${totalGuest > 0 ? totalGuest += '명' : '1명'}</span>
+      </div>
+      
+    </div>
+
+    <button class="btn-filter-icon" onclick="openFilterModal()">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="4" y1="21" x2="4" y2="14"/><line x1="4" y1="10" x2="4" y2="3"/><line x1="12" y1="21" x2="12" y2="12"/><line x1="12" y1="8" x2="12" y2="3"/><line x1="20" y1="21" x2="20" y2="16"/><line x1="20" y1="12" x2="20" y2="3"/><line x1="1" y1="14" x2="7" y2="14"/><line x1="9" y1="8" x2="15" y2="8"/><line x1="17" y1="16" x2="23" y2="16"/></svg>
+    </button>
+  </div>
+
+  <div class="category-nav">
+    <div class="cat-item active"><span>🏠 모든 스테이</span></div>
+    <div class="cat-item"><span>🌸 봄꽃여행</span></div>
+    <div class="cat-item"><span>🏷️ 프로모션</span></div>
+    <div class="cat-item"><span>✨ 신규 오픈</span></div>
+    <div class="cat-item"><span>⏰ 마감임박</span></div>
+    <div class="cat-item"><span>🏯 고즈넉한</span></div>
+    <div class="cat-item"><span>🐶 반려동물</span></div>
+  </div>
+
+  <div class="stay-grid">
+    
+    <div class="stay-item" onclick="location.href='${pageContext.request.contextPath}/accommodation/detail?id=1'">
+      <div class="stay-thumb">
+        <img src="https://images.unsplash.com/photo-1542314831-068cd1dbfeeb?w=600" alt="img">
+        <div style="position:absolute; top:12px; right:12px; color:white;">♡</div>
+      </div>
+      <div class="stay-meta">
+        <h3>자하 (JAHA)</h3>
+        <p class="stay-desc">서울 종로구 · 2-8명</p>
+        <div class="stay-price"><span class="stay-discount">10%</span> ₩300,000~</div>
+      </div>
+    </div>
+
+    <div class="stay-item">
+      <div class="stay-thumb">
+        <img src="https://images.unsplash.com/photo-1520250497591-112f2f40a3f4?w=600" alt="img">
+        <div class="wish-btn">♡</div>
+      </div>
+      <div class="stay-meta">
+        <h3>히가공덕</h3>
+        <p class="stay-desc">서울 마포구 · 4-6명</p>
+        <div class="stay-price"><span class="stay-discount">20%</span> ₩236,000~</div>
+      </div>
+    </div>
+    
+    <div class="stay-item">
+      <div class="stay-thumb">
+        <img src="https://images.unsplash.com/photo-1566073771259-6a8506099945?w=600" alt="img">
+        <div class="wish-btn">♡</div>
+      </div>
+      <div class="stay-meta">
+        <h3>무보재</h3>
+        <p class="stay-desc">서울 종로구 · 4-8명</p>
+        <div class="stay-price">₩370,000~</div>
+      </div>
+    </div>
+    
+    <div class="stay-item">
+      <div class="stay-thumb">
+        <img src="https://images.unsplash.com/photo-1582719508461-905c673771fd?w=600" alt="img">
+        <div class="wish-btn">♡</div>
+      </div>
+      <div class="stay-meta">
+        <h3>서촌 스테이</h3>
+        <p class="stay-desc">서울 종로구 · 2명</p>
+        <div class="stay-price">₩180,000~</div>
+      </div>
+    </div>
+    
+    <div class="stay-item">
+      <div class="stay-thumb">
+        <img src="https://images.unsplash.com/photo-1571003123894-1f0594d2b5d9?w=600" alt="img">
+        <div class="wish-btn">♡</div>
+      </div>
+      <div class="stay-meta">
+        <h3>아만 도쿄</h3>
+        <p class="stay-desc">일본 도쿄 · 2명</p>
+        <div class="stay-price">₩1,200,000~</div>
+      </div>
+    </div>
 
   </div>
+
 </main>
 
+<jsp:include page="../accommodation/searchModal.jsp" /> 
+<jsp:include page="../accommodation/filterModal.jsp" /> 
 <jsp:include page="../layout/footer.jsp" />
