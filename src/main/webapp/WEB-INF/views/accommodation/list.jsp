@@ -1,20 +1,30 @@
 <%@ page contentType="text/html; charset=UTF-8" %>
 <%@ taglib prefix="c" uri="jakarta.tags.core"%>
 <%@ taglib prefix="fmt" uri="jakarta.tags.fmt"%>
+<%@ taglib prefix="fn" uri="jakarta.tags.functions"%>
 
 <c:if test="${not empty param.checkin and not empty param.checkout}">
     <fmt:parseDate value="${param.checkin}" var="inDate" pattern="yyyy-MM-dd"/>
     <fmt:parseDate value="${param.checkout}" var="outDate" pattern="yyyy-MM-dd"/>
     <fmt:formatDate value="${inDate}" var="inStr" pattern="M.d"/>
     <fmt:formatDate value="${outDate}" var="outStr" pattern="M.d"/>
-    
     <fmt:formatDate value="${inDate}" var="inDay" pattern="E"/>
     <fmt:formatDate value="${outDate}" var="outDay" pattern="E"/>
+    
+    <c:set var="diffTime" value="${outDate.time - inDate.time}" />
+    <c:set var="nights" value="${diffTime / (1000 * 60 * 60 * 24)}" />
+    <fmt:parseNumber var="nightCnt" value="${nights}" integerOnly="true" />
 </c:if>
 
 <c:set var="adultCnt" value="${empty param.adult ? 0 : param.adult}" />
 <c:set var="childCnt" value="${empty param.child ? 0 : param.child}" />
 <c:set var="totalGuest" value="${adultCnt + childCnt}" />
+
+<c:if test="${not empty param.regions}">
+    <c:set var="regionArr" value="${fn:split(param.regions, ',')}" />
+    <c:set var="regionCount" value="${fn:length(regionArr)}" />
+    <c:set var="firstRegion" value="${regionArr[0]}" />
+</c:if>
 
 <jsp:include page="../layout/header.jsp" />
 
@@ -26,7 +36,7 @@
     padding: 0 40px; 
   }
   
-  /* --- [핵심 1] 통합 검색바 스타일 (사진 2번 스타일) --- */
+  /* 통합 검색바 스타일 */
   .list-search-bar {
     position: relative;
     display: flex; 
@@ -39,8 +49,8 @@
     align-items: center;
     background: white;
     border: 1px solid #E2E8F0;
-    border-radius: 100px; /* 둥근 알약 모양 */
-    box-shadow: 0 4px 20px rgba(0,0,0,0.05); /* 부드러운 그림자 */
+    border-radius: 100px; 
+    box-shadow: 0 4px 20px rgba(0,0,0,0.05); 
     padding: 4px;
     transition: all 0.3s ease;
   }
@@ -50,7 +60,6 @@
     transform: translateY(-2px);
   }
 
-  /* 검색 섹션 (지역/일정/인원) */
   .search-segment {
     display: flex;
     align-items: center;
@@ -62,88 +71,49 @@
     font-size: 15px;
     font-weight: 700;
     transition: background 0.2s;
-    border-radius: 50px; /* 호버 시 둥글게 */
+    border-radius: 50px; 
   }
+  .search-segment:hover { background-color: #F8F9FA; }
   
-  .search-segment:hover {
-    background-color: #F8F9FA;
-  }
+  .search-segment svg { width: 20px; height: 20px; color: var(--text-gray); }
   
-  /* 아이콘 스타일 */
-  .search-segment svg {
-    width: 20px; height: 20px;
-    color: var(--text-gray); /* 기본 회색 */
-  }
-  
-  /* 활성화 되었을 때 (값이 있을 때) */
-  .search-segment.active {
-    color: var(--point-blue);
-  }
-  .search-segment.active svg {
-    color: var(--point-blue);
-  }
+  .search-segment.active { color: var(--point-blue); }
+  .search-segment.active svg { color: var(--point-blue); }
 
-  /* ✨ 세로 구분선 (Divider) */
+  /* 구분선 */
   .search-segment:not(:last-child)::after {
-    content: '';
-    position: absolute;
-    right: 0;
-    top: 25%;
-    height: 50%; /* 높이 절반 */
-    width: 1px;
-    background-color: #E2E8F0;
+    content: ''; position: absolute; right: 0; top: 25%;
+    height: 50%; width: 1px; background-color: #E2E8F0;
   }
 
-  /* 우측 필터 아이콘 (절대 위치) */
+  /* 필터 아이콘 */
   .btn-filter-icon {
-    position: absolute;
-    right: 0;
-    top: 50%; transform: translateY(-50%);
+    position: absolute; right: 0; top: 50%; transform: translateY(-50%);
     width: 48px; height: 48px; border-radius: 50%; border: 1px solid #E2E8F0;
     display: flex; align-items: center; justify-content: center; cursor: pointer;
     background: white; transition: all 0.2s;
   }
   .btn-filter-icon:hover { background: #F7FAFC; border-color: var(--text-black); }
 
-  /* 카테고리 메뉴 */
-  .category-nav {
-    display: flex; gap: 32px; overflow-x: auto; padding-bottom: 16px; margin-bottom: 30px;
-    border-bottom: 1px solid #F1F3F5; scrollbar-width: none;
-  }
-  .cat-item {
-    display: flex; flex-direction: column; align-items: center; gap: 8px;
-    min-width: 64px; cursor: pointer; opacity: 0.6; transition: opacity 0.2s;
-  }
+  /* 카테고리 & 그리드 */
+  .category-nav { display: flex; gap: 32px; overflow-x: auto; padding-bottom: 16px; margin-bottom: 30px; border-bottom: 1px solid #F1F3F5; scrollbar-width: none; }
+  .cat-item { display: flex; flex-direction: column; align-items: center; gap: 8px; min-width: 64px; cursor: pointer; opacity: 0.6; transition: opacity 0.2s; }
   .cat-item:hover, .cat-item.active { opacity: 1; }
   .cat-item span { font-size: 13px; font-weight: 700; color: var(--text-black); white-space: nowrap; }
   .cat-item.active { border-bottom: 2px solid var(--text-black); padding-bottom: 10px; margin-bottom: -18px; }
 
-  /* --- [핵심 2] 숙소 그리드 (3열 배치) --- */
-  .stay-grid {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr); /* 🚀 3개씩 배치 */
-    gap: 40px 32px; /* 세로간격 40px, 가로간격 32px */
-  }
-  
+  .stay-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 40px 32px; }
   .stay-item { cursor: pointer; transition: transform 0.2s; }
   .stay-item:hover { transform: translateY(-4px); }
-  
-  .stay-thumb {
-    width: 100%; aspect-ratio: 4/3; border-radius: 16px; overflow: hidden; margin-bottom: 16px;
-    position: relative; background: #eee;
-  }
+  .stay-thumb { width: 100%; aspect-ratio: 4/3; border-radius: 16px; overflow: hidden; margin-bottom: 16px; position: relative; background: #eee; }
   .stay-thumb img { width: 100%; height: 100%; object-fit: cover; transition: transform 0.4s; }
   .stay-item:hover .stay-thumb img { transform: scale(1.05); }
-  
   .stay-meta h3 { font-size: 18px; font-weight: 800; margin-bottom: 6px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .stay-desc { font-size: 14px; color: var(--text-gray); margin-bottom: 8px; }
   .stay-price { font-size: 17px; font-weight: 800; }
   .stay-discount { color: var(--point-blue); margin-right: 4px; }
 
-  /* 반응형 */
-  @media (max-width: 1200px) { 
-    .stay-grid { grid-template-columns: repeat(3, 1fr); } 
-  }
+  @media (max-width: 1200px) { .stay-grid { grid-template-columns: repeat(3, 1fr); } }
   @media (max-width: 992px) { 
     .stay-grid { grid-template-columns: repeat(2, 1fr); } 
     .unified-search-bar { width: 100%; justify-content: space-between; }
@@ -154,19 +124,20 @@
   @media (max-width: 600px) { 
     .stay-grid { grid-template-columns: 1fr; } 
     .list-container { padding: 0 20px; margin-top: 120px; } 
-    .search-segment span { display: none; } /* 모바일엔 아이콘만 */
+    .search-segment span { display: none; }
   }
 </style>
 
 <main class="list-container reveal active">
   
   <div class="list-search-bar">
-    
     <div class="unified-search-bar">
       
       <div class="search-segment ${not empty param.regions ? 'active' : ''}" onclick="openModal('region')">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
-        <span>${not empty param.regions ? param.regions : '서울'}</span>
+        <span>
+          ${not empty param.regions ? param.regions : '여행지'}
+        </span>
       </div>
       
       <div class="search-segment ${not empty param.checkin ? 'active' : ''}" onclick="openModal('date')">
@@ -174,7 +145,7 @@
         <span>
           <c:choose>
              <c:when test="${not empty param.checkin}">
-               1박 ${inStr}(${inDay}) - ${outStr}(${outDay})
+               ${nightCnt}박 ${inStr}(${inDay}) - ${outStr}(${outDay})
              </c:when>
              <c:otherwise>일정</c:otherwise>
           </c:choose>
@@ -183,9 +154,8 @@
       
       <div class="search-segment ${totalGuest > 0 ? 'active' : ''}" onclick="openModal('guest')">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-        <span>${totalGuest > 0 ? totalGuest += '명' : '1명'}</span>
+        <span>${totalGuest > 0 ? totalGuest += '명' : '인원'}</span>
       </div>
-      
     </div>
 
     <button class="btn-filter-icon" onclick="openFilterModal()">
@@ -204,7 +174,6 @@
   </div>
 
   <div class="stay-grid">
-    
     <div class="stay-item" onclick="location.href='${pageContext.request.contextPath}/accommodation/detail?id=1'">
       <div class="stay-thumb">
         <img src="https://images.unsplash.com/photo-1542314831-068cd1dbfeeb?w=600" alt="img">
@@ -216,7 +185,7 @@
         <div class="stay-price"><span class="stay-discount">10%</span> ₩300,000~</div>
       </div>
     </div>
-
+    
     <div class="stay-item">
       <div class="stay-thumb">
         <img src="https://images.unsplash.com/photo-1520250497591-112f2f40a3f4?w=600" alt="img">

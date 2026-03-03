@@ -20,7 +20,6 @@ import com.tripan.app.service.MemberService;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import jakarta.servlet.http.HttpSession;
 
 public class LoginSuccessHandler implements AuthenticationSuccessHandler {
     private RequestCache requestCache = new HttpSessionRequestCache();
