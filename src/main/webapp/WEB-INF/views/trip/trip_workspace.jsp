@@ -626,9 +626,9 @@ textarea.form-textarea:focus { border-color: var(--blue); background: var(--whit
     </div>
 
     <div class="avatar-group" title="동행자">
-      <div class="avatar" style="background:linear-gradient(135deg,#89CFF0,#A8C8E1)">나</div>
-      <div class="avatar" style="background:linear-gradient(135deg,#FFB6C1,#E0BBC2)">지</div>
-      <div class="avatar" style="background:linear-gradient(135deg,#C2B8D9,#A8C8E1)">민</div>
+      <div class="avatar" style="background:linear-gradient(135deg,#89CFF0,#A8C8E1)">어진</div>
+      <div class="avatar" style="background:linear-gradient(135deg,#FFB6C1,#E0BBC2)">혁찬</div>
+      <div class="avatar" style="background:linear-gradient(135deg,#C2B8D9,#A8C8E1)">유원</div>
       <div class="avatar avatar-add" onclick="openModal('inviteModal')" title="동행자 초대">+</div>
     </div>
 
@@ -757,7 +757,7 @@ textarea.form-textarea:focus { border-color: var(--blue); background: var(--whit
         <%-- Day 3 --%>
         <div class="day-section" id="day-3">
           <div class="day-header">
-            <div class="day-badge" style="background:linear-gradient(135deg,#A8C8E1,#89CFF0)">
+            <div class="day-badge" style="background:linear-gradient(135deg,#C2B8D9,#E0BBC2)">
               <span class="day-num">3</span><span>DAY</span>
             </div>
             <span class="day-date">3월 12일 (목)</span>
@@ -765,7 +765,7 @@ textarea.form-textarea:focus { border-color: var(--blue); background: var(--whit
           </div>
           <div class="place-list" id="places-3">
             <div class="place-card" draggable="true" data-day="3" data-id="6">
-              <div class="place-num" style="background:linear-gradient(135deg,#A8C8E1,#89CFF0)">1</div>
+              <div class="place-num" style="background:linear-gradient(135deg,#C2B8D9,#E0BBC2)">1</div>
               <div class="place-info">
                 <div class="place-name">우도 자전거 투어</div>
                 <div class="place-addr">제주시 우도면</div>

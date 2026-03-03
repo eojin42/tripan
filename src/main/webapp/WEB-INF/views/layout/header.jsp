@@ -49,7 +49,7 @@
             <a href="#" class="nav-link">여행 플래너</a>
             <div class="dropdown-menu">
               <a href="#">AI 맞춤형 일정 자동 생성</a>
-              <a href="#">실시간 일정 공동 편집</a>
+              <a style="cursor:pointer;" onclick="if(confirm('아직 일정이 없습니다. 일정 생성 페이지로 이동하시겠습니까?')) location.href='${pageContext.request.contextPath}/trip/trip_create'">실시간 일정 공동 편집</a>
               <a href="#">동행자 목적지 투표</a>
               <a href="#">준비물 체크리스트</a>
             </div>
