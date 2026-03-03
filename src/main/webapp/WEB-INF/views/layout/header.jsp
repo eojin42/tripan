@@ -98,10 +98,22 @@
         <sec:authorize access="isAuthenticated()">
           <div class="nav-item user-profile-item" style="height: 100%; display: flex; align-items: center;">
              <a href="#" class="nav-link" style="display:flex; align-items:center; gap:8px; padding: 6px 16px;">
-               <img src="${pageContext.request.contextPath}/uploads/member/${sessionScope.loginUser.profilePhoto}" alt="profile" 
-                    style="width: 32px; height: 32px; border-radius: 50%; object-fit: cover; border: 2px solid var(--border-light);">
-               <span style="font-weight: 800; color: var(--text-black);">${sessionScope.loginUser.nickname}님</span>
-             </a>
+		        <c:choose>
+		            <c:when test="${not empty sessionScope.loginUser.profilePhoto}">
+		                <img src="${pageContext.request.contextPath}/uploads/member/${sessionScope.loginUser.profilePhoto}" 
+		                     alt="profile" 
+		                     style="width: 32px; height: 32px; border-radius: 50%; object-fit: cover; border: 2px solid var(--border-light);">
+		            </c:when>
+		            <c:otherwise>
+		                <div style="width: 32px; height: 32px; border-radius: 50%; background: var(--bg-light); 
+		                            display: flex; align-items: center; justify-content: center; 
+		                            font-size: 10px; font-weight: 800; color: var(--text-gray); border: 2px solid var(--border-light);">
+		                    profile
+		                </div>
+		            </c:otherwise>
+		        </c:choose>
+		        <span style="font-weight: 800; color: var(--text-black);">${sessionScope.loginUser.nickname}님</span>
+		    </a>
              
              <div class="dropdown-menu" style="left: auto; right: 0; transform-origin: top right; transform: translateY(10px) scale(0.95);">
                <a href="#">마이페이지 홈</a>
