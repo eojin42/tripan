@@ -20,6 +20,7 @@ import com.tripan.app.service.MemberService;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpSession;
 
 public class LoginSuccessHandler implements AuthenticationSuccessHandler {
     private RequestCache requestCache = new HttpSessionRequestCache();
@@ -74,7 +75,14 @@ public class LoginSuccessHandler implements AuthenticationSuccessHandler {
                 request.getSession().removeAttribute("prevPage"); 
                 redirectStrategy.sendRedirect(request, response, prevPage);
             } else {
-                redirectStrategy.sendRedirect(request, response, defaultUrl);
+            	
+            	String referer = request.getHeader("Referer");
+            	
+            	if (referer != null && !referer.contains("/member/login")) {
+            		redirectStrategy.sendRedirect(request, response, referer);            		
+            	} else {
+            		redirectStrategy.sendRedirect(request, response, defaultUrl);
+            	}
             }
         }
     }
