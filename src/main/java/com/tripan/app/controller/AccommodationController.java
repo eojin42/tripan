@@ -10,7 +10,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 @RequestMapping("/accommodation/*")
 public class AccommodationController {
 	
-	@GetMapping("main")
+	@GetMapping("home")
 	public String main() {
 		
 		return "accommodation/home";
@@ -18,7 +18,9 @@ public class AccommodationController {
 	
 	// 숙소 리스트 페이지 (지역 선택 시 이동)
     @GetMapping("/list")
-    public String list(@RequestParam(value = "region", defaultValue = "서울 전체") String region, Model model) {
+    public String list(@RequestParam(value = "region", defaultValue = "서울 전체") String region, 
+    		
+    		Model model) {
         
         // TODO: 향후 Service를 통해 DB에서 region에 해당하는 숙소 목록을 가져오는 로직 추가
         // List<StayDTO> stayList = stayService.getStayListByRegion(region);

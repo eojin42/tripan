@@ -3,7 +3,6 @@
 <%@ taglib prefix="fmt" uri="jakarta.tags.fmt"%>
 
 <style>
-  /* 모달 오버레이 */
   .modal-overlay {
     position: fixed; top: 0; left: 0; width: 100%; height: 100%;
     background: rgba(0,0,0,0.6); z-index: 9990;
@@ -12,7 +11,6 @@
   }
   .modal-overlay.open { opacity: 1; visibility: visible; }
 
-  /* 모달 본체 */
   .custom-modal {
     position: fixed; bottom: 0; left: 50%;
     width: 100%; max-width: 800px; height: 90vh;
@@ -25,7 +23,6 @@
   }
   .custom-modal.open { transform: translateX(-50%) translateY(0); }
 
-  /* 헤더 & 닫기 버튼 */
   .c-modal-header { padding: 20px 24px 10px; text-align: center; position: relative; flex-shrink: 0; }
   .c-modal-title { font-size: 18px; font-weight: 800; color: var(--text-black); }
   .btn-close-modal { 
@@ -34,7 +31,6 @@
     color: var(--text-black);
   }
 
-  /* 검색바 영역 */
   .c-search-area { padding: 0 24px 20px; flex-shrink: 0; border-bottom: 1px solid #F1F3F5; }
   
   .search-row {
@@ -63,7 +59,6 @@
   .btn-chip-close:hover { background: rgba(0,0,0,0.1); color: #E53E3E; }
   .placeholder-text { color: #A0AEC0; font-weight: 600; font-size: 16px; }
 
-  /* 탭 버튼 */
   .filter-row { display: flex; justify-content: space-between; margin-top: 12px; }
   .filter-tab {
     display: flex; align-items: center; gap: 8px; padding: 8px 4px;
@@ -72,14 +67,12 @@
   .filter-tab:hover { color: var(--point-blue); }
   .filter-tab.active { color: var(--point-blue); font-weight: 800; }
 
-  /* 본문 영역 */
   .c-modal-body { flex: 1; overflow-y: auto; padding: 24px; scrollbar-width: thin; position: relative; }
   
   .view-section { display: none; animation: fadeIn 0.3s ease-out; }
   .view-section.active { display: block; }
   @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
 
-  /* [View 1] 지역 선택 */
   .section-title { font-size: 15px; font-weight: 800; color: var(--text-gray); margin-bottom: 12px; display: block; }
   .region-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; margin-bottom: 32px; }
   .region-btn {
@@ -91,7 +84,6 @@
   .region-btn.selected { background: var(--text-black); color: white; box-shadow: 0 4px 10px rgba(0,0,0,0.15); }
   #subRegionContainer { display: none; background: #FAFAFA; margin: 0 -24px 24px; padding: 20px 24px; border-bottom: 1px solid #EEEEEE; }
 
-  /* [View 2] 캘린더 */
   .calendar-container { text-align: center; padding-bottom: 40px; }
   .month-block { margin-bottom: 40px; }
   .month-title { font-size: 18px; font-weight: 900; margin-bottom: 20px; text-align: center; color: var(--text-black); }
@@ -116,15 +108,10 @@
   .day-cell.range { background: var(--bg-beige); color: var(--text-black); border-radius: 0; }
   
   .day-cell.range-start { background: var(--point-blue); color: white; border-radius: 50%; position: relative; }
-  .day-cell.range-start::before {
-    content: ''; position: absolute; z-index: -1; top: 0; right: 0; bottom: 0; left: 50%; background: var(--bg-beige);
-  }
+  .day-cell.range-start::before { content: ''; position: absolute; z-index: -1; top: 0; right: 0; bottom: 0; left: 50%; background: var(--bg-beige); }
   .day-cell.range-end { background: var(--point-blue); color: white; border-radius: 50%; position: relative; }
-  .day-cell.range-end::before {
-    content: ''; position: absolute; z-index: -1; top: 0; right: 50%; bottom: 0; left: 0; background: var(--bg-beige);
-  }
+  .day-cell.range-end::before { content: ''; position: absolute; z-index: -1; top: 0; right: 50%; bottom: 0; left: 0; background: var(--bg-beige); }
 
-  /* [View 3] 인원 */
   .guest-row { display: flex; justify-content: space-between; align-items: center; padding: 20px 0; border-bottom: 1px solid #F1F3F5; }
   .guest-info h4 { font-size: 16px; font-weight: 800; margin-bottom: 4px; color: var(--text-black); }
   .guest-info p { font-size: 13px; color: var(--text-gray); }
@@ -137,7 +124,6 @@
   .btn-count.active { border-color: var(--text-black); color: var(--text-black); font-weight: 700; }
   .count-val { font-size: 18px; font-weight: 800; width: 20px; text-align: center; }
 
-  /* 푸터 */
   .c-modal-footer { padding: 16px 24px 32px; border-top: 1px solid #F1F3F5; display: flex; justify-content: space-between; align-items: center; background: white; flex-shrink: 0; }
   .btn-reset { font-size: 14px; font-weight: 600; color: var(--text-gray); background: none; text-decoration: underline; cursor: pointer; border: none; }
   .btn-search-black { background: var(--text-black); color: white; padding: 14px 40px; border-radius: 100px; border: none; font-size: 15px; font-weight: 800; cursor: pointer; transition: background 0.3s; }
@@ -151,7 +137,6 @@
 
 <div class="modal-overlay" id="modalOverlay" onclick="closeModal()"></div>
 <div class="custom-modal" id="customModal">
-  
   <div class="c-modal-header">
     <div class="c-modal-title">어디로 떠날까요?</div>
     <button class="btn-close-modal" onclick="closeModal()">✕</button>
@@ -236,12 +221,13 @@
     return `\${m}.\${d}`;
   };
 
-  // --- 상태 관리 (초기값 비움) ---
+  // --- 상태 관리 변수 ---
   let selectedRegions = []; 
   let selectedDates = []; 
   let guests = { adult: 0, child: 0 }; 
   let currentMajorRegion = null; 
 
+  // --- 데이터 정의 ---
   const subRegionData = {
     '서울': ['서울 전체', '강남/역삼/삼성', '신촌/홍대/합정', '명동/을지로/종로', '잠실/송파/강동', '영등포/여의도', '이태원/용산/서울역', '동대문/청량리/성북', '구로/신도림/금천', '강서/마포/김포공항', '건대/성수/왕십리', '서초/교대/방배', '강북/노원/도봉', '관악/동작/사당'],
     '경기': ['경기 전체', '가평/청평/대성리', '양평/용문', '수원/인계/화성', '용인/에버랜드', '파주/헤이리', '고양/일산', '대부도/제부도', '포천/산정호수', '의정부/동두천/양주', '남양주/구리', '안산/시흥', '성남/분당/판교', '인천공항 인근', '부천'],
@@ -254,15 +240,67 @@
     '충청': ['충청 전체', '대전', '천안/아산', '보령/대천', '태안/안면도', '청주', '제천/단양', '공주/부여/서산', '충주']
   };
 
+  // ✅ [FIX] 페이지 로드 시 URL 파라미터를 읽어와 상태를 동기화
+  document.addEventListener("DOMContentLoaded", () => {
+    const params = new URLSearchParams(window.location.search);
+    
+    // 1. 지역 상태 복원
+    const regionParam = params.get('regions');
+    if (regionParam) {
+      selectedRegions = decodeURIComponent(regionParam).split(',');
+      renderChips(); // 칩 UI 갱신
+      refreshGridHighlight(); // 그리드 선택 상태 갱신
+    }
+
+    // 2. 일정 상태 복원
+    const checkin = params.get('checkin');
+    const checkout = params.get('checkout');
+    if (checkin && checkout) {
+      selectedDates = [checkin, checkout];
+      // 달력 UI는 openModal()에서 갱신됨
+    }
+
+    // 3. 인원 상태 복원
+    const adult = parseInt(params.get('adult')) || 0;
+    const child = parseInt(params.get('child')) || 0;
+    guests.adult = adult;
+    guests.child = child;
+    
+    // 인원 카운터 UI 즉시 반영
+    if(document.getElementById('cnt-adult')) {
+      document.getElementById('cnt-adult').innerText = adult;
+      document.getElementById('cnt-child').innerText = child;
+      updateGuestBtnState('adult', adult);
+      updateGuestBtnState('child', child);
+    }
+
+    // 상단 탭 텍스트 갱신
+    updateHeaderText();
+  });
+
+  // 버튼 활성/비활성 헬퍼 함수
+  function updateGuestBtnState(type, val) {
+      const el = document.getElementById(`cnt-\${type}`);
+      if(!el) return;
+      const btnBox = el.parentNode;
+      const minusBtn = btnBox.querySelector('.btn-count:first-child');
+      if (val > 0) minusBtn.classList.add('active');
+      else minusBtn.classList.remove('active');
+  }
+
   // --- 모달 제어 ---
   function openModal(viewType) {
     document.getElementById('modalOverlay').classList.add('open');
     document.getElementById('customModal').classList.add('open');
     document.body.style.overflow = 'hidden';
     
+    // 달력 렌더링 (없으면 생성)
     if(document.getElementById('calendarContainer').innerHTML.trim() === "") {
       renderCalendar();
     }
+    
+    // ✅ 달력 열릴 때 현재 선택된 날짜 표시
+    updateCalendarUI();
     
     switchView(viewType || 'region');
   }
@@ -321,24 +359,14 @@
   }
 
   function toggleRegion(name, majorContext) {
-    const natIndex = selectedRegions.indexOf('전국');
-    if (natIndex > -1) selectedRegions.splice(natIndex, 1);
-
-    const isAllOption = name.endsWith('전체');
-    if (isAllOption) {
-      selectedRegions = selectedRegions.filter(r => !subRegionData[majorContext].includes(r));
-      const index = selectedRegions.indexOf(name);
-      if (index === -1) selectedRegions.push(name);
-      else selectedRegions.splice(index, 1); 
+    // 1. 이미 선택된 지역을 다시 누르면? -> 선택 해제 (빈 값)
+    if (selectedRegions.includes(name)) {
+      selectedRegions = []; 
     } else {
-      const allOption = majorContext + ' 전체';
-      const allIndex = selectedRegions.indexOf(allOption);
-      if (allIndex > -1) selectedRegions.splice(allIndex, 1);
-      
-      const index = selectedRegions.indexOf(name);
-      if (index > -1) selectedRegions.splice(index, 1);
-      else selectedRegions.push(name);
+      // 2. 아니면? -> 기존 것 다 버리고 이걸로 교체 (단일 선택)
+      selectedRegions = [name];
     }
+    
     renderChips();
     refreshGridHighlight();
   }
@@ -461,19 +489,24 @@
     
     guests[type] = newVal;
     document.getElementById(`cnt-\${type}`).innerText = newVal;
-    
-    const btnBox = document.getElementById(`cnt-\${type}`).parentNode;
-    const minusBtn = btnBox.querySelector('.btn-count:first-child');
-    if (newVal === 0) minusBtn.classList.remove('active');
-    else minusBtn.classList.add('active');
+    updateGuestBtnState(type, newVal); // 버튼 상태 갱신
 
     updateHeaderText();
   }
 
+	//--- [JS 수정] 모달 헤더 텍스트 갱신 함수 (박수 계산 포함) ---
   function updateHeaderText() {
     const dateText = document.getElementById('dateText');
+    
     if (selectedDates.length === 2) {
-      dateText.innerText = `\${getDisplayDate(selectedDates[0])} ~ \${getDisplayDate(selectedDates[1])}`;
+      // 날짜 객체로 변환하여 차이 계산
+      const d1 = new Date(selectedDates[0]);
+      const d2 = new Date(selectedDates[1]);
+      const diffTime = Math.abs(d2 - d1);
+      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)); 
+      
+      // "2박 M.D ~ M.D" 형식으로 표시
+      dateText.innerText = `\${diffDays}박 \${getDisplayDate(selectedDates[0])} ~ \${getDisplayDate(selectedDates[1])}`;
       dateText.style.color = "var(--text-black)";
       dateText.style.fontWeight = "800";
     } else if (selectedDates.length === 1) {
@@ -501,24 +534,20 @@
   function submitSearch() {
     let params = [];
     
-    // 1. 지역: 선택 없거나 '전국'이면 파라미터 안 보냄
     if(selectedRegions.length > 0 && !selectedRegions.includes('전국')) {
       const optimizedRegions = selectedRegions.map(r => r.replace(' 전체', ''));
       params.push('regions=' + encodeURIComponent(optimizedRegions.join(',')));
     }
     
-    // 2. 날짜: 2개 다 선택 안하면 파라미터 안 보냄
     if(selectedDates.length === 2) {
       params.push('checkin=' + selectedDates[0]);
       params.push('checkout=' + selectedDates[1]);
     }
     
-    // 3. 인원: 0명이면 안 보냄
     if (guests.adult > 0 || guests.child > 0) {
         params.push(`adult=\${guests.adult}&child=\${guests.child}`);
     }
     
-    // 파라미터가 있으면 붙이고, 없으면 그냥 /list로 이동
     let url = '${pageContext.request.contextPath}/accommodation/list';
     if(params.length > 0) {
         url += '?' + params.join('&');
