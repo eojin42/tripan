@@ -10,19 +10,19 @@ import lombok.extern.slf4j.Slf4j;
 @Controller
 @RequiredArgsConstructor
 @Slf4j
-@RequestMapping("/admin")
+@RequestMapping("/admin/*")
 public class HomeManageController {
 	@GetMapping({"", "/", "/main"})
 	public String handleHome() {
 		return "admin/main/home";
 	}
 	
-	@GetMapping("/settlement")
+	@GetMapping("settlement")
 	public String settlement() {
 		return "admin/main/settlement";
 	}
 	
-	@GetMapping("/accomsales")
+	@GetMapping("accomsales")
 	public String accomsales() {
 		return "admin/main/accomsales";
 	}
