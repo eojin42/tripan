@@ -8,7 +8,6 @@
   <meta charset="UTF-8">
   <title>TripanSuper — 회원 관리</title>
   <link rel="stylesheet" href="${pageContext.request.contextPath}/dist/css/admin.css">
-
 </head>
 <body>
 
@@ -54,7 +53,25 @@
       <div class="card filter-card fade-up">
         <div class="filter-row">
           <div class="filter-label">회원 검색</div>
-          <select class="filter-select" id="searchCategory" style="width: 120px;"><option value="id">ID (이메일)</option><option value="nickname">닉네임</option></select>
+          
+          <select class="filter-select" id="searchRole" style="width: 120px;" onchange="filterTable()">
+            <option value="ALL">전체 권한</option>
+            <option value="USER">일반 유저</option>
+            <option value="PARTNER">파트너</option>
+            <option value="ADMIN">관리자</option>
+          </select>
+
+          <select class="filter-select" id="searchStatus" style="width: 120px;" onchange="filterTable()">
+            <option value="ALL">전체 상태</option>
+            <option value="ACTIVE">정상</option>
+            <option value="BAN">정지(BAN)</option>
+            <option value="WITHDRAW">탈퇴</option>
+          </select>
+
+          <select class="filter-select" id="searchCategory" style="width: 120px;">
+            <option value="id">ID (이메일)</option>
+            <option value="nickname">닉네임</option>
+          </select>
           <input type="text" id="searchInput" class="keyword-input" placeholder="검색어를 입력하세요..." onkeyup="if(event.key==='Enter') filterTable()">
           <button class="btn btn-primary" onclick="filterTable()">🔍 검색</button>
         </div>
@@ -66,17 +83,25 @@
           <table>
             <thead>
               <tr>
-                <th>ID / 이메일</th><th>닉네임</th><th>권한 레벨</th><th>상태</th><th>위반 지표</th><th>가입일</th><th class="right">관리</th>
+                <th>ID / 이메일</th>
+                <th>닉네임</th>
+                <th>권한 레벨</th>
+                <th>상태</th>
+                <th>위반 지표</th>
+                <th style="cursor: pointer; user-select: none;" onclick="sortByDate()">
+                  가입일 <span id="dateSortIcon">↕️</span>
+                </th>
+                <th class="right">관리</th>
               </tr>
             </thead>
             
             <tbody id="memberTableBody">
 			  <c:forEach var="member" items="${memberList}">
-			    <tr data-phone="${member.phone}">
+          <tr class="member-row" data-phone="${member.phone}" data-role="${member.role}" data-status="${member.status}">
 			      
-			      <td><strong>${member.email}</strong></td>
+			      <td class="col-id"><strong>${member.email}</strong></td>
 			      
-			      <td>
+			      <td class="col-nickname">
 			        <span class="member-name-link" onclick="goToDetail('${member.email}')">
 			          ${member.nickname}
 			        </span>
@@ -148,7 +173,8 @@
       <h2>회원 정보 상세 및 수정</h2>
     </div>
     <div class="modal-body">
-      <input type="hidden" id="modalTargetId"> <div class="form-group">
+      <input type="hidden" id="modalTargetId"> 
+      <div class="form-group">
         <label>대상 회원</label>
         <input type="text" id="modalUserDisplay" class="keyword-input" readonly style="background:var(--bg); border:none; font-weight:700;">
       </div>
@@ -183,6 +209,60 @@
 </div>
 
 <script>
+  function filterTable() {
+    const roleFilter = document.getElementById('searchRole').value;
+    const statusFilter = document.getElementById('searchStatus').value;
+    const categoryFilter = document.getElementById('searchCategory').value;
+    const keyword = document.getElementById('searchInput').value.toLowerCase().trim();
+
+    const rows = document.querySelectorAll('.member-row');
+
+    rows.forEach(row => {
+      const rowRole = row.getAttribute('data-role');
+      const rowStatus = row.getAttribute('data-status');
+      
+      let searchText = '';
+      if (categoryFilter === 'id') {
+        searchText = row.querySelector('.col-id').innerText.toLowerCase();
+      } else if (categoryFilter === 'nickname') {
+        searchText = row.querySelector('.col-nickname').innerText.toLowerCase();
+      }
+
+      const matchRole = (roleFilter === 'ALL' || roleFilter === rowRole);
+      const matchStatus = (statusFilter === 'ALL' || statusFilter === rowStatus);
+      const matchKeyword = (keyword === '' || searchText.includes(keyword));
+
+      if (matchRole && matchStatus && matchKeyword) {
+        row.style.display = '';
+      } else {
+        row.style.display = 'none';
+      }
+    });
+  }
+
+  let dateSortAsc = true;
+  function sortByDate() {
+    const tbody = document.getElementById('memberTableBody');
+    const rows = Array.from(tbody.querySelectorAll('.member-row'));
+    const icon = document.getElementById('dateSortIcon');
+
+    rows.sort((a, b) => {
+      const dateA = new Date(a.querySelectorAll('td')[5].innerText.trim());
+      const dateB = new Date(b.querySelectorAll('td')[5].innerText.trim());
+
+      if (dateSortAsc) {
+        return dateA - dateB; 
+      } else {
+        return dateB - dateA; 
+      }
+    });
+
+    dateSortAsc = !dateSortAsc;
+    icon.innerText = dateSortAsc ? '⬇️' : '⬆️';
+
+    rows.forEach(row => tbody.appendChild(row));
+  }
+
   let currentOldStatus = '';
 
   function goToDetail(userId) {
@@ -193,7 +273,6 @@
     event.stopPropagation(); 
     alert("📌 [처리 사유]\n\n" + (reason || "기록된 사유가 없습니다."));
   }
-
 
   function openDetailModal(event, id, nickname, role, status, reason) {
     event.stopPropagation();
@@ -220,18 +299,14 @@
     }
 
     if(confirm("회원 정보 및 권한/상태를 변경하시겠습니까?")) {
-      
-
       updateKPI(currentOldStatus, newStatus);
-      
       alert("성공적으로 저장되었습니다.");
       closeModal();
-      
     }
   }
 
   function updateKPI(oldStatus, newStatus) {
-    if (oldStatus === newStatus) return; // 변동 없음
+    if (oldStatus === newStatus) return; 
 
     let elActive = document.getElementById('kpiActive');
     let elBan = document.getElementById('kpiBan');
