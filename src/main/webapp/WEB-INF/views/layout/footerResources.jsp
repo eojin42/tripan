@@ -10,4 +10,4 @@
     };
 </script>
 
-<script src="${pageContext.request.contextPath}/resources/js/api.js"></script>
+<script src="${pageContext.request.contextPath}/dist/js/api.js"></script>
