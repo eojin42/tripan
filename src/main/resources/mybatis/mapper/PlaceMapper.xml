@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.tripan.app.mapper.PlaceMapper">
+
+    <select id="findPlaceIdByNameAndAddress" resultType="java.lang.Long">
+        SELECT place_id 
+        FROM place 
+        WHERE place_name = #{placeName} 
+          AND address = #{address}
+          AND ROWNUM = 1
+    </select>
+
+    <insert id="insertPlace" parameterType="com.tripan.app.domain.dto.PlaceDto">
+        <selectKey keyProperty="placeId" resultType="long" order="BEFORE">
+            SELECT SEQ_PLACE.NEXTVAL FROM DUAL
+        </selectKey>
+        
+        INSERT INTO place (
+            place_id, partner_id, place_name, category, address, 
+            latitude, longitude, phone_number, description, image_url, createdtime
+        ) VALUES (
+            #{placeId}, NULL, #{placeName}, #{category}, #{address}, 
+            #{latitude}, #{longitude}, #{phoneNumber}, #{description}, #{imageUrl}, SYSDATE
+        )
+    </insert>
+
+</mapper>
