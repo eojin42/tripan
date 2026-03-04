@@ -8,10 +8,6 @@ import java.time.LocalDateTime;
 @Entity
 @Table(
     name = "trip_scrap",
-    uniqueConstraints = {
-        // 한 사용자가 동일한 여행을 여러 번 스크랩할 수 없도록 방지
-        @UniqueConstraint(columnNames = {"trip_id", "member_id"})
-    },
 	indexes = {
 			// "내가 스크랩한 목록" 조회 속도 향상
 	        @Index(name = "idx_trip_scrap_member", columnList = "member_id")
