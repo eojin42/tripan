@@ -10,21 +10,12 @@ import lombok.extern.slf4j.Slf4j;
 @Controller
 @Slf4j
 @RequiredArgsConstructor
-@RequestMapping("admin/member/*")
-public class AdminMemberController {
+@RequestMapping("admin/*")
+public class Memberncs {
 	
-	
-	@GetMapping("main")
+	@GetMapping("member")
 	public String membermain() {
 		
-		return "admin/member/member";
+		return "admin/memberncs/member";
 	}
-	
-	@GetMapping("detail")
-	public String memberDetail() {
-		
-		return "admin/member/memberDetail";
-	}
-	
-	
 }

@@ -63,8 +63,6 @@
       </div>
     </div>
   </footer>
-  
-  <jsp:include page="footerResources.jsp"/>
 
   <script>
     document.addEventListener("DOMContentLoaded", () => {

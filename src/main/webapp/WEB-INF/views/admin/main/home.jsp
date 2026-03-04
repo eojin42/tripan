@@ -5,17 +5,82 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>TripanSuper — Dashboard</title>
-   <link rel="stylesheet" href="${pageContext.request.contextPath}/dist/css/admin.css">
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
+  <style>
+    /* ── Grid layouts ── */
+    .kpi-grid     { display: grid; grid-template-columns: repeat(4, 1fr); gap: 18px; margin-bottom: 22px; }
+    .chart-grid   { display: grid; grid-template-columns: 1fr 1fr 1fr;   gap: 18px; margin-bottom: 22px; }
+    .bottom-grid  { display: grid; grid-template-columns: 1fr 1fr 1fr;   gap: 18px; }
+
+    /* ── KPI card ── */
+    .kpi-card { padding: 24px 22px; }
+    .kpi-label { font-size: 11px; font-weight: 700; color: var(--muted); letter-spacing: .4px; text-transform: uppercase; margin-bottom: 10px; }
+    .kpi-value { font-family: var(--font-display); font-size: 28px; font-weight: 800; letter-spacing: -.5px; margin-bottom: 8px; }
+    .kpi-footer { display: flex; align-items: center; gap: 8px; }
+    .kpi-icon {
+      width: 40px; height: 40px; border-radius: 12px; display: flex; align-items: center;
+      justify-content: center; font-size: 18px; float: right; margin: -4px 0 0 12px;
+    }
+    .kpi-icon-blue   { background: var(--primary-10); }
+    .kpi-icon-purple { background: rgba(139,92,246,.10); }
+    .kpi-icon-green  { background: rgba(16,185,129,.10); }
+    .kpi-icon-amber  { background: rgba(245,158,11,.10); }
+
+    /* ── Chart card ── */
+    .chart-card { padding: 22px 22px 18px; }
+    .chart-wrap { height: 255px; }
+
+    /* ── Bottom widgets ── */
+    .bottom-card { padding: 20px 22px; }
+
+    /* Ranking list */
+    .rank-item {
+      display: flex; align-items: center; gap: 12px;
+      padding: 12px 0; border-bottom: 1px solid var(--border);
+      cursor: pointer; transition: padding-left .18s;
+    }
+    .rank-item:last-child { border-bottom: none; }
+    .rank-item:hover { padding-left: 6px; }
+    .rank-num {
+      width: 22px; height: 22px; border-radius: 6px; background: var(--bg);
+      font-size: 11px; font-weight: 800; display: flex; align-items: center;
+      justify-content: center; color: var(--muted); flex-shrink: 0;
+    }
+    .rank-num.top { background: var(--primary-10); color: var(--primary); }
+    .stay-img  { width: 40px; height: 40px; border-radius: 10px; object-fit: cover; flex-shrink: 0; }
+    .stay-info { flex: 1; min-width: 0; }
+    .stay-info h4 { font-size: 13px; font-weight: 700; margin-bottom: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .stay-info p  { font-size: 11px; color: var(--muted); }
+    .stay-cnt  { font-family: var(--font-display); font-size: 14px; font-weight: 800; flex-shrink: 0; }
+
+    /* Inquiry list */
+    .inq-item { padding: 14px 0; border-bottom: 1px solid var(--border); }
+    .inq-item:last-child { border-bottom: none; }
+    .inq-meta { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
+    .inq-title { font-size: 13px; font-weight: 700; margin-bottom: 3px; }
+    .inq-sub   { font-size: 11px; color: var(--muted); }
+
+    /* API status */
+    .api-row {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 13px 0; border-bottom: 1px dashed var(--border);
+    }
+    .api-row:last-child { border-bottom: none; }
+    .api-row h4 { font-size: 13px; font-weight: 700; margin-bottom: 2px; }
+    .api-row p  { font-size: 11px; color: var(--muted); }
+    .api-ok  { display: flex; align-items: center; font-size: 12px; font-weight: 700; color: var(--success); }
+
+    @media (max-width: 1380px) { .chart-grid, .bottom-grid { grid-template-columns: 1fr 1fr; } }
+    @media (max-width: 900px)  { .kpi-grid, .chart-grid, .bottom-grid { grid-template-columns: 1fr; } }
+  </style>
 </head>
 <body>
-<div class="admin-layout">
-<jsp:include page="../layout/sidebar.jsp">
+
+<jsp:include page="../layout/header.jsp">
   <jsp:param name="activePage" value="dashboard"/>
 </jsp:include>
-<div class="main-wrapper">
-    <jsp:include page="../layout/header.jsp" />
+
 <main class="main-content">
 
   <div class="page-header fade-up">
@@ -29,7 +94,7 @@
   <!-- KPI row -->
   <div class="kpi-grid">
     <div class="card kpi-card fade-up fade-up-1">
-      <div class="kpi-icon kpi-icon-blue"></div>
+      <div class="kpi-icon kpi-icon-blue">💰</div>
       <div class="kpi-label">Total GMV (총 거래액)</div>
       <div class="kpi-value">₩1.24B</div>
       <div class="kpi-footer">
@@ -38,7 +103,7 @@
       </div>
     </div>
     <div class="card kpi-card fade-up fade-up-2">
-      <div class="kpi-icon kpi-icon-purple"></div>
+      <div class="kpi-icon kpi-icon-purple">📋</div>
       <div class="kpi-label">Total Order (총 예약건)</div>
       <div class="kpi-value">12,430건</div>
       <div class="kpi-footer">
@@ -47,7 +112,7 @@
       </div>
     </div>
     <div class="card kpi-card fade-up fade-up-3">
-      <div class="kpi-icon kpi-icon-green"></div>
+      <div class="kpi-icon kpi-icon-green">📈</div>
       <div class="kpi-label">Total Revenue (수익)</div>
       <div class="kpi-value">₩112M</div>
       <div class="kpi-footer">
@@ -56,7 +121,7 @@
       </div>
     </div>
     <div class="card kpi-card fade-up fade-up-4">
-      <div class="kpi-icon kpi-icon-amber"></div>
+      <div class="kpi-icon kpi-icon-amber">👥</div>
       <div class="kpi-label">Active Users (사용자)</div>
       <div class="kpi-value">45.1K</div>
       <div class="kpi-footer">
@@ -153,8 +218,7 @@
 
   </div>
 </main>
-</div>
-</div>
+
 <script>
 Chart.defaults.font.family = "'Noto Sans KR', sans-serif";
 Chart.defaults.font.size = 11;
