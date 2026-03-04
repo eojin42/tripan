@@ -377,6 +377,46 @@
 	    text-decoration: none !important;
 	}
 	
+	.fc-event {
+	        cursor: pointer;
+	        border: none !important;
+	        background: transparent !important; /* 배경색 투명하게 */
+	        padding: 2px 4px;
+	        margin-bottom: 2px;
+	        transition: transform 0.2s;
+	    }
+	    .fc-event:hover {
+	        transform: scale(1.05);
+	    }
+	    .fc-daygrid-event-dot {
+	        border-color: var(--sky-blue) !important;
+	        border-width: 4px !important;
+	    }
+	    .fc-event-title {
+	        color: var(--text-dark) !important;
+	        font-weight: 600;
+	        font-size: 11px;
+	    }
+	    .fc-more-link {
+	        color: var(--sky-blue) !important;
+	        font-weight: 800;
+	        font-size: 11px;
+	        background: rgba(137, 207, 240, 0.1);
+	        padding: 2px 6px;
+	        border-radius: 4px;
+	        text-decoration: none !important;
+	    }
+	    .fc-day-highlight {
+	        background-color: rgba(255, 182, 193, 0.2) !important;
+	        transition: background-color 0.3s;
+	    }
+		
+		.fc-festival-hover {
+		        background-color: rgba(137, 207, 240, 0.05) !important; 
+		        box-shadow: inset 0 -10px 0 0 var(--sky-blue) !important; 
+		        transition: all 0.2s ease-in-out;
+		    }
+	
     
   </style>
 </head>
@@ -436,46 +476,15 @@
 
     <aside class="right-sidebar">
 	  <div class="glass-card" onclick="openFestivalModal()" style="cursor: pointer; transition: transform 0.2s;" onmouseover="this.style.transform='scale(1.02)'" onmouseout="this.style.transform='scale(1)'">
-  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
-    <h3 class="widget-header" style="margin:0;">🎉 전국 축제 캘린더</h3>
-    <span style="font-size: 12px; color: var(--sky-blue); font-weight: bold;">더보기 ❯</span>
-  </div>
-  
-  <div class="festival-list" style="display: flex; flex-direction: column; gap: 14px;">
-    <div class="festival-item" style="display: flex; gap: 12px; align-items: center;">
-      <div class="fes-date" style="background: var(--sky-blue); color: white; padding: 6px 10px; border-radius: 8px; text-align: center; min-width: 45px;">
-        <span style="font-size: 10px; display: block; line-height: 1;">MAR</span>
-        <strong style="font-size: 16px; display: block; line-height: 1.2; margin-top: 2px;">15</strong>
-      </div>
-      <div class="fes-info">
-        <h4 style="margin: 0 0 4px 0; font-size: 14px; color: var(--text-dark);">광양 매화축제</h4>
-        <p style="margin: 0; font-size: 12px; color: var(--text-gray);">전남 광양시 다압면</p>
-      </div>
-    </div>
-
-    <div class="festival-item" style="display: flex; gap: 12px; align-items: center;">
-      <div class="fes-date" style="background: var(--sky-blue); color: white; padding: 6px 10px; border-radius: 8px; text-align: center; min-width: 45px;">
-        <span style="font-size: 10px; display: block; line-height: 1;">MAR</span>
-        <strong style="font-size: 16px; display: block; line-height: 1.2; margin-top: 2px;">22</strong>
-      </div>
-      <div class="fes-info">
-        <h4 style="margin: 0 0 4px 0; font-size: 14px; color: var(--text-dark);">진해 군항제</h4>
-        <p style="margin: 0; font-size: 12px; color: var(--text-gray);">경남 창원시 진해구</p>
-      </div>
-    </div>
-
-    <div class="festival-item" style="display: flex; gap: 12px; align-items: center;">
-      <div class="fes-date" style="background: var(--sky-blue); color: white; padding: 6px 10px; border-radius: 8px; text-align: center; min-width: 45px;">
-        <span style="font-size: 10px; display: block; line-height: 1;">APR</span>
-        <strong style="font-size: 16px; display: block; line-height: 1.2; margin-top: 2px;">05</strong>
-      </div>
-      <div class="fes-info">
-        <h4 style="margin: 0 0 4px 0; font-size: 14px; color: var(--text-dark);">여의도 봄꽃축제</h4>
-        <p style="margin: 0; font-size: 12px; color: var(--text-gray);">서울 영등포구 일대</p>
-      </div>
-    </div>
-  </div>
-</div>
+	    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+	      <h3 class="widget-header" style="margin:0;">🎉 전국 축제 캘린더</h3>
+	      <span style="font-size: 12px; color: var(--sky-blue); font-weight: bold;">더보기 ❯</span>
+	    </div>
+	    
+	    <div id="mini-festival-list" class="festival-list" style="display: flex; flex-direction: column; gap: 14px;">
+	      <p style="text-align:center; font-size:12px; color:var(--text-gray);">축제 정보를 불러오는 중... ✈️</p>
+	    </div>
+	  </div>
 
       <div class="game-widget">
         <h3>어디 갈지 고민될 땐?</h3>
@@ -537,38 +546,19 @@
     </div>
   </div>
   
-  <!--  캘린더 부분 -->
- <div id="festivalModal" class="festival-partial-modal">
-  <div class="festival-modal-header">
-    <h2>🎉 Tripan 전국 축제 캘린더</h2>
-    <button class="btn-close-modal" onclick="closeFestivalModal()">&times;</button>
-  </div>
-  
-  <div class="festival-modal-body">
-    <div class="calendar-area" style="display: block; padding: 20px; overflow: hidden;">
-	  <div id="calendar" style="height: 100%;"></div>
-	</div>
-    
-    <div class="festival-detail-list">
-      <h3 style="margin-top:0; color:var(--text-dark);">이달의 추천 축제</h3>
-      
-      <a href="https://korean.visitkorea.or.kr" target="_blank" class="festival-card">
-        <h4 style="margin:0 0 6px 0;">🌸 광양 매화축제</h4>
-        <p style="margin:0; font-size:12px; color:var(--text-gray);">🗓️ 2026.03.15 ~ 2026.03.24</p>
-      </a>
-
-      <a href="https://korean.visitkorea.or.kr" target="_blank" class="festival-card">
-        <h4 style="margin:0 0 6px 0;">🌸 진해 군항제</h4>
-        <p style="margin:0; font-size:12px; color:var(--text-gray);">🗓️ 2026.03.22 ~ 2026.04.01</p>
-      </a>
-      
-      <a href="https://korean.visitkorea.or.kr" target="_blank" class="festival-card">
-        <h4 style="margin:0 0 6px 0;">🌷 태안 튤립축제</h4>
-        <p style="margin:0; font-size:12px; color:var(--text-gray);">🗓️ 2026.04.10 ~ 2026.05.08</p>
-      </a>
+  <div id="festivalModal" class="festival-partial-modal">
+    <div class="festival-modal-header">
+      <h2>🎉 Tripan 전국 축제 캘린더</h2>
+      <button class="btn-close-modal" onclick="closeFestivalModal()">✕</button>
+    </div>
+    <div class="festival-modal-body">
+      <div class="calendar-area">
+        <div id="calendar" style="width: 100%; height: 100%; padding: 10px;"></div>
+      </div>
+      <div class="festival-detail-list">
+        </div>
     </div>
   </div>
-</div>
   
 
   <jsp:include page="/WEB-INF/views/layout/footer.jsp"/>
@@ -680,7 +670,9 @@
     
     window.addEventListener('DOMContentLoaded', () => { 
     	setupInfiniteScroll(); 
-    	
+		const now = new Date();
+		loadMiniFestivalSidebar(now.getFullYear(), now.getMonth() + 1);
+		
     	const urlParams = new URLSearchParams(window.location.search);
     	const tabParams = urlParams.get('tab');
     	
@@ -689,6 +681,46 @@
     	}
     
     });
+	
+	async function loadMiniFestivalSidebar(year, month) {
+	    const miniList = document.getElementById('mini-festival-list');
+	    
+	    if (!miniList) {
+	        console.warn("알림: 화면에 mini-festival-list 영역이 없어서 축제 정보를 그리지 않습니다.");
+	        return; 
+	    }
+
+	    const data = await fetchFestivals(year, month);
+
+	    if (!data || data.length === 0) {
+	        miniList.innerHTML = `<p style="text-align:center; font-size:12px; color:var(--text-gray);">진행 중인 축제가 없습니다.</p>`;
+	        return;
+	    }
+
+	    const limitData = data.slice(0, 3);
+	    
+	    let html = '';
+	    limitData.forEach(fes => {
+	        const startDate = new Date(fes.start);
+	        const monthNames = ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"];
+	        const monthName = monthNames[startDate.getMonth()];
+	        const day = startDate.getDate();
+
+	        html += `
+	            <div class="festival-item" style="display: flex; gap: 12px; align-items: center;">
+	              <div class="fes-date" style="background: var(--sky-blue); color: white; padding: 6px 10px; border-radius: 8px; text-align: center; min-width: 45px;">
+	                <span style="font-size: 10px; display: block; line-height: 1;">\${monthName}</span>
+	                <strong style="font-size: 16px; display: block; line-height: 1.2; margin-top: 2px;">\${day}</strong>
+	              </div>
+	              <div class="fes-info">
+	                <h4 style="margin: 0 0 4px 0; font-size: 14px; color: var(--text-dark);">\${fes.title}</h4>
+	                <p style="margin: 0; font-size: 12px; color: var(--text-gray);">\${fes.address || '장소 정보 없음'}</p>
+	              </div>
+	            </div>
+	        `;
+	    });
+	    miniList.innerHTML = html;
+	}
     
     let festivalCalendar;
     let currentFestivals = [];
@@ -708,97 +740,113 @@
         }
     }
 
-    function updateFestivalSidebar(festivals, targetDate = null) {
-        const sidebar = document.querySelector('.festival-detail-list');
-        
-        let titleHtml = `<h3 style="margin-top:0; color:var(--text-dark);">이달의 추천 축제 🎈</h3>`;
-        if (targetDate) {
-            titleHtml = `<h3 style="margin-top:0; color:var(--text-dark);">${targetDate} 진행 축제 🎈</h3>`;
-        }
-        
-        sidebar.innerHTML = titleHtml;
+	function updateFestivalSidebar(festivals, targetDate = null) {
+	        const sidebar = document.querySelector('.festival-detail-list');
+	        
+	        let titleHtml = `<h3 style="margin-top:0; color:var(--text-dark);">이달의 추천 축제 🎈</h3>`;
+	        if (targetDate) {
+	            titleHtml = `<h3 style="margin-top:0; color:var(--text-dark);">\${targetDate} 진행 축제 🎈</h3>`;
+	        }
+	        
+	        sidebar.innerHTML = titleHtml;
 
-        if (!festivals || festivals.length === 0) {
-            sidebar.innerHTML += `<p style="font-size: 13px; color: var(--text-gray); padding: 20px 0; text-align: center;">해당 기간에 진행되는 축제가 없습니다. 🥲</p>`;
-            return;
-        }
+	        if (!festivals || festivals.length === 0) {
+	            sidebar.innerHTML += `<p style="font-size: 13px; color: var(--text-gray); padding: 20px 0; text-align: center;">해당 기간에 진행되는 축제가 없습니다. 🥲</p>`;
+	            return;
+	        }
 
-        festivals.forEach(fes => {
-            const address = fes.address ? fes.address : '장소 미정';
-            const imgSrc = fes.image ? fes.image : '${pageContext.request.contextPath}/assets/img/default_festival.jpg';
-            
-            const cardHtml = `
-                <div class="festival-card" onclick="window.open('https://search.naver.com/search.naver?query=\${encodeURIComponent(fes.title)}', '_blank')">
-                    <div style="display: flex; gap: 12px;">
-                        <img src="\${imgSrc}" style="width: 70px; height: 70px; border-radius: 8px; object-fit: cover;" alt="축제 이미지">
-                        <div style="flex: 1;">
-                            <h4 style="margin:0 0 6px 0; font-size: 14px; color: var(--text-dark);">\${fes.title}</h4>
-                            <p style="margin:0 0 4px; font-size:11px; color:var(--text-gray);">📍 \${address}</p>
-                            <p style="margin:0; font-size:12px; font-weight: bold; color: \${fes.color};">🗓️ \${fes.start} ~ \${fes.end}</p>
-                        </div>
-                    </div>
-                </div>
-            `;
-            sidebar.innerHTML += cardHtml;
-        });
-    }
+	        festivals.forEach(fes => {
+	            const address = fes.address ? fes.address : '장소 미정';
+	            const imgSrc = fes.image ? fes.image : '${pageContext.request.contextPath}/assets/img/default_festival.jpg';
+	            const cardHtml = `
+	                <div class="festival-card" 
+	                     onclick="window.open('https://search.naver.com/search.naver?query=\${encodeURIComponent(fes.title)}', '_blank')"
+	                     onmouseenter="highlightFestivalDates('\${fes.start}', '\${fes.end}')"
+	                     onmouseleave="clearFestivalHighlights()">
+	                    <div style="display: flex; gap: 12px;">
+	                        <img src="\${imgSrc}" style="width: 70px; height: 70px; border-radius: 8px; object-fit: cover;" alt="축제 이미지">
+	                        <div style="flex: 1;">
+	                            <h4 style="margin:0 0 6px 0; font-size: 14px; color: var(--text-dark);">\${fes.title}</h4>
+	                            <p style="margin:0 0 4px; font-size:11px; color:var(--text-gray);">📍 \${address}</p>
+	                            <p style="margin:0; font-size:12px; font-weight: bold; color: \${fes.color};">🗓️ \${fes.start} ~ \${fes.end}</p>
+	                        </div>
+	                    </div>
+	                </div>
+	            `;
+	            sidebar.innerHTML += cardHtml;
+	        });
+	    }
 
-    function openFestivalModal() {
-        document.getElementById('festivalModal').classList.add('active');
-        document.body.style.overflow = 'hidden'; 
-        
-        setTimeout(() => {
-            if (!festivalCalendar) {
-                const calendarEl = document.getElementById('calendar');
-                festivalCalendar = new FullCalendar.Calendar(calendarEl, {
-                    initialView: 'dayGridMonth',
-                    locale: 'ko', 
-                    dayCellContent: function(info) {
-                        return info.dayNumberText.replace('일', '');
-                    },
-                    headerToolbar: {
-                        left: 'prev,next',
-                        center: 'title',
-                        right: 'today'
-                    },
-                    
-                    events: async function(info, successCallback, failureCallback) {
-                        const currentViewDate = new Date(info.start.valueOf() + 86400000 * 15); 
-                        const year = currentViewDate.getFullYear();
-                        const month = currentViewDate.getMonth() + 1;
-                        const data = await fetchFestivals(year, month);
+	function openFestivalModal() {
+	        document.getElementById('festivalModal').classList.add('active');
+	        document.body.style.overflow = 'hidden'; 
+	        
+	        setTimeout(() => {
+	            if (!festivalCalendar) {
+	                const calendarEl = document.getElementById('calendar');
+	                festivalCalendar = new FullCalendar.Calendar(calendarEl, {
+	                    initialView: 'dayGridMonth',
+	                    locale: 'ko', 
+	                    dayCellContent: function(info) {
+	                        return info.dayNumberText.replace('일', '');
+	                    },
+	                    headerToolbar: {
+	                        left: 'prev,next',
+	                        center: 'title',
+	                        right: 'today'
+	                    },
+	                    
+	                    eventDisplay: 'list-item', 
+	                    
+	                    dayMaxEvents: 2, 
+	                    moreLinkText: function(n) {
+	                        return "+" + n + "개";
+	                    },
 
-                        updateFestivalSidebar(data);
-                        successCallback(data);
-                    },
-                    
-                    eventClick: function(info) {
-                        const clickedFestival = {
-                            title: info.event.title,
-                            start: info.event.startStr,
-                            end: info.event.endStr || info.event.startStr,
-                            color: info.event.backgroundColor,
-                            address: info.event.extendedProps.address,
-                            image: info.event.extendedProps.image
-                        };
-                        
-                        updateFestivalSidebar([clickedFestival], info.event.title);
-                    },
-                    
-                    dateClick: function(info) {
-                        const clickDate = info.dateStr;
-                        
-                        const filtered = currentFestivals.filter(fes => {
-                            return clickDate >= fes.start && clickDate <= fes.end;
-                        });
-                        
-                        updateFestivalSidebar(filtered, clickDate);
-                    }
-                });
-                festivalCalendar.render();
-            } 
-        }, 300);
-    }
+	                    events: async function(info, successCallback, failureCallback) {
+	                        const currentViewDate = new Date(info.start.valueOf() + 86400000 * 15); 
+	                        const year = currentViewDate.getFullYear();
+	                        const month = currentViewDate.getMonth() + 1;
+	                        const data = await fetchFestivals(year, month);
+
+	                        updateFestivalSidebar(data);
+	                        successCallback(data);
+	                    },
+	                    
+	                    eventClick: function(info) {
+	                        const clickDate = info.event.startStr;
+	                        const filtered = currentFestivals.filter(fes => {
+	                            return clickDate >= fes.start && clickDate <= fes.end;
+	                        });
+	                        updateFestivalSidebar(filtered, clickDate);
+	                        highlightCalendarDay(clickDate);
+	                    },
+	                    
+	                    dateClick: function(info) {
+	                        const clickDate = info.dateStr;
+	                        
+	                        const filtered = currentFestivals.filter(fes => {
+	                            return clickDate >= fes.start && clickDate <= fes.end;
+	                        });
+	                        
+	                        updateFestivalSidebar(filtered, clickDate);
+	                        highlightCalendarDay(clickDate); 
+	                    }
+	                });
+	                festivalCalendar.render();
+	            } 
+	        }, 300);
+	    }
+
+	    function highlightCalendarDay(dateStr) {
+	        document.querySelectorAll('.fc-day-highlight').forEach(el => {
+	            el.classList.remove('fc-day-highlight');
+	        });
+	        const targetCell = document.querySelector(`.fc-day[data-date="\${dateStr}"]`);
+	        if (targetCell) {
+	            targetCell.classList.add('fc-day-highlight');
+	        }
+	    }
 
     const modal = document.getElementById('festivalModal');
     const modalHeader = document.querySelector('.festival-modal-header');
@@ -836,6 +884,32 @@
             modal.style.transform = ''; 
         }, 300); 
     }
+	
+	function highlightFestivalDates(startStr, endStr) {
+	        clearFestivalHighlights(); 
+	        if (!endStr) endStr = startStr; 
+
+	        let startDate = new Date(startStr + "T00:00:00");
+	        let endDate = new Date(endStr + "T00:00:00");
+
+	        for (let d = new Date(startDate); d <= endDate; d.setDate(d.getDate() + 1)) {
+	            let y = d.getFullYear();
+	            let m = String(d.getMonth() + 1).padStart(2, '0');
+	            let day = String(d.getDate()).padStart(2, '0');
+	            let dateString = y + '-' + m + '-' + day;
+
+	            let cell = document.querySelector(`.fc-day[data-date="\${dateString}"]`);
+	            if (cell) {
+	                cell.classList.add('fc-festival-hover');
+	            }
+	        }
+	    }
+
+	    function clearFestivalHighlights() {
+	        document.querySelectorAll('.fc-festival-hover').forEach(el => {
+	            el.classList.remove('fc-festival-hover');
+	        });
+	    }
     
     
   </script>
