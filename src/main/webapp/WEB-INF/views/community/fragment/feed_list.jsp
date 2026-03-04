@@ -38,8 +38,7 @@
 </style>
 
 <div id="feedListContainer" style="display: flex; flex-direction: column; gap: 24px;">
-
-  <!-- 피드 카드 1 -->
+  
   <article class="glass-card feed-card">
     <div class="feed-author">
       <div class="author-left">
