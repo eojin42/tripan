@@ -70,3 +70,63 @@
     <div class="card-thumb"><img src="https://picsum.photos/seed/yacht/400/400"></div>
   </a>
 </div>
+
+  <a href="#" class="board-card">
+    <div class="card-content">
+      <span class="card-badge badge-review">다녀온 후기</span>
+      <h3 class="card-title">어제 다녀온 부산 해운대 요트투어 야경 미쳤네요 진짜;;</h3>
+      <p class="card-text">Tripan 일정 담아오기 기능으로 다른 분 코스 그대로 훔쳐서 다녀왔는데, 시간대 18시로 예약한 게 신의 한 수 였습니다.</p>
+      <div class="card-meta">
+        <div class="meta-user"><img src="https://picsum.photos/seed/user3/100/100"><span>@busan_lover</span></div>
+        <span>1일 전</span>
+        <div class="meta-stats"><span>👁 2,510</span><span>💬 48</span><span style="color:#E8849A">♥ 312</span></div>
+      </div>
+    </div>
+    <div class="card-thumb"><img src="https://picsum.photos/seed/yacht/400/400"></div>
+  </a>
+</div>
+
+  <a href="#" class="board-card">
+    <div class="card-content">
+      <span class="card-badge badge-review">다녀온 후기</span>
+      <h3 class="card-title">어제 다녀온 부산 해운대 요트투어 야경 미쳤네요 진짜;;</h3>
+      <p class="card-text">Tripan 일정 담아오기 기능으로 다른 분 코스 그대로 훔쳐서 다녀왔는데, 시간대 18시로 예약한 게 신의 한 수 였습니다.</p>
+      <div class="card-meta">
+        <div class="meta-user"><img src="https://picsum.photos/seed/user3/100/100"><span>@busan_lover</span></div>
+        <span>1일 전</span>
+        <div class="meta-stats"><span>👁 2,510</span><span>💬 48</span><span style="color:#E8849A">♥ 312</span></div>
+      </div>
+    </div>
+    <div class="card-thumb"><img src="https://picsum.photos/seed/yacht/400/400"></div>
+  </a>
+</div>
+
+  <a href="#" class="board-card">
+    <div class="card-content">
+      <span class="card-badge badge-review">다녀온 후기</span>
+      <h3 class="card-title">어제 다녀온 부산 해운대 요트투어 야경 미쳤네요 진짜;;</h3>
+      <p class="card-text">Tripan 일정 담아오기 기능으로 다른 분 코스 그대로 훔쳐서 다녀왔는데, 시간대 18시로 예약한 게 신의 한 수 였습니다.</p>
+      <div class="card-meta">
+        <div class="meta-user"><img src="https://picsum.photos/seed/user3/100/100"><span>@busan_lover</span></div>
+        <span>1일 전</span>
+        <div class="meta-stats"><span>👁 2,510</span><span>💬 48</span><span style="color:#E8849A">♥ 312</span></div>
+      </div>
+    </div>
+    <div class="card-thumb"><img src="https://picsum.photos/seed/yacht/400/400"></div>
+  </a>
+</div>
+
+  <a href="#" class="board-card">
+    <div class="card-content">
+      <span class="card-badge badge-review">다녀온 후기</span>
+      <h3 class="card-title">어제 다녀온 부산 해운대 요트투어 야경 미쳤네요 진짜;;</h3>
+      <p class="card-text">Tripan 일정 담아오기 기능으로 다른 분 코스 그대로 훔쳐서 다녀왔는데, 시간대 18시로 예약한 게 신의 한 수 였습니다.</p>
+      <div class="card-meta">
+        <div class="meta-user"><img src="https://picsum.photos/seed/user3/100/100"><span>@busan_lover</span></div>
+        <span>1일 전</span>
+        <div class="meta-stats"><span>👁 2,510</span><span>💬 48</span><span style="color:#E8849A">♥ 312</span></div>
+      </div>
+    </div>
+    <div class="card-thumb"><img src="https://picsum.photos/seed/yacht/400/400"></div>
+  </a>
+</div>

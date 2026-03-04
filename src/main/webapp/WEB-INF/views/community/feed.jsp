@@ -9,6 +9,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Tripan - 소셜 커뮤니티</title>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.8/dist/web/static/pretendard.css">
+  <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/index.global.min.js"></script>
   <style>
     :root {
       --sky-blue: #89CFF0;
@@ -113,7 +114,6 @@
     @media (max-width: 1024px) { .community-container { grid-template-columns: 1fr 300px; } .left-sidebar { display: none; } }
     @media (max-width: 768px) { .community-container { grid-template-columns: 1fr; margin-top: 80px; } .right-sidebar { display: none; } }
 
-    /* --- 🌟 새로운 모달창 전용 스타일 (애니메이션 수정본) --- */
     .login-modal-overlay {
       position: fixed; inset: 0; background: rgba(0, 0, 0, 0.4); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
       display: none; justify-content: center; align-items: center; z-index: 9999;
@@ -133,7 +133,6 @@
     }
     .modal-close-icon:hover { color: var(--text-black); }
 
-    /* --- ✈️ 로고 애니메이션 핵심 CSS --- */
     .modal-auth-brand-wrapper { text-align: center; margin-bottom: 12px; }
     .modal-auth-brand { display: inline-flex; align-items: flex-end; gap: 0; position: relative; }
     
@@ -155,7 +154,6 @@
       opacity: 0; transform: scale(0); transform-origin: bottom center; display: inline-block;
     }
 
-    /* 애니메이션 실행 트리거 (show 클래스가 붙었을 때) */
     .show .logo-line { animation: drawLine 1.2s cubic-bezier(0.4, 0, 0.2, 1) forwards; animation-delay: 0.2s; }
     .show .logo-plane { animation: flyPlane 1.2s cubic-bezier(0.4, 0, 0.2, 1) forwards; animation-delay: 0.2s; }
     .show .logo-dot { animation: popDot 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; animation-delay: 1.4s; }
@@ -171,7 +169,6 @@
 
     .modal-auth-subtitle { font-size: 16px; color: #4A5568; margin: 0 0 32px; font-weight: 600; letter-spacing: -0.5px; }
     
-    /* 입력창 및 버튼 */
     .modal-auth-form { display: flex; flex-direction: column; gap: 12px; margin-bottom: 20px; }
     .modal-auth-input {
       width: 100%; padding: 18px 20px; border: 1px solid #EAEAEA; border-radius: 12px;
@@ -210,6 +207,166 @@
       background-origin: border-box; background-clip: padding-box, border-box;
     }
     .modal-auth-btn-signup:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(137, 207, 240, 0.15); }
+    
+    .left-sidebar, .right-sidebar {
+      position: sticky;
+  	  top: 120px; 
+  	  height: fit-content; 
+  	  min-height: calc(100vh - 120px);
+   /* max-height: calc(100vh - 140px); */
+  /* overflow-y: auto; */
+	}
+	
+	.festival-partial-modal {
+	  position: fixed;
+	  top: 100px; 
+	  left: 12%; 
+	  width: 70%; 
+	  height: 80vh; 
+	  background-color: #f8fafc;
+	  z-index: 9999;
+	  border-radius: 20px;
+	  box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+	  transform: translateY(20px);
+	  opacity: 0;
+	  visibility: hidden;
+	  transition: all 0.3s cubic-bezier(0.25, 1, 0.5, 1);
+	  display: flex;
+	  flex-direction: column;
+	}
+	
+	.festival-partial-modal.active {
+	  transform: translateY(0);
+	  opacity: 1;
+	  visibility: visible;
+	}
+	
+	.festival-modal-header {
+	  height: 70px;
+	  padding: 0 30px;
+	  display: flex;
+	  justify-content: space-between;
+	  align-items: center;
+	  background: white; 
+	  border-bottom: 3px solid var(--sky-blue); 
+	  border-radius: 20px 20px 0 0;
+	  cursor: grab;
+	}
+	
+	.festival-modal-header:active {
+		cursor: grabbing;
+	}
+	
+	.festival-modal-header h2 {
+	  font-size: 22px;
+	  font-weight: 900;
+	  background: var(--grad-main);
+	  -webkit-background-clip: text;
+	  -webkit-text-fill-color: transparent;
+	  margin: 0;
+	}
+	
+	.btn-close-modal {
+	  width: 36px;
+	  height: 36px;
+	  background: #f1f5f9;
+	  border: none;
+	  border-radius: 50%;
+	  font-size: 20px;
+	  line-height: 1;
+	  color: var(--text-gray);
+	  cursor: pointer;
+	  display: flex;
+	  align-items: center;
+	  justify-content: center;
+	  transition: all 0.3s var(--bounce);
+	}
+	
+	.btn-close-modal:hover {
+	  background: var(--light-pink);
+	  color: white;
+	  transform: rotate(90deg) scale(1.1);
+	}
+	
+	.festival-modal-body {
+	  flex: 1;
+	  display: grid;
+	  grid-template-columns: 1fr 300px; 
+	  gap: 20px;
+	  padding: 30px;
+	  overflow: hidden; 
+	}
+	
+	.calendar-area {
+	  background: white;
+	  border-radius: 16px;
+	  box-shadow: 0 4px 20px rgba(137, 207, 240, 0.15); 
+	  display: flex;
+	  align-items: center;
+	  justify-content: center;
+	}
+	
+	.festival-detail-list {
+	  background: white;
+	  border-radius: 16px;
+	  padding: 20px;
+	  overflow-y: auto; 
+	  display: flex;
+	  flex-direction: column;
+	  gap: 12px;
+	}
+	
+	.festival-card {
+	  border: 2px solid transparent;
+	  border-radius: 12px;
+	  padding: 16px;
+	  cursor: pointer;
+	  text-decoration: none; 
+	  color: inherit;
+	  display: block;
+	  background: #fafafa;
+	  transition: all 0.3s ease;
+	}
+	.festival-card:hover {
+	  background: white;
+	  border-color: var(--sky-blue);
+	  box-shadow: 0 8px 20px rgba(137, 207, 240, 0.2);
+	  transform: translateY(-3px);
+	}
+	
+	.fc .fc-button-primary {
+	  background-color: var(--sky-blue) !important;
+	  border-color: var(--sky-blue) !important;
+	  font-family: 'Pretendard', sans-serif;
+	  font-weight: 600;
+	  border-radius: 8px !important;
+	  transition: 0.2s;
+	}
+	
+	.fc .fc-button-primary:hover {
+	  background-color: #72bde0 !important;
+	  border-color: #72bde0 !important;
+	}
+	
+	.fc .fc-toolbar-title {
+	  font-size: 1.3rem !important;
+	  font-weight: 900;
+	  color: var(--text-dark);
+	}
+	
+	.fc .fc-daygrid-day.fc-day-today {
+	  background-color: rgba(255, 182, 193, 0.15) !important; 
+	}
+	
+	.fc-event {
+	  border-radius: 4px;
+	  border: none !important;
+	  font-weight: 700;
+	  padding: 2px 4px;
+	  cursor: pointer;
+	}
+	
+    
   </style>
 </head>
 <body>
@@ -267,13 +424,47 @@
     </section>
 
     <aside class="right-sidebar">
-      <div class="glass-card">
-        <h3 class="widget-header">🎉 내 주변 지역 축제</h3>
-        <div class="festival-list">
-          <div class="festival-item"><div class="fes-date"><span>AUG</span><strong>15</strong></div><div class="fes-info"><h4>광안리 M 드론 라이트쇼</h4><p>부산광역시 수영구 광안해변로</p></div></div>
-          <div class="festival-item"><div class="fes-date"><span>AUG</span><strong>22</strong></div><div class="fes-info"><h4>제주 감귤 팜파티 페스타</h4><p>제주 서귀포시 농업기술센터</p></div></div>
-        </div>
+	  <div class="glass-card" onclick="openFestivalModal()" style="cursor: pointer; transition: transform 0.2s;" onmouseover="this.style.transform='scale(1.02)'" onmouseout="this.style.transform='scale(1)'">
+  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+    <h3 class="widget-header" style="margin:0;">🎉 전국 축제 캘린더</h3>
+    <span style="font-size: 12px; color: var(--sky-blue); font-weight: bold;">더보기 ❯</span>
+  </div>
+  
+  <div class="festival-list" style="display: flex; flex-direction: column; gap: 14px;">
+    <div class="festival-item" style="display: flex; gap: 12px; align-items: center;">
+      <div class="fes-date" style="background: var(--sky-blue); color: white; padding: 6px 10px; border-radius: 8px; text-align: center; min-width: 45px;">
+        <span style="font-size: 10px; display: block; line-height: 1;">MAR</span>
+        <strong style="font-size: 16px; display: block; line-height: 1.2; margin-top: 2px;">15</strong>
       </div>
+      <div class="fes-info">
+        <h4 style="margin: 0 0 4px 0; font-size: 14px; color: var(--text-dark);">광양 매화축제</h4>
+        <p style="margin: 0; font-size: 12px; color: var(--text-gray);">전남 광양시 다압면</p>
+      </div>
+    </div>
+
+    <div class="festival-item" style="display: flex; gap: 12px; align-items: center;">
+      <div class="fes-date" style="background: var(--sky-blue); color: white; padding: 6px 10px; border-radius: 8px; text-align: center; min-width: 45px;">
+        <span style="font-size: 10px; display: block; line-height: 1;">MAR</span>
+        <strong style="font-size: 16px; display: block; line-height: 1.2; margin-top: 2px;">22</strong>
+      </div>
+      <div class="fes-info">
+        <h4 style="margin: 0 0 4px 0; font-size: 14px; color: var(--text-dark);">진해 군항제</h4>
+        <p style="margin: 0; font-size: 12px; color: var(--text-gray);">경남 창원시 진해구</p>
+      </div>
+    </div>
+
+    <div class="festival-item" style="display: flex; gap: 12px; align-items: center;">
+      <div class="fes-date" style="background: var(--sky-blue); color: white; padding: 6px 10px; border-radius: 8px; text-align: center; min-width: 45px;">
+        <span style="font-size: 10px; display: block; line-height: 1;">APR</span>
+        <strong style="font-size: 16px; display: block; line-height: 1.2; margin-top: 2px;">05</strong>
+      </div>
+      <div class="fes-info">
+        <h4 style="margin: 0 0 4px 0; font-size: 14px; color: var(--text-dark);">여의도 봄꽃축제</h4>
+        <p style="margin: 0; font-size: 12px; color: var(--text-gray);">서울 영등포구 일대</p>
+      </div>
+    </div>
+  </div>
+</div>
 
       <div class="game-widget">
         <h3>어디 갈지 고민될 땐?</h3>
@@ -334,11 +525,44 @@
       <a href="${pageContext.request.contextPath}/member/join" class="modal-auth-btn-signup">이메일로 3초 만에 가입하기</a>
     </div>
   </div>
+  
+  <!--  캘린더 부분 -->
+ <div id="festivalModal" class="festival-partial-modal">
+  <div class="festival-modal-header">
+    <h2>🎉 Tripan 전국 축제 캘린더</h2>
+    <button class="btn-close-modal" onclick="closeFestivalModal()">&times;</button>
+  </div>
+  
+  <div class="festival-modal-body">
+    <div class="calendar-area" style="display: block; padding: 20px; overflow: hidden;">
+	  <div id="calendar" style="height: 100%;"></div>
+	</div>
+    
+    <div class="festival-detail-list">
+      <h3 style="margin-top:0; color:var(--text-dark);">이달의 추천 축제</h3>
+      
+      <a href="https://korean.visitkorea.or.kr" target="_blank" class="festival-card">
+        <h4 style="margin:0 0 6px 0;">🌸 광양 매화축제</h4>
+        <p style="margin:0; font-size:12px; color:var(--text-gray);">🗓️ 2026.03.15 ~ 2026.03.24</p>
+      </a>
+
+      <a href="https://korean.visitkorea.or.kr" target="_blank" class="festival-card">
+        <h4 style="margin:0 0 6px 0;">🌸 진해 군항제</h4>
+        <p style="margin:0; font-size:12px; color:var(--text-gray);">🗓️ 2026.03.22 ~ 2026.04.01</p>
+      </a>
+      
+      <a href="https://korean.visitkorea.or.kr" target="_blank" class="festival-card">
+        <h4 style="margin:0 0 6px 0;">🌷 태안 튤립축제</h4>
+        <p style="margin:0; font-size:12px; color:var(--text-gray);">🗓️ 2026.04.10 ~ 2026.05.08</p>
+      </a>
+    </div>
+  </div>
+</div>
+  
 
   <jsp:include page="/WEB-INF/views/layout/footer.jsp"/>
 
   <script>
-    // --- 🎮 기존 스크립트 기능 유지 ---
     function startRoulette() {
       const dests = ['여수 밤바다 낭만 투어', '경주 황리단길 카페 투어', '강원도 양양 서핑 트립', '제주도 한라산 등반'];
       const random = dests[Math.floor(Math.random() * dests.length)];
@@ -416,22 +640,132 @@
         contentArea.innerHTML = '<div style="text-align:center; padding: 100px 20px; color:var(--sky-blue); font-size: 18px; font-weight:800;">데이터를 불러오는 중입니다... ✈️</div>';
 
         const url = '${pageContext.request.contextPath}/community/fragment/' + tabType;
-        fetch(url)
+        fetch(url, {
+        	headers: {
+        		'X-Requested-With': 'Fetch'
+        	}
+        })
           .then(response => {
             if(!response.ok) throw new Error("네트워크 응답 에러!");
             return response.text();
           })
           .then(html => {
             contentArea.innerHTML = html;
-            setupInfiniteScroll(); 
+            setupInfiniteScroll();
+            
+            window.scrollTo({
+            	top: 0,
+            	behavior: 'smooth'
+            })
+            
           })
           .catch(error => {
             console.error('Error:', error);
             contentArea.innerHTML = '<div style="text-align:center; padding: 50px; color:red;">데이터를 불러오는데 실패했습니다. 😢</div>';
           });
     }
+    
+    
+    
+    window.addEventListener('DOMContentLoaded', () => { 
+    	setupInfiniteScroll(); 
+    	
+    	const urlParams = new URLSearchParams(window.location.search);
+    	const tabParams = urlParams.get('tab');
+    	
+    	if (tabParams && tabParams !== 'feed') {
+    		loadTabContent(tabParams, null);
+    	}
+    
+    });
+    
+    let festivalCalendar;
+    
+    async function fetchFestivals(year, month) {
+        try {
+            // return await TripanAPI.getFestivals(year, month); 
+            return [
+                { title: '🌸 광양 매화축제 (API 연동 테스트)', start: '2026-03-15', end: '2026-03-25', color: '#89CFF0' },
+                { title: '🌸 진해 군항제', start: '2026-03-22', end: '2026-04-02', color: '#FFB6C1' }
+            ];
+        } catch (error) {
+            console.log("데이터를 불러오지 못했습니다. 백엔드 API가 아직 없어요!");
+            return []; 
+        }
+    }
 
-    window.addEventListener('DOMContentLoaded', () => { setupInfiniteScroll(); });
+    function openFestivalModal() {
+        document.getElementById('festivalModal').classList.add('active');
+        document.body.style.overflow = 'hidden'; 
+        
+        setTimeout(() => {
+            if (!festivalCalendar) {
+                const calendarEl = document.getElementById('calendar');
+                festivalCalendar = new FullCalendar.Calendar(calendarEl, {
+                    initialView: 'dayGridMonth',
+                    headerToolbar: {
+                        left: 'prev,next',
+                        center: 'title',
+                        right: 'today'
+                    },
+                    
+                    events: async function(info, successCallback, failureCallback) {
+                        const currentViewDate = new Date(info.start.valueOf() + 86400000 * 15); 
+                        const year = currentViewDate.getFullYear();
+                        const month = currentViewDate.getMonth() + 1;
+                        const data = await fetchFestivals(year, month);
+
+                        successCallback(data);
+                    },
+                    
+                    dateClick: function(info) {
+                        alert('클릭한 날짜 : ' + info.dateStr + '\n이 날짜의 데이터를 우측에 불러옵니다.');
+                    }
+                });
+                festivalCalendar.render();
+            } 
+        }, 300);
+    }
+
+    const modal = document.getElementById('festivalModal');
+    const modalHeader = document.querySelector('.festival-modal-header');
+
+    let isDragging = false;
+    let offsetX = 0;
+    let offsetY = 0;
+
+    modalHeader.addEventListener('mousedown', (e) => {
+        isDragging = true;
+        
+        const rect = modal.getBoundingClientRect();
+        offsetX = e.clientX - rect.left;
+        offsetY = e.clientY - rect.top;
+    });
+
+    document.addEventListener('mousemove', (e) => {
+        if (!isDragging) return;
+        
+        modal.style.transform = 'none'; 
+        modal.style.left = (e.clientX - offsetX) + 'px';
+        modal.style.top = (e.clientY - offsetY) + 'px';
+    });
+
+    document.addEventListener('mouseup', () => {
+        isDragging = false;
+    });
+
+    function closeFestivalModal() {
+        modal.classList.remove('active');
+        document.body.style.overflow = 'auto'; 
+        setTimeout(() => {
+            modal.style.left = '12%';
+            modal.style.top = '100px';
+            modal.style.transform = ''; 
+        }, 300); 
+    }
+    
+    
   </script>
+  
 </body>
 </html>
