@@ -365,6 +365,17 @@
 	  padding: 2px 4px;
 	  cursor: pointer;
 	}
+	.fc-daygrid-day-number {
+    font-family: 'Pretendard', sans-serif;
+    font-weight: 700;
+    color: var(--text-dark);
+    text-decoration: none !important;
+}
+	.fc-col-header-cell-cushion {
+	    font-weight: 800;
+	    color: var(--text-black);
+	    text-decoration: none !important;
+	}
 	
     
   </style>
@@ -680,18 +691,56 @@
     });
     
     let festivalCalendar;
+    let currentFestivals = [];
     
     async function fetchFestivals(year, month) {
         try {
-            // return await TripanAPI.getFestivals(year, month); 
-            return [
-                { title: '🌸 광양 매화축제 (API 연동 테스트)', start: '2026-03-15', end: '2026-03-25', color: '#89CFF0' },
-                { title: '🌸 진해 군항제', start: '2026-03-22', end: '2026-04-02', color: '#FFB6C1' }
-            ];
+            const url = '${pageContext.request.contextPath}/api/festivals?year=' + year + '&month=' + month;
+            const response = await fetch(url);
+            
+            if (!response.ok) throw new Error('네트워크 응답 에러');
+            const data = await response.json();
+            currentFestivals = data; 
+            return data;
         } catch (error) {
-            console.log("데이터를 불러오지 못했습니다. 백엔드 API가 아직 없어요!");
+            console.error("데이터를 불러오지 못했습니다:", error);
             return []; 
         }
+    }
+
+    function updateFestivalSidebar(festivals, targetDate = null) {
+        const sidebar = document.querySelector('.festival-detail-list');
+        
+        let titleHtml = `<h3 style="margin-top:0; color:var(--text-dark);">이달의 추천 축제 🎈</h3>`;
+        if (targetDate) {
+            titleHtml = `<h3 style="margin-top:0; color:var(--text-dark);">${targetDate} 진행 축제 🎈</h3>`;
+        }
+        
+        sidebar.innerHTML = titleHtml;
+
+        if (!festivals || festivals.length === 0) {
+            sidebar.innerHTML += `<p style="font-size: 13px; color: var(--text-gray); padding: 20px 0; text-align: center;">해당 기간에 진행되는 축제가 없습니다. 🥲</p>`;
+            return;
+        }
+
+        festivals.forEach(fes => {
+            const address = fes.address ? fes.address : '장소 미정';
+            const imgSrc = fes.image ? fes.image : '${pageContext.request.contextPath}/assets/img/default_festival.jpg';
+            
+            const cardHtml = `
+                <div class="festival-card" onclick="window.open('https://search.naver.com/search.naver?query=\${encodeURIComponent(fes.title)}', '_blank')">
+                    <div style="display: flex; gap: 12px;">
+                        <img src="\${imgSrc}" style="width: 70px; height: 70px; border-radius: 8px; object-fit: cover;" alt="축제 이미지">
+                        <div style="flex: 1;">
+                            <h4 style="margin:0 0 6px 0; font-size: 14px; color: var(--text-dark);">\${fes.title}</h4>
+                            <p style="margin:0 0 4px; font-size:11px; color:var(--text-gray);">📍 \${address}</p>
+                            <p style="margin:0; font-size:12px; font-weight: bold; color: \${fes.color};">🗓️ \${fes.start} ~ \${fes.end}</p>
+                        </div>
+                    </div>
+                </div>
+            `;
+            sidebar.innerHTML += cardHtml;
+        });
     }
 
     function openFestivalModal() {
@@ -703,6 +752,10 @@
                 const calendarEl = document.getElementById('calendar');
                 festivalCalendar = new FullCalendar.Calendar(calendarEl, {
                     initialView: 'dayGridMonth',
+                    locale: 'ko', 
+                    dayCellContent: function(info) {
+                        return info.dayNumberText.replace('일', '');
+                    },
                     headerToolbar: {
                         left: 'prev,next',
                         center: 'title',
@@ -715,11 +768,31 @@
                         const month = currentViewDate.getMonth() + 1;
                         const data = await fetchFestivals(year, month);
 
+                        updateFestivalSidebar(data);
                         successCallback(data);
                     },
                     
+                    eventClick: function(info) {
+                        const clickedFestival = {
+                            title: info.event.title,
+                            start: info.event.startStr,
+                            end: info.event.endStr || info.event.startStr,
+                            color: info.event.backgroundColor,
+                            address: info.event.extendedProps.address,
+                            image: info.event.extendedProps.image
+                        };
+                        
+                        updateFestivalSidebar([clickedFestival], info.event.title);
+                    },
+                    
                     dateClick: function(info) {
-                        alert('클릭한 날짜 : ' + info.dateStr + '\n이 날짜의 데이터를 우측에 불러옵니다.');
+                        const clickDate = info.dateStr;
+                        
+                        const filtered = currentFestivals.filter(fes => {
+                            return clickDate >= fes.start && clickDate <= fes.end;
+                        });
+                        
+                        updateFestivalSidebar(filtered, clickDate);
                     }
                 });
                 festivalCalendar.render();
