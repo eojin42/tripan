@@ -5,84 +5,17 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>TripanSuper — 통계 및 정산</title>
+   <link rel="stylesheet" href="${pageContext.request.contextPath}/dist/css/admin.css">
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
-  <style>
-    /* ── Grid ── */
-    .kpi-grid    { display: grid; grid-template-columns: repeat(4,1fr); gap: 18px; margin-bottom: 22px; }
-    .chart-grid  { display: grid; grid-template-columns: 2fr 1fr;       gap: 18px; margin-bottom: 22px; }
-
-    /* ── KPI card ── */
-    .kpi-card { padding: 24px 22px; overflow: hidden; }
-    .kpi-top { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px; }
-    .kpi-icon-wrap { width: 40px; height: 40px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 18px; }
-    .kpi-label { font-size: 11px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: .4px; margin-bottom: 6px; }
-    .kpi-value { font-family: var(--font-display); font-size: 27px; font-weight: 800; letter-spacing: -.5px; margin-bottom: 7px; }
-    .kpi-sub   { font-size: 11px; color: var(--muted); }
-
-    /* ── Chart cards ── */
-    .chart-card { padding: 22px 22px 16px; }
-    .chart-wrap { height: 260px; }
-
-    /* ── Filter bar ── */
-    .filter-bar {
-      display: flex; align-items: center; gap: 10px;
-      background: var(--surface); border-radius: var(--radius-lg);
-      padding: 14px 20px; margin-bottom: 22px;
-      box-shadow: var(--shadow-xs); border: 1px solid rgba(255,255,255,.8);
-    }
-    .filter-label { font-size: 12px; font-weight: 700; color: var(--muted); margin-right: 4px; white-space: nowrap; }
-    .filter-select {
-      padding: 6px 12px; border-radius: var(--radius-full);
-      border: 1px solid var(--border); background: var(--bg);
-      font-size: 12px; font-family: inherit; color: var(--text); font-weight: 600;
-      cursor: pointer; outline: none; transition: border-color .2s;
-      appearance: none; -webkit-appearance: none;
-      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%238B92A5'/%3E%3C/svg%3E");
-      background-repeat: no-repeat; background-position: right 10px center; padding-right: 28px;
-    }
-    .filter-select:focus { border-color: var(--primary); }
-    .filter-spacer { flex: 1; }
-
-    /* ── Table ── */
-    .table-card { padding: 22px 24px; }
-    table { width: 100%; border-collapse: collapse; }
-    thead th {
-      padding: 10px 12px; font-size: 11px; font-weight: 700; color: var(--muted);
-      text-transform: uppercase; letter-spacing: .5px;
-      border-bottom: 1px solid var(--border); text-align: left; white-space: nowrap;
-    }
-    tbody tr { transition: background .15s; cursor: pointer; }
-    tbody tr:hover td { background: var(--bg); }
-    tbody td { padding: 14px 12px; border-bottom: 1px dashed var(--border); vertical-align: middle; }
-    tbody tr:last-child td { border-bottom: none; }
-
-    .partner-info h4 { font-size: 13px; font-weight: 700; margin-bottom: 2px; }
-    .partner-info p  { font-size: 11px; color: var(--muted); }
-    .partner-avatar {
-      width: 34px; height: 34px; border-radius: 10px; display: inline-flex;
-      align-items: center; justify-content: center; font-size: 14px; margin-right: 10px;
-      flex-shrink: 0; background: var(--bg); vertical-align: middle;
-    }
-    .td-partner { display: flex; align-items: center; }
-
-    .amount { font-family: var(--font-display); font-size: 13px; font-weight: 700; }
-    .amount-fee  { color: var(--primary); }
-    .amount-net  { color: var(--text); font-weight: 800; }
-
-    .btn-approve { background: var(--text); color: white; border: none; padding: 5px 13px; border-radius: var(--radius-md); font-size: 11px; font-weight: 700; cursor: pointer; font-family: inherit; transition: all .2s; }
-    .btn-approve:hover { opacity: .8; transform: translateY(-1px); }
-    .btn-done { background: var(--bg); color: var(--muted); border: none; padding: 5px 13px; border-radius: var(--radius-md); font-size: 11px; font-weight: 700; cursor: default; font-family: inherit; }
-
-    @media (max-width: 1200px) { .chart-grid { grid-template-columns: 1fr; } }
-    @media (max-width: 900px)  { .kpi-grid { grid-template-columns: 1fr 1fr; } }
-  </style>
 </head>
 <body>
-
-<jsp:include page="../layout/header.jsp">
-  <jsp:param name="activePage" value="stats"/>
+<div class="admin-layout">
+<jsp:include page="../layout/sidebar.jsp">
+  <jsp:param name="activePage" value="dashboard"/>
 </jsp:include>
+<div class="main-wrapper">
+    <jsp:include page="../layout/header.jsp" />
 
 <main class="main-content">
 
@@ -268,6 +201,8 @@
   </div>
 
 </main>
+</div>
+</div>
 
 <script>
 Chart.defaults.font.family = "'Noto Sans KR', sans-serif";
