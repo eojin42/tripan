@@ -440,3 +440,16 @@ td.right { text-align: right; }
 	  color: var(--primary);
 	  text-decoration: underline;
 	}
+	
+	/* 부트스트랩 collapse와 기존 서브메뉴 디자인 연동 */
+	.sub-menu.collapse {
+	  display: none; /* 기본 숨김 */
+	}
+	.sub-menu.collapse.show {
+	  display: flex; /* 열렸을 때 (admin.css의 기존 sub-menu 스타일 적용) */
+	}
+	
+	/* 대메뉴가 활성화(active) 되었을 때 글자색이 흰색으로 변하므로 아이콘 색상도 유지 */
+	.menu-item.active .chevron-down {
+	  stroke: white;
+	}

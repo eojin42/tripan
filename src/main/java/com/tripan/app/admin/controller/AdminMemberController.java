@@ -26,5 +26,9 @@ public class AdminMemberController {
 		return "admin/member/memberDetail";
 	}
 	
-	
+	@GetMapping("dormant")
+	public String dormantMembers() {
+		
+		return "admin/member/dormantMembers";
+	}
 }
