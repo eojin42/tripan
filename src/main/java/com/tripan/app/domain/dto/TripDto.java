@@ -7,7 +7,7 @@ import java.util.List;
 @Getter
 @Setter
 public class TripDto {
-    // 1. 기본 여행 데이터 (trip 테이블)
+    //  기본 여행 데이터 
     private Long tripId;
     private String tripName;
     private String startDate;
@@ -15,26 +15,24 @@ public class TripDto {
     private String status;
     private String thumbnailUrl;
 
-    // 2. 통계 및 단일 부가 데이터
+    // 통계 및 단일 부가 데이터
     private String leaderNickname;  
     private String regionName;      
     private double totalBudget;     // 설정한 총 예산
     private double currentExpense;  // 현재까지 쓴 지출 총합
 
-    // 3. 동행자 목록 (trip_member + member 테이블)
+    // 동행자 목록 (trip_member + member 테이블)
     private List<TripMemberDto> members;
 
-    // 4. 여행 일정표 (일자별 방문 장소 계층 구조)
+    // 여행 일정표 (일자별 방문 장소 계층 구조)
     private List<TripDayDto> days; 
 
-    // 5. 진행 중인 투표 현황 (vote + vote_candidate 테이블)
+    // 진행 중인 투표 현황 (vote + vote_candidate 테이블)
     private List<VoteDto> votes;
 
-    // 6. 준비물 공용 체크리스트 (trip_checklist 테이블)
+    // 준비물 공용 체크리스트 (trip_checklist 테이블)
     private List<ChecklistDto> checklists;
 
-    // --- 내부 DTO 클래스들 ---
-    
     @Getter @Setter
     public static class TripMemberDto {
         private Long memberId;
@@ -72,7 +70,7 @@ public class TripDto {
     @Getter @Setter
     public static class VoteDto {
         private Long voteId;
-        private String title; // 예: "둘째 날 저녁 흑돼지 vs 회?"
+        private String title; 
         private int totalVotes; // 총 참여 투표 수
         // 투표 후보지 목록 및 각각의 득표수
         private List<VoteCandidateDto> candidates; 

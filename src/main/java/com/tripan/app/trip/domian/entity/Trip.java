@@ -1,10 +1,18 @@
 package com.tripan.app.trip.domian.entity;
 
-import jakarta.persistence.*;
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
+
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.Lob;
+import jakarta.persistence.PreUpdate;
+import jakarta.persistence.Table;
 import lombok.Getter;
 import lombok.Setter;
-
-import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "trip")
@@ -42,7 +50,7 @@ public class Trip {
     private Integer isPublic = 0; // 공개 여부 (0: 비공개, 1: 공개)
 
     @Column(name = "total_budget")
-    private Double totalBudget; // 총 예산
+    private BigDecimal totalBudget; // 총 예산
 
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt = LocalDateTime.now(); // 생성일
