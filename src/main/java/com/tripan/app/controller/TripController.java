@@ -19,7 +19,7 @@ public class TripController {
 	@GetMapping({"/trip_workspace"})
     public String workspace(Model model) {
      
-        return "trip/trip_workspace";
+        return "trip/workspace";
     }
 	
 }
