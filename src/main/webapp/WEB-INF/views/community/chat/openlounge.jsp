@@ -1,155 +1,284 @@
 <%@ page contentType="text/html; charset=UTF-8" %>
 <%@ taglib prefix="c" uri="jakarta.tags.core"%>
-<%@ taglib prefix="fmt" uri="jakarta.tags.fmt"%>
-<!DOCTYPE html>
-<html>
-<head>
-<meta charset="UTF-8">
-<head>
-  <meta charset="UTF-8">
-  <title>Tripan - 오픈 라운지 테스트</title>
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.8/dist/web/static/pretendard.css">
-  <style>
-    :root {
-      --sky-blue: #89CFF0; --light-pink: #FFB6C1; --bg-page: #F0F8FF;
-      --glass-bg: rgba(255, 255, 255, 0.7); --glass-border: rgba(255, 255, 255, 0.9);
-      --grad-main: linear-gradient(135deg, var(--sky-blue), var(--light-pink));
-      --text-black: #2D3748; --text-gray: #718096;
-    }
 
-    body {
-      margin: 0; padding: 20px; font-family: 'Pretendard', sans-serif;
-      background-color: var(--bg-page);
-      background-image: radial-gradient(at 0% 0%, rgba(137, 207, 240, 0.2) 0px, transparent 50%), 
-                        radial-gradient(at 100% 100%, rgba(255, 182, 193, 0.2) 0px, transparent 50%);
-      display: flex; justify-content: center; align-items: center; height: 100vh;
-    }
+<style>
+  .global-chat-wrapper {
+    position: fixed;
+    bottom: 50px; /* 플로팅 버튼 바로 위 */
+    right: 30px;
+    z-index: 9999;
+    display: none; /* JS로 제어 */
+    flex-direction: column;
+    align-items: flex-end;
+  }
 
-    /* 채팅창 전체 프레임 (글래스모피즘) */
-    .chat-container {
-      width: 100%; max-width: 450px; height: 80vh; max-height: 700px;
-      background: var(--glass-bg); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
-      border: 1px solid var(--glass-border); border-radius: 32px;
-      box-shadow: 0 20px 40px rgba(45, 55, 72, 0.08);
-      display: flex; flex-direction: column; overflow: hidden;
-    }
+  .chat-modal-container {
+    width: 950px;
+    height: 700px;
+    max-width: 90vw;
+    background: rgba(255, 255, 255, 0.75);
+    backdrop-filter: blur(24px);
+    -webkit-backdrop-filter: blur(24px);
+    border: 1px solid rgba(255, 255, 255, 0.9);
+    border-radius: 28px;
+    box-shadow: 0 24px 48px rgba(45, 55, 72, 0.15);
+    display: flex;
+    overflow: hidden;
+    transform-origin: bottom right;
+    animation: chatPopUp 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+  }
 
-    /* 상단 헤더: 해시태그 및 접속자 목록 */
-    .chat-header {
-      padding: 20px; background: rgba(255, 255, 255, 0.5); border-bottom: 1px solid rgba(255,255,255,0.8);
-    }
-    .chat-title-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
-    .chat-title { font-size: 18px; font-weight: 900; color: var(--text-black); margin: 0; }
-    .chat-count { font-size: 13px; font-weight: 700; color: #FF6B6B; background: #FFE5E5; padding: 4px 10px; border-radius: 20px; }
+  @keyframes chatPopUp {
+    0% { opacity: 0; transform: scale(0.8); }
+    100% { opacity: 1; transform: scale(1); }
+  }
+
+  .chat-sidebar {
+    width: 300px;
+    background: rgba(255, 255, 255, 0.4);
+    border-right: 1px solid rgba(255, 255, 255, 0.6);
+    display: flex;
+    flex-direction: column;
+  }
+  
+  .chat-sidebar-header {
+    padding: 20px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.5);
+  }
+  .chat-sidebar-header h3 {
+    margin: 0; font-size: 16px; font-weight: 900; color: var(--text-black);
+  }
+
+  .chat-room-list {
+    flex: 1;
+    overflow-y: auto;
+    padding: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .chat-room-list::-webkit-scrollbar { display: none; }
+
+  .chat-room-item {
+    display: flex; align-items: center; gap: 12px;
+    padding: 12px; border-radius: 16px; cursor: pointer;
+    transition: all 0.2s; background: transparent;
+  }
+  .chat-room-item:hover { background: rgba(255,255,255,0.7); }
+  .chat-room-item.active { background: white; box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
+  
+  .room-icon {
+    width: 40px; height: 40px; border-radius: 12px;
+    background: var(--grad-main); color: white;
+    display: flex; justify-content: center; align-items: center; font-size: 18px;
+  }
+  .room-info h4 { margin: 0 0 4px; font-size: 14px; font-weight: 800; color: var(--text-dark); }
+  .room-info p { margin: 0; font-size: 12px; color: var(--text-gray); font-weight: 500; }
+
+  .chat-main {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    background: transparent;
+  }
+
+  .chat-header {
+    padding: 16px 20px;
+    border-bottom: 1px solid rgba(255,255,255,0.6);
+    display: flex; justify-content: space-between; align-items: center;
+  }
+  .chat-title-info h2 { margin: 0 0 6px; font-size: 18px; font-weight: 900; }
+  .chat-title-info span { font-size: 12px; font-weight: 700; color: #FF6B6B; background: #FFE5E5; padding: 3px 8px; border-radius: 12px; }
+
+  .chat-controls { display: flex; gap: 8px; }
+  .chat-control-btn {
+    width: 32px; height: 32px; border-radius: 50%;
+    border: none; background: rgba(255,255,255,0.6);
+    color: var(--text-dark); font-size: 16px; font-weight: 900; cursor: pointer;
+    display: flex; justify-content: center; align-items: center; transition: 0.2s;
+  }
+  .chat-control-btn:hover { background: var(--text-black); color: white; }
+
+  .chat-messages { flex: 1; padding: 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 16px; }
+  .msg-row { display: flex; gap: 10px; align-items: flex-end; }
+  .msg-row.me { justify-content: flex-end; }
+  .msg-profile { width: 36px; height: 36px; border-radius: 50%; object-fit: cover; }
+  .msg-bubble { max-width: 75%; padding: 12px 16px; border-radius: 20px; font-size: 14px; line-height: 1.5; font-weight: 600; box-shadow: 0 4px 12px rgba(0,0,0,0.03); }
+  .msg-row.other .msg-bubble { background: white; border-top-left-radius: 4px; color: var(--text-black); }
+  .msg-row.me .msg-bubble { background: var(--grad-main); color: white; border-bottom-right-radius: 4px; }
+  .msg-name { font-size: 12px; color: var(--text-gray); margin-bottom: 4px; font-weight: 700; }
+  .msg-time { font-size: 11px; color: #A0AEC0; font-weight: 600; margin-bottom: 4px; }
+
+  .chat-input-area { padding: 16px; background: rgba(255, 255, 255, 0.4); border-top: 1px solid rgba(255,255,255,0.6); display: flex; gap: 12px; }
+  .chat-input { flex: 1; padding: 12px 20px; border: none; border-radius: 24px; background: rgba(255, 255, 255, 0.9); font-size: 14px; outline: none; transition: 0.3s; font-family: 'Pretendard', sans-serif; box-shadow: 0 0 0 2px var(--sky-blue); }
+  .btn-send { width: 44px; height: 44px; border-radius: 50%; border: none; background: var(--grad-main); color: white; cursor: pointer; display: flex; justify-content: center; align-items: center; transition: 0.2s; }
+  .btn-send:hover { transform: scale(1.05); }
+  .btn-send svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round; margin-left: -2px;}
+
+  .chat-floating-btn {
+    position: fixed;
+    bottom: 30px;
+    right: 30px;
+    width: 64px;
+    height: 64px;
+    border-radius: 50%;
+    background: white;
+    box-shadow: 0 8px 24px rgba(45, 55, 72, 0.15);
+    display: none; /* JS로 제어 */
+    justify-content: center;
+    align-items: center;
+    cursor: pointer;
+    z-index: 9999;
+    border: 2px solid var(--sky-blue);
+    transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+  .chat-floating-btn:hover {
+    transform: translateY(-5px) scale(1.05);
+    box-shadow: 0 12px 32px rgba(137, 207, 240, 0.3);
+  }
+  .chat-floating-btn img {
+    width: 40px; height: 40px; object-fit: contain;
+  }
+  
+  /* 안읽은 메시지 뱃지 */
+  .chat-badge {
+    position: absolute; top: -2px; right: -2px;
+    background: #FF6B6B; color: white; font-size: 11px; font-weight: 900;
+    width: 20px; height: 20px; border-radius: 50%;
+    display: flex; justify-content: center; align-items: center;
+    border: 2px solid white;
+  }
+</style>
+
+<div id="globalChatModal" class="global-chat-wrapper">
+  <div class="chat-modal-container">
     
-    .chat-users { display: flex; gap: -10px; overflow-x: auto; padding-bottom: 4px; }
-    .chat-users::-webkit-scrollbar { display: none; } /* 스크롤바 숨기기 */
-    .user-avatar { 
-      width: 36px; height: 36px; border-radius: 50%; border: 2px solid white; 
-      object-fit: cover; flex-shrink: 0; margin-right: -10px; /* 프로필 겹치기 효과 */
-      box-shadow: 0 4px 8px rgba(0,0,0,0.05);
-    }
-
-    /* 채팅 메시지 영역 */
-    .chat-messages {
-      flex: 1; padding: 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 16px;
-    }
-
-    /* 공통 말풍선 스타일 */
-    .msg-row { display: flex; gap: 10px; align-items: flex-end; }
-    .msg-row.me { justify-content: flex-end; }
-    
-    .msg-profile { width: 40px; height: 40px; border-radius: 50%; object-fit: cover; }
-    
-    .msg-bubble {
-      max-width: 70%; padding: 12px 16px; border-radius: 20px;
-      font-size: 15px; line-height: 1.5; font-weight: 500;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.03);
-    }
-    
-    /* 타인 말풍선: 하얀색 글래스 */
-    .msg-row.other .msg-bubble {
-      background: white; border-top-left-radius: 4px; color: var(--text-black);
-    }
-    .msg-name { font-size: 12px; color: var(--text-gray); margin-bottom: 4px; font-weight: 700; }
-
-    /* 내 말풍선: Tripan 메인 그라데이션 */
-    .msg-row.me .msg-bubble {
-      background: var(--grad-main); color: white; border-bottom-right-radius: 4px;
-    }
-
-    .msg-time { font-size: 11px; color: #A0AEC0; font-weight: 600; margin-bottom: 4px; }
-
-    /* 하단 입력창 */
-    .chat-input-area {
-      padding: 16px; background: rgba(255, 255, 255, 0.6);
-      border-top: 1px solid rgba(255,255,255,0.8); display: flex; gap: 12px;
-    }
-    .chat-input {
-      flex: 1; padding: 14px 20px; border: none; border-radius: 24px;
-      background: rgba(255, 255, 255, 0.9); font-size: 15px; font-family: 'Pretendard', sans-serif;
-      box-shadow: inset 0 2px 4px rgba(0,0,0,0.02); outline: none; transition: 0.3s;
-    }
-    .chat-input:focus { box-shadow: 0 0 0 2px var(--sky-blue); }
-    .btn-send {
-      width: 48px; height: 48px; border-radius: 50%; border: none;
-      background: var(--grad-main); color: white; cursor: pointer;
-      display: flex; justify-content: center; align-items: center;
-      box-shadow: 0 4px 12px rgba(137, 207, 240, 0.4); transition: transform 0.2s;
-    }
-    .btn-send:hover { transform: scale(1.05); }
-    .btn-send svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round; margin-left: -2px; }
-  </style>
-</head>
-<body>
-
-  <div class="chat-container">
-    <div class="chat-header">
-      <div class="chat-title-row">
-        <h2 class="chat-title">🌴 #제주도 동행/맛집 방</h2>
-        <span class="chat-count">🔴 124명 접속 중</span>
+    <div class="chat-sidebar">
+      <div class="chat-sidebar-header">
+        <h3>💬 참여중인 라운지</h3>
       </div>
-      <div class="chat-users">
-        <img src="https://picsum.photos/seed/user1/100/100" class="user-avatar" style="z-index: 5;">
-        <img src="https://picsum.photos/seed/user2/100/100" class="user-avatar" style="z-index: 4;">
-        <img src="https://picsum.photos/seed/user3/100/100" class="user-avatar" style="z-index: 3;">
-        <img src="https://picsum.photos/seed/user4/100/100" class="user-avatar" style="z-index: 2;">
-        <div class="user-avatar" style="z-index: 1; background:#E2E8F0; display:flex; justify-content:center; align-items:center; font-size:12px; font-weight:800; color:#718096; border:2px solid white;">+120</div>
-      </div>
-    </div>
-
-    <div class="chat-messages">
-      <div class="msg-row other">
-        <img src="https://picsum.photos/seed/user2/100/100" class="msg-profile">
-        <div>
-          <div class="msg-name">@서핑매니아</div>
-          <div class="msg-bubble">혹시 지금 중문 색달해변 파도 어떤가요? 🌊</div>
+      <div class="chat-room-list">
+        <div class="chat-room-item">
+          <div class="room-icon">🌴</div>
+          <div class="room-info"><h4>제주도 동행/맛집 방</h4><p>최근: 저 근처에 숨겨진...</p></div>
         </div>
-        <span class="msg-time">오후 2:30</span>
-      </div>
-
-      <div class="msg-row other">
-        <img src="https://picsum.photos/seed/user3/100/100" class="msg-profile">
-        <div>
-          <div class="msg-name">@고기국수러버</div>
-          <div class="msg-bubble">바람 꽤 불어서 서핑하기 딱 좋아요! 근데 웨이팅 있는 카페가 많네요 ㅠㅠ</div>
+        <div class="chat-room-item">
+          <div class="room-icon" style="background: linear-gradient(135deg, #A8C8E1, #C2B8D9);">🌊</div>
+          <div class="room-info"><h4>부산 해운대 핫플</h4><p>최근: 내일 요트 타실 분?</p></div>
         </div>
-        <span class="msg-time">오후 2:32</span>
-      </div>
-
-      <div class="msg-row me">
-        <span class="msg-time">오후 2:35</span>
-        <div class="msg-bubble">저 근처에 숨겨진 뷰 맛집 카페 아는데 위치 공유해드릴까요? 😎</div>
       </div>
     </div>
 
-    <div class="chat-input-area">
-      <input type="text" class="chat-input" placeholder="메시지를 입력하세요...">
-      <button class="btn-send">
-        <svg viewBox="0 0 24 24"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
-      </button>
+    <div class="chat-main" style="position: relative;">
+      
+      <div id="chatEmptyState" style="width: 100%; height: 100%; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center;">
+        <div class="chat-controls" style="position: absolute; top: 16px; right: 20px;">
+          <button class="chat-control-btn" onclick="document.getElementById('btnChatMinimize').click()">_</button>
+          <button class="chat-control-btn" onclick="document.getElementById('btnChatClose').click()">✕</button>
+        </div>
+        
+        <span style="font-size: 54px; margin-bottom: 20px; opacity: 0.6;">💬</span>
+        <h3 style="color: var(--text-dark); margin: 0 0 10px 0; font-size: 20px;">입장할 라운지를 선택해주세요</h3>
+        <p style="color: var(--text-gray); font-size: 14px; font-weight: 500;">좌측 목록에서 참여하고 싶은 지역 채팅방을 클릭하세요.</p>
+      </div>
+
+      <div id="chatRoomView" style="display: none; flex-direction: column; height: 100%;">
+        <div class="chat-header">
+          <div class="chat-title-info">
+            <h2>🌴 #제주도 동행/맛집 방</h2>
+            <span>🔴 124명 접속 중</span>
+          </div>
+          <div class="chat-controls">
+            <button class="chat-control-btn" id="btnChatMinimize" title="최소화">_</button>
+            <button class="chat-control-btn" id="btnChatClose" title="닫기">✕</button>
+          </div>
+        </div>
+
+        <div class="chat-messages">
+          <div class="msg-row other">
+            <img src="https://picsum.photos/seed/user2/100/100" class="msg-profile">
+            <div><div class="msg-name">@서핑매니아</div><div class="msg-bubble">혹시 지금 중문 색달해변 파도 어떤가요? 🌊</div></div>
+            <span class="msg-time">오후 2:30</span>
+          </div>
+          <div class="msg-row me">
+            <span class="msg-time">오후 2:35</span>
+            <div class="msg-bubble">저 근처에 숨겨진 뷰 맛집 카페 아는데 위치 공유해드릴까요? 😎</div>
+          </div>
+        </div>
+
+        <div class="chat-input-area">
+          <input type="text" class="chat-input" placeholder="메시지를 입력하세요...">
+          <button class="btn-send"><svg viewBox="0 0 24 24"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg></button>
+        </div>
+      </div>
     </div>
+
   </div>
+</div>
 
-</body>
-</html>
+<div id="chatFloatingBtn" class="chat-floating-btn" title="오픈 라운지 열기">
+  <span class="chat-badge">3</span>
+  <img src="${pageContext.request.contextPath}/dist/images/logo.png" alt="Tripan Chat" onerror="this.src='https://cdn-icons-png.flaticon.com/512/1041/1041916.png'">
+</div>
+
+<script>
+  document.addEventListener("DOMContentLoaded", () => {
+    const chatModal = document.getElementById("globalChatModal");
+    const floatingBtn = document.getElementById("chatFloatingBtn");
+    
+    const chatState = sessionStorage.getItem("tripanChatState");
+
+    if (chatState === "opened") {
+      chatModal.style.display = "flex";
+      floatingBtn.style.display = "none";
+    } else if (chatState === "minimized") {
+      chatModal.style.display = "none";
+      floatingBtn.style.display = "flex";
+    } else {
+      chatModal.style.display = "none";
+      floatingBtn.style.display = "none";
+    }
+
+    //  닫기 버튼 (X)
+    document.getElementById("btnChatClose").addEventListener("click", () => {
+      chatModal.style.display = "none";
+      floatingBtn.style.display = "none";
+      sessionStorage.setItem("tripanChatState", "closed");
+    });
+
+    // 최소화 버튼 (_)
+    document.getElementById("btnChatMinimize").addEventListener("click", () => {
+      chatModal.style.display = "none";
+      floatingBtn.style.display = "flex";
+      sessionStorage.setItem("tripanChatState", "minimized");
+    });
+
+    // 우측 하단 플로팅 버튼 클릭 시 -> 다시 열기
+    floatingBtn.addEventListener("click", () => {
+      floatingBtn.style.display = "none";
+      chatModal.style.display = "flex";
+      sessionStorage.setItem("tripanChatState", "opened");
+    });
+
+    //  다른 페이지에서 채팅방 목록을 눌렀을 때 호출될 함수
+    window.openGlobalChat = function() {
+      chatModal.style.display = "flex";
+      floatingBtn.style.display = "none";
+      sessionStorage.setItem("tripanChatState", "opened");
+    };
+    
+    const chatRoomItems = document.querySelectorAll('.chat-room-item');
+    const emptyState = document.getElementById('chatEmptyState');
+    const roomView = document.getElementById('chatRoomView');
+
+    chatRoomItems.forEach(item => {
+      item.addEventListener('click', function() {
+        chatRoomItems.forEach(el => el.classList.remove('active'));
+        this.classList.add('active');
+        emptyState.style.display = 'none';
+        roomView.style.display = 'flex';
+      });
+    });
+    
+  });
+</script>
