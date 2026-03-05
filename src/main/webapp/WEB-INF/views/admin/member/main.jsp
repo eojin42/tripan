@@ -96,8 +96,8 @@
             </thead>
             
             <tbody id="memberTableBody">
-			  <c:forEach var="member" items="${memberList}">
-          <tr class="member-row" data-phone="${member.phone}" data-role="${member.role}" data-status="${member.status}">
+			  <c:forEach var="member" items="${list}">
+          		  <tr class="member-row" data-phone="${member.phoneNumber}" data-role="${member.role}" data-status="${member.status}">
 			      
 			      <td class="col-id"><strong>${member.email}</strong></td>
 			      
@@ -123,10 +123,10 @@
 			      
 			      <td id="status-${member.id}">
 			        <c:choose>
-			          <c:when test="${member.status == 'BAN'}">
+			          <c:when test="${member.status == '2'}">
 			            <span class="badge badge-danger status-badge" onclick="showReason(event, '${member.reason}')">BAN(정지)</span>
 			          </c:when>
-			          <c:when test="${member.status == 'WITHDRAW'}">
+			          <c:when test="${member.status == '4'}">
 			            <span class="badge" style="background:var(--bg); color:var(--muted)">탈퇴 완료</span>
 			          </c:when>
 			          <c:otherwise>

@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.tripan.app.admin.mapper.BookingManageMapper">
+	<select id="selectMemberBookings" parameterType="Long" resultType="com.tripan.app.admin.domain.dto.BookingResponseDto">
+		SELECT b.id,
+            '#' || b.res_id AS resId,b.room_name AS roomName, b.check_in || ' ~ ' || b.check_out AS duration, 
+            '₩ ' || TO_CHAR(b.total_price, 'FM999,999,999') AS totalPrice, 
+            CASE 
+                WHEN b.status = 1 THEN '예약 확정'
+                WHEN b.status = 3 THEN '예약 취소'
+                ELSE '결제 대기'
+            END AS statusText,
+            CASE 
+                WHEN b.status = 1 THEN 'badge-done'
+                WHEN b.status = 3 THEN 'badge-danger'
+                ELSE 'badge-wait'
+            END AS statusClass FROM booking b
+        WHERE b.member_id = #{memberId}
+        ORDER BY b.id DESC
+	</select>
+	
+	<select id="selectAllBookings" resultType="com.tripan.app.admin.domain.dto.BookingResponseDto">
+		SELECT b.id, '#' || b.res_id AS resId, m.username, b.room_name AS roomName,
+            	b.check_in || ' ~ ' || b.check_out AS duration,
+            '₩ ' || TO_CHAR(b.total_price, 'FM999,999,999') AS totalPrice,
+            CASE 
+                WHEN b.status = 1 THEN '예약 확정'
+                WHEN b.status = 2 THEN '예약중'
+                WHEN b.status = 0 THEN '예약 취소'
+                ELSE '결제 대기'
+            END AS statusText,
+            CASE 
+                WHEN b.status = 1 THEN 'badge-done'
+                WHEN b.status = 2 THEN 'badge-wait'
+                WHEN b.status = 0 THEN 'badge-danger'
+                ELSE 'badge-default'
+            END AS statusClass
+        FROM booking b
+        JOIN member1 m ON b.member_id = m.member_id ORDER BY b.id DESC
+	</select>
+</mapper>

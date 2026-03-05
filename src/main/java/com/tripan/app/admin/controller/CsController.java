@@ -11,7 +11,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @RequiredArgsConstructor
 @RequestMapping("admin/*")
-public class Memberncs {
+public class CsController {
 	
 	@GetMapping("member")
 	public String membermain() {
