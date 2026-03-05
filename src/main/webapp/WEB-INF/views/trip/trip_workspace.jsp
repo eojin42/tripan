@@ -34,7 +34,7 @@
   --white:      #FFFFFF;
   --bg:         #F7F9FC;
   --border:     #E2E8F0;
-  --sidebar-w:  360px;
+  --sidebar-w:  520px;
   --topbar-h:   64px;
   --grad:       linear-gradient(120deg, var(--ice), var(--orchid), var(--rose));
   --grad2:      linear-gradient(135deg, var(--blue), var(--pink));
@@ -82,10 +82,29 @@ html, body {
 .ws-topbar__back:hover { background: var(--bg); border-color: var(--blue); color: var(--blue); }
 .ws-topbar__info { flex: 1; min-width: 0; }
 .ws-topbar__title {
-  font-size: 16px; font-weight: 800; color: var(--dark);
+  font-size: 18px; font-weight: 900; color: var(--dark);
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  letter-spacing: -0.3px;
 }
-.ws-topbar__sub { font-size: 12px; color: var(--light); font-weight: 500; margin-top: 1px; }
+.ws-topbar__title-wrap { display: flex; align-items: center; gap: 8px; }
+.trip-status-badge {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 3px 10px; border-radius: 50px;
+  font-size: 11px; font-weight: 800; white-space: nowrap; flex-shrink: 0;
+}
+.trip-status-badge.planning {
+  background: rgba(137,207,240,.15); color: #3a8fb7;
+  border: 1px solid rgba(137,207,240,.35);
+}
+.trip-status-badge.ongoing {
+  background: rgba(104,211,145,.15); color: #276749;
+  border: 1px solid rgba(104,211,145,.35);
+}
+.trip-status-badge.completed {
+  background: rgba(160,174,192,.15); color: var(--mid);
+  border: 1px solid rgba(160,174,192,.3);
+}
+.ws-topbar__sub { font-size: 12px; color: var(--light); font-weight: 500; margin-top: 2px; }
 
 .ws-topbar__actions { display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
 
@@ -117,6 +136,18 @@ html, body {
 }
 .avatar:first-child { margin-left: 0; }
 .avatar:hover { transform: translateY(-3px); z-index: 1; }
+/* OWNER: 파란 링 */
+.avatar.role-owner {
+  border-color: #89CFF0;
+  box-shadow: 0 0 0 2px #89CFF0;
+}
+/* PENDING: 점선 + 흐림 */
+.avatar.role-pending {
+  border: 2px dashed #CBD5E0;
+  filter: grayscale(40%) opacity(.65);
+  cursor: default;
+}
+.avatar.role-pending:hover { transform: none; }
 .avatar-add {
   background: var(--bg);
   border: 1.5px dashed var(--border);
@@ -124,6 +155,51 @@ html, body {
   font-size: 16px;
 }
 .avatar-add:hover { border-color: var(--blue); color: var(--blue); background: #EBF8FF; }
+
+/* ── 동행자 모달 멤버 목록 ── */
+.member-list { display: flex; flex-direction: column; gap: 8px; margin-bottom: 20px; }
+.member-row {
+  display: flex; align-items: center; gap: 12px;
+  padding: 10px 12px;
+  background: var(--bg); border-radius: 14px;
+  transition: background .15s;
+}
+.member-row:hover { background: #EBF8FF; }
+.member-avatar-lg {
+  width: 38px; height: 38px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 13px; font-weight: 800; color: white;
+  flex-shrink: 0; border: 2px solid var(--white);
+}
+.member-avatar-lg.role-owner { box-shadow: 0 0 0 2px #89CFF0; }
+.member-avatar-lg.role-pending { filter: grayscale(40%) opacity(.7); border: 2px dashed #CBD5E0; }
+.member-info { flex: 1; min-width: 0; }
+.member-name { font-size: 14px; font-weight: 700; color: var(--dark); }
+.member-sub  { font-size: 11px; color: var(--light); margin-top: 1px; }
+.member-role-badge {
+  font-size: 10px; font-weight: 800; padding: 3px 10px; border-radius: 50px;
+  white-space: nowrap; flex-shrink: 0;
+}
+.member-role-badge.owner   { background: rgba(137,207,240,.18); color: #3a8fb7; border: 1px solid rgba(137,207,240,.4); }
+.member-role-badge.editor  { background: rgba(194,184,217,.18); color: #8B7BAE; border: 1px solid rgba(194,184,217,.4); }
+.member-role-badge.pending { background: rgba(160,174,192,.12); color: var(--light); border: 1px dashed var(--border); }
+.member-actions { display: flex; gap: 6px; flex-shrink: 0; }
+.member-act-btn {
+  font-size: 11px; font-weight: 700;
+  padding: 4px 10px; border-radius: 8px; cursor: pointer;
+  font-family: 'Pretendard',sans-serif; transition: all .15s;
+}
+.member-act-btn.change { border: 1px solid var(--border); background: none; color: var(--mid); }
+.member-act-btn.change:hover { border-color: var(--blue); color: var(--blue); background: #EBF8FF; }
+.member-act-btn.cancel { border: 1px solid rgba(232,132,154,.3); background: none; color: #E8849A; }
+.member-act-btn.cancel:hover { background: rgba(232,132,154,.08); }
+.invite-divider {
+  display: flex; align-items: center; gap: 10px; margin: 14px 0 12px;
+  font-size: 11px; font-weight: 700; color: var(--light);
+}
+.invite-divider::before,.invite-divider::after {
+  content:''; flex:1; height:1px; background: var(--border);
+}
 
 .btn-save {
   padding: 8px 20px;
@@ -376,6 +452,22 @@ body.resizing .ws-resizer { pointer-events: all !important; }
 }
 .memo-chip svg { flex-shrink: 0; color: var(--pink); }
 
+/* 장소 메타 칩 행 (시간 + 이동수단) */
+.place-chips {
+  display: flex; flex-wrap: wrap; gap: 5px;
+  margin-top: 5px;
+}
+.place-chip {
+  display: inline-flex; align-items: center; gap: 4px;
+  font-size: 10px; font-weight: 700;
+  padding: 3px 8px; border-radius: 6px;
+  background: rgba(137,207,240,.12); color: #3a8fb7;
+  border: 1px solid rgba(137,207,240,.25);
+  white-space: nowrap;
+}
+.place-chip.time  { background: rgba(255,182,193,.12); color: #C47A90; border-color: rgba(255,182,193,.3); }
+.place-chip.trans { background: rgba(194,184,217,.12); color: #8B7BAE; border-color: rgba(194,184,217,.3); }
+
 /* 장소 추가 드롭존 */
 .drop-zone {
   border: 1.5px dashed var(--border);
@@ -391,23 +483,40 @@ body.resizing .ws-resizer { pointer-events: all !important; }
 .drop-zone:hover { border-color: var(--blue); color: var(--blue); background: #EBF8FF; }
 
 /* ══════════════════════════════
-   체크리스트 패널
+   체크리스트 패널 — 완전 재설계
 ══════════════════════════════ */
-.checklist-panel-inner { flex: 1; overflow-y: auto; padding: 24px; }
+
+/* 공통 래퍼: 분할모드·편집모드 모두 동일하게 flex 컬럼 */
+.checklist-panel-inner {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden; /* 내부 스크롤용 */
+}
+
+/* 상단 고정 헤더 영역 (스크롤 안 됨) */
+.cl-top {
+  flex-shrink: 0;
+  padding: 20px 20px 0;
+}
+
+/* 스크롤 가능한 본문 */
+.cl-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 14px 20px 32px;
+  scrollbar-width: thin;
+  scrollbar-color: var(--border) transparent;
+}
+
+/* 헤더 행 */
 .checklist-header {
   display: flex; justify-content: space-between; align-items: center;
-  margin-bottom: 20px;
+  margin-bottom: 14px;
 }
 .checklist-title { font-size: 16px; font-weight: 900; color: var(--dark); }
-.checklist-progress {
-  display: flex; align-items: center; gap: 10px;
-  margin-bottom: 20px; padding: 14px 16px;
-  background: linear-gradient(135deg,rgba(137,207,240,.08),rgba(255,182,193,.08));
-  border: 1.5px solid rgba(137,207,240,.2); border-radius: 14px;
-}
-.checklist-progress-bar-bg { flex: 1; height: 8px; background: var(--border); border-radius: 50px; overflow: hidden; }
-.checklist-progress-bar { height: 100%; background: var(--grad2); border-radius: 50px; transition: width .5s var(--ease); }
-.checklist-progress-txt { font-size: 12px; font-weight: 800; color: var(--mid); white-space: nowrap; }
+
+/* + 추가 버튼 */
 .btn-add-check {
   padding: 7px 16px; border: none;
   background: var(--grad2); border-radius: 50px;
@@ -417,37 +526,159 @@ body.resizing .ws-resizer { pointer-events: all !important; }
   transition: all .2s;
 }
 .btn-add-check:hover { transform: translateY(-1px); box-shadow: 0 6px 16px rgba(137,207,240,.4); }
+
+/* 진행률 바 */
+.checklist-progress {
+  display: flex; align-items: center; gap: 10px;
+  margin-bottom: 16px; padding: 12px 16px;
+  background: linear-gradient(135deg,rgba(137,207,240,.08),rgba(255,182,193,.08));
+  border: 1.5px solid rgba(137,207,240,.2); border-radius: 14px;
+}
+.checklist-progress-bar-bg { flex: 1; height: 8px; background: var(--border); border-radius: 50px; overflow: hidden; }
+.checklist-progress-bar { height: 100%; background: var(--grad2); border-radius: 50px; transition: width .5s var(--ease); }
+.checklist-progress-txt { font-size: 12px; font-weight: 800; color: var(--mid); white-space: nowrap; }
+
+/* 카테고리 그리드 — 기본(분할): 1열 */
+.check-categories-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 12px;
+}
+
+/* 카테고리 카드 */
 .check-category {
   background: var(--white);
   border: 1.5px solid var(--border);
   border-radius: 16px;
   padding: 16px 18px;
-  margin-bottom: 12px;
   transition: box-shadow .2s;
+  break-inside: avoid;
 }
 .check-category:hover { box-shadow: 0 4px 16px rgba(0,0,0,.06); }
+
+/* 카테고리 라벨 */
 .check-cat-label {
   display: flex; align-items: center; gap: 6px;
   font-size: 12px; font-weight: 800; color: var(--dark);
   margin-bottom: 12px; padding-bottom: 10px;
   border-bottom: 1px solid var(--border);
+  justify-content: space-between;
 }
+.check-cat-label-left { display: flex; align-items: center; gap: 6px; }
+.check-cat-add {
+  font-size: 11px; font-weight: 700; color: var(--light);
+  border: 1px dashed var(--border); background: none;
+  border-radius: 8px; padding: 3px 10px; cursor: pointer;
+  font-family: 'Pretendard',sans-serif; transition: all .15s;
+}
+.check-cat-add:hover { border-color: var(--blue); color: var(--blue); background: #EBF8FF; }
+
+/* 체크 아이템 */
 .check-item {
   display: flex; align-items: center; gap: 10px;
-  padding: 9px 0; cursor: pointer;
+  padding: 9px 4px; cursor: pointer;
   border-bottom: 1px solid var(--bg);
+  border-radius: 8px;
+  transition: background .12s;
 }
-.check-item:last-child { border-bottom: none; padding-bottom: 0; }
+.check-item:last-child { border-bottom: none; padding-bottom: 4px; }
+.check-item:hover { background: var(--bg); }
+
+/* 커스텀 체크박스 */
 .check-item input[type=checkbox] {
   width: 18px; height: 18px; border-radius: 5px;
   accent-color: var(--blue); cursor: pointer; flex-shrink: 0;
 }
-.check-item label { font-size: 13px; font-weight: 600; color: var(--dark); cursor: pointer; flex: 1; }
-.check-item.done label { text-decoration: line-through; color: var(--light); }
-.check-by {
-  font-size: 11px; font-weight: 700; color: var(--light);
-  background: var(--bg); padding: 2px 8px; border-radius: 50px;
+.check-item label {
+  font-size: 13px; font-weight: 600; color: var(--dark);
+  cursor: pointer; flex: 1; transition: color .15s;
 }
+.check-item.done label { text-decoration: line-through; color: var(--light); }
+
+/* 담당자 칩 */
+.check-by {
+  display: flex; align-items: center; gap: 4px;
+  font-size: 11px; font-weight: 700; color: var(--mid);
+  background: var(--bg); padding: 3px 10px; border-radius: 50px;
+  white-space: nowrap; flex-shrink: 0;
+}
+
+/* 아이템 삭제 버튼 (hover 시) */
+.check-item-del {
+  width: 22px; height: 22px; border-radius: 6px;
+  border: none; background: transparent; cursor: pointer;
+  color: var(--light); font-size: 13px;
+  display: flex; align-items: center; justify-content: center;
+  opacity: 0; transition: opacity .15s, background .15s;
+  flex-shrink: 0;
+}
+.check-item:hover .check-item-del { opacity: 1; }
+.check-item-del:hover { background: rgba(255,182,193,.2); color: #E8849A; }
+
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   편집 모드 — 체크리스트 레이아웃 override
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+.ws-layout.mode-edit #panel-checklist .checklist-panel-inner {
+  /* flex column 유지 — grid 덮어쓰기 없음 */
+}
+.ws-layout.mode-edit #panel-checklist .cl-top {
+  padding: 28px 40px 0;
+  max-width: 1100px; margin: 0 auto; width: 100%;
+}
+.ws-layout.mode-edit #panel-checklist .cl-body {
+  padding: 14px 40px 40px;
+  max-width: 1100px; margin: 0 auto; width: 100%;
+}
+/* 편집 모드: 2열 그리드 */
+.ws-layout.mode-edit #panel-checklist .check-categories-grid {
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 14px;
+}
+
+/* 새 항목 추가 인라인 입력 */
+.check-add-row {
+  display: none;
+  align-items: center; gap: 8px;
+  padding: 8px 4px 0;
+  border-top: 1px dashed var(--border);
+  margin-top: 6px;
+}
+.check-add-row.open { display: flex; }
+.check-add-input {
+  flex: 1; border: 1.5px solid var(--border);
+  border-radius: 8px; padding: 7px 12px;
+  font-family: 'Pretendard',sans-serif; font-size: 13px;
+  background: var(--bg); outline: none; color: var(--dark);
+  transition: border-color .2s;
+}
+.check-add-input:focus { border-color: var(--blue); background: var(--white); }
+.check-add-confirm {
+  padding: 7px 14px; border: none; border-radius: 8px;
+  background: var(--grad2); color: white;
+  font-family: 'Pretendard',sans-serif; font-size: 12px; font-weight: 700;
+  cursor: pointer; transition: opacity .15s; flex-shrink: 0;
+}
+.check-add-confirm:hover { opacity: .85; }
+.check-add-cancel {
+  padding: 7px 10px; border: 1px solid var(--border); border-radius: 8px;
+  background: none; color: var(--light);
+  font-family: 'Pretendard',sans-serif; font-size: 12px;
+  cursor: pointer; transition: all .15s; flex-shrink: 0;
+}
+.check-add-cancel:hover { border-color: #E8849A; color: #E8849A; }
+
+/* 카테고리 추가 카드 (+ 카테고리) */
+.check-category-add-card {
+  border: 2px dashed var(--border);
+  border-radius: 16px; padding: 20px;
+  text-align: center; cursor: pointer;
+  transition: all .2s; color: var(--light);
+  font-size: 13px; font-weight: 700;
+  background: transparent;
+  display: flex; flex-direction: column; align-items: center;
+  gap: 8px; font-family: 'Pretendard',sans-serif;
+}
+.check-category-add-card:hover { border-color: var(--blue); color: var(--blue); background: #EBF8FF; }
 
 /* ══════════════════════════════
    가계부 패널
@@ -511,10 +742,31 @@ body.resizing .ws-resizer { pointer-events: all !important; }
   background: var(--bg); display: flex; align-items: center; justify-content: center;
   font-size: 18px; flex-shrink: 0;
 }
-.expense-item__info { flex: 1; }
+.expense-item__info { flex: 1; min-width: 0; }
 .expense-item__name { font-size: 13px; font-weight: 700; color: var(--dark); }
-.expense-item__detail { font-size: 11px; color: var(--light); margin-top: 1px; }
-.expense-item__amt { font-size: 15px; font-weight: 900; color: var(--dark); }
+.expense-item__detail { font-size: 11px; color: var(--light); margin-top: 2px; display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.expense-item__amt { font-size: 15px; font-weight: 900; color: var(--dark); white-space: nowrap; }
+/* 🔒 나만 보기 뱃지 */
+.expense-private-badge {
+  display: inline-flex; align-items: center; gap: 3px;
+  font-size: 10px; font-weight: 700; padding: 2px 7px; border-radius: 50px;
+  background: rgba(160,174,192,.12); color: var(--light);
+  border: 1px solid rgba(160,174,192,.3); white-space: nowrap;
+}
+/* 결제자 칩 */
+.expense-payer-chip {
+  display: inline-flex; align-items: center; gap: 3px;
+  font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 50px;
+  background: rgba(137,207,240,.1); color: #3a8fb7;
+  border: 1px solid rgba(137,207,240,.25);
+}
+/* 카테고리 칩 */
+.expense-cat-chip {
+  display: inline-flex; align-items: center; gap: 3px;
+  font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 50px;
+  background: rgba(194,184,217,.1); color: #8B7BAE;
+  border: 1px solid rgba(194,184,217,.25);
+}
 .btn-add-expense {
   width: 100%; padding: 13px;
   border: 1.5px dashed var(--border);
@@ -524,6 +776,98 @@ body.resizing .ws-resizer { pointer-events: all !important; }
   display: flex; align-items: center; justify-content: center; gap: 6px;
 }
 .btn-add-expense:hover { border-color: var(--blue); color: var(--blue); background: rgba(137,207,240,.05); }
+
+/* ── 정산 현황 섹션 ── */
+.settle-section {
+  margin-top: 20px;
+  background: var(--white);
+  border: 1.5px solid var(--border);
+  border-radius: 18px;
+  overflow: hidden;
+}
+.settle-head {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 14px 18px;
+  border-bottom: 1px solid var(--border);
+  background: linear-gradient(135deg,rgba(137,207,240,.06),rgba(194,184,217,.06));
+}
+.settle-title { font-size: 13px; font-weight: 800; color: var(--dark); display: flex; align-items: center; gap: 6px; }
+.settle-done-badge {
+  font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 50px;
+  background: rgba(104,211,145,.15); color: #276749; border: 1px solid rgba(104,211,145,.3);
+}
+.settle-row {
+  display: flex; align-items: center; gap: 12px;
+  padding: 13px 18px;
+  border-bottom: 1px solid var(--bg);
+  transition: background .12s;
+}
+.settle-row:last-child { border-bottom: none; }
+.settle-row:hover { background: var(--bg); }
+.settle-avatars { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
+.settle-avatar {
+  width: 28px; height: 28px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 10px; font-weight: 800; color: white; flex-shrink: 0;
+}
+.settle-arrow { font-size: 14px; color: var(--light); }
+.settle-info { flex: 1; min-width: 0; }
+.settle-desc { font-size: 12px; font-weight: 600; color: var(--mid); }
+.settle-amt { font-size: 14px; font-weight: 900; color: var(--dark); margin-top: 1px; }
+.settle-amt.positive { color: #276749; }
+.settle-amt.negative { color: #E8849A; }
+.settle-req-btn {
+  font-size: 11px; font-weight: 700; padding: 5px 12px;
+  border: 1.5px solid var(--border); border-radius: 8px; background: none;
+  font-family: 'Pretendard',sans-serif; cursor: pointer; color: var(--mid);
+  transition: all .15s; flex-shrink: 0;
+}
+.settle-req-btn:hover { border-color: var(--blue); color: var(--blue); background: #EBF8FF; }
+.settle-req-btn.settled { border-color: rgba(104,211,145,.4); color: #276749; background: rgba(104,211,145,.08); cursor: default; }
+
+/* 지출 추가 모달 — 폼 스타일 */
+.expense-modal-box { width: min(520px, 95vw); }
+.form-row { display: flex; gap: 10px; margin-bottom: 12px; }
+.form-group { flex: 1; display: flex; flex-direction: column; gap: 6px; }
+.form-group.half { flex: 0 0 calc(50% - 5px); }
+.form-label-sm { font-size: 12px; font-weight: 700; color: var(--mid); }
+.form-input {
+  width: 100%; padding: 10px 14px;
+  border: 1.5px solid var(--border); border-radius: 10px;
+  font-family: 'Pretendard',sans-serif; font-size: 14px; color: var(--dark);
+  background: var(--bg); outline: none; transition: border-color .2s;
+}
+.form-input:focus { border-color: var(--blue); background: var(--white); }
+.form-select {
+  width: 100%; padding: 10px 14px;
+  border: 1.5px solid var(--border); border-radius: 10px;
+  font-family: 'Pretendard',sans-serif; font-size: 14px; color: var(--dark);
+  background: var(--bg); outline: none; cursor: pointer;
+  appearance: none; transition: border-color .2s;
+}
+.form-select:focus { border-color: var(--blue); background: var(--white); }
+.form-toggle-row {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 10px 14px; background: var(--bg); border-radius: 10px; margin-bottom: 12px;
+}
+.form-toggle-label { font-size: 13px; font-weight: 600; color: var(--dark); }
+.form-toggle-sub { font-size: 11px; color: var(--light); margin-top: 1px; }
+/* 토글 스위치 */
+.toggle-switch { position: relative; width: 42px; height: 24px; flex-shrink: 0; }
+.toggle-switch input { opacity: 0; width: 0; height: 0; }
+.toggle-slider {
+  position: absolute; inset: 0; cursor: pointer;
+  background: var(--border); border-radius: 50px;
+  transition: background .2s;
+}
+.toggle-slider::before {
+  content: ''; position: absolute;
+  width: 18px; height: 18px; border-radius: 50%;
+  left: 3px; top: 3px; background: white;
+  transition: transform .2s; box-shadow: 0 1px 4px rgba(0,0,0,.15);
+}
+.toggle-switch input:checked + .toggle-slider { background: var(--blue); }
+.toggle-switch input:checked + .toggle-slider::before { transform: translateX(18px); }
 
 /* ══════════════════════════════
    투표 패널
@@ -795,6 +1139,10 @@ textarea.form-textarea:focus { border-color: var(--blue); background: var(--whit
 }
 .view-toggle-btn:hover:not(.active) { color: var(--mid); }
 
+/* 편집 모드 active 색상 강조 */
+#vBtn-edit.active { color: #3a8fb7; background: rgba(137,207,240,.12); }
+#vBtn-map.active  { color: #8B7BAE; background: rgba(194,184,217,.12); }
+
 /* ── 모드별 레이아웃 변환 ── */
 
 /* 기본: split (지도 + 사이드바) */
@@ -838,6 +1186,8 @@ textarea.form-textarea:focus { border-color: var(--blue); background: var(--whit
 .edit-recommend-panel {
   display: none;
   width: 380px;
+  min-width: 200px;
+  max-width: 560px;
   flex-shrink: 0;
   background: var(--white);
   border-right: 1px solid var(--border);
@@ -848,9 +1198,57 @@ textarea.form-textarea:focus { border-color: var(--blue); background: var(--whit
   gap: 0;
   order: -1;
   scrollbar-width: none;
+  position: relative;
 }
 .edit-recommend-panel::-webkit-scrollbar { display: none; }
 .ws-layout.mode-edit .edit-recommend-panel { display: flex; }
+
+/* 편집모드 추천 패널 오른쪽 리사이저 */
+.edit-rp-resizer {
+  position: absolute;
+  top: 0; right: -4px; bottom: 0;
+  width: 8px;
+  cursor: col-resize;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.edit-rp-resizer::before {
+  content: '';
+  display: block;
+  width: 3px;
+  height: 40px;
+  border-radius: 2px;
+  background: var(--border);
+  transition: background .2s, height .2s;
+}
+.edit-rp-resizer:hover::before,
+.edit-rp-resizer.dragging::before {
+  background: var(--blue);
+  height: 60px;
+}
+
+/* 편집모드 일정 패널 → 중앙 flex:1 */
+.ws-layout.mode-edit .edit-schedule-center {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  background: var(--bg);
+  position: relative;
+}
+/* 일정 패널 오른쪽에 리사이저 (오른쪽 공간 조절) */
+.edit-schedule-resizer {
+  position: absolute;
+  top: 0; right: 0; bottom: 0;
+  width: 6px;
+  cursor: col-resize;
+  z-index: 50;
+  display: none;
+}
+.ws-layout.mode-edit .edit-schedule-resizer { display: block; }
 
 /* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
    편집모드 — 공통: 모든 활성 패널
@@ -872,32 +1270,6 @@ textarea.form-textarea:focus { border-color: var(--blue); background: var(--whit
 /* ━━━ 체크리스트 ━━━ */
 .ws-layout.mode-edit #panel-checklist {
   background: var(--bg);
-}
-.ws-layout.mode-edit #panel-checklist .checklist-panel-inner {
-  max-width: 1000px;
-  margin: 0 auto;
-  padding: 40px 56px;
-  overflow-y: auto;
-  width: 100%;
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-}
-.ws-layout.mode-edit #panel-checklist .checklist-header {
-  margin-bottom: 16px;
-}
-.ws-layout.mode-edit #panel-checklist .checklist-progress {
-  display: flex;
-  margin-bottom: 24px;
-}
-.ws-layout.mode-edit #panel-checklist .check-categories-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(270px, 1fr));
-  gap: 16px;
-  align-items: start;
-}
-.ws-layout.mode-edit #panel-checklist .check-category {
-  margin-bottom: 0;
 }
 
 /* ━━━ 가계부 ━━━ */
@@ -1010,8 +1382,13 @@ textarea.form-textarea:focus { border-color: var(--blue); background: var(--whit
   border-radius: 22px;
   box-shadow: 0 2px 20px rgba(0,0,0,.055);
   border: 1.5px solid rgba(226,232,240,.8);
+  border-top: 4px solid transparent;
   transition: box-shadow .2s;
 }
+.ws-layout.mode-edit .day-section:nth-child(1) { border-top-color: #89CFF0; }
+.ws-layout.mode-edit .day-section:nth-child(2) { border-top-color: #C2B8D9; }
+.ws-layout.mode-edit .day-section:nth-child(3) { border-top-color: #A8C8E1; }
+.ws-layout.mode-edit .day-section:nth-child(4) { border-top-color: #FFB6C1; }
 .ws-layout.mode-edit .day-section:hover { box-shadow: 0 4px 28px rgba(0,0,0,.09); }
 .ws-layout.mode-edit .day-section:first-child { margin-top: 0; }
 .ws-layout.mode-edit .day-section:last-child { margin-bottom: 0; }
@@ -1399,28 +1776,6 @@ textarea.form-textarea:focus { border-color: var(--blue); background: var(--whit
 
 .rp-link-item:hover { border-color: var(--blue); background: #EBF8FF; }
 
-/* ── 전체 편집 모드 — 체크리스트 2컬럼 ── */
-.ws-layout.mode-edit .checklist-panel-inner {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-  gap: 16px;
-  padding: 24px 28px;
-  flex: none;
-  overflow-y: auto;
-  height: 100%;
-  align-items: start;
-}
-.ws-layout.mode-edit .checklist-header {
-  grid-column: 1 / -1;
-}
-.ws-layout.mode-edit .check-category {
-  background: var(--white);
-  border: 1.5px solid var(--border);
-  border-radius: 16px;
-  padding: 16px;
-  margin-bottom: 0;
-}
-
 /* ── 전체 편집 모드 — 가계부 와이드 ── */
 .ws-layout.mode-edit .expense-panel-inner {
   max-width: 900px;
@@ -1431,20 +1786,7 @@ textarea.form-textarea:focus { border-color: var(--blue); background: var(--whit
   grid-template-columns: repeat(4, 1fr);
 }
 
-/* ── 편집 모드 상단 모드 배지 ── */
-.mode-badge {
-  display: none;
-  align-items: center; gap: 6px;
-  padding: 4px 12px;
-  background: linear-gradient(135deg, rgba(137,207,240,.15), rgba(255,182,193,.15));
-  border: 1px solid rgba(137,207,240,.3);
-  border-radius: 50px;
-  font-size: 11px; font-weight: 700; color: var(--mid);
-  position: absolute; left: 50%; transform: translateX(-50%);
-  white-space: nowrap;
-}
-.ws-layout.mode-edit ~ .mode-badge,
-.ws-topbar .mode-badge.show { display: flex; }
+
 
 /* 지도 전체 모드 — 사이드바 숨김, 지도 전체 */
 .ws-layout.mode-map .ws-sidebar {
@@ -1481,9 +1823,106 @@ textarea.form-textarea:focus { border-color: var(--blue); background: var(--whit
 }
 .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 10px 28px rgba(137,207,240,.5); }
 
-/* ═══════════════════════════════════════════
-   TOAST
-═══════════════════════════════════════════ */
+/* ── 알림 벨 ── */
+.notif-btn {
+  position: relative;
+  width: 36px; height: 36px;
+  border: 1.5px solid var(--border);
+  border-radius: 10px;
+  background: transparent;
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer;
+  color: var(--mid);
+  transition: all .2s;
+  flex-shrink: 0;
+}
+.notif-btn:hover { background: var(--bg); border-color: var(--blue); color: var(--blue); }
+.notif-dot {
+  position: absolute; top: 5px; right: 5px;
+  width: 8px; height: 8px; border-radius: 50%;
+  background: #E8849A;
+  border: 2px solid var(--white);
+}
+.notif-dropdown {
+  display: none;
+  position: fixed;
+  top: calc(var(--topbar-h) + 8px);
+  right: 16px;
+  width: min(360px, calc(100vw - 32px));
+  background: var(--white);
+  border-radius: 18px;
+  box-shadow: 0 20px 60px rgba(0,0,0,.16);
+  z-index: 800;
+  overflow: hidden;
+  animation: slideup .25s var(--ease);
+}
+.notif-dropdown.open { display: block; }
+.notif-dd-head {
+  padding: 18px 20px 14px;
+  border-bottom: 1px solid var(--border);
+  display: flex; justify-content: space-between; align-items: center;
+}
+.notif-dd-title { font-size: 15px; font-weight: 800; color: var(--dark); }
+.notif-dd-clear {
+  font-size: 12px; font-weight: 700; color: var(--light);
+  border: none; background: none; cursor: pointer; transition: color .15s;
+}
+.notif-dd-clear:hover { color: var(--mid); }
+.notif-list { max-height: 340px; overflow-y: auto; padding: 8px 0; }
+.notif-item {
+  display: flex; align-items: flex-start; gap: 12px;
+  padding: 12px 20px;
+  transition: background .15s;
+  cursor: pointer;
+}
+.notif-item:hover { background: var(--bg); }
+.notif-item.unread { background: rgba(137,207,240,.05); }
+.notif-item-icon {
+  width: 38px; height: 38px; border-radius: 12px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 18px; flex-shrink: 0;
+}
+.notif-item-icon.type-invite { background: rgba(137,207,240,.15); }
+.notif-item-icon.type-accept { background: rgba(104,211,145,.15); }
+.notif-item-icon.type-comment { background: rgba(255,182,193,.15); }
+.notif-item-info { flex: 1; min-width: 0; }
+.notif-item-text {
+  font-size: 13px; font-weight: 600; color: var(--dark);
+  line-height: 1.45; margin-bottom: 3px;
+}
+.notif-item-text strong { font-weight: 800; color: var(--dark); }
+.notif-item-time { font-size: 11px; color: var(--light); font-weight: 500; }
+.notif-item-unread-dot {
+  width: 7px; height: 7px; border-radius: 50%;
+  background: var(--blue); flex-shrink: 0; margin-top: 5px;
+}
+/* 초대 수락/거절 버튼 */
+.notif-invite-actions {
+  display: flex; gap: 6px; margin-top: 8px;
+}
+.notif-accept-btn {
+  padding: 5px 14px;
+  background: var(--grad2); border: none;
+  border-radius: 8px; color: white;
+  font-family: 'Pretendard',sans-serif;
+  font-size: 11px; font-weight: 800; cursor: pointer;
+  transition: opacity .15s;
+}
+.notif-accept-btn:hover { opacity: .85; }
+.notif-decline-btn {
+  padding: 5px 12px;
+  background: var(--bg); border: 1px solid var(--border);
+  border-radius: 8px; color: var(--light);
+  font-family: 'Pretendard',sans-serif;
+  font-size: 11px; font-weight: 700; cursor: pointer;
+  transition: all .15s;
+}
+.notif-decline-btn:hover { border-color: #E8849A; color: #E8849A; }
+.notif-dd-dim {
+  display: none; position: fixed; inset: 0; z-index: 799;
+}
+.notif-dd-dim.open { display: block; }
+
 .toast-wrap { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%); z-index: 9999; display: flex; flex-direction: column; gap: 8px; pointer-events: none; }
 .toast {
   padding: 12px 20px; background: var(--dark); color: white;
@@ -1546,7 +1985,8 @@ textarea.form-textarea:focus { border-color: var(--blue); background: var(--whit
   }
   .ws-layout.mode-edit .sidebar-panel.active { height: calc(100vh - var(--topbar-h)); }
   .ws-layout.mode-edit .schedule-scroll { padding: 20px 16px 40px; }
-  .ws-layout.mode-edit #panel-checklist .checklist-panel-inner { padding: 16px; }
+  .ws-layout.mode-edit #panel-checklist .cl-top { padding: 16px 16px 0; }
+  .ws-layout.mode-edit #panel-checklist .cl-body { padding: 12px 16px 32px; }
   .ws-layout.mode-edit #panel-checklist .check-categories-grid { grid-template-columns: 1fr; }
   .ws-layout.mode-edit #panel-expense .expense-panel-inner { padding: 16px; }
   .ws-layout.mode-edit #panel-expense .expense-cats { grid-template-columns: 1fr 1fr; }
@@ -1559,6 +1999,13 @@ textarea.form-textarea:focus { border-color: var(--blue); background: var(--whit
 
   /* 모달 */
   .modal-box { max-width: 100%; margin: 0; border-radius: 24px 24px 0 0; position: fixed; bottom: 0; left: 0; right: 0; }
+  .modal-box__head { padding: 18px 18px 14px; }
+  .modal-box__body { padding: 14px 18px 24px; }
+  .place-type-tabs { gap: 4px; }
+  .place-type-tab { font-size: 11px; padding: 7px 4px; }
+  .invite-method { gap: 6px; }
+  .invite-btn { font-size: 11px; padding: 10px 6px; }
+  .notif-dropdown { top: auto; bottom: 0; right: 0; left: 0; width: 100%; border-radius: 20px 20px 0 0; }
 }
 
 /* ═══════════════════════════════════════════
@@ -1570,6 +2017,8 @@ textarea.form-textarea:focus { border-color: var(--blue); background: var(--whit
   .ws-tabs .ws-tab { font-size: 10px; padding: 4px 6px; }
   .place-card { padding: 10px 12px; }
   .place-name { font-size: 13px; }
+  .notif-dropdown { border-radius: 16px 16px 0 0; }
+  .trip-status-badge { display: none; }
 }
 </style>
 
@@ -1583,14 +2032,14 @@ textarea.form-textarea:focus { border-color: var(--blue); background: var(--whit
   </a>
 
   <div class="ws-topbar__info">
-    <div class="ws-topbar__title"><%= tripTitle %></div>
+    <div class="ws-topbar__title-wrap">
+      <div class="ws-topbar__title"><%= tripTitle %></div>
+      <%-- [DB] status = "PLANNING" | "ONGOING" | "COMPLETED" --%>
+      <span class="trip-status-badge planning">📋 계획중</span>
+      <%-- ONGOING: <span class="trip-status-badge ongoing">✈️ 진행중</span> --%>
+      <%-- COMPLETED: <span class="trip-status-badge completed">✅ 완료된 여행</span> --%>
+    </div>
     <div class="ws-topbar__sub"><%= tripDates %> &nbsp;·&nbsp; <%= tripNights %></div>
-  </div>
-
-  <%-- 현재 모드 배지 (중앙) --%>
-  <div class="mode-badge" id="modeBadge" style="display:none;">
-    <span id="modeBadgeIcon">↔️</span>
-    <span id="modeBadgeText">분할 보기</span>
   </div>
 
     <div class="ws-topbar__actions">
@@ -1599,11 +2048,15 @@ textarea.form-textarea:focus { border-color: var(--blue); background: var(--whit
         실시간 동기화
       </div>
 
-      <div class="avatar-group" title="동행자">
-        <div class="avatar" style="background:linear-gradient(135deg,#89CFF0,#A8C8E1)">어진</div>
-        <div class="avatar" style="background:linear-gradient(135deg,#FFB6C1,#E0BBC2)">혁찬</div>
-        <div class="avatar" style="background:linear-gradient(135deg,#C2B8D9,#A8C8E1)">유원</div>
-        <div class="avatar avatar-add" onclick="openModal('inviteModal')" title="동행자 초대">+</div>
+      <%-- [DB] trip_member 테이블 조회 → role/invitation_status 기반 렌더 --%>
+      <div class="avatar-group" title="동행자" onclick="openModal('memberModal')" style="cursor:pointer">
+        <%-- OWNER: 파란 링 --%>
+        <div class="avatar role-owner" style="background:linear-gradient(135deg,#89CFF0,#A8C8E1)" title="어진 (방장)">어진</div>
+        <%-- EDITOR: 기본 --%>
+        <div class="avatar" style="background:linear-gradient(135deg,#FFB6C1,#E0BBC2)" title="혁찬 (편집자)">혁찬</div>
+        <%-- PENDING: 점선 + 흐림 --%>
+        <div class="avatar role-pending" style="background:linear-gradient(135deg,#C2B8D9,#A8C8E1)" title="유원 (초대 대기중)">유원</div>
+        <div class="avatar avatar-add" onclick="event.stopPropagation();openModal('memberModal')" title="동행자 관리">+</div>
       </div>
 
       <%-- 뷰 토글 --%>
@@ -1629,6 +2082,10 @@ textarea.form-textarea:focus { border-color: var(--blue); background: var(--whit
         <button class="ws-tab" onclick="switchPanel('vote', this)">🗳️ 투표</button>
       </div>
 
+      <button class="notif-btn" id="notifBtn" onclick="toggleNotif()" title="알림">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+        <span class="notif-dot" id="notifDot"></span>
+      </button>
       <button class="btn-save" onclick="showToast('💾 저장되었어요!')">저장</button>
     </div>
 </div>
@@ -1663,6 +2120,11 @@ textarea.form-textarea:focus { border-color: var(--blue); background: var(--whit
                 <div class="place-name">공항 → 숙소 이동</div>
                 <div class="place-addr">제주국제공항 → 서귀포시</div>
                 <span class="place-type-badge stay">🚗 이동</span>
+                <%-- [DB] itinerary_item.start_time / transportation --%>
+                <div class="place-chips">
+                  <span class="place-chip time">⏰ 14:30</span>
+                  <span class="place-chip trans">🚌 렌터카</span>
+                </div>
               </div>
               <div class="place-actions">
                 <button class="place-action-btn" onclick="openMemo(this)" title="메모">📝</button>
@@ -1691,6 +2153,9 @@ textarea.form-textarea:focus { border-color: var(--blue); background: var(--whit
                 <div class="place-name">흑돼지거리 맛집</div>
                 <div class="place-addr">제주시 연동</div>
                 <span class="place-type-badge eat">🍽️ 식당</span>
+                <div class="place-chips">
+                  <span class="place-chip time">⏰ 19:00</span>
+                </div>
               </div>
               <div class="place-actions">
                 <button class="place-action-btn" onclick="openMemo(this)" title="메모">📝</button>
@@ -1782,70 +2247,141 @@ textarea.form-textarea:focus { border-color: var(--blue); background: var(--whit
     <div class="sidebar-panel" id="panel-checklist">
       <div class="checklist-panel-inner">
 
-        <div class="checklist-header">
-          <span class="checklist-title">여행 준비물 체크리스트</span>
-          <button class="btn-add-check" onclick="showToast('항목 추가 기능 준비 중')">+ 추가</button>
-        </div>
-
-        <%-- 완료율 바 --%>
-        <div class="checklist-progress">
-          <div class="checklist-progress-bar-bg">
-            <div class="checklist-progress-bar" id="checkProgressBar" style="width:44%"></div>
-          </div>
-          <span class="checklist-progress-txt" id="checkProgressTxt">4 / 9 완료</span>
-        </div>
-
-        <%-- 카테고리 그리드 --%>
-        <div class="check-categories-grid">
-
-          <div class="check-category">
-            <span class="check-cat-label">📋 서류 &amp; 결제</span>
-            <div class="check-item done" onclick="toggleCheck(this)">
-              <input type="checkbox" id="c1" checked><label for="c1">신분증</label><span class="check-by">나</span>
-            </div>
-            <div class="check-item done" onclick="toggleCheck(this)">
-              <input type="checkbox" id="c2" checked><label for="c2">항공권 e-티켓</label><span class="check-by">나</span>
-            </div>
-            <div class="check-item" onclick="toggleCheck(this)">
-              <input type="checkbox" id="c3"><label for="c3">숙소 예약 확인서</label><span class="check-by">지민</span>
-            </div>
+        <%-- ── 상단 고정 헤더 ── --%>
+        <div class="cl-top">
+          <div class="checklist-header">
+            <span class="checklist-title">여행 준비물 체크리스트</span>
+            <%-- [DB] trip_checklist 테이블 INSERT --%>
+            <button class="btn-add-check" onclick="openAddCheckModal()">+ 추가</button>
           </div>
 
-          <div class="check-category">
-            <span class="check-cat-label">👗 의류 &amp; 용품</span>
-            <div class="check-item" onclick="toggleCheck(this)">
-              <input type="checkbox" id="c4"><label for="c4">여벌 옷 (3벌)</label><span class="check-by">나</span>
+          <%-- 완료율 바 --%>
+          <div class="checklist-progress">
+            <div class="checklist-progress-bar-bg">
+              <div class="checklist-progress-bar" id="checkProgressBar" style="width:44%"></div>
             </div>
-            <div class="check-item" onclick="toggleCheck(this)">
-              <input type="checkbox" id="c5"><label for="c5">우산 / 우비</label><span class="check-by">나</span>
-            </div>
-            <div class="check-item done" onclick="toggleCheck(this)">
-              <input type="checkbox" id="c6" checked><label for="c6">선크림 SPF50+</label><span class="check-by">지민</span>
-            </div>
-            <div class="check-item" onclick="toggleCheck(this)">
-              <input type="checkbox" id="c7"><label for="c7">카메라 + 충전기</label><span class="check-by">민준</span>
-            </div>
+            <span class="checklist-progress-txt" id="checkProgressTxt">4 / 9 완료</span>
           </div>
+        </div><%-- /cl-top --%>
 
-          <div class="check-category">
-            <span class="check-cat-label">💊 의약품</span>
-            <div class="check-item" onclick="toggleCheck(this)">
-              <input type="checkbox" id="c8"><label for="c8">멀미약</label><span class="check-by">나</span>
-            </div>
-            <div class="check-item done" onclick="toggleCheck(this)">
-              <input type="checkbox" id="c9" checked><label for="c9">상비약 세트</label><span class="check-by">지민</span>
-            </div>
-          </div>
+        <%-- ── 스크롤 본문 ── --%>
+        <div class="cl-body">
 
-        </div><%-- /check-categories-grid --%>
-      </div>
+          <%-- 카테고리 그리드 --%>
+          <div class="check-categories-grid" id="checkGrid">
+
+            <%-- 서류 & 결제 --%>
+            <div class="check-category" id="cat-doc">
+              <div class="check-cat-label">
+                <span class="check-cat-label-left">📋 서류 &amp; 결제</span>
+                <button class="check-cat-add" onclick="openInlineAdd('cat-doc')">+ 항목</button>
+              </div>
+              <div class="check-item done" onclick="toggleCheck(this)">
+                <input type="checkbox" id="c1" checked>
+                <label for="c1">신분증</label>
+                <span class="check-by">나</span>
+                <button class="check-item-del" onclick="event.stopPropagation();delCheckItem(this)" title="삭제">✕</button>
+              </div>
+              <div class="check-item done" onclick="toggleCheck(this)">
+                <input type="checkbox" id="c2" checked>
+                <label for="c2">항공권 e-티켓</label>
+                <span class="check-by">나</span>
+                <button class="check-item-del" onclick="event.stopPropagation();delCheckItem(this)" title="삭제">✕</button>
+              </div>
+              <div class="check-item" onclick="toggleCheck(this)">
+                <input type="checkbox" id="c3">
+                <label for="c3">숙소 예약 확인서</label>
+                <span class="check-by">지민</span>
+                <button class="check-item-del" onclick="event.stopPropagation();delCheckItem(this)" title="삭제">✕</button>
+              </div>
+              <div class="check-add-row" id="add-row-cat-doc">
+                <input type="text" class="check-add-input" placeholder="항목 입력…"
+                  onkeydown="checkAddKeydown(event,'cat-doc')">
+                <button class="check-add-confirm" onclick="confirmInlineAdd('cat-doc')">추가</button>
+                <button class="check-add-cancel" onclick="cancelInlineAdd('cat-doc')">취소</button>
+              </div>
+            </div>
+
+            <%-- 의류 & 용품 --%>
+            <div class="check-category" id="cat-cloth">
+              <div class="check-cat-label">
+                <span class="check-cat-label-left">👗 의류 &amp; 용품</span>
+                <button class="check-cat-add" onclick="openInlineAdd('cat-cloth')">+ 항목</button>
+              </div>
+              <div class="check-item" onclick="toggleCheck(this)">
+                <input type="checkbox" id="c4">
+                <label for="c4">여벌 옷 (3벌)</label>
+                <span class="check-by">나</span>
+                <button class="check-item-del" onclick="event.stopPropagation();delCheckItem(this)" title="삭제">✕</button>
+              </div>
+              <div class="check-item" onclick="toggleCheck(this)">
+                <input type="checkbox" id="c5">
+                <label for="c5">우산 / 우비</label>
+                <span class="check-by">나</span>
+                <button class="check-item-del" onclick="event.stopPropagation();delCheckItem(this)" title="삭제">✕</button>
+              </div>
+              <div class="check-item done" onclick="toggleCheck(this)">
+                <input type="checkbox" id="c6" checked>
+                <label for="c6">선크림 SPF50+</label>
+                <span class="check-by">지민</span>
+                <button class="check-item-del" onclick="event.stopPropagation();delCheckItem(this)" title="삭제">✕</button>
+              </div>
+              <div class="check-item" onclick="toggleCheck(this)">
+                <input type="checkbox" id="c7">
+                <label for="c7">카메라 + 충전기</label>
+                <span class="check-by">민준</span>
+                <button class="check-item-del" onclick="event.stopPropagation();delCheckItem(this)" title="삭제">✕</button>
+              </div>
+              <div class="check-add-row" id="add-row-cat-cloth">
+                <input type="text" class="check-add-input" placeholder="항목 입력…"
+                  onkeydown="checkAddKeydown(event,'cat-cloth')">
+                <button class="check-add-confirm" onclick="confirmInlineAdd('cat-cloth')">추가</button>
+                <button class="check-add-cancel" onclick="cancelInlineAdd('cat-cloth')">취소</button>
+              </div>
+            </div>
+
+            <%-- 의약품 --%>
+            <div class="check-category" id="cat-med">
+              <div class="check-cat-label">
+                <span class="check-cat-label-left">💊 의약품</span>
+                <button class="check-cat-add" onclick="openInlineAdd('cat-med')">+ 항목</button>
+              </div>
+              <div class="check-item" onclick="toggleCheck(this)">
+                <input type="checkbox" id="c8">
+                <label for="c8">멀미약</label>
+                <span class="check-by">나</span>
+                <button class="check-item-del" onclick="event.stopPropagation();delCheckItem(this)" title="삭제">✕</button>
+              </div>
+              <div class="check-item done" onclick="toggleCheck(this)">
+                <input type="checkbox" id="c9" checked>
+                <label for="c9">상비약 세트</label>
+                <span class="check-by">지민</span>
+                <button class="check-item-del" onclick="event.stopPropagation();delCheckItem(this)" title="삭제">✕</button>
+              </div>
+              <div class="check-add-row" id="add-row-cat-med">
+                <input type="text" class="check-add-input" placeholder="항목 입력…"
+                  onkeydown="checkAddKeydown(event,'cat-med')">
+                <button class="check-add-confirm" onclick="confirmInlineAdd('cat-med')">추가</button>
+                <button class="check-add-cancel" onclick="cancelInlineAdd('cat-med')">취소</button>
+              </div>
+            </div>
+
+            <%-- 카테고리 추가 카드 --%>
+            <button class="check-category-add-card" onclick="addNewCategory()">
+              <span style="font-size:22px">+</span>
+              <span>카테고리 추가</span>
+            </button>
+
+          </div><%-- /check-categories-grid --%>
+        </div><%-- /cl-body --%>
+      </div><%-- /checklist-panel-inner --%>
     </div>
 
     <%-- 가계부 패널 --%>
     <div class="sidebar-panel" id="panel-expense">
       <div class="expense-panel-inner">
 
-        <%-- 총액 카드 --%>
+        <%-- 총액 카드 [DB] expense 테이블 SUM --%>
         <div class="expense-summary">
           <div class="expense-summary__label">총 지출</div>
           <div class="expense-summary__amount">₩ 287,500</div>
@@ -1881,41 +2417,113 @@ textarea.form-textarea:focus { border-color: var(--blue); background: var(--whit
           </div>
         </div>
 
-        <%-- 최근 지출 --%>
+        <%-- 최근 지출 내역 [DB] expense + expense_participant JOIN --%>
         <div class="expense-section-head">
           <span class="expense-list-title">최근 지출 내역</span>
           <button class="expense-list-more" onclick="showToast('전체 내역 기능 준비 중')">전체 보기 →</button>
         </div>
 
+        <%-- [DB] expense: id=1, payer=어진, category=ACCOMMODATION, is_private=N --%>
         <div class="expense-item">
           <div class="expense-item__icon-wrap">🏨</div>
           <div class="expense-item__info">
             <div class="expense-item__name">스테이 밤편지</div>
-            <div class="expense-item__detail">3/10 · 나 결제</div>
+            <div class="expense-item__detail">
+              <span>3/10</span>
+              <span class="expense-payer-chip">💳 어진</span>
+              <span class="expense-cat-chip">🏨 숙소</span>
+            </div>
           </div>
           <span class="expense-item__amt">₩ 120,000</span>
         </div>
+
+        <%-- [DB] expense: id=2, payer=지민, category=FOOD, is_private=N --%>
         <div class="expense-item">
           <div class="expense-item__icon-wrap">🍽️</div>
           <div class="expense-item__info">
             <div class="expense-item__name">흑돼지거리 맛집</div>
-            <div class="expense-item__detail">3/10 · 지민 결제</div>
+            <div class="expense-item__detail">
+              <span>3/10</span>
+              <span class="expense-payer-chip">💳 지민</span>
+              <span class="expense-cat-chip">🍽 식비</span>
+            </div>
           </div>
           <span class="expense-item__amt">₩ 55,500</span>
         </div>
+
+        <%-- [DB] expense: id=3, payer=민준, category=TRANSPORT, is_private=N --%>
         <div class="expense-item">
           <div class="expense-item__icon-wrap">🚗</div>
           <div class="expense-item__info">
             <div class="expense-item__name">렌터카</div>
-            <div class="expense-item__detail">3/10 · 민준 결제</div>
+            <div class="expense-item__detail">
+              <span>3/10</span>
+              <span class="expense-payer-chip">💳 민준</span>
+              <span class="expense-cat-chip">🚗 교통</span>
+            </div>
           </div>
           <span class="expense-item__amt">₩ 45,000</span>
         </div>
 
-        <button class="btn-add-expense" onclick="showToast('💸 지출 추가 기능 연동 예정')">
+        <%-- [DB] expense: is_private=Y → 🔒 나만 보기 뱃지 표시 --%>
+        <div class="expense-item">
+          <div class="expense-item__icon-wrap">🍦</div>
+          <div class="expense-item__info">
+            <div class="expense-item__name">아이스크림 간식 <span class="expense-private-badge">🔒 나만 보기</span></div>
+            <div class="expense-item__detail">
+              <span>3/11</span>
+              <span class="expense-payer-chip">💳 나</span>
+              <span class="expense-cat-chip">🛍 기타</span>
+            </div>
+          </div>
+          <span class="expense-item__amt">₩ 8,500</span>
+        </div>
+
+        <button class="btn-add-expense" onclick="openModal('addExpenseModal')">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
           지출 추가
         </button>
+
+        <%-- 정산 현황 [DB] expense_participant + is_settled 기반 --%>
+        <div class="settle-section">
+          <div class="settle-head">
+            <span class="settle-title">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+              정산 현황
+            </span>
+            <span class="settle-done-badge">1 / 2 완료</span>
+          </div>
+
+          <%-- [DB] is_settled=N: 나 → 지민에게 18,500 줘야 함 --%>
+          <div class="settle-row">
+            <div class="settle-avatars">
+              <div class="settle-avatar" style="background:linear-gradient(135deg,#89CFF0,#A8C8E1)">나</div>
+              <span class="settle-arrow">→</span>
+              <div class="settle-avatar" style="background:linear-gradient(135deg,#FFB6C1,#E0BBC2)">지민</div>
+            </div>
+            <div class="settle-info">
+              <div class="settle-desc">지민에게 보내야 해요</div>
+              <div class="settle-amt negative">₩ 18,500</div>
+            </div>
+            <%-- [DB] is_settled = N → 정산 요청 버튼 표시 --%>
+            <button class="settle-req-btn" onclick="requestSettle(this)">정산 요청</button>
+          </div>
+
+          <%-- [DB] is_settled=Y: 민준 → 나에게 받음 (완료) --%>
+          <div class="settle-row">
+            <div class="settle-avatars">
+              <div class="settle-avatar" style="background:linear-gradient(135deg,#C2B8D9,#A8C8E1)">민준</div>
+              <span class="settle-arrow">→</span>
+              <div class="settle-avatar" style="background:linear-gradient(135deg,#89CFF0,#A8C8E1)">나</div>
+            </div>
+            <div class="settle-info">
+              <div class="settle-desc">민준에게 받아야 해요</div>
+              <div class="settle-amt positive">₩ 15,000</div>
+            </div>
+            <%-- [DB] is_settled = Y → 완료 표시 --%>
+            <button class="settle-req-btn settled">✓ 완료</button>
+          </div>
+        </div>
 
       </div>
     </div>
@@ -1977,6 +2585,8 @@ textarea.form-textarea:focus { border-color: var(--blue); background: var(--whit
 
     <%-- 편집 모드: 좌측 추천 사이드바 --%>
     <div class="edit-recommend-panel" id="editRecommendPanel">
+      <%-- 편집모드 추천 패널 리사이저 --%>
+      <div class="edit-rp-resizer" id="editRpResizer" title="드래그로 크기 조절"></div>
 
       <%-- 헤더 + 검색바 + 탭 --%>
       <div class="rp-header">
@@ -2273,10 +2883,10 @@ textarea.form-textarea:focus { border-color: var(--blue); background: var(--whit
     <div class="sidebar-width-bar">
       <span class="sidebar-width-label" id="sidebarWidthLabel">360px</span>
       <div class="sidebar-width-btns">
-        <button class="sidebar-width-btn" onclick="setSidebarWidth(260)" title="좁게">좁게</button>
-        <button class="sidebar-width-btn" onclick="setSidebarWidth(360)" title="기본">기본</button>
-        <button class="sidebar-width-btn" onclick="setSidebarWidth(520)" title="넓게">넓게</button>
-        <button class="sidebar-width-btn" onclick="setSidebarWidth(720)" title="최대">최대</button>
+        <button class="sidebar-width-btn" onclick="setSidebarWidth(280)" title="좁게">좁게</button>
+        <button class="sidebar-width-btn" onclick="setSidebarWidth(520)" title="기본">기본</button>
+        <button class="sidebar-width-btn" onclick="setSidebarWidth(680)" title="넓게">넓게</button>
+        <button class="sidebar-width-btn" onclick="setSidebarWidth(860)" title="최대">최대</button>
       </div>
     </div>
 
@@ -2401,14 +3011,59 @@ textarea.form-textarea:focus { border-color: var(--blue); background: var(--whit
   </div>
 </div>
 
-<%-- 동행자 초대 모달 --%>
-<div class="modal-overlay" id="inviteModal">
+<%-- 동행자 관리 모달 [DB] trip_member 테이블 --%>
+<div class="modal-overlay" id="memberModal">
   <div class="modal-box">
     <div class="modal-box__head">
-      <span class="modal-box__title">👥 동행자 초대</span>
-      <button class="modal-close-btn" onclick="closeModal('inviteModal')">✕</button>
+      <span class="modal-box__title">👥 동행자 관리</span>
+      <button class="modal-close-btn" onclick="closeModal('memberModal')">✕</button>
     </div>
     <div class="modal-box__body">
+
+      <%-- 현재 멤버 목록 --%>
+      <label class="form-label-sm" style="margin-bottom:10px;display:block">현재 멤버 (3명)</label>
+      <div class="member-list">
+
+        <%-- OWNER --%>
+        <div class="member-row">
+          <div class="member-avatar-lg role-owner" style="background:linear-gradient(135deg,#89CFF0,#A8C8E1)">어진</div>
+          <div class="member-info">
+            <div class="member-name">어진</div>
+            <div class="member-sub">나 · 방장</div>
+          </div>
+          <span class="member-role-badge owner">👑 방장</span>
+        </div>
+
+        <%-- EDITOR (ACCEPTED) --%>
+        <div class="member-row">
+          <div class="member-avatar-lg" style="background:linear-gradient(135deg,#FFB6C1,#E0BBC2)">혁찬</div>
+          <div class="member-info">
+            <div class="member-name">혁찬</div>
+            <div class="member-sub">@hyeokc · 편집자</div>
+          </div>
+          <span class="member-role-badge editor">✏️ 편집자</span>
+          <div class="member-actions">
+            <button class="member-act-btn change" onclick="showToast('권한 변경 기능 연동 예정')">권한</button>
+            <button class="member-act-btn cancel" onclick="showToast('강퇴 기능 연동 예정')">강퇴</button>
+          </div>
+        </div>
+
+        <%-- PENDING --%>
+        <div class="member-row">
+          <div class="member-avatar-lg role-pending" style="background:linear-gradient(135deg,#C2B8D9,#A8C8E1)">유원</div>
+          <div class="member-info">
+            <div class="member-name">유원</div>
+            <div class="member-sub">@yw2024 · 초대 대기 중</div>
+          </div>
+          <span class="member-role-badge pending">⏳ 대기중</span>
+          <div class="member-actions">
+            <button class="member-act-btn cancel" onclick="showToast('초대 취소됨')">취소</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="invite-divider">초대하기</div>
+
       <div class="invite-method">
         <button class="invite-btn" onclick="showToast('카카오톡 공유 연동 예정')">
           <span class="invite-icon">💬</span>카카오톡
@@ -2420,16 +3075,142 @@ textarea.form-textarea:focus { border-color: var(--blue); background: var(--whit
           <span class="invite-icon">🔍</span>아이디 검색
         </button>
       </div>
-      <label class="form-label-sm">초대 링크</label>
-      <div class="invite-link-box">
+      <label class="form-label-sm" style="margin-top:12px;display:block">초대 링크</label>
+      <div class="invite-link-box" style="margin-top:6px">
         <span id="inviteLinkText">https://tripan.kr/invite/abc123xyz</span>
         <button class="btn-copy" onclick="copyInviteLink()">복사</button>
       </div>
-      <p style="font-size:12px;color:var(--light);margin-top:12px;line-height:1.6;">
-        링크를 받은 사람은 Tripan에 로그인 후 일정에 참여할 수 있어요.<br>
-        일정 편집 권한은 방장이 개별로 설정할 수 있어요.
+      <p style="font-size:12px;color:var(--light);margin-top:10px;line-height:1.6;">
+        링크를 클릭한 사람은 즉시 ACCEPTED로 참여돼요.<br>
+        아이디 검색 초대는 상대방 수락 후 ACCEPTED 처리됩니다.
       </p>
     </div>
+  </div>
+</div>
+
+<%-- 지출 추가 모달 [DB] expense INSERT --%>
+<div class="modal-overlay" id="addExpenseModal">
+  <div class="modal-box expense-modal-box">
+    <div class="modal-box__head">
+      <span class="modal-box__title">💸 지출 추가</span>
+      <button class="modal-close-btn" onclick="closeModal('addExpenseModal')">✕</button>
+    </div>
+    <div class="modal-box__body">
+
+      <%-- 금액 + 항목명 --%>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label-sm">항목명</label>
+          <input type="text" class="form-input" placeholder="예: 흑돼지 맛집" id="exp-name">
+        </div>
+        <div class="form-group half">
+          <label class="form-label-sm">금액 (₩)</label>
+          <input type="number" class="form-input" placeholder="0" id="exp-amt">
+        </div>
+      </div>
+
+      <%-- 카테고리 + 결제자 --%>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label-sm">카테고리</label>
+          <select class="form-select" id="exp-cat">
+            <option value="FOOD">🍽️ 식비</option>
+            <option value="ACCOMMODATION">🏨 숙소</option>
+            <option value="TRANSPORT">🚗 교통</option>
+            <option value="TOUR">🎯 관광</option>
+            <option value="CAFE">☕ 카페</option>
+            <option value="SHOPPING">🛍️ 쇼핑</option>
+            <option value="ETC">📦 기타</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label-sm">결제자 (payer)</label>
+          <%-- [DB] trip_member 목록으로 동적 렌더 --%>
+          <select class="form-select" id="exp-payer">
+            <option value="me">나 (어진)</option>
+            <option value="hyeok">혁찬</option>
+            <option value="yuwon">유원</option>
+          </select>
+        </div>
+      </div>
+
+      <%-- 날짜 --%>
+      <div class="form-group" style="margin-bottom:12px">
+        <label class="form-label-sm">날짜</label>
+        <input type="date" class="form-input" id="exp-date" value="2026-03-10">
+      </div>
+
+      <%-- 🔒 나만 보기 [DB] expense.is_private --%>
+      <div class="form-toggle-row">
+        <div>
+          <div class="form-toggle-label">🔒 나만 보기</div>
+          <div class="form-toggle-sub">다른 동행자에게 이 지출이 표시되지 않아요</div>
+        </div>
+        <label class="toggle-switch">
+          <input type="checkbox" id="exp-private">
+          <span class="toggle-slider"></span>
+        </label>
+      </div>
+
+      <button class="btn-primary" onclick="submitExpense()">지출 추가하기</button>
+    </div>
+  </div>
+</div>
+
+<%-- 알림 dim --%>
+<div class="notif-dd-dim" id="notifDim" onclick="closeNotif()"></div>
+
+<%-- 알림 드롭다운 --%>
+<div class="notif-dropdown" id="notifDropdown">
+  <div class="notif-dd-head">
+    <span class="notif-dd-title">🔔 알림</span>
+    <button class="notif-dd-clear" onclick="clearAllNotif()">모두 읽음</button>
+  </div>
+  <div class="notif-list" id="notifList">
+
+    <%-- 초대 알림 (아이디 검색으로 초대된 경우 - PENDING 상태) --%>
+    <%-- [DB] trip_member.invitation_status = 'PENDING' → 수락/거절 버튼 표시 --%>
+    <div class="notif-item unread" id="notif-invite-1">
+      <div class="notif-item-icon type-invite">🧳</div>
+      <div class="notif-item-info">
+        <div class="notif-item-text"><strong>혁찬</strong>님이 <strong>제주 힐링 여행</strong>에 초대되었습니다.</div>
+        <div class="notif-item-time">방금 전</div>
+        <%-- [DB] invitation_status = PENDING → 버튼 표시. ACCEPTED → 숨김 --%>
+        <div class="notif-invite-actions" id="notif-invite-1-actions">
+          <button class="notif-accept-btn" onclick="acceptInvite('notif-invite-1')">수락</button>
+          <button class="notif-decline-btn" onclick="declineInvite('notif-invite-1')">거절</button>
+        </div>
+      </div>
+      <div class="notif-item-unread-dot"></div>
+    </div>
+
+    <%-- 초대 수락 완료 알림 --%>
+    <div class="notif-item unread">
+      <div class="notif-item-icon type-accept">✅</div>
+      <div class="notif-item-info">
+        <div class="notif-item-text"><strong>유원</strong>님이 초대를 수락했어요.</div>
+        <div class="notif-item-time">5분 전</div>
+      </div>
+      <div class="notif-item-unread-dot"></div>
+    </div>
+
+    <%-- 일반 알림 --%>
+    <div class="notif-item">
+      <div class="notif-item-icon type-comment">💬</div>
+      <div class="notif-item-info">
+        <div class="notif-item-text"><strong>어진</strong>님이 Day2 일정에 메모를 추가했어요.</div>
+        <div class="notif-item-time">1시간 전</div>
+      </div>
+    </div>
+
+    <div class="notif-item">
+      <div class="notif-item-icon type-invite">🗳️</div>
+      <div class="notif-item-info">
+        <div class="notif-item-text"><strong>Day2 저녁 투표</strong>에 새 응답이 있어요.</div>
+        <div class="notif-item-time">2시간 전</div>
+      </div>
+    </div>
+
   </div>
 </div>
 
@@ -2439,21 +3220,68 @@ textarea.form-textarea:focus { border-color: var(--blue); background: var(--whit
 
 <script>
 /* ══════════════════════════════
+   알림 드롭다운
+══════════════════════════════ */
+function toggleNotif() {
+  var dd = document.getElementById('notifDropdown');
+  var dim = document.getElementById('notifDim');
+  var isOpen = dd.classList.contains('open');
+  if (isOpen) {
+    dd.classList.remove('open');
+    dim.classList.remove('open');
+  } else {
+    dd.classList.add('open');
+    dim.classList.add('open');
+  }
+}
+function closeNotif() {
+  document.getElementById('notifDropdown').classList.remove('open');
+  document.getElementById('notifDim').classList.remove('open');
+}
+function clearAllNotif() {
+  document.querySelectorAll('.notif-item.unread').forEach(function(el){ el.classList.remove('unread'); });
+  document.querySelectorAll('.notif-item-unread-dot').forEach(function(el){ el.style.display='none'; });
+  document.getElementById('notifDot').style.display = 'none';
+  showToast('✅ 알림을 모두 읽었어요');
+}
+/* [DB] trip_member.invitation_status → ACCEPTED 로 UPDATE */
+function acceptInvite(itemId) {
+  var actions = document.getElementById(itemId + '-actions');
+  if (actions) {
+    actions.innerHTML = '<span style="font-size:12px;font-weight:700;color:#276749;">✓ 수락 완료</span>';
+  }
+  var item = document.getElementById(itemId);
+  if (item) item.classList.remove('unread');
+  showToast('✅ 초대를 수락했어요!');
+  closeNotif();
+}
+/* [DB] trip_member 레코드 DELETE */
+function declineInvite(itemId) {
+  var item = document.getElementById(itemId);
+  if (item) {
+    item.style.transition = 'opacity .3s';
+    item.style.opacity = '0';
+    setTimeout(function(){ item.remove(); }, 300);
+  }
+  showToast('🚫 초대를 거절했어요');
+  closeNotif();
+}
+
+/* ══════════════════════════════
    뷰 모드 전환 (편집 / 분할 / 지도)
 ══════════════════════════════ */
 var currentMode = 'split';
-var prevSidebarW = 360;
+var prevSidebarW = 520;
 
 function setViewMode(mode) {
   if (mode === currentMode) return;
 
   var layout  = document.getElementById('wsLayout');
   var sidebar = document.getElementById('wsSidebar');
-  var badge   = document.getElementById('modeBadge');
 
   /* 분할 모드에서 나갈 때 너비 저장 */
   if (currentMode === 'split') {
-    prevSidebarW = parseInt(sidebar.style.width) || 360;
+    prevSidebarW = parseInt(sidebar.style.width) || 520;
   }
 
   /* 레이아웃 클래스 교체 */
@@ -2470,19 +3298,14 @@ function setViewMode(mode) {
   document.querySelectorAll('.view-toggle-btn').forEach(function(b){ b.classList.remove('active'); });
   document.getElementById('vBtn-' + mode).classList.add('active');
 
-  /* 중앙 모드 배지 업데이트 */
   var META = {
-    edit:  { icon: '📋', label: '편집 전체 보기', toast: '📋 편집 모드 — 일정을 한눈에' },
-    split: { icon: '↔️', label: '분할 보기',       toast: '↔️ 분할 모드' },
-    map:   { icon: '🗺️', label: '지도 전체 보기',  toast: '🗺️ 지도 모드 — 동선 확인' }
+    edit:  { toast: '📋 편집 모드 — 일정을 한눈에' },
+    split: { toast: '↔️ 분할 모드' },
+    map:   { toast: '🗺️ 지도 모드 — 동선 확인' }
   };
-  var meta = META[mode];
-  document.getElementById('modeBadgeIcon').textContent = meta.icon;
-  document.getElementById('modeBadgeText').textContent = meta.label;
-  badge.style.display = (mode === 'split') ? 'none' : 'flex';
 
   currentMode = mode;
-  showToast(meta.toast);
+  showToast(META[mode].toast);
 }
 
 /* 키보드 단축키: E=편집 / S=분할 / M=지도 */
@@ -2502,7 +3325,7 @@ document.addEventListener('keydown', function(e) {
   var sidebar  = document.getElementById('wsSidebar');
   var resizer  = document.getElementById('wsResizer');
   var label    = document.getElementById('sidebarWidthLabel');
-  var MIN = 260, MAX = 720, DEFAULT = 360;
+  var MIN = 260, MAX = 860, DEFAULT = 520;
   var startX, startW, isDragging = false;
 
   // 툴팁
@@ -2513,8 +3336,7 @@ document.addEventListener('keydown', function(e) {
   function setWidth(w) {
     w = Math.round(Math.max(MIN, Math.min(MAX, w)));
     sidebar.style.width = w + 'px';
-    label.textContent = w + 'px';
-    // 넓을 때 텍스트 wrap 허용
+    if (label) label.textContent = w + 'px';
     sidebar.setAttribute('data-wide', w >= 480 ? 'true' : 'false');
   }
 
@@ -2568,8 +3390,63 @@ document.addEventListener('keydown', function(e) {
     setTimeout(function(){ sidebar.style.transition = ''; }, 300);
   };
 
-  // 초기값
+  // 초기값 520px
   setWidth(DEFAULT);
+})();
+
+/* ══════════════════════════════
+   편집모드 추천 패널 리사이저
+══════════════════════════════ */
+(function(){
+  var panel   = document.getElementById('editRecommendPanel');
+  var resizer = document.getElementById('editRpResizer');
+  if (!resizer) return;
+  var MIN = 200, MAX = 560, DEFAULT = 380;
+  var startX, startW, isDragging = false;
+
+  var tip = document.createElement('div');
+  tip.className = 'resize-tooltip';
+  document.body.appendChild(tip);
+
+  function setW(w) {
+    w = Math.round(Math.max(MIN, Math.min(MAX, w)));
+    panel.style.width = w + 'px';
+  }
+  function showTip(x, y, w) {
+    tip.textContent = Math.round(w) + 'px';
+    tip.style.left = (x + 14) + 'px';
+    tip.style.top  = (y - 14) + 'px';
+    tip.classList.add('show');
+  }
+  function hideTip() { tip.classList.remove('show'); }
+
+  resizer.addEventListener('mousedown', function(e) {
+    e.preventDefault();
+    isDragging = true;
+    startX = e.clientX;
+    startW = panel.getBoundingClientRect().width;
+    resizer.classList.add('dragging');
+    document.body.classList.add('resizing');
+    showTip(e.clientX, e.clientY, startW);
+  });
+  document.addEventListener('mousemove', function(e) {
+    if (!isDragging) return;
+    var w = startW + (e.clientX - startX);
+    setW(w);
+    showTip(e.clientX, e.clientY, w);
+  });
+  document.addEventListener('mouseup', function() {
+    if (!isDragging) return;
+    isDragging = false;
+    resizer.classList.remove('dragging');
+    document.body.classList.remove('resizing');
+    hideTip();
+  });
+  resizer.addEventListener('dblclick', function() {
+    panel.style.transition = 'width .3s cubic-bezier(.19,1,.22,1)';
+    setW(DEFAULT);
+    setTimeout(function(){ panel.style.transition = ''; }, 320);
+  });
 })();
 
 /* ══════════════════════════════
@@ -2718,10 +3595,115 @@ document.querySelectorAll('.place-card').forEach(function(card) { initDrag(card)
 /* ══════════════════════════════
    체크리스트
 ══════════════════════════════ */
+
+/* 진행률 재계산 */
+function updateCheckProgress() {
+  var all   = document.querySelectorAll('#checkGrid .check-item').length;
+  var done  = document.querySelectorAll('#checkGrid .check-item.done').length;
+  var pct   = all === 0 ? 0 : Math.round(done / all * 100);
+  var bar   = document.getElementById('checkProgressBar');
+  var txt   = document.getElementById('checkProgressTxt');
+  if (bar) bar.style.width = pct + '%';
+  if (txt) txt.textContent = done + ' / ' + all + ' 완료';
+}
+
+/* 체크 토글 */
 function toggleCheck(item) {
+  /* [DB] trip_checklist 항목 is_checked UPDATE */
   var cb = item.querySelector('input[type=checkbox]');
   cb.checked = !cb.checked;
   item.classList.toggle('done', cb.checked);
+  updateCheckProgress();
+}
+
+/* 아이템 삭제 */
+/* [DB] trip_checklist DELETE by checklist_id */
+function delCheckItem(btn) {
+  var item = btn.closest('.check-item');
+  item.style.transition = 'opacity .25s, transform .25s';
+  item.style.opacity = '0';
+  item.style.transform = 'translateX(-12px)';
+  setTimeout(function(){
+    item.remove();
+    updateCheckProgress();
+  }, 250);
+}
+
+/* 인라인 항목 추가 열기 */
+function openInlineAdd(catId) {
+  /* 다른 열려있는 행 닫기 */
+  document.querySelectorAll('.check-add-row.open').forEach(function(r){ r.classList.remove('open'); r.querySelector('.check-add-input').value=''; });
+  var row = document.getElementById('add-row-' + catId);
+  if (row) {
+    row.classList.add('open');
+    row.querySelector('.check-add-input').focus();
+  }
+}
+
+function cancelInlineAdd(catId) {
+  var row = document.getElementById('add-row-' + catId);
+  if (row) { row.classList.remove('open'); row.querySelector('.check-add-input').value = ''; }
+}
+
+/* 인라인 항목 확정 추가 */
+/* [DB] trip_checklist INSERT */
+function confirmInlineAdd(catId) {
+  var row   = document.getElementById('add-row-' + catId);
+  var input = row.querySelector('.check-add-input');
+  var val   = input.value.trim();
+  if (!val) { input.focus(); return; }
+
+  var cat  = document.getElementById(catId);
+  var newId = 'c_' + Date.now();
+  var item = document.createElement('div');
+  item.className = 'check-item';
+  item.onclick = function(){ toggleCheck(this); };
+  item.innerHTML =
+    '<input type="checkbox" id="' + newId + '">' +
+    '<label for="' + newId + '">' + val + '</label>' +
+    '<span class="check-by">나</span>' +
+    '<button class="check-item-del" onclick="event.stopPropagation();delCheckItem(this)" title="삭제">✕</button>';
+  cat.insertBefore(item, row);
+  input.value = '';
+  input.focus();
+  updateCheckProgress();
+  showToast('✅ 항목 추가됨');
+}
+
+/* Enter 키 지원 */
+function checkAddKeydown(e, catId) {
+  if (e.key === 'Enter') confirmInlineAdd(catId);
+  if (e.key === 'Escape') cancelInlineAdd(catId);
+}
+
+/* 새 카테고리 추가 */
+function addNewCategory() {
+  var name = prompt('카테고리 이름을 입력하세요 (예: 🧴 세면도구)');
+  if (!name || !name.trim()) return;
+  var catId = 'cat-' + Date.now();
+  var addCard = document.querySelector('.check-category-add-card');
+  var cat = document.createElement('div');
+  cat.className = 'check-category';
+  cat.id = catId;
+  cat.innerHTML =
+    '<div class="check-cat-label">' +
+      '<span class="check-cat-label-left">' + name.trim() + '</span>' +
+      '<button class="check-cat-add" onclick="openInlineAdd(\'' + catId + '\')">+ 항목</button>' +
+    '</div>' +
+    '<div class="check-add-row open" id="add-row-' + catId + '">' +
+      '<input type="text" class="check-add-input" placeholder="첫 항목 입력…" onkeydown="checkAddKeydown(event,\'' + catId + '\')">' +
+      '<button class="check-add-confirm" onclick="confirmInlineAdd(\'' + catId + '\')">추가</button>' +
+      '<button class="check-add-cancel" onclick="cancelInlineAdd(\'' + catId + '\')">취소</button>' +
+    '</div>';
+  addCard.parentNode.insertBefore(cat, addCard);
+  setTimeout(function(){ cat.querySelector('.check-add-input').focus(); }, 50);
+  showToast('📋 카테고리 추가됨');
+}
+
+/* + 추가 버튼 (헤더) → 첫 카테고리에 인라인 추가 열기 */
+function openAddCheckModal() {
+  var firstCat = document.querySelector('#checkGrid .check-category');
+  if (firstCat) openInlineAdd(firstCat.id);
 }
 
 /* ══════════════════════════════
@@ -2734,7 +3716,7 @@ function castVote(btn) {
 }
 
 /* ══════════════════════════════
-   동행자 초대
+   동행자 초대 링크 복사
 ══════════════════════════════ */
 function copyInviteLink() {
   var link = document.getElementById('inviteLinkText').textContent;
@@ -2743,6 +3725,57 @@ function copyInviteLink() {
   } else {
     showToast('🔗 링크: ' + link);
   }
+}
+
+/* ══════════════════════════════
+   정산 요청 [DB] expense_participant.is_settled UPDATE
+══════════════════════════════ */
+function requestSettle(btn) {
+  btn.textContent = '📨 요청 전송';
+  btn.style.borderColor = '#89CFF0';
+  btn.style.color = '#3a8fb7';
+  btn.style.background = 'rgba(137,207,240,.08)';
+  btn.onclick = null;
+  showToast('📨 정산 요청 알림을 보냈어요!');
+}
+
+/* ══════════════════════════════
+   지출 추가 [DB] expense INSERT
+══════════════════════════════ */
+function submitExpense() {
+  var name = document.getElementById('exp-name').value.trim();
+  var amt  = document.getElementById('exp-amt').value.trim();
+  if (!name || !amt) { showToast('⚠️ 항목명과 금액을 입력해주세요'); return; }
+  var payer    = document.getElementById('exp-payer');
+  var cat      = document.getElementById('exp-cat');
+  var isPriv   = document.getElementById('exp-private').checked;
+  var payerTxt = payer.options[payer.selectedIndex].text;
+  var catTxt   = cat.options[cat.selectedIndex].text;
+  var catIcons = {'FOOD':'🍽️','ACCOMMODATION':'🏨','TRANSPORT':'🚗','TOUR':'🎯','CAFE':'☕','SHOPPING':'🛍️','ETC':'📦'};
+  var icon = catIcons[cat.value] || '💸';
+
+  /* 목록에 새 아이템 추가 */
+  var list = document.querySelector('#panel-expense .expense-panel-inner .btn-add-expense');
+  var item = document.createElement('div');
+  item.className = 'expense-item';
+  item.innerHTML =
+    '<div class="expense-item__icon-wrap">' + icon + '</div>' +
+    '<div class="expense-item__info">' +
+      '<div class="expense-item__name">' + name + (isPriv ? ' <span class="expense-private-badge">🔒 나만 보기</span>' : '') + '</div>' +
+      '<div class="expense-item__detail">' +
+        '<span>' + document.getElementById('exp-date').value + '</span>' +
+        '<span class="expense-payer-chip">💳 ' + payerTxt.split(' ')[0] + '</span>' +
+        '<span class="expense-cat-chip">' + catTxt + '</span>' +
+      '</div>' +
+    '</div>' +
+    '<span class="expense-item__amt">₩ ' + Number(amt).toLocaleString() + '</span>';
+  list.parentNode.insertBefore(item, list);
+
+  closeModal('addExpenseModal');
+  document.getElementById('exp-name').value = '';
+  document.getElementById('exp-amt').value  = '';
+  document.getElementById('exp-private').checked = false;
+  showToast('💸 지출이 추가됐어요!');
 }
 
 /* ══════════════════════════════
