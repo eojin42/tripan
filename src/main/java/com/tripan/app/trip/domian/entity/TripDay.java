@@ -17,8 +17,11 @@ public class TripDay {
     @Column(name = "trip_id", nullable = false)
     private Long tripId; // 부모(여행) 일정 ID
 
-    @Column(name = "trip_date", nullable = false)
-    private LocalDateTime tripDate; // 해당 일자의 실제 날짜
+    @Column(name = "day_number", nullable = false)
+    private Integer dayNumber; // N일차 순서
+
+    @Column(name = "trip_date")
+    private LocalDateTime tripDate; // 여행날짜 
 
     @Lob
     private String memo; // 해당 일자의 메모
