@@ -66,7 +66,18 @@ public class LoginSuccessHandler implements AuthenticationSuccessHandler {
 
         if (savedRequest != null) {
             String targetUrl = savedRequest.getRedirectUrl();
-            redirectStrategy.sendRedirect(request, response, targetUrl);
+            
+            if (targetUrl.contains("/fragment/")) {
+            	String referer = request.getHeader("Referer");
+            	if (referer != null && !referer.contains("/member/login")) {
+            		redirectStrategy.sendRedirect(request, response, referer);            		
+            	} else {
+            		redirectStrategy.sendRedirect(request, response, defaultUrl);
+            	}
+            } else {
+            	redirectStrategy.sendRedirect(request, response, targetUrl);
+            }
+            
         } else {
         	String prevPage = (String) request.getSession().getAttribute("prevPage");
             
