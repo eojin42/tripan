@@ -7,6 +7,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.tripan.app.admin.domain.dto.MemberDto;
+import com.tripan.app.admin.domain.dto.MemberKpiDto;
 import com.tripan.app.admin.domain.entity.Member1;
 import com.tripan.app.admin.domain.entity.Member3;
 import com.tripan.app.admin.domain.entity.MemberStatus;
@@ -14,7 +15,6 @@ import com.tripan.app.admin.mapper.MemberManageMapper;
 import com.tripan.app.admin.repository.Member1ManageRepository;
 import com.tripan.app.admin.repository.Member3ManageRepository;
 import com.tripan.app.admin.repository.MemberStatusManageRepository;
-
 
 import lombok.RequiredArgsConstructor;
 
@@ -66,6 +66,23 @@ public class MemberManageServiceImpl implements MemberManageService{
             
             member3Repository.save(withdrawInfo);
         }
+	}
+	
+	@Override
+	public MemberKpiDto getMemberKpi() {
+		MemberKpiDto kpi = memberMapper.selectMemberKpi();
+		
+		int today = kpi.getTodayNewCount();
+		int yesterday = kpi.getYesterdayNewCount();
+		
+		if(yesterday == 0) {
+			kpi.setDailyTrend(today>0? 100.0 : 0.0);
+		}else {
+			double trend = ((double)(today - yesterday)/yesterday * 100);
+			kpi.setDailyTrend(Math.round(trend*10)/10.0);
+		}
+		
+	    return kpi;
 	}
 
 }
