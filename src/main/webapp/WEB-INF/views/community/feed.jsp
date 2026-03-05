@@ -462,12 +462,23 @@
         </ul>
       </div>
 
-      <div class="glass-card chat-widget">
+      <div class="glass-card chat-widget" style="cursor: pointer;" onclick="checkAuthAndRun(() => window.openGlobalChat())">
         <h3>실시간 지역 톡 <span class="live-dot"></span></h3>
-        <div class="chat-room" onclick="checkAuthAndRun(() => alert('채팅방 입장!'))"><div class="chat-icon">🌴</div><div class="chat-info"><h4>제주도 동행/맛집 방</h4><p>현재 124명 접속 중</p></div></div>
-        <div class="chat-room" onclick="checkAuthAndRun(() => alert('채팅방 입장!'))"><div class="chat-icon">🌊</div><div class="chat-info"><h4>부산 해운대 핫플 공유</h4><p>현재 89명 접속 중</p></div></div>
-        <div class="chat-room" onclick="checkAuthAndRun(() => alert('채팅방 입장!'))"><div class="chat-icon">🏔️</div><div class="chat-info"><h4>강원도 렌터카 드라이브</h4><p>현재 45명 접속 중</p></div></div>
+        
+        <div class="chat-room">
+          <div class="chat-icon">🌴</div>
+          <div class="chat-info"><h4>제주도 동행/맛집 방</h4><p>현재 124명 접속 중</p></div>
+        </div>
+        <div class="chat-room">
+          <div class="chat-icon">🌊</div>
+          <div class="chat-info"><h4>부산 해운대 핫플 공유</h4><p>현재 89명 접속 중</p></div>
+        </div>
+        <div class="chat-room">
+          <div class="chat-icon">🏔️</div>
+          <div class="chat-info"><h4>강원도 렌터카 드라이브</h4><p>현재 45명 접속 중</p></div>
+        </div>
       </div>
+      
     </aside>
 
     <section class="feed-main" id="dynamic-content">

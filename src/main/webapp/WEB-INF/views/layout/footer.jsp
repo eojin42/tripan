@@ -121,5 +121,8 @@
       });
     });
   </script>
+  
+  <jsp:include page="/WEB-INF/views/community/chat/openlounge.jsp"/>
+  
 </body>
 </html>
