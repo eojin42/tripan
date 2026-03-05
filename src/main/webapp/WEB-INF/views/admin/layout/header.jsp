@@ -2,7 +2,18 @@
 <header class="top-header">
   
   <div class="header-left" style="display: flex; align-items: center;">
-    <h2 style="font-size: 16px; font-weight: 800; color: var(--text);">🛠️ 관리자 워크스페이스</h2>
+    <a href="${pageContext.request.contextPath}/admin/dashboard" class="brand-logo">
+      <div class="logo-text-wrapper">
+        <span class="trip">Trip</span><span class="an">an</span> 
+        <div class="logo-track">
+          <div class="logo-line"></div>
+          <svg class="logo-plane" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+            <path d="M22,16v-2l-8.5-5V3.5C13.5,2.67 12.83,2 12,2s-1.5,0.67-1.5,1.5V9L2,14v2l8.5-2.5V19L8.5,20.5V22L12,21l3.5,1v-1.5L13.5,19v-5.5L22,16z" />
+          </svg>
+        </div>
+      </div>
+      <span class="super-badge">ADMIN</span>
+    </a>
   </div>
 
   <div class="nav-right" style="display: flex; align-items: center; gap: 12px;">
@@ -36,6 +47,7 @@
           <div class="pd-name">관리자 (Manager)</div>
           <div class="pd-email">admin@tripan.co.kr</div>
         </div>
+        
         <a href="#">👤 내 프로필</a>
         <a href="#">⚙️ 환경설정</a>
         <div class="pd-sep"></div>

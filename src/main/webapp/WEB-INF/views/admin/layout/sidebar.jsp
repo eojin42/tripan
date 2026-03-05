@@ -2,19 +2,6 @@
 <aside class="sidebar">
   
   <div class="sidebar-header">
-    <a href="${pageContext.request.contextPath}/admin/dashboard" class="brand-logo">
-      <div class="logo-text-wrapper">
-        <span class="trip">Trip</span><span class="an">an</span> 
-        <div class="logo-track">
-          <div class="logo-line"></div>
-          <svg class="logo-plane" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-            <path d="M22,16v-2l-8.5-5V3.5C13.5,2.67 12.83,2 12,2s-1.5,0.67-1.5,1.5V9L2,14v2l8.5-2.5V19L8.5,20.5V22L12,21l3.5,1v-1.5L13.5,19v-5.5L22,16z" />
-          </svg>
-        </div>
-      </div>
-      <span class="super-badge">ADMIN</span>
-    </a>
-    
     <button class="hamburger-btn" onclick="toggleSidebar()" title="메뉴 접기/펴기">
       <svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round">
         <line x1="3" y1="12" x2="21" y2="12"></line>
@@ -26,7 +13,7 @@
 
   <div class="sidebar-menu">
     <div class="menu-label">Analytics</div>
-    <a href="${pageContext.request.contextPath}/admin/dashboard" class="menu-item ${param.activePage == 'dashboard' ? 'active' : ''}">
+    <a href="${pageContext.request.contextPath}/admin/main" class="menu-item ${param.activePage == 'dashboard' ? 'active' : ''}">
       <svg class="menu-icon" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
       <span class="menu-text">대시보드</span>
     </a>
@@ -52,26 +39,33 @@
     </a>
     
     <div class="menu-item has-sub ${param.activePage == 'cs' || param.activePage == 'members' || param.activePage == 'dormant' ? 'active open' : ''}" 
-         data-bs-toggle="collapse" data-bs-target="#csSubmenu" aria-expanded="true">
-      <div style="display:flex; align-items:center; gap:12px; flex:1;">
-        <svg class="menu-icon" viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
-        <span class="menu-text">회원 및 CS 관리</span>
-      </div>
+         onclick="toggleSubMenu(this)">
+      <svg class="menu-icon" viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
+      <span class="menu-text">회원 및 CS 관리</span>
       <svg class="chevron-down" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"></polyline></svg>
     </div>
     
-    <div class="collapse sub-menu ${param.activePage == 'cs' || param.activePage == 'members' || param.activePage == 'dormant' ? 'show' : ''}" id="csSubmenu">
-      <a href="${pageContext.request.contextPath}/admin/members" class="sub-item ${param.activePage == 'members' ? 'active' : ''}">일반 회원 관리</a>
-      <a href="${pageContext.request.contextPath}/admin/dormantMembers" class="sub-item ${param.activePage == 'dormant' ? 'active' : ''}">휴면 회원 관리</a>
+    <div class="sub-menu ${param.activePage == 'cs' || param.activePage == 'members' || param.activePage == 'dormant' ? 'open' : ''}">
+      <a href="${pageContext.request.contextPath}/admin/member/main" class="sub-item ${param.activePage == 'members' ? 'active' : ''}">일반 회원 관리</a>
+      <a href="${pageContext.request.contextPath}/admin/member/dormant" class="sub-item ${param.activePage == 'dormant' ? 'active' : ''}">휴면 회원 관리</a>
       <a href="${pageContext.request.contextPath}/admin/inquiries" class="sub-item ${param.activePage == 'cs' ? 'active' : ''}">1:1 문의 관리</a>
       <a href="${pageContext.request.contextPath}/admin/reports" class="sub-item">신고 게시물 관리</a>
     </div>
 
-    </div>
+  </div>
 </aside>
 
 <script>
   function toggleSidebar() {
     document.querySelector('.admin-layout').classList.toggle('collapsed');
+  }
+
+  function toggleSubMenu(element) {
+    if(document.querySelector('.admin-layout').classList.contains('collapsed')) return;
+    element.classList.toggle('open');
+    let subMenu = element.nextElementSibling;
+    if (subMenu && subMenu.classList.contains('sub-menu')) {
+      subMenu.classList.toggle('open');
+    }
   }
 </script>

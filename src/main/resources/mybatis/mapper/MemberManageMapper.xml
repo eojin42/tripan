@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.tripan.app.admin.mapper.MemberManageMapper">
+
+    <select id="selectAllMembers" resultType="com.tripan.app.admin.domain.dto.MemberDto">
+	    SELECT 
+	        m1.member_id, m1.login_id, m1.email, m1.username, m1.status, m1.role, 
+	        m3.register_date as regDate, m2.nickname, m2.phone_number as phoneNumber 
+	    FROM member1 m1
+	    LEFT JOIN member2 m2 ON m1.member_id = m2.member_id
+	    LEFT JOIN member3 m3 ON m1.member_id = m3.member_id
+	    ORDER BY m1.member_id DESC
+	</select>
+
+    <select id="selectMemberDetail" parameterType="Long" resultType="com.tripan.app.admin.domain.dto.MemberDto">
+        SELECT 
+            m1.member_id, m1.login_id, m1.email, m1.username, m1.status, m1.role, m1.gender, m1.birthday,
+            m2.nickname, m2.profile_image, m2.bio, m2.phone_number, m2.last_login_at, m2.equipped_badge_id
+        FROM member1 m1
+        LEFT JOIN member2 m2 ON m1.member_id = m2.member_id
+        WHERE m1.member_id = #{memberId}
+    </select>
+
+</mapper>

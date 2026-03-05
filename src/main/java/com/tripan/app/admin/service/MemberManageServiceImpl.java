@@ -1,0 +1,71 @@
+package com.tripan.app.admin.service;
+
+import java.time.LocalDateTime;
+import java.util.List;
+
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import com.tripan.app.admin.domain.dto.MemberDto;
+import com.tripan.app.admin.domain.entity.Member1;
+import com.tripan.app.admin.domain.entity.Member3;
+import com.tripan.app.admin.domain.entity.MemberStatus;
+import com.tripan.app.admin.mapper.MemberManageMapper;
+import com.tripan.app.admin.repository.Member1ManageRepository;
+import com.tripan.app.admin.repository.Member3ManageRepository;
+import com.tripan.app.admin.repository.MemberStatusManageRepository;
+
+
+import lombok.RequiredArgsConstructor;
+
+@Service
+@RequiredArgsConstructor
+@Transactional(readOnly = true)
+public class MemberManageServiceImpl implements MemberManageService{
+	private final MemberManageMapper memberMapper;
+	private final Member1ManageRepository member1Repository;
+    private final MemberStatusManageRepository memberStatusRepository;
+    private final Member3ManageRepository member3Repository;
+    
+	@Override
+	public List<MemberDto> getAllMembers() {
+		return memberMapper.selectAllMembers();
+	}
+
+	@Override
+	public MemberDto getMemberDetail(Long memberId) {
+		return memberMapper.selectMemberDetail(memberId);
+	}
+
+	@Transactional
+	@Override
+	public void changeMemberStatus(Long targetId, Integer newStatus, String memo, Long adminId) {
+		Member1 targetMember = member1Repository.findById(targetId)
+				.orElseThrow(()-> new IllegalArgumentException("대상 회원을 찾을 수 없습니다."));
+		
+		Member1 adminMember = member1Repository.findById(adminId)
+				.orElseThrow(()-> new IllegalArgumentException("관리자 정보를 찾을 수 없습니다."));
+		
+		targetMember.setStatus(newStatus);
+		
+		MemberStatus statusLog = new MemberStatus();
+		statusLog.setTargetMember(targetMember);
+        statusLog.setStatus(newStatus);
+        statusLog.setMemo(memo);
+        statusLog.setRegDate(LocalDateTime.now());
+        statusLog.setRegisterMember(adminMember);
+        
+        memberStatusRepository.save(statusLog);
+        
+        if(newStatus == 4) {
+        	Member3 withdrawInfo = new Member3();
+        	withdrawInfo.setMember1(targetMember);
+            withdrawInfo.setRegisterDate(LocalDateTime.now());
+            withdrawInfo.setWithdrawDate(LocalDateTime.now());
+            withdrawInfo.setWithdrawReason(memo);
+            
+            member3Repository.save(withdrawInfo);
+        }
+	}
+
+}

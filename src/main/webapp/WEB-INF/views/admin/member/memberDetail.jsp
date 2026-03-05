@@ -144,20 +144,27 @@
                 <tr><th>예약 번호</th><th>숙소명</th><th>체크인/아웃</th><th>결제 금액</th><th>상태</th></tr>
               </thead>
               <tbody id="resTableBody">
-                <tr style="cursor:pointer;" onclick="openResModal('BK-9921', '아만 스위트 리저브', '2026.05.01 ~ 05.03', '1,200,000', '예약 확정')" data-status="예약 확정" data-name="아만 스위트 리저브">
-                  <td style="color:var(--muted); font-weight:700;">#BK-9921</td>
-                  <td><strong>아만 스위트 리저브</strong></td>
-                  <td>26.05.01 ~ 05.03</td>
-                  <td class="num">₩ 1,200,000</td>
-                  <td><span class="badge badge-done">예약 확정</span></td>
-                </tr>
-                <tr style="cursor:pointer;" onclick="openResModal('BK-8810', '신라 더 파크 호텔', '2026.04.15 ~ 04.16', '450,000', '고객 취소')" data-status="고객 취소" data-name="신라 더 파크 호텔">
-                  <td style="color:var(--muted); font-weight:700;">#BK-8810</td>
-                  <td><strong>신라 더 파크 호텔</strong></td>
-                  <td>26.04.15 ~ 04.16</td>
-                  <td class="num">₩ 450,000</td>
-                  <td><span class="badge badge-danger">고객 취소</span></td>
-                </tr>
+              <c:forEach var="accom" items="${accomList}">
+	                <tr style="cursor:pointer;" onclick="openResModal('${accom.resId}', '${accom.roomName}', '${accom.checkIn} ~ ${accom.checkOut}', '${accom.totalPrice}', '${accom.status}')" 
+       					 data-status="${accom.status}" data-name="${accom.roomName}">
+       					 
+	                  <td style="color:var(--muted); font-weight:700;">#${accom.resId}</td>
+	                  <td><strong>${accom.roomName}</strong></td>
+	                  <td>${accom.checkIn} ~ ${accom.checkOut}</td>
+	                  <td class="num">₩ ${accom.totalPrice}</td>
+	                  <c:choose>
+			            <c:when test="${accom.status == '예약 확정'}">
+			                <span class="badge badge-done">${accom.status}</span>
+			            </c:when>
+			            <c:when test="${accom.status == '예약 취소'}">
+			                <span class="badge badge-danger">${accom.status}</span>
+			            </c:when>
+			            <c:otherwise>
+			                <span class="badge badge-wait">${accom.status}</span>
+			            </c:otherwise>
+			        </c:choose>
+	                </tr>
+                </c:forEach>
               </tbody>
             </table>
           </div>

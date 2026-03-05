@@ -131,8 +131,12 @@ button { font-family: inherit; cursor: pointer; }
   z-index: 1000; box-shadow: var(--shadow-sm); transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 .sidebar-header {
-  height: 72px; display: flex; align-items: center; justify-content: space-between;
-  padding: 0 16px 0 24px; border-bottom: 1px solid var(--border);
+  height: 72px; 
+  display: flex; 
+  align-items: center; 
+  justify-content: flex-start; 
+  padding: 0 16px;
+  border-bottom: none; 
 }
 .hamburger-btn {
   width: 36px; height: 36px; border-radius: 50%; background: transparent;
@@ -179,8 +183,7 @@ button { font-family: inherit; cursor: pointer; }
 /* ── 6. Sidebar Collapsed State (접힘 완벽 대응) ── */
 .admin-layout.collapsed .sidebar { width: 88px; }
 
-/* 텍스트, 로고, 라벨, 화살표 숨김 */
-.admin-layout.collapsed .brand-logo,
+/* 👇 로고가 사라지는 버그 수정 (로고 제외하고 텍스트만 숨김) */
 .admin-layout.collapsed .menu-label,
 .admin-layout.collapsed .menu-text,
 .admin-layout.collapsed .chevron-down { display: none !important; }
@@ -403,53 +406,45 @@ td.right { text-align: right; }
 }
 
 .badge-alert { background: #FFF1F2; border: 1px solid #FDA4AF; color: #E11D48; font-weight: 800; padding: 4px 10px; font-size: 11px; }
-    .badge-warning { background: #FFFBEB; border: 1px solid #FCD34D; color: #D97706; font-weight: 800; padding: 4px 10px; font-size: 11px; }
-    .sortable { cursor: pointer; user-select: none; transition: color 0.2s; }
-    .sortable:hover { color: var(--primary) !important; }
-    .sort-icon { display: inline-block; width: 14px; text-align: center; font-size: 10px; color: var(--primary); }
-    
-    /* 상태 뱃지 클릭 유도 (사유 보기) */
-    .status-badge { cursor: pointer; transition: transform 0.2s; }
-    .status-badge:hover { transform: scale(1.05); }
+.badge-warning { background: #FFFBEB; border: 1px solid #FCD34D; color: #D97706; font-weight: 800; padding: 4px 10px; font-size: 11px; }
+.sortable { cursor: pointer; user-select: none; transition: color 0.2s; }
+.sortable:hover { color: var(--primary) !important; }
+.sort-icon { display: inline-block; width: 14px; text-align: center; font-size: 10px; color: var(--primary); }
 
-    /* 모달 및 페이징 (기존과 동일) */
-    .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.4); backdrop-filter: blur(4px); display: none; justify-content: center; align-items: center; z-index: 2000; }
-    .modal-content { background: var(--surface); width: 460px; border-radius: var(--radius-xl); box-shadow: var(--shadow-lg); padding: 32px; position: relative; animation: modalFadeIn 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
-    @keyframes modalFadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
-    .modal-header { margin-bottom: 24px; }
-    .modal-header h2 { font-size: 20px; font-weight: 800; }
-    .modal-body { display: flex; flex-direction: column; gap: 16px; }
-    .form-row { display: flex; gap: 16px; }
-    .form-group { display: flex; flex-direction: column; gap: 8px; flex: 1; }
-    .form-group label { font-size: 12px; font-weight: 800; color: var(--muted); }
-    .modal-footer { margin-top: 32px; display: flex; gap: 12px; }
-    .pagination { display: flex; justify-content: center; align-items: center; gap: 8px; margin-top: 30px; }
-    .pg-btn { width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; border-radius: 10px; background: var(--surface); border: 1px solid var(--border); font-weight: 700; color: var(--muted); transition: all 0.2s; cursor: pointer; }
-    .pg-btn:hover { background: var(--bg); color: var(--text); }
-    .pg-btn.active { background: var(--text); color: white; border-color: var(--text); }
-    .pg-arrow { width: 36px; height: 36px; font-size: 18px; }
-    
-    /* 이름(닉네임) 클릭 링크 스타일 */
-	.member-name-link {
-	  cursor: pointer;
-	  font-weight: 700;
-	  color: var(--text);
-	  transition: color 0.2s;
-	}
-	.member-name-link:hover {
-	  color: var(--primary);
-	  text-decoration: underline;
-	}
-	
-	/* 부트스트랩 collapse와 기존 서브메뉴 디자인 연동 */
-	.sub-menu.collapse {
-	  display: none; /* 기본 숨김 */
-	}
-	.sub-menu.collapse.show {
-	  display: flex; /* 열렸을 때 (admin.css의 기존 sub-menu 스타일 적용) */
-	}
-	
-	/* 대메뉴가 활성화(active) 되었을 때 글자색이 흰색으로 변하므로 아이콘 색상도 유지 */
-	.menu-item.active .chevron-down {
-	  stroke: white;
-	}
+/* 상태 뱃지 클릭 유도 (사유 보기) */
+.status-badge { cursor: pointer; transition: transform 0.2s; }
+.status-badge:hover { transform: scale(1.05); }
+
+/* 모달 및 페이징 (기존과 동일) */
+.modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.4); backdrop-filter: blur(4px); display: none; justify-content: center; align-items: center; z-index: 2000; }
+.modal-content { background: var(--surface); width: 460px; border-radius: var(--radius-xl); box-shadow: var(--shadow-lg); padding: 32px; position: relative; animation: modalFadeIn 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
+@keyframes modalFadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+.modal-header { margin-bottom: 24px; }
+.modal-header h2 { font-size: 20px; font-weight: 800; }
+.modal-body { display: flex; flex-direction: column; gap: 16px; }
+.form-row { display: flex; gap: 16px; }
+.form-group { display: flex; flex-direction: column; gap: 8px; flex: 1; }
+.form-group label { font-size: 12px; font-weight: 800; color: var(--muted); }
+.modal-footer { margin-top: 32px; display: flex; gap: 12px; }
+.pagination { display: flex; justify-content: center; align-items: center; gap: 8px; margin-top: 30px; }
+.pg-btn { width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; border-radius: 10px; background: var(--surface); border: 1px solid var(--border); font-weight: 700; color: var(--muted); transition: all 0.2s; cursor: pointer; }
+.pg-btn:hover { background: var(--bg); color: var(--text); }
+.pg-btn.active { background: var(--text); color: white; border-color: var(--text); }
+.pg-arrow { width: 36px; height: 36px; font-size: 18px; }
+
+/* 이름(닉네임) 클릭 링크 스타일 */
+.member-name-link {
+  cursor: pointer;
+  font-weight: 700;
+  color: var(--text);
+  transition: color 0.2s;
+}
+.member-name-link:hover {
+  color: var(--primary);
+  text-decoration: underline;
+}
+
+/* 대메뉴가 활성화(active) 되었을 때 글자색이 흰색으로 변하므로 아이콘 색상도 유지 */
+.menu-item.active .chevron-down {
+  stroke: white;
+}
