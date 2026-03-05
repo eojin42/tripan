@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.tripan.app.mapper.CommunityChatMapper">
+
+        <insert id="insertMessage" parameterType="com.tripan.app.domain.dto.CommunityChatMessageDto">
+        INSERT INTO chat_message (
+            message_id,
+            room_id,
+            member_id,
+            message_type,
+            content,
+            created_at
+        ) VALUES (
+            SEQ_CHAT_MESSAGE_ID.NEXTVAL, 
+            #{roomId},
+            #{memberId},
+            #{messageType},
+            #{content},
+            CURRENT_TIMESTAMP
+        )
+    </insert>
+
+    <select id="selectChatHistory" parameterType="long" resultType="com.tripan.app.domain.dto.CommunityChatMessageDto">
+        SELECT 
+            m.room_id,
+            m.member_id,
+            u.username AS senderNickname,
+            m.message_type,
+            m.content,
+            TO_CHAR(m.created_at, 'AM HH:MI') AS createdAt
+        FROM chat_message m
+        JOIN member1 u ON m.member_id = u.member_id
+        WHERE m.room_id = #{roomId}
+        ORDER BY m.created_at ASC
+    </select>
+
+</mapper>
