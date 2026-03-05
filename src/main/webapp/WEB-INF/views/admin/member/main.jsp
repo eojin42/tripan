@@ -69,18 +69,19 @@
           <div class="filter-label">회원 검색</div>
           
           <select class="filter-select" id="searchRole" style="width: 120px;" onchange="filterTable()">
-            <option value="ALL">전체 권한</option>
-            <option value="USER">일반 유저</option>
-            <option value="PARTNER">파트너</option>
-            <option value="ADMIN">관리자</option>
-          </select>
-
-          <select class="filter-select" id="searchStatus" style="width: 120px;" onchange="filterTable()">
-            <option value="ALL">전체 상태</option>
-            <option value="ACTIVE">정상</option>
-            <option value="BAN">정지(BAN)</option>
-            <option value="WITHDRAW">탈퇴</option>
-          </select>
+			  <option value="ALL">전체 권한</option>
+			  <option value="ROLE_USER">일반 유저</option>
+			  <option value="ROLE_PARTNER">파트너</option>
+			  <option value="ROLE_ADMIN">관리자</option>
+			</select>
+			
+			<select class="filter-select" id="searchStatus" style="width: 120px;" onchange="filterTable()">
+			  <option value="ALL">전체 상태</option>
+			  <option value="1">정상</option>
+			  <option value="2">정지(BAN)</option>
+			  <option value="3">휴면</option>
+			  <option value="4">탈퇴</option>
+			</select>
 
           <select class="filter-select" id="searchCategory" style="width: 120px;">
             <option value="id">ID (이메일)</option>
@@ -123,10 +124,10 @@
 			      
 			      <td>
 			        <c:choose>
-			          <c:when test="${member.role == 'ADMIN'}">
+			          <c:when test="${member.role == 'ROLE_ADMIN'}">
 			            <span class="badge" style="background:#E0E7FF; color:#4338CA;">SYS ADMIN</span>
 			          </c:when>
-			          <c:when test="${member.role == 'PARTNER'}">
+			          <c:when test="${member.role == 'ROLE_PARTNER'}">
 			            <span class="badge" style="background:#F0FDF4; color:#15803D;">PARTNER</span>
 			          </c:when>
 			          <c:otherwise>
@@ -194,21 +195,22 @@
       </div>
       <div class="form-row">
         <div class="form-group">
-          <label>권한 레벨</label>
-          <select class="filter-select" id="modalRoleSelect" style="width:100%;" onchange="checkAdminStatus()">
-            <option value="USER">일반 유저 (USER)</option>
-            <option value="PARTNER">파트너 (PARTNER)</option>
-            <option value="ADMIN">시스템 관리자 (SYS ADMIN)</option>
-          </select>
-        </div>
-        <div class="form-group">
-          <label>계정 상태</label>
-          <select class="filter-select" id="modalStatusSelect" style="width:100%;">
-            <option value="ACTIVE">정상 활동</option>
-            <option value="BAN" class="user-status-only">활동 정지 (BAN)</option>
-            <option value="WITHDRAW" class="user-status-only">탈퇴 완료</option>
-          </select>
-        </div>
+		  <label>권한 레벨</label>
+		  <select class="filter-select" id="modalRoleSelect" style="width:100%;" onchange="checkAdminStatus()">
+		    <option value="ROLE_USER">일반 유저 (USER)</option>
+		    <option value="ROLE_PARTNER">파트너 (PARTNER)</option>
+		    <option value="ROLE_ADMIN">시스템 관리자 (SYS ADMIN)</option>
+		  </select>
+		</div>
+		<div class="form-group">
+		  <label>계정 상태</label>
+		  <select class="filter-select" id="modalStatusSelect" style="width:100%;">
+		    <option value="1">정상 활동</option>
+		    <option value="2" class="user-status-only">활동 정지 (BAN)</option>
+		    <option value="3" class="user-status-only">휴면 상태</option>
+		    <option value="4" class="user-status-only">탈퇴 완료</option>
+		  </select>
+		</div>
       </div>
       <div class="form-group">
         <label>변경/조치 사유 <span style="color:var(--danger)">*</span></label>

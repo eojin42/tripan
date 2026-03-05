@@ -6,8 +6,8 @@
     <select id="selectAllMembers" resultType="com.tripan.app.admin.domain.dto.MemberDto">
 	    SELECT 
 	        m1.member_id, m1.login_id, m1.email, m1.username, m1.status, m1.role, 
-	        m3.register_date as regDate, m2.nickname, m2.phone_number as phoneNumber,
-	        (SELECT COUNT(*) FROM member_report r WHERE r.target_id = m1.member_id) as reportCount
+	        m3.register_date as regDate, m2.nickname, m2.phone_number as phoneNumber
+	        <!--  (SELECT COUNT(*) FROM member_report r WHERE r.target_id = m1.member_id) as reportCount-->
 	    FROM member1 m1
 	    LEFT JOIN member2 m2 ON m1.member_id = m2.member_id
 	    LEFT JOIN member3 m3 ON m1.member_id = m3.member_id
@@ -27,9 +27,9 @@
     <select id="selectMemberKpi" resultType="com.tripan.app.admin.domain.dto.MemberKpiDto">
 	    SELECT 
 	        COUNT(*) AS totalCount,
-	        COUNT(CASE WHEN m1.role = 'USER' THEN 1 END) AS userCount,
-	        COUNT(CASE WHEN m1.role = 'PARTNER' THEN 1 END) AS partnerCount,
-	        COUNT(CASE WHEN m1.role = 'ADMIN' THEN 1 END) AS adminCount,
+	        COUNT(CASE WHEN m1.role = 'ROLE_USER' THEN 1 END) AS userCount,
+	        COUNT(CASE WHEN m1.role = 'ROLE_PARTNER' THEN 1 END) AS partnerCount,
+	        COUNT(CASE WHEN m1.role = 'ROLE_ADMIN' THEN 1 END) AS adminCount,
 	        COUNT(CASE WHEN m1.status = 1 THEN 1 END) AS activeCount,
 	        COUNT(CASE WHEN m1.status = 2 THEN 1 END) AS banCount,
 	        COUNT(CASE WHEN m1.status = 3 THEN 1 END) AS dormantCount,
