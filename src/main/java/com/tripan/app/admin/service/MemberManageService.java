@@ -1,11 +1,13 @@
 package com.tripan.app.admin.service;
 
-import com.tripan.app.admin.domain.dto.MemberDto;
-import com.tripan.app.admin.domain.entity.Member1;
 import java.util.List;
+
+import com.tripan.app.admin.domain.dto.MemberDto;
+import com.tripan.app.admin.domain.dto.MemberKpiDto;
 
 public interface MemberManageService {
     List<MemberDto> getAllMembers();
     MemberDto getMemberDetail(Long memberId);
+    MemberKpiDto getMemberKpi();
     void changeMemberStatus(Long targetId, Integer newStatus, String memo, Long adminId);
 }

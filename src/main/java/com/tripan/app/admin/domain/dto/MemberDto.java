@@ -47,6 +47,7 @@ public class MemberDto {
 	private MultipartFile selectFile;
 	private String reason;
 	private Long reporterId;
+	private int reportCount;
 	
 	private String startDate;
     private String endDate;

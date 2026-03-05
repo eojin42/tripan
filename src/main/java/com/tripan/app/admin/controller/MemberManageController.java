@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseBody;
 
 import com.tripan.app.admin.domain.dto.MemberDto;
+import com.tripan.app.admin.domain.dto.MemberKpiDto;
 import com.tripan.app.admin.domain.entity.Member1;
 import com.tripan.app.admin.service.BookingManageService;
 import com.tripan.app.admin.service.MemberManageService;
@@ -28,6 +29,9 @@ public class MemberManageController {
 	
 	@GetMapping("main")
 	public String membermain(Model model) {
+		MemberKpiDto kpi = memberService.getMemberKpi();
+		model.addAttribute("kpi", kpi);
+		
 		List<MemberDto> memberList = memberService.getAllMembers();
 		
 		model.addAttribute("list", memberList);

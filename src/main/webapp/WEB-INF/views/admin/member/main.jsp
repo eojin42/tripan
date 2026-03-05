@@ -28,27 +28,41 @@
       </div>
 
       <div class="kpi-grid">
-        <div class="card kpi-card fade-up fade-up-1">
-          <div class="kpi-label">전체 회원수</div>
-          <div class="kpi-value" id="kpiTotal">45,120</div>
-          <div class="kpi-sub">일반 44.2K / 파트너 820 / 관리자 12</div>
-        </div>
-        <div class="card kpi-card fade-up fade-up-2">
-          <div class="kpi-label">정상 활동 유저</div>
-          <div class="kpi-value" style="color:var(--success)" id="kpiActive">44,980</div>
-          <span class="trend trend-up">↑ 12%</span>
-        </div>
-        <div class="card kpi-card fade-up fade-up-3">
-          <div class="kpi-label">활동 정지(Ban) 유저</div>
-          <div class="kpi-value" style="color:var(--danger)" id="kpiBan">86</div>
-          <div class="badge badge-danger">정책 위반 관리중</div>
-        </div>
-        <div class="card kpi-card fade-up fade-up-4">
-          <div class="kpi-label">탈퇴 완료</div>
-          <div class="kpi-value" style="color:var(--muted)" id="kpiWithdraw">54</div>
-          <div class="kpi-sub">누적 탈퇴 회원</div>
-        </div>
-      </div>
+		  <div class="card kpi-card fade-up fade-up-1">
+		    <div class="kpi-label">전체 회원수</div>
+		    <div class="kpi-value" id="kpiTotal">${kpi.totalCount}</div>
+		    <div class="kpi-sub">일반 ${kpi.userCount} / 파트너 ${kpi.partnerCount} / 관리자 ${kpi.adminCount}</div>
+		  </div>
+		
+		  <div class="card kpi-card fade-up fade-up-2">
+		    <div class="kpi-label">신규 가입 (오늘)</div>
+		    <div class="kpi-value" id="kpiTodayNew">${kpi.todayNewCount}명</div> <c:choose>
+		      <c:when test="${kpi.dailyTrend > 0}">
+		        <span class="trend trend-up" style="color: #ff4d4f;">↑ ${kpi.dailyTrend}%</span>
+		      </c:when>
+		      <c:when test="${kpi.dailyTrend < 0}">
+		        <%-- 절댓값 처리를 위해 마이너스(-) 기호 붙임 --%>
+		        <span class="trend trend-down" style="color: #1890ff;">↓ ${-kpi.dailyTrend}%</span>
+		      </c:when>
+		      <c:otherwise>
+		        <span class="trend" style="color: #999;">- 0%</span>
+		      </c:otherwise>
+		    </c:choose>
+		  </div>
+		
+		  <div class="card kpi-card fade-up fade-up-3">
+		    <div class="kpi-label">정상 활동 유저</div>
+		    <div class="kpi-value" style="color:var(--success)" id="kpiActive">${kpi.activeCount}</div>
+		    <div class="kpi-sub">현재 서비스 이용 가능</div>
+		  </div>
+		
+		  <div class="card kpi-card fade-up fade-up-4">
+		    <div class="kpi-label">활동 정지(Ban) 유저</div>
+		    <div class="kpi-value" style="color:var(--danger)" id="kpiBan">${kpi.banCount}</div>
+		    <div class="badge badge-danger">정책 위반 관리중</div>
+		  </div>
+	  
+	  </div>
 
       <div class="card filter-card fade-up">
         <div class="filter-row">
@@ -121,7 +135,7 @@
 			        </c:choose>
 			      </td>
 			      
-			      <td id="status-${member.id}">
+			      <td id="status-${member.memberId}">
 			        <c:choose>
 			          <c:when test="${member.status == '2'}">
 			            <span class="badge badge-danger status-badge" onclick="showReason(event, '${member.reason}')">BAN(정지)</span>
