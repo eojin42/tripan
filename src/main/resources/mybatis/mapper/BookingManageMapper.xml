@@ -1,7 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
-<mapper namespace="com.tripan.app.admin.mapper.BookingManageMapper">
+ <mapper namespace="com.tripan.app.admin.mapper.BookingManageMapper">
+ <select id="dummy" resultType="int">
+        SELECT 1 FROM DUAL
+    </select>
+    <!--
 	<select id="selectMemberBookings" parameterType="Long" resultType="com.tripan.app.admin.domain.dto.BookingResponseDto">
 		SELECT b.id,
             '#' || b.res_id AS resId,b.room_name AS roomName, b.check_in || ' ~ ' || b.check_out AS duration, 
@@ -38,5 +42,5 @@
             END AS statusClass
         FROM booking b
         JOIN member1 m ON b.member_id = m.member_id ORDER BY b.id DESC
-	</select>
+	</select> -->
 </mapper>
