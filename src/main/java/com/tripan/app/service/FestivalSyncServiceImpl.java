@@ -100,7 +100,7 @@ public class FestivalSyncServiceImpl implements FestivalSyncService {
                     }
 
                     FestivalDto festival = new FestivalDto();
-                    festival.setPlaceId(currentPlaceId); // 🌟 방금 찾거나 새로 만든 장소의 PK를 넣어줌!
+                    festival.setPlaceId(currentPlaceId); 
                     festival.setApiContentId(Long.parseLong(contentId));
                     festival.setEventStartDate(parseDate(node.path("eventstartdate").asText()));
                     festival.setEventEndDate(parseDate(node.path("eventenddate").asText()));
