@@ -757,7 +757,7 @@
 
 	        festivals.forEach(fes => {
 	            const address = fes.address ? fes.address : '장소 미정';
-	            const imgSrc = fes.image ? fes.image : '${pageContext.request.contextPath}/assets/img/default_festival.jpg';
+	            const imgSrc = fes.image ? fes.image : '${pageContext.request.contextPath}/images/default_festival.jpg';
 	            const cardHtml = `
 	                <div class="festival-card" 
 	                     onclick="window.open('https://search.naver.com/search.naver?query=\${encodeURIComponent(fes.title)}', '_blank')"
