@@ -125,10 +125,12 @@
 	
 	.festival-partial-modal {
 	  position: fixed;
-	  top: 100px; 
-	  left: 12%; 
-	  width: 70%; 
-	  height: 80vh; 
+	  top: 50%; 
+	  left: 50%; 
+	  transform: translate(-50%, -45%) translateY(20px);
+	  width: 80%; 
+	  max-width: 1300px;
+	  height: 85vh; 
 	  background-color: #f8fafc;
 	  z-index: 9999;
 	  border-radius: 20px;
@@ -142,7 +144,7 @@
 	}
 	
 	.festival-partial-modal.active {
-	  transform: translateY(0);
+	  transform: translate(-50%, -50%);
 	  opacity: 1;
 	  visibility: visible;
 	}
@@ -197,10 +199,11 @@
 	.festival-modal-body {
 	  flex: 1;
 	  display: grid;
-	  grid-template-columns: 1fr 300px; 
-	  gap: 20px;
-	  padding: 30px;
+	  grid-template-columns: 1fr 420px; 
+	  gap: 24px;
+	  padding: 24px; 
 	  overflow: hidden; 
+	  min-height: 0; 
 	}
 	
 	.calendar-area {
@@ -216,6 +219,9 @@
 	  background: white;
 	  border-radius: 16px;
 	  padding: 20px;
+	  padding-bottom: 60px;
+	  height: 100%;
+	  box-sizing: border-box;
 	  overflow-y: auto; 
 	  display: flex;
 	  flex-direction: column;
@@ -722,9 +728,9 @@
         modal.classList.remove('active');
         document.body.style.overflow = 'auto'; 
         setTimeout(() => {
-            modal.style.left = '12%';
-            modal.style.top = '100px';
-            modal.style.transform = ''; 
+            modal.style.left = '50%';
+            modal.style.top = '50%';
+            modal.style.transform = 'translate(-50%, -50%) translateY(15px)'; 
         }, 300); 
     }
 	

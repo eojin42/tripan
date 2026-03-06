@@ -4,14 +4,14 @@ import java.util.List;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import com.tripan.app.domain.dto.CommunityFreeBoardDto;
-import com.tripan.app.mapper.CommunityFreeboardMapper;
+import com.tripan.app.mapper.CommunityFreeBoardMapper;
 import lombok.RequiredArgsConstructor;
 
 @Service
 @RequiredArgsConstructor
 public class CommunityFreeboardServiceImpl implements CommunityFreeboardService {
 
-    private final CommunityFreeboardMapper freeboardMapper;
+    private final CommunityFreeBoardMapper freeboardMapper;
 
     @Override
     public List<CommunityFreeBoardDto> getBoardList() {
@@ -28,6 +28,6 @@ public class CommunityFreeboardServiceImpl implements CommunityFreeboardService 
     @Transactional
     public CommunityFreeBoardDto getBoardDetail(Long boardId) {
         freeboardMapper.updateViewCount(boardId); // 조회수 증가
-        return freeboardMapper.selectById(boardId);
+        return freeboardMapper.selectById(boardId); // 게시글 상세정보 
     }
 }

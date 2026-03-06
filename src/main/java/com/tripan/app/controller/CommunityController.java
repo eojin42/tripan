@@ -76,6 +76,7 @@ public class CommunityController {
         log.info("실시간 인기 채팅방 조회 완료: {}건", topRooms.size());
         return topRooms;
     }
+ 
     
     @GetMapping("/chat/openlounge")
     public String openlounge(Model model) {

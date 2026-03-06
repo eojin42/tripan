@@ -6,7 +6,7 @@ import org.apache.ibatis.annotations.Mapper;
 import com.tripan.app.domain.dto.CommunityFreeBoardDto;
 
 @Mapper
-public interface CommunityFreeboardMapper {
+public interface CommunityFreeBoardMapper {
     List<CommunityFreeBoardDto> selectAll();
 
     List<CommunityFreeBoardDto> selectByCategory(String category);
