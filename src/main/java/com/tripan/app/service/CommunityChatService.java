@@ -10,4 +10,6 @@ public interface CommunityChatService {
     
     List<CommunityChatMessageDto> getChatHistory(Long roomId);
     List<CommunityChatRoomDto> getAllChatRooms();
+    
+    List<CommunityChatRoomDto> getTopChatRooms();
 }

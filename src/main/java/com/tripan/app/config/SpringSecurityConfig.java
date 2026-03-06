@@ -28,7 +28,7 @@ public class SpringSecurityConfig {
 				"/member/userIdCheck", "/member/complete", "/member/pwdFind", "/member/expired", "/dist/**",
 				"/guest/main", "/guest/list", "/uploads/photo/**", "/favicon.ico", "/WEB-INF/views/**",
 				"/oauth/kakao/callback", "/accommodation/home", "/accommodation/list", 
-				"/community/feed", "/community/fragment/feed", "api/festivals/**"};
+				"/community/feed", "/community/fragment/feed", "api/festivals/**", "/community/api/chat/top-rooms"};
 		
 		http.cors(Customizer.withDefaults())
 			.csrf(AbstractHttpConfigurer::disable)

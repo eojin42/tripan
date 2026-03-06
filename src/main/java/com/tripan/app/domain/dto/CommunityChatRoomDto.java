@@ -8,4 +8,6 @@ public class CommunityChatRoomDto {
     private String chatRoomName;
     private String chatRoomType;
     private String status;
+    
+    private int userCount; // 현재 접속자 수 
 }

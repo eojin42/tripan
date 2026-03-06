@@ -367,21 +367,12 @@
       </div>
 
       <div class="glass-card chat-widget" style="cursor: pointer;" onclick="checkAuthAndRun(() => window.openGlobalChat())">
-        <h3>실시간 지역 톡 <span class="live-dot"></span></h3>
-        
-        <div class="chat-room">
-          <div class="chat-icon">🌴</div>
-          <div class="chat-info"><h4>제주도 동행/맛집 방</h4><p>현재 124명 접속 중</p></div>
-        </div>
-        <div class="chat-room">
-          <div class="chat-icon">🌊</div>
-          <div class="chat-info"><h4>부산 해운대 핫플 공유</h4><p>현재 89명 접속 중</p></div>
-        </div>
-        <div class="chat-room">
-          <div class="chat-icon">🏔️</div>
-          <div class="chat-info"><h4>강원도 렌터카 드라이브</h4><p>현재 45명 접속 중</p></div>
-        </div>
-      </div>
+		<h3>실시간 지역 톡 <span class="live-dot"></span></h3>
+		  
+		<div id="live-chat-list">
+			<p style="text-align:center; font-size:12px; color:var(--text-gray); padding: 10px 0;">로딩 중... 💬</p>
+		</div>
+	  </div>
       
     </aside>
 
@@ -762,6 +753,59 @@
 	            el.classList.remove('fc-festival-hover');
 	        });
 	    }
+	    
+	    async function loadLiveChatSidebar() {
+	        const chatListEl = document.getElementById('live-chat-list');
+	        if (!chatListEl) return;
+
+	        try {
+	            const url = '${pageContext.request.contextPath}/community/api/chat/top-rooms';
+	            const response = await fetch(url);
+	            if (!response.ok) throw new Error('채팅방 로딩 실패');
+	            
+	            const rooms = await response.json();
+
+	            if (!rooms || rooms.length === 0) {
+	                chatListEl.innerHTML = `<p style="text-align:center; font-size:12px; color:var(--text-gray); padding: 10px 0;">현재 활성화된 방이 없습니다.</p>`;
+	                return;
+	            }
+
+	            const icons = ['🌴', '🌊', '🏔️', '🌃', '🎎'];
+	            let html = '';
+
+	            rooms.forEach((room, index) => {
+	                const icon = icons[index % icons.length];
+	                html += `
+	                    <div class="chat-room">
+	                      <div class="chat-icon">\${icon}</div>
+	                      <div class="chat-info">
+	                        <h4>\${room.chatRoomName}</h4>
+	                        <p>현재 \${room.userCount}명 접속 중</p>
+	                      </div>
+	                    </div>
+	                `;
+	            });
+	            chatListEl.innerHTML = html;
+
+	        } catch (error) {
+	            console.error("인기 채팅방을 불러오지 못했습니다:", error);
+	            chatListEl.innerHTML = `<p style="text-align:center; font-size:12px; color:#FF6B6B; padding: 10px 0;">목록 로딩 실패 😢</p>`;
+	        }
+	    }
+
+	    window.addEventListener('DOMContentLoaded', () => { 
+	        setupInfiniteScroll(); 
+	        const now = new Date();
+	        loadMiniFestivalSidebar(now.getFullYear(), now.getMonth() + 1);
+	        
+	        loadLiveChatSidebar();
+
+	        const urlParams = new URLSearchParams(window.location.search);
+	        const tabParams = urlParams.get('tab');
+	        if (tabParams && tabParams !== 'feed') {
+	            loadTabContent(tabParams, null);
+	        }
+	    });
     
   </script>
 </body>

@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.tripan.app.mapper.CommunityFreeboardMapper">
+
+  <select id="selectAll" resultType="com.tripan.app.domain.dto.CommunityFreeBoardDto">
+        SELECT 
+            f.board_id as boardId,
+            f.member_id as memberId,
+            f.category,
+            f.title,
+            f.content,
+            f.thumbnail_url as thumbnailUrl,
+            f.view_count as viewCount,
+            f.like_count as likeCount,
+            f.reply_count as replyCount,
+            TO_CHAR(f.created_at, 'YYYY-MM-DD HH24:MI') as createdAt,
+            m2.nickname,
+            m2.profile_image as profilePhoto FROM freeboard f
+        JOIN member1 m1 ON f.member_id = m1.member_id
+        JOIN member2 m2 ON m1.member_id = m2.member_id
+        ORDER BY f.board_id DESC
+    </select>
+
+    <select id="selectById" resultType="com.tripan.app.domain.dto.CommunityFreeBoardDto">
+        SELECT 
+            f.*, 
+            m2.nickname, 
+            m2.profile_image as profilePhoto 
+        FROM freeboard f
+        JOIN member2 m2 ON f.member_id = m2.member_id
+        WHERE f.board_id = #{boardId}
+    </select>
+
+    <insert id="insertBoard" parameterType="com.tripan.app.domain.dto.CommunityFreeBoardDto">
+        INSERT INTO freeboard (
+            board_id, member_id, category, title, content, thumbnail_url
+        ) VALUES (
+            SEQ_FREEBOARD_ID.NEXTVAL, #{memberId}, #{category}, #{title}, #{content}, #{thumbnailUrl}
+        )
+    </insert>
+
+    <update id="updateViewCount">
+        UPDATE freeboard SET view_count = view_count + 1 WHERE board_id = #{boardId}
+    </update>
+
+</mapper>
