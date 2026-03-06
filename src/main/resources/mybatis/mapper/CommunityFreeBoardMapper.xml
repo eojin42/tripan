@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
-<mapper namespace="com.tripan.app.mapper.CommunityFreeboardMapper">
+<mapper namespace="com.tripan.app.mapper.CommunityFreeBoardMapper">
 
   <select id="selectAll" resultType="com.tripan.app.domain.dto.CommunityFreeBoardDto">
         SELECT 

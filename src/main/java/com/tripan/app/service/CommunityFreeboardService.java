@@ -13,4 +13,6 @@ public interface CommunityFreeboardService {
     
     // 게시글 상세 조회 및 조회수 증가
     CommunityFreeBoardDto getBoardDetail(Long boardId);
+    
+    
 }
