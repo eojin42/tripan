@@ -66,12 +66,6 @@
           
           <li class="nav-item">
             <a href="${pageContext.request.contextPath}/community/feed" class="nav-link">커뮤니티</a>
-            <div class="dropdown-menu">
-              <a href="#">소셜 여행기 피드</a>
-              <a href="#">실시간 지역 채팅방</a>
-              <a href="#">자유 게시판 (정보 공유)</a>
-              <a href="#">지역별 축제 및 행사</a>
-            </div>
           </li>
           
           <li class="nav-item">
