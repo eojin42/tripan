@@ -1,6 +1,9 @@
 package com.tripan.app.admin.domain.dto;
 
+import java.util.List;
+
 import org.springframework.web.multipart.MultipartFile;
+
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -8,7 +11,6 @@ import lombok.Setter;
 @Getter
 @Setter
 @NoArgsConstructor
-
 public class MemberDto {
 
 	private Long memberId;
@@ -34,7 +36,6 @@ public class MemberDto {
 	
 	private int status;
 	private String role;
-	private Long equippedBadgeId;
 	
 	private String createdAt;
 	private String updateAt;
@@ -59,4 +60,11 @@ public class MemberDto {
     private String memo;
     private String regDate;
     private Long registerId;
+    
+    private List<BookingResponseDto> bookingList;
+    
+    private Integer followerCount;  // 팔로워 수
+    private Integer followingCount; // 팔로잉 수
+    private Integer badgeCount;     // 획득 뱃지 수
+	private Long equippedBadgeId;
 }

@@ -6,11 +6,15 @@ import java.util.List;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.tripan.app.admin.domain.dto.BookingResponseDto;
+import com.tripan.app.admin.domain.dto.DormantKpiDto;
+import com.tripan.app.admin.domain.dto.DormantMemberDto;
 import com.tripan.app.admin.domain.dto.MemberDto;
 import com.tripan.app.admin.domain.dto.MemberKpiDto;
 import com.tripan.app.admin.domain.entity.Member1;
 import com.tripan.app.admin.domain.entity.Member3;
 import com.tripan.app.admin.domain.entity.MemberStatus;
+import com.tripan.app.admin.mapper.BookingManageMapper;
 import com.tripan.app.admin.mapper.MemberManageMapper;
 import com.tripan.app.admin.repository.Member1ManageRepository;
 import com.tripan.app.admin.repository.Member3ManageRepository;
@@ -26,6 +30,7 @@ public class MemberManageServiceImpl implements MemberManageService{
 	private final Member1ManageRepository member1Repository;
     private final MemberStatusManageRepository memberStatusRepository;
     private final Member3ManageRepository member3Repository;
+    private final BookingManageMapper bookingMapper;
     
 	@Override
 	public List<MemberDto> getAllMembers() {
@@ -34,7 +39,13 @@ public class MemberManageServiceImpl implements MemberManageService{
 
 	@Override
 	public MemberDto getMemberDetail(Long memberId) {
-		return memberMapper.selectMemberDetail(memberId);
+		MemberDto member = memberMapper.selectMemberDetail(memberId);
+		
+		List<BookingResponseDto> bookings = bookingMapper.selectBookingsByMemberId(memberId);
+		member.setBookingList(bookings);
+		//member.setCsList(csMapper.selectCsHistoryByMemberId(memberId));
+		//member.setBadgeList(memberMapper.selectUserBadges(memberId));
+		return member;
 	}
 
 	@Transactional
@@ -83,6 +94,18 @@ public class MemberManageServiceImpl implements MemberManageService{
 		}
 		
 	    return kpi;
+	}
+
+	@Override
+	public DormantMemberDto getDormantMembers() {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public DormantKpiDto getDormantKpi() {
+		// TODO Auto-generated method stub
+		return null;
 	}
 
 }

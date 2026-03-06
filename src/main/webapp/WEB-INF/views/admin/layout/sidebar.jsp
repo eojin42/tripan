@@ -68,4 +68,26 @@
       subMenu.classList.toggle('open');
     }
   }
+  
+// 화면 크기에 따라 사이드바 자동 조절하는 함수
+  function autoToggleSidebar() {
+      // 사이드바를 감싸는 전체 레이아웃이나 body 선택
+      const layout = document.querySelector('.admin-layout'); 
+      
+      if (!layout) return;
+
+      // 화면 가로 넓이가 992px (보통 태블릿 사이즈) 이하로 줄어들면 사이드바를 닫는 클래스를 강제로 추가
+      if (window.innerWidth <= 992) {
+          layout.classList.add('collapsed'); 
+      } else {
+          // 화면 다시 커지면 클래스를 빼서 사이드바 열기
+          layout.classList.remove('collapsed');
+      }
+  }
+
+  // 이벤트 리스너 등록(화면이 처음 켜질 때 한 번 실행)
+  window.addEventListener('DOMContentLoaded', autoToggleSidebar);
+
+  // 사용자가 브라우저 창 크기를 마우스로 드래그해서 조절할 때마다 실행
+  window.addEventListener('resize', autoToggleSidebar);
 </script>
