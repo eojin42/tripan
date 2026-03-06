@@ -4,10 +4,10 @@
 <style>
   .global-chat-wrapper {
     position: fixed;
-    bottom: 50px; /* 플로팅 버튼 바로 위 */
+    bottom: 50px; 
     right: 30px;
     z-index: 9999;
-    display: none; /* JS로 제어 */
+    display: none; 
     flex-direction: column;
     align-items: flex-end;
   }
@@ -98,8 +98,13 @@
     display: flex; justify-content: center; align-items: center; transition: 0.2s;
   }
   .chat-control-btn:hover { background: var(--text-black); color: white; }
-
-  .chat-messages { flex: 1; padding: 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 16px; }
+  .chat-messages { 
+  	flex: 1; 
+  	padding: 20px; 
+  	overflow-y: auto; 
+  	display: flex; 
+  	flex-direction: column; 
+  	gap: 16px; }
   .msg-row { display: flex; gap: 10px; align-items: flex-end; }
   .msg-row.me { justify-content: flex-end; }
   .msg-profile { width: 36px; height: 36px; border-radius: 50%; object-fit: cover; }
@@ -124,7 +129,7 @@
     border-radius: 50%;
     background: white;
     box-shadow: 0 8px 24px rgba(45, 55, 72, 0.15);
-    display: none; /* JS로 제어 */
+    display: none; 
     justify-content: center;
     align-items: center;
     cursor: pointer;
@@ -157,15 +162,8 @@
       <div class="chat-sidebar-header">
         <h3>💬 참여중인 라운지</h3>
       </div>
-      <div class="chat-room-list">
-        <div class="chat-room-item">
-          <div class="room-icon">🌴</div>
-          <div class="room-info"><h4>제주도 동행/맛집 방</h4><p>최근: 저 근처에 숨겨진...</p></div>
-        </div>
-        <div class="chat-room-item">
-          <div class="room-icon" style="background: linear-gradient(135deg, #A8C8E1, #C2B8D9);">🌊</div>
-          <div class="room-info"><h4>부산 해운대 핫플</h4><p>최근: 내일 요트 타실 분?</p></div>
-        </div>
+      <div class="chat-room-list" id="dynamicChatRoomList">
+        
       </div>
     </div>
 
@@ -195,15 +193,7 @@
         </div>
 
         <div class="chat-messages">
-          <div class="msg-row other">
-            <img src="https://picsum.photos/seed/user2/100/100" class="msg-profile">
-            <div><div class="msg-name">@서핑매니아</div><div class="msg-bubble">혹시 지금 중문 색달해변 파도 어떤가요? 🌊</div></div>
-            <span class="msg-time">오후 2:30</span>
-          </div>
-          <div class="msg-row me">
-            <span class="msg-time">오후 2:35</span>
-            <div class="msg-bubble">저 근처에 숨겨진 뷰 맛집 카페 아는데 위치 공유해드릴까요? 😎</div>
-          </div>
+          
         </div>
 
         <div class="chat-input-area">
@@ -221,11 +211,19 @@
   <img src="${pageContext.request.contextPath}/dist/images/logo.png" alt="Tripan Chat" onerror="this.src='https://cdn-icons-png.flaticon.com/512/1041/1041916.png'">
 </div>
 
+
+<script src="https://cdn.jsdelivr.net/npm/sockjs-client@1/dist/sockjs.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/stomp.js/2.3.3/stomp.min.js"></script>
+
 <script>
   document.addEventListener("DOMContentLoaded", () => {
+    
+  	const memberId = "${sessionScope.loginUser.memberId}";
+    const senderNickname = "${sessionScope.loginUser.nickname}";
+    const contextPath = "${pageContext.request.contextPath}";
+
     const chatModal = document.getElementById("globalChatModal");
     const floatingBtn = document.getElementById("chatFloatingBtn");
-    
     const chatState = sessionStorage.getItem("tripanChatState");
 
     if (chatState === "opened") {
@@ -239,46 +237,182 @@
       floatingBtn.style.display = "none";
     }
 
-    //  닫기 버튼 (X)
     document.getElementById("btnChatClose").addEventListener("click", () => {
       chatModal.style.display = "none";
       floatingBtn.style.display = "none";
       sessionStorage.setItem("tripanChatState", "closed");
     });
 
-    // 최소화 버튼 (_)
     document.getElementById("btnChatMinimize").addEventListener("click", () => {
       chatModal.style.display = "none";
       floatingBtn.style.display = "flex";
       sessionStorage.setItem("tripanChatState", "minimized");
     });
 
-    // 우측 하단 플로팅 버튼 클릭 시 -> 다시 열기
     floatingBtn.addEventListener("click", () => {
       floatingBtn.style.display = "none";
       chatModal.style.display = "flex";
       sessionStorage.setItem("tripanChatState", "opened");
     });
 
-    //  다른 페이지에서 채팅방 목록을 눌렀을 때 호출될 함수
     window.openGlobalChat = function() {
       chatModal.style.display = "flex";
       floatingBtn.style.display = "none";
       sessionStorage.setItem("tripanChatState", "opened");
     };
     
-    const chatRoomItems = document.querySelectorAll('.chat-room-item');
+    let stompClient = null;
+    let currentRoomId = null;
+    
     const emptyState = document.getElementById('chatEmptyState');
     const roomView = document.getElementById('chatRoomView');
+    const chatMessages = document.querySelector('.chat-messages');
+    const chatInput = document.querySelector('.chat-input');
+    const btnSend = document.querySelector('.btn-send');
 
-    chatRoomItems.forEach(item => {
-      item.addEventListener('click', function() {
-        chatRoomItems.forEach(el => el.classList.remove('active'));
-        this.classList.add('active');
-        emptyState.style.display = 'none';
-        roomView.style.display = 'flex';
-      });
+    if (memberId) {
+        fetch(contextPath + '/api/chat/rooms')
+        .then(response => {
+          // 서버가 에러나 로그인 페이지(HTML)를 던지면 여기서 걸러냅니다.
+          const contentType = response.headers.get("content-type");
+          if (!contentType || !contentType.includes("application/json")) {
+            throw new TypeError("JSON이 아닙니다! 시큐리티 설정이나 주소를 확인하세요.");
+          }
+          return response.json();
+        })
+        .then(rooms => {
+          const listEl = document.getElementById('dynamicChatRoomList');
+          if (!listEl) return;
+          
+          listEl.innerHTML = ''; 
+
+          const icons = ['🌴', '🌊', '🏔️', '🌃', '🎎'];
+
+          rooms.forEach((room, index) => {
+            const icon = icons[index % icons.length];
+            const html = `
+              <div class="chat-room-item" data-room-id="\${room.chatRoomId}" data-room-name="\${room.chatRoomName}">
+                <div class="room-icon">\${icon}</div>
+                <div class="room-info">
+                  <h4>\${room.chatRoomName}</h4>
+                  <p>입장하여 대화를 나눠보세요!</p>
+                </div>
+              </div>
+            `;
+            listEl.insertAdjacentHTML('beforeend', html);
+          });
+
+          document.querySelectorAll('.chat-room-item').forEach(item => {
+            item.addEventListener('click', function() {
+              document.querySelectorAll('.chat-room-item').forEach(el => el.classList.remove('active'));
+              this.classList.add('active');
+              emptyState.style.display = 'none';
+              roomView.style.display = 'flex';
+
+              const roomId = this.getAttribute('data-room-id'); 
+              const roomName = this.getAttribute('data-room-name');
+              
+              document.querySelector('.chat-title-info h2').innerText = '💬 #' + roomName;
+
+              connectChatRoom(roomId);
+            });
+          });
+        })
+        .catch(error => console.error('방 목록을 불러오지 못했습니다:', error));
+      }
+
+    btnSend.addEventListener('click', sendMessage);
+    chatInput.addEventListener('keypress', function(e) {
+      if (e.key === 'Enter') {
+        sendMessage();
+      }
     });
+
+    function connectChatRoom(roomId) {
+      if (!memberId) { 
+        if (typeof showLoginModal === 'function') {
+            showLoginModal();
+        } else {
+            alert("로그인이 필요한 서비스입니다.");
+        }
+        return;
+      }
+
+      if (stompClient !== null) {
+        stompClient.disconnect();
+      }
+
+      currentRoomId = roomId;
+      chatMessages.innerHTML = `
+        <div style="text-align: center; margin: 20px 0;">
+          <span style="background: rgba(0, 0, 0, 0.08); color: var(--text-gray); font-size: 12px; padding: 6px 16px; border-radius: 16px; font-weight: 600;">
+            🎉 라운지에 입장하셨습니다. 매너 채팅 부탁드려요!
+          </span>
+        </div>
+      `; 
+
+      const socket = new SockJS(contextPath + '/ws-chat');
+      stompClient = Stomp.over(socket);
+      stompClient.debug = null; 
+
+      stompClient.connect({}, function (frame) {
+        console.log('방 번호 [' + roomId + '] 에 연결되었습니다!');
+
+        stompClient.subscribe('/sub/chat/room/' + roomId, function (chat) {
+          const messageData = JSON.parse(chat.body);
+          renderMessage(messageData); 
+        });
+      });
+    }
+
+    function sendMessage() {
+      const content = chatInput.value.trim();
+      
+      if (content && stompClient) {
+        const chatMessage = {
+          roomId: currentRoomId,
+          memberId: memberId,
+          senderNickname: senderNickname,
+          content: content,
+          messageType: 'TALK'
+        };
+
+        stompClient.send("/pub/chat/message", {}, JSON.stringify(chatMessage));
+        chatInput.value = ''; 
+      }
+    }
+
+    function renderMessage(message) {
+      const isMe = (message.memberId == memberId); 
+      
+      const msgRow = document.createElement('div');
+      msgRow.className = 'msg-row ' + (isMe ? 'me' : 'other');
+
+      let htmlString = '';
+
+      if (!isMe) {
+        // 남이 보낸 메시지 (왼쪽)
+        htmlString += `
+          <img src="https://picsum.photos/seed/\${message.memberId}/100/100" class="msg-profile" alt="프로필">
+          <div style="max-width: 70%;">
+            <div class="msg-name">@\${message.senderNickname}</div>
+            <div class="msg-bubble" style="max-width: 100%; word-break: break-word;">\${message.content}</div>
+          </div>
+          <span class="msg-time" style="white-space: nowrap; margin-bottom: 4px;">\${message.createdAt || ''}</span>
+        `;
+      } else {
+        // 내가 보낸 메시지 (오른쪽)
+        htmlString += `
+          <span class="msg-time" style="white-space: nowrap; margin-bottom: 4px;">\${message.createdAt || ''}</span>
+          <div class="msg-bubble" style="max-width: 70%; word-break: break-word;">\${message.content}</div>
+        `;
+      }
+
+      msgRow.innerHTML = htmlString;
+      chatMessages.appendChild(msgRow);
+
+      chatMessages.scrollTop = chatMessages.scrollHeight; // 항상 맨 밑으로 스크롤
+    }
     
   });
 </script>

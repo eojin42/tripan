@@ -426,9 +426,7 @@
   
 
   <jsp:include page="/WEB-INF/views/layout/footer.jsp"/>
-
   <jsp:include page="/WEB-INF/views/member/loginModal.jsp" />
-  <jsp:include page="/WEB-INF/views/community/chat/openlounge.jsp" />
 
   <script>
     function startRoulette() {

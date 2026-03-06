@@ -1,14 +1,18 @@
 package com.tripan.app.controller;
 
 import com.tripan.app.domain.dto.CommunityChatMessageDto;
+import com.tripan.app.domain.dto.CommunityChatRoomDto;
 import com.tripan.app.service.CommunityChatService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.messaging.handler.annotation.MessageMapping;
 import org.springframework.messaging.simp.SimpMessageSendingOperations;
 import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.ResponseBody;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.List;
 
 @Controller
 @RequiredArgsConstructor
@@ -27,4 +31,11 @@ public class CommunityChatController {
 
         messagingTemplate.convertAndSend("/sub/chat/room/" + message.getRoomId(), message);
     } 
+    
+    @GetMapping("/api/chat/rooms")
+    @ResponseBody
+    public List<CommunityChatRoomDto> getChatRoomList() {
+        return chatService.getAllChatRooms();
+    }
+    
 }
