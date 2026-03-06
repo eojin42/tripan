@@ -440,6 +440,7 @@
 
     let isFetching = false;     
     let scrollObserver = null; 
+    let scrollCount = 0;
 
     function setupInfiniteScroll() {
       if(scrollObserver) scrollObserver.disconnect();
@@ -456,7 +457,15 @@
 
     function handleInfiniteScroll(trigger) {
       if (isFetching) return;
-      if (!IS_LOGGED_IN) { showLoginModal(); return; }
+      if (!IS_LOGGED_IN) {
+    	  scrollCount++;
+    	  
+    	  if (scrollCount > 2) {
+    	  showLoginModal(); 
+    	  return; 
+    	  }
+    		  
+    	}
 
       isFetching = true;
       trigger.innerHTML = '로딩 중... ⏳';
