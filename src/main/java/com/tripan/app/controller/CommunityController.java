@@ -1,17 +1,22 @@
 package com.tripan.app.controller;
 
 import java.util.List;
+import java.util.Map;
 
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseBody;
 
 import com.tripan.app.config.WebSocketEventListener;
 import com.tripan.app.domain.dto.CommunityChatRoomDto;
 import com.tripan.app.domain.dto.CommunityFreeBoardDto;
+import com.tripan.app.domain.dto.CommunityFreeboardCommentDto;
 import com.tripan.app.service.CommunityChatService;
 import com.tripan.app.service.CommunityFreeboardService;
 
@@ -77,6 +82,46 @@ public class CommunityController {
         return topRooms;
     }
  
+    @GetMapping("/freeboard/detail/{boardId}")
+    public String handleFreeboardDetail(@PathVariable("boardId") Long boardId, HttpServletRequest request, Model model) {
+        String requestedWith = request.getHeader("X-Requested-With");
+        
+        if ("Fetch".equals(requestedWith) || "XMLHttpRequest".equals(requestedWith)) {
+            CommunityFreeBoardDto board = freeboardService.getBoardDetail(boardId);
+
+            List<CommunityFreeboardCommentDto> comments = freeboardService.getCommentList(boardId);
+            model.addAttribute("board", board);
+            model.addAttribute("comments", comments); 
+            
+            log.info("{}번 게시글 상세 조회", boardId);
+            return "community/fragment/freeboard_detail"; 
+        }
+        return "redirect:/community/freeboard";
+    }
+    
+    /**
+     * 🌟 자유게시판 댓글 등록 (AJAX)
+     */
+    @PostMapping("/freeboard/comment/add")
+    @ResponseBody
+    public ResponseEntity<?> addFreeboardComment(@RequestBody CommunityFreeboardCommentDto commentDto) {
+        try {
+            // 실제 로그인 연동 시 세션에서 memberId를 가져와 세팅해야 함
+            // 임시로 memberId = 1 로 고정 테스트 (나중에 수정 필요)
+            if (commentDto.getMemberId() == null) {
+                commentDto.setMemberId(1L); 
+            }
+            
+            freeboardService.registerComment(commentDto);
+            
+            // 등록 성공 메시지 반환
+            return ResponseEntity.ok(Map.of("status", "success", "message", "댓글이 등록되었습니다."));
+        } catch (Exception e) {
+            log.error("댓글 등록 실패", e);
+            return ResponseEntity.status(500).body(Map.of("status", "error", "message", "등록 중 오류가 발생했습니다."));
+        }
+    }
+    
     
     @GetMapping("/chat/openlounge")
     public String openlounge(Model model) {

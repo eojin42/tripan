@@ -4,6 +4,7 @@ import java.util.List;
 import org.apache.ibatis.annotations.Mapper;
 
 import com.tripan.app.domain.dto.CommunityFreeBoardDto;
+import com.tripan.app.domain.dto.CommunityFreeboardCommentDto;
 
 @Mapper
 public interface CommunityFreeBoardMapper {
@@ -19,4 +20,8 @@ public interface CommunityFreeBoardMapper {
     
     void updateLikeCount(Long boardId);
     void updateReplyCount(Long boardId);
+    
+    List<CommunityFreeboardCommentDto> selectComments(Long boardId);
+    
+    void insertComment(CommunityFreeboardCommentDto dto);
 }
