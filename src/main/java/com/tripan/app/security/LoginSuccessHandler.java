@@ -41,7 +41,7 @@ public class LoginSuccessHandler implements AuthenticationSuccessHandler {
 			// 패스워드 변경이 90일이 지난 경우 패스워드 변경 폼으로 이동
 			// 로그인 정보 저장
 			MemberDto dto = memberService.findById(authentication.getName());
-			
+			request.getSession().setAttribute("loginUser", dto);
 			
 			DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
 			LocalDateTime currentDateTime = LocalDateTime.now();
