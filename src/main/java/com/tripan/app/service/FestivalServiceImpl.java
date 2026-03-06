@@ -35,8 +35,8 @@ public class FestivalServiceImpl implements FestivalService {
                 dto.setEnd(sdf.format(dto.getEventEndDate()));
             }
 
-            dto.setAddress(dto.getEventPlace()); // XML에서 조회한 주소 넣기
-            dto.setImage(dto.getFirstimage());   // XML에서 조회한 이미지 넣기
+            dto.setAddress(dto.getEventPlace()); 
+            dto.setImage(dto.getFirstimage());   
             
             dto.setColor(colors[colorIndex % colors.length]);
             colorIndex++;

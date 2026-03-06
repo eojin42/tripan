@@ -1,6 +1,7 @@
 package com.tripan.app.service;
 
 import com.tripan.app.domain.dto.CommunityChatMessageDto;
+import com.tripan.app.domain.dto.CommunityChatRoomDto;
 import com.tripan.app.mapper.CommunityChatMapper;
 
 import lombok.RequiredArgsConstructor;
@@ -27,4 +28,10 @@ public class CommunityChatServiceImpl implements CommunityChatService {
         // 나중에 상담 채팅이나 워크스페이스 채팅 시 과거 내역을 불러올 때 사용합니다.
         return chatMapper.selectChatHistory(roomId);
     }
+    
+    @Override
+    public List<CommunityChatRoomDto> getAllChatRooms() {
+        return chatMapper.selectAllChatRooms();
+    }
+    
 }

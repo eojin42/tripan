@@ -53,10 +53,10 @@ public class FestivalSyncServiceImpl implements FestivalSyncService {
             System.out.println("📅 동기화 기준일(오늘): " + today);
 
             URI listUri = buildUri("/searchFestival2", null)
-                    .queryParam("eventStartDate", today) 
-                    .queryParam("arrange", "C")
-                    .queryParam("numOfRows", 999) 
-                    .build().toUri();
+	                    .queryParam("eventStartDate", today) 
+	                    .queryParam("arrange", "C")
+	                    .queryParam("numOfRows", 999) 
+	                    .build().toUri();
                     
             JsonNode listItems = callApiAndGetItems(listUri);
 

@@ -34,5 +34,16 @@
         WHERE m.room_id = #{roomId}
         ORDER BY m.created_at ASC
     </select>
+    
+    <select id="selectAllChatRooms" resultType="com.tripan.app.domain.dto.CommunityChatRoomDto">
+        SELECT 
+            chat_room_id as chatRoomId, 
+            chat_room_name as chatRoomName, 
+            chat_room_type as chatRoomType, 
+            status 
+        FROM chat_room 
+        WHERE status = 'ACTIVE' 
+        ORDER BY chat_room_id ASC
+    </select>
 
 </mapper>
