@@ -1,46 +1,73 @@
 <?xml version="1.0" encoding="UTF-8"?>
-
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
- <mapper namespace="com.tripan.app.admin.mapper.BookingManageMapper">
- <select id="dummy" resultType="int">
+<mapper namespace="com.tripan.app.admin.mapper.BookingManageMapper">
+
+    <select id="dummy" resultType="int">
         SELECT 1 FROM DUAL
     </select>
-    <!--
-	<select id="selectMemberBookings" parameterType="Long" resultType="com.tripan.app.admin.domain.dto.BookingResponseDto">
-		SELECT b.id,
-            '#' || b.res_id AS resId,b.room_name AS roomName, b.check_in || ' ~ ' || b.check_out AS duration, 
-            '₩ ' || TO_CHAR(b.total_price, 'FM999,999,999') AS totalPrice, 
+
+    <select id="selectBookingsByMemberId" parameterType="Long" resultType="com.tripan.app.admin.domain.dto.BookingResponseDto">
+        SELECT 
+            b.RESERVATION_ID AS id,
+            TO_CHAR(b.RESERVATION_ID) AS resId, /* 이미지에 RES_ID가 없으므로 PK를 문자열로 변환 */
+            r.ROOM_NAME AS roomName,
+            m.USERNAME AS username,
+            /* 날짜 컬럼명: CHECK_IN_DATE, CHECK_OUT_DATE */
+            TO_CHAR(b.CHECK_IN_DATE, 'YYYY-MM-DD') || ' ~ ' || TO_CHAR(b.CHECK_OUT_DATE, 'YYYY-MM-DD') AS duration,
+            /* 금액 컬럼명: AMOUNT */
+            '₩ ' || TO_CHAR(b.AMOUNT, 'FM999,999,999') AS totalPrice, 
+            
+            /* 상태 컬럼명: STATUS (VARCHAR2) */
+            b.STATUS AS statusText,
             CASE 
-                WHEN b.status = 1 THEN '예약 확정'
-                WHEN b.status = 3 THEN '예약 취소'
-                ELSE '결제 대기'
-            END AS statusText,
-            CASE 
-                WHEN b.status = 1 THEN 'badge-done'
-                WHEN b.status = 3 THEN 'badge-danger'
+                WHEN b.STATUS = '예약 확정' THEN 'badge-done'
+                WHEN b.STATUS = '예약 취소' THEN 'badge-danger'
                 ELSE 'badge-wait'
-            END AS statusClass FROM booking b
-        WHERE b.member_id = #{memberId}
-        ORDER BY b.id DESC
-	</select>
-	
-	<select id="selectAllBookings" resultType="com.tripan.app.admin.domain.dto.BookingResponseDto">
-		SELECT b.id, '#' || b.res_id AS resId, m.username, b.room_name AS roomName,
-            	b.check_in || ' ~ ' || b.check_out AS duration,
-            '₩ ' || TO_CHAR(b.total_price, 'FM999,999,999') AS totalPrice,
-            CASE 
-                WHEN b.status = 1 THEN '예약 확정'
-                WHEN b.status = 2 THEN '예약중'
-                WHEN b.status = 0 THEN '예약 취소'
-                ELSE '결제 대기'
-            END AS statusText,
-            CASE 
-                WHEN b.status = 1 THEN 'badge-done'
-                WHEN b.status = 2 THEN 'badge-wait'
-                WHEN b.status = 0 THEN 'badge-danger'
-                ELSE 'badge-default'
             END AS statusClass
-        FROM booking b
-        JOIN member1 m ON b.member_id = m.member_id ORDER BY b.id DESC
-	</select> -->
+        FROM RESERVATION b
+        LEFT JOIN ROOM r ON b.ROOM_ID = r.ROOM_ID
+        LEFT JOIN MEMBER1 m ON b.MEMBER_ID = m.MEMBER_ID
+        WHERE b.MEMBER_ID = #{memberId}
+        ORDER BY b.RESERVATION_ID DESC
+    </select>
+
+    <select id="selectAllBookings" resultType="com.tripan.app.admin.domain.dto.BookingResponseDto">
+        SELECT 
+            b.RESERVATION_ID AS id, 
+            '#' || b.RESERVATION_ID AS resId, 
+            m.USERNAME AS username, 
+            r.ROOM_NAME AS roomName,
+            TO_CHAR(b.CHECK_IN_DATE, 'YYYY-MM-DD') || ' ~ ' || TO_CHAR(b.CHECK_OUT_DATE, 'YYYY-MM-DD') AS duration,
+            '₩ ' || TO_CHAR(b.AMOUNT, 'FM999,999,999') AS totalPrice,
+            b.STATUS AS statusText,
+            CASE 
+                WHEN b.STATUS = '예약 확정' THEN 'badge-done'
+                WHEN b.STATUS = '예약 취소' THEN 'badge-danger'
+                ELSE 'badge-wait'
+            END AS statusClass
+        FROM RESERVATION b
+        JOIN MEMBER1 m ON b.MEMBER_ID = m.MEMBER_ID 
+        LEFT JOIN ROOM r ON b.ROOM_ID = r.ROOM_ID
+        ORDER BY b.RESERVATION_ID DESC
+    </select> 
+    
+    <select id="selectMemberBookings" parameterType="Long" resultType="com.tripan.app.admin.domain.dto.BookingResponseDto">
+        SELECT 
+            b.RESERVATION_ID AS id,
+            '#' || b.RESERVATION_ID AS resId,
+            r.ROOM_NAME AS roomName, 
+            TO_CHAR(b.CHECK_IN_DATE, 'YYYY-MM-DD') || ' ~ ' || TO_CHAR(b.CHECK_OUT_DATE, 'YYYY-MM-DD') AS duration, 
+            '₩ ' || TO_CHAR(b.AMOUNT, 'FM999,999,999') AS totalPrice, 
+            b.STATUS AS statusText,
+            CASE 
+                WHEN b.STATUS = '예약 확정' THEN 'badge-done'
+                WHEN b.STATUS = '예약 취소' THEN 'badge-danger'
+                ELSE 'badge-wait'
+            END AS statusClass 
+        FROM RESERVATION b
+        LEFT JOIN ROOM r ON b.ROOM_ID = r.ROOM_ID
+        WHERE b.MEMBER_ID = #{memberId}
+        ORDER BY b.RESERVATION_ID DESC
+    </select>
+
 </mapper>

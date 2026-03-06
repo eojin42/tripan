@@ -3,7 +3,7 @@ package com.tripan.app.admin.service;
 import com.tripan.app.admin.domain.dto.BookingResponseDto;
 import com.tripan.app.admin.domain.entity.Booking;
 import com.tripan.app.admin.mapper.BookingManageMapper;
-import com.tripan.app.admin.repository.BookingManegeRepository;
+import com.tripan.app.admin.repository.BookingManageRepository;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -19,7 +19,7 @@ import java.util.List;
 public class BookingManageServiceImpl implements BookingManageService {
 
     private final BookingManageMapper bookingMapper;
-    private final BookingManegeRepository bookingRepository;
+    private final BookingManageRepository bookingRepository;
 
 
     @Override

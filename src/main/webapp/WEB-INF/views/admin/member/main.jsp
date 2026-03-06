@@ -8,6 +8,63 @@
   <meta charset="UTF-8">
   <title>TripanSuper — 회원 관리</title>
   <link rel="stylesheet" href="${pageContext.request.contextPath}/dist/css/admin.css">
+  <style>
+    .col-check { width: 44px; text-align: center; }
+    input[type="checkbox"] { width: 16px; height: 16px; cursor: pointer; accent-color: var(--primary); }
+    .col-id { user-select: text; -webkit-user-select: text; cursor: text; }
+
+    .bulk-bar {
+      display: none; align-items: center; gap: 12px;
+      padding: 12px 20px; background: #EFF6FF;
+      border: 1.5px solid #BFDBFE; border-radius: 14px;
+      margin-bottom: 16px; animation: slideDown 0.2s ease;
+    }
+    .bulk-bar.visible { display: flex; }
+    @keyframes slideDown { from { opacity:0; transform:translateY(-6px); } to { opacity:1; transform:translateY(0); } }
+    .bulk-count { font-size: 13px; font-weight: 800; color: #1D4ED8; background: #DBEAFE; padding: 4px 12px; border-radius: 20px; }
+    .bulk-bar-label { font-size: 13px; font-weight: 700; color: var(--text); }
+    .bulk-bar-actions { display: flex; gap: 8px; margin-left: auto; }
+    .btn-bulk { height: 36px; padding: 0 16px; border-radius: 9px; font-size: 13px; font-weight: 800; border: none; cursor: pointer; transition: opacity 0.15s; }
+    .btn-bulk-status { background: #111; color: #fff; }
+    .btn-bulk-excel  { background: var(--bg); color: var(--text); border: 1px solid var(--border); }
+    .btn-bulk-copy   { background: #F0FDF4; color: #15803D; border: 1px solid #BBF7D0; }
+    .btn-bulk:hover  { opacity: 0.8; }
+
+    .modal-overlay {
+      position: fixed; inset: 0; background: rgba(15,23,42,0.5);
+      backdrop-filter: blur(6px); display: none;
+      justify-content: center; align-items: center;
+      z-index: 3000; padding: 24px;
+    }
+    .modal-sheet {
+      background: #fff; width: 100%; max-width: 440px;
+      border-radius: 22px; overflow: hidden;
+      box-shadow: 0 24px 64px rgba(0,0,0,0.16);
+      animation: modalUp 0.3s cubic-bezier(0.16,1,0.3,1);
+      display: flex; flex-direction: column;
+    }
+    @keyframes modalUp { from{opacity:0;transform:translateY(20px)} to{opacity:1;transform:translateY(0)} }
+    .ms-head    { padding: 26px 28px 18px; border-bottom: 1px solid var(--border); }
+    .ms-head h3 { font-size: 17px; font-weight: 900; margin: 0 0 4px; }
+    .ms-head p  { font-size: 13px; color: var(--muted); margin: 0; }
+    .ms-body    { padding: 22px 28px; display: flex; flex-direction: column; gap: 16px; }
+    .ms-foot    { padding: 16px 28px; border-top: 1px solid var(--border); display: flex; gap: 10px; }
+    .fg         { display: flex; flex-direction: column; gap: 7px; }
+    .fg label   { font-size: 11px; font-weight: 800; color: var(--muted); text-transform: uppercase; letter-spacing: 0.6px; }
+    .fg select, .fg textarea, .fg input {
+      width: 100%; border: 1.5px solid var(--border); border-radius: 10px;
+      padding: 10px 14px; font-size: 14px; font-weight: 600;
+      background: #fff; outline: none; transition: border-color 0.2s;
+      box-sizing: border-box; font-family: inherit; color: var(--text);
+    }
+    .fg select:focus, .fg textarea:focus, .fg input:focus { border-color: var(--primary); box-shadow: 0 0 0 3px var(--primary-10); }
+    .fg textarea { resize: vertical; min-height: 80px; line-height: 1.5; }
+    .btn-m         { flex:1; height: 46px; border-radius: 11px; font-weight: 800; font-size: 14px; border: none; cursor: pointer; transition: opacity 0.15s; }
+    .btn-m-ghost   { background: var(--bg); color: var(--text); }
+    .btn-m-primary { background: #111; color: #fff; }
+    .btn-m:hover   { opacity: 0.84; }
+    .filter-row .btn { display: inline-flex; align-items: center; gap: 6px; }
+  </style>
 </head>
 <body>
 
@@ -17,343 +74,244 @@
     <jsp:include page="../layout/header.jsp" />
 
     <main class="main-content">
+
       <div class="page-header fade-up">
         <div>
           <h1>회원 관리</h1>
           <p>전체 유저, 파트너 및 관리자의 권한과 상태를 통합 관리합니다.</p>
         </div>
-        <div class="header-actions">
-          <button class="btn btn-ghost btn-sm">📥 전체 목록 다운로드</button>
-        </div>
       </div>
 
       <div class="kpi-grid">
-		  <div class="card kpi-card fade-up fade-up-1">
-		    <div class="kpi-label">전체 회원수</div>
-		    <div class="kpi-value" id="kpiTotal">${kpi.totalCount}</div>
-		    <div class="kpi-sub">일반 ${kpi.userCount} / 파트너 ${kpi.partnerCount} / 관리자 ${kpi.adminCount}</div>
-		  </div>
-		
-		  <div class="card kpi-card fade-up fade-up-2">
-		    <div class="kpi-label">신규 가입 (오늘)</div>
-		    <div class="kpi-value" id="kpiTodayNew">${kpi.todayNewCount}명</div> <c:choose>
-		      <c:when test="${kpi.dailyTrend > 0}">
-		        <span class="trend trend-up" style="color: #ff4d4f;">↑ ${kpi.dailyTrend}%</span>
-		      </c:when>
-		      <c:when test="${kpi.dailyTrend < 0}">
-		        <%-- 절댓값 처리를 위해 마이너스(-) 기호 붙임 --%>
-		        <span class="trend trend-down" style="color: #1890ff;">↓ ${-kpi.dailyTrend}%</span>
-		      </c:when>
-		      <c:otherwise>
-		        <span class="trend" style="color: #999;">- 0%</span>
-		      </c:otherwise>
-		    </c:choose>
-		  </div>
-		
-		  <div class="card kpi-card fade-up fade-up-3">
-		    <div class="kpi-label">정상 활동 유저</div>
-		    <div class="kpi-value" style="color:var(--success)" id="kpiActive">${kpi.activeCount}</div>
-		    <div class="kpi-sub">현재 서비스 이용 가능</div>
-		  </div>
-		
-		  <div class="card kpi-card fade-up fade-up-4">
-		    <div class="kpi-label">활동 정지(Ban) 유저</div>
-		    <div class="kpi-value" style="color:var(--danger)" id="kpiBan">${kpi.banCount}</div>
-		    <div class="badge badge-danger">정책 위반 관리중</div>
-		  </div>
-	  
-	  </div>
+        <div class="card kpi-card fade-up fade-up-1">
+          <div class="kpi-label">전체 회원수</div>
+          <div class="kpi-value" id="kpiTotal">${kpi.totalCount != null ? kpi.totalCount : 0}</div>
+          <div class="kpi-sub">일반 ${kpi.userCount} / 파트너 ${kpi.partnerCount} / 관리자 ${kpi.adminCount}</div>
+        </div>
+        <div class="card kpi-card fade-up fade-up-2">
+          <div class="kpi-label">신규 가입 (오늘)</div>
+          <div class="kpi-value" id="kpiTodayNew">${kpi.todayNewCount != null ? kpi.todayNewCount : 0}명</div>
+          <c:choose>
+            <c:when test="${kpi.dailyTrend > 0}"><span class="trend" style="color:#ff4d4f;">↑ ${kpi.dailyTrend}%</span></c:when>
+            <c:when test="${kpi.dailyTrend < 0}"><span class="trend" style="color:#1890ff;">↓ ${-kpi.dailyTrend}%</span></c:when>
+            <c:otherwise><span class="trend" style="color:#999;">- 0%</span></c:otherwise>
+          </c:choose>
+        </div>
+        <div class="card kpi-card fade-up fade-up-3">
+          <div class="kpi-label">정상 활동 유저</div>
+          <div class="kpi-value" style="color:var(--success)" id="kpiActive">${kpi.activeCount != null ? kpi.activeCount : 0}</div>
+          <div class="kpi-sub">현재 서비스 이용 가능</div>
+        </div>
+        <div class="card kpi-card fade-up fade-up-4">
+          <div class="kpi-label">활동 정지(Ban) 유저</div>
+          <div class="kpi-value" style="color:var(--danger)" id="kpiBan">${kpi.banCount != null ? kpi.banCount : 0}</div>
+          <div class="badge badge-danger">정책 위반 관리중</div>
+        </div>
+      </div>
 
       <div class="card filter-card fade-up">
         <div class="filter-row">
           <div class="filter-label">회원 검색</div>
-          
-          <select class="filter-select" id="searchRole" style="width: 120px;" onchange="filterTable()">
-			  <option value="ALL">전체 권한</option>
-			  <option value="ROLE_USER">일반 유저</option>
-			  <option value="ROLE_PARTNER">파트너</option>
-			  <option value="ROLE_ADMIN">관리자</option>
-			</select>
-			
-			<select class="filter-select" id="searchStatus" style="width: 120px;" onchange="filterTable()">
-			  <option value="ALL">전체 상태</option>
-			  <option value="1">정상</option>
-			  <option value="2">정지(BAN)</option>
-			  <option value="3">휴면</option>
-			  <option value="4">탈퇴</option>
-			</select>
-
-          <select class="filter-select" id="searchCategory" style="width: 120px;">
-            <option value="id">ID (이메일)</option>
+          <select class="filter-select" id="searchRole" style="width:120px;">
+            <option value="ALL">전체 권한</option>
+            <option value="ROLE_USER">일반 유저</option>
+            <option value="ROLE_PARTNER">파트너</option>
+            <option value="ROLE_ADMIN">관리자</option>
+          </select>
+          <select class="filter-select" id="searchStatus" style="width:120px;">
+            <option value="ALL">전체 상태</option>
+            <option value="1">정상</option>
+            <option value="2">정지(BAN)</option>
+            <option value="3">휴면</option>
+            <option value="4">탈퇴</option>
+          </select>
+          <select class="filter-select" id="searchCategory" style="width:120px;">
+            <option value="id">ID</option>
             <option value="nickname">닉네임</option>
           </select>
-          <input type="text" id="searchInput" class="keyword-input" placeholder="검색어를 입력하세요..." onkeyup="if(event.key==='Enter') filterTable()">
-          <button class="btn btn-primary" onclick="filterTable()">🔍 검색</button>
+          <input type="text" id="searchInput" class="keyword-input"
+                 placeholder="여러 ID는 쉼표(,)로 구분해 붙여넣기"
+                 onkeyup="if(event.key==='Enter') filterTable()" style="flex:1;">
+          <button class="btn btn-primary" onclick="filterTable()">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            검색
+          </button>
         </div>
       </div>
 
       <div class="card table-card fade-up">
-        <div class="w-header"><h2>👥 전체 회원 목록</h2></div>
+        <div class="w-header" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+          <h2 style="display:inline-flex; align-items:center; gap:8px;">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/>
+              <path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+            </svg>
+            회원 목록
+          </h2>
+          <button class="btn btn-outline btn-sm" onclick="downloadFilteredExcel(false)" style="display:inline-flex; align-items:center; gap:6px;">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>
+            </svg>
+            엑셀 다운로드
+          </button>
+        </div>
+
+        <div class="bulk-bar" id="bulkBar">
+          <span class="bulk-count" id="bulkCount">0명</span>
+          <span class="bulk-bar-label">선택됨</span>
+          <div class="bulk-bar-actions">
+            <button class="btn-bulk btn-bulk-copy"   onclick="copySelectedIds()">ID 복사</button>
+            <button class="btn-bulk btn-bulk-status" onclick="openBulkStatusModal()">상태 일괄 변경</button>
+            <button class="btn-bulk btn-bulk-excel"  onclick="downloadFilteredExcel(true)">선택 엑셀</button>
+          </div>
+        </div>
+
         <div class="table-responsive">
           <table>
             <thead>
               <tr>
+                <th class="col-check">
+                  <input type="checkbox" id="checkAll" onchange="toggleCheckAll(this)" title="전체 선택">
+                </th>
                 <th>ID / 이메일</th>
                 <th>닉네임</th>
                 <th>권한 레벨</th>
                 <th>상태</th>
                 <th>위반 지표</th>
-                <th style="cursor: pointer; user-select: none;" onclick="sortByDate()">
-                  가입일 <span id="dateSortIcon">↕️</span>
+                <th style="cursor:pointer; user-select:none;" onclick="sortByDate()">
+                  가입일 <span id="dateSortIcon">↕</span>
                 </th>
                 <th class="right">관리</th>
               </tr>
             </thead>
-            
             <tbody id="memberTableBody">
-			  <c:forEach var="member" items="${list}">
-          		  <tr class="member-row" data-phone="${member.phoneNumber}" data-role="${member.role}" data-status="${member.status}">
-			      
-			      <td class="col-id"><strong>${member.email}</strong></td>
-			      
-			      <td class="col-nickname">
-			        <span class="member-name-link" onclick="goToDetail('${member.email}')">
-			          ${member.nickname}
-			        </span>
-			      </td>
-			      
-			      <td>
-			        <c:choose>
-			          <c:when test="${member.role == 'ROLE_ADMIN'}">
-			            <span class="badge" style="background:#E0E7FF; color:#4338CA;">SYS ADMIN</span>
-			          </c:when>
-			          <c:when test="${member.role == 'ROLE_PARTNER'}">
-			            <span class="badge" style="background:#F0FDF4; color:#15803D;">PARTNER</span>
-			          </c:when>
-			          <c:otherwise>
-			            <span class="badge">USER</span>
-			          </c:otherwise>
-			        </c:choose>
-			      </td>
-			      
-			      <td id="status-${member.memberId}">
-			        <c:choose>
-			          <c:when test="${member.status == '2'}">
-			            <span class="badge badge-danger status-badge" onclick="showReason(event, '${member.reason}')">BAN(정지)</span>
-			          </c:when>
-			          <c:when test="${member.status == '4'}">
-			            <span class="badge" style="background:var(--bg); color:var(--muted)">탈퇴 완료</span>
-			          </c:when>
-			          <c:otherwise>
-			            <span class="badge badge-done">정상</span>
-			          </c:otherwise>
-			        </c:choose>
-			      </td>
-			      
-			      <td>
-			        <c:choose>
-			          <c:when test="${member.reportCount >= 5}">
-			            <span class="badge badge-alert">신고 ${member.reportCount}회 누적</span>
-			          </c:when>
-			          <c:otherwise>
-			            -
-			          </c:otherwise>
-			        </c:choose>
-			      </td>
-			      
-			      <td class="num date-cell">
-			        <fmt:formatDate value="${member.regDate}" pattern="yyyy-MM-dd" />
-			      </td>
-			      
-			      <td class="right">
-			        <button class="btn btn-primary btn-sm" 
-			                onclick="openDetailModal(event, '${member.email}', '${member.nickname}', '${member.role}', '${member.status}', '${member.reason}')">
-			          상세/수정
-			        </button>
-			      </td>
-			      
-			    </tr>
-			  </c:forEach>
-			</tbody>
+              <%-- 초기엔 안내 메시지만. member-row 전부 display:none --%>
+              <tr id="emptySearchMsg">
+                <td colspan="8" style="text-align:center; padding:50px 0; color:var(--muted);">
+                  상단의 검색 조건을 설정한 후 <strong>[검색]</strong> 버튼을 눌러주세요.
+                </td>
+              </tr>
+              <c:forEach var="member" items="${list}">
+                <tr class="member-row"
+                    style="display:none;"
+                    data-memberid="${member.memberId}"
+                    data-email="${member.email}"
+                    data-nickname="${member.nickname}"
+                    data-role="${member.role}"
+                    data-status="${member.status}"
+                    data-reason="${member.reason}">
+
+                  <td class="col-check">
+                    <input type="checkbox" class="row-check"
+                           value="${member.loginId}"
+                           data-memberid="${member.memberId}"
+                           onchange="onRowCheck()" onclick="event.stopPropagation()">
+                  </td>
+
+                  <td class="col-id"><strong>${member.loginId}</strong></td>
+
+                  <td class="col-nickname">
+                    <a href="${pageContext.request.contextPath}/admin/member/detail/${member.memberId}"
+                       style="color:inherit; font-weight:bold; text-decoration:none;"
+                       onmouseover="this.style.textDecoration='underline'"
+                       onmouseout="this.style.textDecoration='none'">
+                      ${member.nickname}
+                    </a>
+                  </td>
+
+                  <td>
+                    <c:choose>
+                      <c:when test="${member.role == 'ROLE_ADMIN'}"><span class="badge" style="background:#E0E7FF;color:#4338CA;">SYS ADMIN</span></c:when>
+                      <c:when test="${member.role == 'ROLE_PARTNER'}"><span class="badge" style="background:#F0FDF4;color:#15803D;">PARTNER</span></c:when>
+                      <c:otherwise><span class="badge">USER</span></c:otherwise>
+                    </c:choose>
+                  </td>
+
+                  <td class="col-status">
+                    <c:choose>
+                      <c:when test="${member.status == '2'}"><span class="badge badge-danger" onclick="showReason(event,'${member.reason}')">BAN(정지)</span></c:when>
+                      <c:when test="${member.status == '3'}"><span class="badge" style="background:#fef3c7;color:#b45309;">휴면</span></c:when>
+                      <c:when test="${member.status == '4'}"><span class="badge" style="background:var(--bg);color:var(--muted)">탈퇴 완료</span></c:when>
+                      <c:otherwise><span class="badge badge-done">정상</span></c:otherwise>
+                    </c:choose>
+                  </td>
+
+                  <td>
+                    <c:choose>
+                      <c:when test="${member.reportCount >= 5}"><span class="badge badge-alert">신고 ${member.reportCount}회</span></c:when>
+                      <c:otherwise>-</c:otherwise>
+                    </c:choose>
+                  </td>
+
+                  <td class="num date-cell"><fmt:formatDate value="${member.regDate}" pattern="yyyy-MM-dd"/></td>
+
+                  <td class="right">
+                    <button class="btn btn-primary btn-sm"
+                            onclick="location.href='${pageContext.request.contextPath}/admin/member/detail/${member.memberId}'">상세/수정</button>
+                  </td>
+                </tr>
+              </c:forEach>
+            </tbody>
           </table>
         </div>
       </div>
+
     </main>
+
+    <div class="modal-overlay" id="bulkStatusModal">
+      <div class="modal-sheet">
+        <div class="ms-head">
+          <h3>상태 일괄 변경</h3>
+          <p id="bulkStatusDesc">선택된 회원의 상태를 일괄 변경합니다.</p>
+        </div>
+        <div class="ms-body">
+          <div class="fg">
+            <label>변경할 상태</label>
+            <select id="bulkStatusSelect">
+              <option value="1">정상 활동</option>
+              <option value="2">활동 정지</option>
+              <option value="3">휴면</option>
+              <option value="4">탈퇴</option>
+            </select>
+          </div>
+          <div class="fg">
+            <label>처리 사유 <span style="color:var(--danger);">*</span></label>
+            <textarea id="bulkStatusReason" placeholder="정지/탈퇴 처리 시 반드시 입력하세요."></textarea>
+          </div>
+        </div>
+        <div class="ms-foot">
+          <button class="btn-m btn-m-ghost"   onclick="closeBulkStatusModal()">취소</button>
+          <button class="btn-m btn-m-primary"  onclick="applyBulkStatus()">일괄 적용</button>
+        </div>
+      </div>
+    </div>
+
+    <%-- 기존 infoModal / detailModal 껍데기 (member.js 호환용) --%>
+    <div class="modal-overlay" id="detailModal" style="display:none;"></div>
+    <div class="modal-overlay" id="infoModal"   style="display:none;">
+      <div class="modal-content" style="max-width:500px;">
+        <div class="modal-header"><h2>회원 상세 정보</h2></div>
+        <div class="modal-body">
+          <div style="text-align:center; margin-bottom:20px;">
+            <h3 id="infoNickname" style="margin-top:10px;">로딩중...</h3>
+          </div>
+          <table style="width:100%; border-collapse:collapse; text-align:left;">
+            <tr style="border-bottom:1px solid var(--border);"><th style="padding:10px;width:30%;">ID(이메일)</th><td id="infoEmail" style="padding:10px;"></td></tr>
+            <tr style="border-bottom:1px solid var(--border);"><th style="padding:10px;">이름</th><td id="infoUsername" style="padding:10px;"></td></tr>
+            <tr style="border-bottom:1px solid var(--border);"><th style="padding:10px;">전화번호</th><td id="infoPhone" style="padding:10px;"></td></tr>
+            <tr style="border-bottom:1px solid var(--border);"><th style="padding:10px;">성별/생일</th><td id="infoGenderBirth" style="padding:10px;"></td></tr>
+            <tr><th style="padding:10px;">마지막 접속</th><td id="infoLastLogin" style="padding:10px;"></td></tr>
+          </table>
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-ghost" style="flex:1" onclick="closeInfoModal()">닫기</button>
+        </div>
+      </div>
+    </div>
+
   </div>
 </div>
 
-<div class="modal-overlay" id="detailModal">
-  <div class="modal-content">
-    <div class="modal-header">
-      <h2>회원 정보 상세 및 수정</h2>
-    </div>
-    <div class="modal-body">
-      <input type="hidden" id="modalTargetId"> 
-      <div class="form-group">
-        <label>대상 회원</label>
-        <input type="text" id="modalUserDisplay" class="keyword-input" readonly style="background:var(--bg); border:none; font-weight:700;">
-      </div>
-      <div class="form-row">
-        <div class="form-group">
-		  <label>권한 레벨</label>
-		  <select class="filter-select" id="modalRoleSelect" style="width:100%;" onchange="checkAdminStatus()">
-		    <option value="ROLE_USER">일반 유저 (USER)</option>
-		    <option value="ROLE_PARTNER">파트너 (PARTNER)</option>
-		    <option value="ROLE_ADMIN">시스템 관리자 (SYS ADMIN)</option>
-		  </select>
-		</div>
-		<div class="form-group">
-		  <label>계정 상태</label>
-		  <select class="filter-select" id="modalStatusSelect" style="width:100%;">
-		    <option value="1">정상 활동</option>
-		    <option value="2" class="user-status-only">활동 정지 (BAN)</option>
-		    <option value="3" class="user-status-only">휴면 상태</option>
-		    <option value="4" class="user-status-only">탈퇴 완료</option>
-		  </select>
-		</div>
-      </div>
-      <div class="form-group">
-        <label>변경/조치 사유 <span style="color:var(--danger)">*</span></label>
-        <textarea id="modalReasonInput" class="keyword-input" placeholder="활동 정지나 탈퇴 처리 시 사유를 반드시 입력해 주세요." style="height:80px; resize:none; padding:12px;"></textarea>
-      </div>
-    </div>
-    <div class="modal-footer">
-      <button class="btn btn-ghost" style="flex:1" onclick="closeModal()">취소</button>
-      <button class="btn btn-primary" style="flex:1" onclick="saveChanges()">변경사항 저장</button>
-    </div>
-  </div>
-</div>
-
-<script>
-  function filterTable() {
-    const roleFilter = document.getElementById('searchRole').value;
-    const statusFilter = document.getElementById('searchStatus').value;
-    const categoryFilter = document.getElementById('searchCategory').value;
-    const keyword = document.getElementById('searchInput').value.toLowerCase().trim();
-
-    const rows = document.querySelectorAll('.member-row');
-
-    rows.forEach(row => {
-      const rowRole = row.getAttribute('data-role');
-      const rowStatus = row.getAttribute('data-status');
-      
-      let searchText = '';
-      if (categoryFilter === 'id') {
-        searchText = row.querySelector('.col-id').innerText.toLowerCase();
-      } else if (categoryFilter === 'nickname') {
-        searchText = row.querySelector('.col-nickname').innerText.toLowerCase();
-      }
-
-      const matchRole = (roleFilter === 'ALL' || roleFilter === rowRole);
-      const matchStatus = (statusFilter === 'ALL' || statusFilter === rowStatus);
-      const matchKeyword = (keyword === '' || searchText.includes(keyword));
-
-      if (matchRole && matchStatus && matchKeyword) {
-        row.style.display = '';
-      } else {
-        row.style.display = 'none';
-      }
-    });
-  }
-
-  let dateSortAsc = true;
-  function sortByDate() {
-    const tbody = document.getElementById('memberTableBody');
-    const rows = Array.from(tbody.querySelectorAll('.member-row'));
-    const icon = document.getElementById('dateSortIcon');
-
-    rows.sort((a, b) => {
-      const dateA = new Date(a.querySelectorAll('td')[5].innerText.trim());
-      const dateB = new Date(b.querySelectorAll('td')[5].innerText.trim());
-
-      if (dateSortAsc) {
-        return dateA - dateB; 
-      } else {
-        return dateB - dateA; 
-      }
-    });
-
-    dateSortAsc = !dateSortAsc;
-    icon.innerText = dateSortAsc ? '⬇️' : '⬆️';
-
-    rows.forEach(row => tbody.appendChild(row));
-  }
-
-  let currentOldStatus = '';
-
-  function goToDetail(userId) {
-    location.href = '${pageContext.request.contextPath}/admin/memberDetail?id=' + userId;
-  }
-
-  function showReason(event, reason) {
-    event.stopPropagation(); 
-    alert("📌 [처리 사유]\n\n" + (reason || "기록된 사유가 없습니다."));
-  }
-
-  function openDetailModal(event, id, nickname, role, status, reason) {
-    event.stopPropagation();
-    document.getElementById('modalTargetId').value = id;
-    document.getElementById('modalUserDisplay').value = `\${nickname} (\${id})`;
-    document.getElementById('modalRoleSelect').value = role;
-    
-    currentOldStatus = status; 
-    checkAdminStatus(role);
-    document.getElementById('modalStatusSelect').value = status;
-    document.getElementById('modalReasonInput').value = reason;
-    
-    document.getElementById('detailModal').style.display = 'flex';
-  }
-
-  function saveChanges() {
-    const newStatus = document.getElementById('modalStatusSelect').value;
-    const reason = document.getElementById('modalReasonInput').value.trim();
-
-    if ((newStatus === 'BAN' || newStatus === 'WITHDRAW') && reason === '') {
-      alert("⚠️ 활동 정지 또는 탈퇴 처리 시 반드시 사유를 입력해야 합니다.");
-      document.getElementById('modalReasonInput').focus();
-      return;
-    }
-
-    if(confirm("회원 정보 및 권한/상태를 변경하시겠습니까?")) {
-      updateKPI(currentOldStatus, newStatus);
-      alert("성공적으로 저장되었습니다.");
-      closeModal();
-    }
-  }
-
-  function updateKPI(oldStatus, newStatus) {
-    if (oldStatus === newStatus) return; 
-
-    let elActive = document.getElementById('kpiActive');
-    let elBan = document.getElementById('kpiBan');
-    let elWithdraw = document.getElementById('kpiWithdraw');
-
-    let activeCnt = parseInt(elActive.innerText.replace(/,/g, ''));
-    let banCnt = parseInt(elBan.innerText.replace(/,/g, ''));
-    let withdrawCnt = parseInt(elWithdraw.innerText.replace(/,/g, ''));
-
-    if(oldStatus === 'ACTIVE') activeCnt--;
-    else if(oldStatus === 'BAN') banCnt--;
-    else if(oldStatus === 'WITHDRAW') withdrawCnt--;
-
-    if(newStatus === 'ACTIVE') activeCnt++;
-    else if(newStatus === 'BAN') banCnt++;
-    else if(newStatus === 'WITHDRAW') withdrawCnt++;
-
-    elActive.innerText = activeCnt.toLocaleString('ko-KR');
-    elBan.innerText = banCnt.toLocaleString('ko-KR');
-    elWithdraw.innerText = withdrawCnt.toLocaleString('ko-KR');
-  }
-
-  function checkAdminStatus(passedRole) {
-    const role = passedRole || document.getElementById('modalRoleSelect').value;
-    const statusSelect = document.getElementById('modalStatusSelect');
-    const userOnlyOpts = statusSelect.querySelectorAll('.user-status-only');
-    if(role === 'ADMIN') { userOnlyOpts.forEach(opt => opt.style.display = 'none'); statusSelect.value = 'ACTIVE'; }
-    else { userOnlyOpts.forEach(opt => opt.style.display = ''); }
-  }
-
-  function closeModal() { document.getElementById('detailModal').style.display = 'none'; }
-</script>
+<script src="${pageContext.request.contextPath}/dist/js/admin/member.js"></script>
 </body>
 </html>

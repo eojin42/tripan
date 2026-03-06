@@ -13,4 +13,5 @@ public interface BookingManageMapper {
     List<BookingResponseDto> selectMemberBookings(@Param("memberId") Long memberId);
     List<BookingResponseDto> selectAllBookings();
     BookingResponseDto selectBookingDetail(Long id);
+    List<BookingResponseDto> selectBookingsByMemberId(Long memberId);
 }
