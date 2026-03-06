@@ -312,6 +312,11 @@
               const roomId = this.getAttribute('data-room-id'); 
               const roomName = this.getAttribute('data-room-name');
               
+              const countSpan = document.querySelector('.chat-title-info span');
+              if (countSpan) {
+                  countSpan.innerText = '🔴 인원 확인 중...';
+              }
+              
               document.querySelector('.chat-title-info h2').innerText = '💬 #' + roomName;
 
               connectChatRoom(roomId);
@@ -356,12 +361,21 @@
       stompClient.debug = null; 
 
       stompClient.connect({}, function (frame) {
-        console.log('방 번호 [' + roomId + '] 에 연결되었습니다!');
+          console.log('방 번호 [' + roomId + '] 에 연결되었습니다!');
 
-        stompClient.subscribe('/sub/chat/room/' + roomId, function (chat) {
-          const messageData = JSON.parse(chat.body);
-          renderMessage(messageData); 
-        });
+          stompClient.subscribe('/sub/chat/room/' + roomId + '/count', function (message) {
+            const count = message.body; // 백엔드에서 보낸 숫자(count)를 받음
+            
+            const countSpan = document.querySelector('.chat-title-info span');
+            if (countSpan) {
+                countSpan.innerText = '🔴 ' + count + '명 접속 중';
+            }
+          });
+
+          stompClient.subscribe('/sub/chat/room/' + roomId, function (chat) {
+            const messageData = JSON.parse(chat.body);
+            renderMessage(messageData); 
+          });
       });
     }
 

@@ -1,4 +1,6 @@
 <%@ page contentType="text/html; charset=UTF-8" %>
+<%@ taglib prefix="c" uri="jakarta.tags.core" %>
+
 <style>
   .board-header { margin-bottom: 24px; }
   .board-title { font-size: 24px; font-weight: 900; margin: 0 0 8px; letter-spacing: -0.5px; }
@@ -15,8 +17,11 @@
   .board-card:hover { transform: translateY(-3px); box-shadow: 0 12px 32px rgba(137, 207, 240, 0.15); border-color: rgba(137,207,240,0.3); }
   .card-content { flex: 1; display: flex; flex-direction: column; justify-content: center; }
   .card-badge { display: inline-block; padding: 4px 10px; border-radius: 6px; font-size: 11px; font-weight: 800; margin-bottom: 12px; width: fit-content; }
+
   .badge-tip { background: #E6FFFA; color: #00A88F; }
+  .badge-question { background: #FFF3CD; color: #D69E2E; }
   .badge-review { background: #EBF8FF; color: var(--sky-blue); }
+  
   .card-title { font-size: 17px; font-weight: 800; margin: 0 0 8px; line-height: 1.4; }
   .card-text { font-size: 14px; color: var(--text-gray); margin: 0 0 16px; line-height: 1.5; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
   .card-meta { display: flex; align-items: center; gap: 16px; font-size: 12px; color: #A0AEC0; font-weight: 600; }
@@ -25,6 +30,8 @@
   .meta-stats { display: flex; gap: 12px; margin-left: auto; }
   .card-thumb { width: 120px; height: 120px; border-radius: 12px; overflow: hidden; flex-shrink: 0; }
   .card-thumb img { width: 100%; height: 100%; object-fit: cover; }
+  
+  
 </style>
 
 <div class="board-header">
@@ -43,90 +50,61 @@
 </div>
 
 <div class="board-list">
-  <a href="#" class="board-card">
-    <div class="card-content">
-      <span class="card-badge badge-tip">여행 꿀팁</span>
-      <h3 class="card-title">일본 오사카 여행 시 트래블월렛 vs 트래블로그 완벽 비교해드림</h3>
-      <p class="card-text">이번에 오사카 다녀오면서 두 카드 모두 사용해봤는데요, 수수료나 편의성 면에서 확실히 차이가 있더라고요.</p>
-      <div class="card-meta">
-        <div class="meta-user"><img src="https://picsum.photos/seed/user1/100/100"><span>@travel_pro</span></div>
-        <span>2시간 전</span>
-        <div class="meta-stats"><span>👁 1,204</span><span>💬 32</span><span style="color:#E8849A">♥ 145</span></div>
-      </div>
-    </div>
-  </a>
+  <c:choose>
+    <c:when test="${not empty boardList}">
+      <c:forEach var="board" items="${boardList}">
+        <a href="${pageContext.request.contextPath}/community/freeboard/detail?id=${board.boardId}" class="board-card">
+          <div class="card-content">
+            <c:choose>
+              <c:when test="${board.category == 'tip'}">
+                <span class="card-badge badge-tip">💡 여행 꿀팁</span>
+              </c:when>
+              <c:when test="${board.category == 'question'}">
+                <span class="card-badge badge-question">🙋‍♂️ 질문있어요</span>
+              </c:when>
+              <c:otherwise>
+                <span class="card-badge badge-review">📸 다녀온 후기</span>
+              </c:otherwise>
+            </c:choose>
 
-  <a href="#" class="board-card">
-    <div class="card-content">
-      <span class="card-badge badge-review">다녀온 후기</span>
-      <h3 class="card-title">어제 다녀온 부산 해운대 요트투어 야경 미쳤네요 진짜;;</h3>
-      <p class="card-text">Tripan 일정 담아오기 기능으로 다른 분 코스 그대로 훔쳐서 다녀왔는데, 시간대 18시로 예약한 게 신의 한 수 였습니다.</p>
-      <div class="card-meta">
-        <div class="meta-user"><img src="https://picsum.photos/seed/user3/100/100"><span>@busan_lover</span></div>
-        <span>1일 전</span>
-        <div class="meta-stats"><span>👁 2,510</span><span>💬 48</span><span style="color:#E8849A">♥ 312</span></div>
-      </div>
-    </div>
-    <div class="card-thumb"><img src="https://picsum.photos/seed/yacht/400/400"></div>
-  </a>
-</div>
+            <h3 class="card-title">${board.title}</h3>
+            <p class="card-text">${board.content}</p>
 
-  <a href="#" class="board-card">
-    <div class="card-content">
-      <span class="card-badge badge-review">다녀온 후기</span>
-      <h3 class="card-title">어제 다녀온 부산 해운대 요트투어 야경 미쳤네요 진짜;;</h3>
-      <p class="card-text">Tripan 일정 담아오기 기능으로 다른 분 코스 그대로 훔쳐서 다녀왔는데, 시간대 18시로 예약한 게 신의 한 수 였습니다.</p>
-      <div class="card-meta">
-        <div class="meta-user"><img src="https://picsum.photos/seed/user3/100/100"><span>@busan_lover</span></div>
-        <span>1일 전</span>
-        <div class="meta-stats"><span>👁 2,510</span><span>💬 48</span><span style="color:#E8849A">♥ 312</span></div>
+            <div class="card-meta">
+              <div class="meta-user">
+                <c:choose>
+                  <c:when test="${not empty board.profilePhoto}">
+                    <img src="${pageContext.request.contextPath}/uploads/profile/${board.profilePhoto}" alt="profile">
+                  </c:when>
+                  <c:otherwise>
+                    <img src="${pageContext.request.contextPath}/dist/images/default.png" alt="default profile">
+                  </c:otherwise>
+                </c:choose>
+                <span>@${board.nickname}</span>
+              </div>
+              <span>${board.createdAt}</span>
+              <div class="meta-stats">
+                <span>👁 ${board.viewCount}</span>
+                <span>💬 ${board.replyCount}</span>
+                <span style="color:#E8849A">♥ ${board.likeCount}</span>
+              </div>
+            </div>
+          </div>
+          
+          <c:if test="${not empty board.thumbnailUrl}">
+            <div class="card-thumb">
+                <img src="${pageContext.request.contextPath}/uploads/freeboard/${board.thumbnailUrl}" alt="thumb">
+            </div>
+          </c:if>
+        </a>
+      </c:forEach>
+    </c:when>
+    <c:otherwise>
+      <div style="text-align:center; padding: 100px 20px; color:var(--text-gray);">
+        <p style="font-size: 40px; margin-bottom: 20px;">🏜️</p>
+        <p style="font-weight: 700;">아직 등록된 게시글이 없습니다.</p>
+        <p style="font-size: 13px;">첫 번째 주인공이 되어 여행 이야기를 들려주세요!</p>
       </div>
-    </div>
-    <div class="card-thumb"><img src="https://picsum.photos/seed/yacht/400/400"></div>
-  </a>
-</div>
-
-  <a href="#" class="board-card">
-    <div class="card-content">
-      <span class="card-badge badge-review">다녀온 후기</span>
-      <h3 class="card-title">어제 다녀온 부산 해운대 요트투어 야경 미쳤네요 진짜;;</h3>
-      <p class="card-text">Tripan 일정 담아오기 기능으로 다른 분 코스 그대로 훔쳐서 다녀왔는데, 시간대 18시로 예약한 게 신의 한 수 였습니다.</p>
-      <div class="card-meta">
-        <div class="meta-user"><img src="https://picsum.photos/seed/user3/100/100"><span>@busan_lover</span></div>
-        <span>1일 전</span>
-        <div class="meta-stats"><span>👁 2,510</span><span>💬 48</span><span style="color:#E8849A">♥ 312</span></div>
-      </div>
-    </div>
-    <div class="card-thumb"><img src="https://picsum.photos/seed/yacht/400/400"></div>
-  </a>
-</div>
-
-  <a href="#" class="board-card">
-    <div class="card-content">
-      <span class="card-badge badge-review">다녀온 후기</span>
-      <h3 class="card-title">어제 다녀온 부산 해운대 요트투어 야경 미쳤네요 진짜;;</h3>
-      <p class="card-text">Tripan 일정 담아오기 기능으로 다른 분 코스 그대로 훔쳐서 다녀왔는데, 시간대 18시로 예약한 게 신의 한 수 였습니다.</p>
-      <div class="card-meta">
-        <div class="meta-user"><img src="https://picsum.photos/seed/user3/100/100"><span>@busan_lover</span></div>
-        <span>1일 전</span>
-        <div class="meta-stats"><span>👁 2,510</span><span>💬 48</span><span style="color:#E8849A">♥ 312</span></div>
-      </div>
-    </div>
-    <div class="card-thumb"><img src="https://picsum.photos/seed/yacht/400/400"></div>
-  </a>
-</div>
-
-  <a href="#" class="board-card">
-    <div class="card-content">
-      <span class="card-badge badge-review">다녀온 후기</span>
-      <h3 class="card-title">어제 다녀온 부산 해운대 요트투어 야경 미쳤네요 진짜;;</h3>
-      <p class="card-text">Tripan 일정 담아오기 기능으로 다른 분 코스 그대로 훔쳐서 다녀왔는데, 시간대 18시로 예약한 게 신의 한 수 였습니다.</p>
-      <div class="card-meta">
-        <div class="meta-user"><img src="https://picsum.photos/seed/user3/100/100"><span>@busan_lover</span></div>
-        <span>1일 전</span>
-        <div class="meta-stats"><span>👁 2,510</span><span>💬 48</span><span style="color:#E8849A">♥ 312</span></div>
-      </div>
-    </div>
-    <div class="card-thumb"><img src="https://picsum.photos/seed/yacht/400/400"></div>
-  </a>
+    </c:otherwise>
+  </c:choose>
 </div>
