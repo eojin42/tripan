@@ -50,61 +50,67 @@
 </div>
 
 <div class="board-list">
-  <c:choose>
-    <c:when test="${not empty boardList}">
-      <c:forEach var="board" items="${boardList}">
-        <a href="${pageContext.request.contextPath}/community/freeboard/detail?id=${board.boardId}" class="board-card">
-          <div class="card-content">
-            <c:choose>
-              <c:when test="${board.category == 'tip'}">
-                <span class="card-badge badge-tip">💡 여행 꿀팁</span>
-              </c:when>
-              <c:when test="${board.category == 'question'}">
-                <span class="card-badge badge-question">🙋‍♂️ 질문있어요</span>
-              </c:when>
-              <c:otherwise>
-                <span class="card-badge badge-review">📸 다녀온 후기</span>
-              </c:otherwise>
-            </c:choose>
+	<div class="board-list">
+	  <c:choose>
+	    <c:when test="${not empty boardList}">
+	      <c:forEach var="board" items="${boardList}">
+	        <a href="javascript:void(0);" onclick="loadBoardDetail(${board.boardId})" class="board-card">
+	          
+	          <div class="card-content">
+	            <c:choose>
+	              <c:when test="${board.category == 'tip'}">
+	                <span class="card-badge badge-tip">💡 여행 꿀팁</span>
+	              </c:when>
+	              <c:when test="${board.category == 'question'}">
+	                <span class="card-badge badge-question">🙋‍♂️ 질문있어요</span>
+	              </c:when>
+	              <c:otherwise>
+	                <span class="card-badge badge-review">📸 다녀온 후기</span>
+	              </c:otherwise>
+	            </c:choose>
 
-            <h3 class="card-title">${board.title}</h3>
-            <p class="card-text">${board.content}</p>
+	            <h3 class="card-title">${board.title}</h3>
+	            <p class="card-text">${board.content}</p>
 
-            <div class="card-meta">
-              <div class="meta-user">
-                <c:choose>
-                  <c:when test="${not empty board.profilePhoto}">
-                    <img src="${pageContext.request.contextPath}/uploads/profile/${board.profilePhoto}" alt="profile">
-                  </c:when>
-                  <c:otherwise>
-                    <img src="${pageContext.request.contextPath}/dist/images/default.png" alt="default profile">
-                  </c:otherwise>
-                </c:choose>
-                <span>@${board.nickname}</span>
-              </div>
-              <span>${board.createdAt}</span>
-              <div class="meta-stats">
-                <span>👁 ${board.viewCount}</span>
-                <span>💬 ${board.replyCount}</span>
-                <span style="color:#E8849A">♥ ${board.likeCount}</span>
-              </div>
-            </div>
-          </div>
-          
-          <c:if test="${not empty board.thumbnailUrl}">
-            <div class="card-thumb">
-                <img src="${pageContext.request.contextPath}/uploads/freeboard/${board.thumbnailUrl}" alt="thumb">
-            </div>
-          </c:if>
-        </a>
-      </c:forEach>
-    </c:when>
-    <c:otherwise>
-      <div style="text-align:center; padding: 100px 20px; color:var(--text-gray);">
-        <p style="font-size: 40px; margin-bottom: 20px;">🏜️</p>
-        <p style="font-weight: 700;">아직 등록된 게시글이 없습니다.</p>
-        <p style="font-size: 13px;">첫 번째 주인공이 되어 여행 이야기를 들려주세요!</p>
-      </div>
-    </c:otherwise>
-  </c:choose>
+	            <div class="card-meta">
+	              <div class="meta-user">
+	                <c:choose>
+	                  <c:when test="${not empty board.profilePhoto}">
+	                    <img src="${pageContext.request.contextPath}/uploads/profile/${board.profilePhoto}" alt="profile">
+	                  </c:when>
+	                  <c:otherwise>
+	                    <img src="${pageContext.request.contextPath}/dist/images/default.png" alt="default profile">
+	                  </c:otherwise>
+	                </c:choose>
+	                <span>@${board.nickname != null ? board.nickname : '익명'}</span>
+	              </div>
+	              
+	              <span>${board.createdAt}</span>
+	              
+	              <div class="meta-stats">
+	                <span>👁 ${board.viewCount}</span>
+	                <span>💬 ${board.replyCount}</span>
+	                <span style="color:#E8849A">♥ ${board.likeCount}</span>
+	              </div>
+	            </div>
+	          </div>
+	          
+	          <c:if test="${not empty board.thumbnailUrl}">
+	            <div class="card-thumb">
+	                <img src="${pageContext.request.contextPath}/uploads/freeboard/${board.thumbnailUrl}" alt="thumb">
+	            </div>
+	          </c:if>
+
+	        </a>
+	      </c:forEach>
+	    </c:when>
+	    <c:otherwise>
+	      <div style="text-align:center; padding: 100px 20px; color:var(--text-gray);">
+	        <p style="font-size: 40px; margin-bottom: 20px;">🏜️</p>
+	        <p style="font-weight: 700;">아직 등록된 게시글이 없습니다.</p>
+	        <p style="font-size: 13px;">첫 번째 주인공이 되어 여행 이야기를 들려주세요!</p>
+	      </div>
+	    </c:otherwise>
+	  </c:choose>
+	</div>
 </div>

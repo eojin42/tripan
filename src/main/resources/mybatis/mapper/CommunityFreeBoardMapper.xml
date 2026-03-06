@@ -4,23 +4,25 @@
 <mapper namespace="com.tripan.app.mapper.CommunityFreeBoardMapper">
 
   <select id="selectAll" resultType="com.tripan.app.domain.dto.CommunityFreeBoardDto">
-        SELECT 
-            f.board_id as boardId,
-            f.member_id as memberId,
-            f.category,
-            f.title,
-            f.content,
-            f.thumbnail_url as thumbnailUrl,
-            f.view_count as viewCount,
-            f.like_count as likeCount,
-            f.reply_count as replyCount,
-            TO_CHAR(f.created_at, 'YYYY-MM-DD HH24:MI') as createdAt,
-            m2.nickname,
-            m2.profile_image as profilePhoto FROM freeboard f
-        JOIN member1 m1 ON f.member_id = m1.member_id
-        JOIN member2 m2 ON m1.member_id = m2.member_id
-        ORDER BY f.board_id DESC
-    </select>
+    SELECT 
+        f.board_id as boardId,
+        /* DB 컬럼명이 member_id2라면 f.member_id2로 수정해야 합니다 */
+        f.member_id as memberId, 
+        f.category,
+        f.title,
+        f.content,
+        f.thumbnail_url as thumbnailUrl,
+        f.view_count as viewCount,
+        f.like_count as likeCount,
+        f.reply_count as replyCount,
+        TO_CHAR(f.created_at, 'YYYY-MM-DD HH24:MI') as createdAt,
+        m2.nickname,
+        m2.profile_image as profilePhoto
+    FROM freeboard f
+    LEFT JOIN member1 m1 ON f.member_id = m1.member_id
+    LEFT JOIN member2 m2 ON f.member_id = m2.member_id
+    ORDER BY f.board_id DESC
+	</select>
 
     <select id="selectById" resultType="com.tripan.app.domain.dto.CommunityFreeBoardDto">
         SELECT 
@@ -42,6 +44,35 @@
 
     <update id="updateViewCount">
         UPDATE freeboard SET view_count = view_count + 1 WHERE board_id = #{boardId}
+    </update>
+    
+    <!-- 댓글 보기 -->
+    <select id="selectComments" resultType="com.tripan.app.domain.dto.CommunityFreeboardCommentDto">
+        SELECT 
+            c.comment_id as commentId,
+            c.board_id as boardId,
+            c.member_id as memberId,
+            c.content,
+            TO_CHAR(c.created_at, 'YYYY-MM-DD HH24:MI') as createdAt,
+            m2.nickname,
+            m2.profile_image as profilePhoto
+        FROM freeboard_comment c
+        LEFT JOIN member2 m2 ON c.member_id = m2.member_id
+        WHERE c.board_id = #{boardId}
+        ORDER BY c.comment_id ASC
+    </select>
+    
+    <!--댓글 달기 -->
+    <insert id="insertComment" parameterType="com.tripan.app.domain.dto.CommunityFreeboardCommentDto">
+        INSERT INTO freeboard_comment (
+            comment_id, board_id, member_id, content
+        ) VALUES (
+            SEQ_FREEBOARD_COMMENT_ID.NEXTVAL, #{boardId}, #{memberId}, #{content}
+        )
+    </insert>
+    
+    <update id="updateReplyCount">
+        UPDATE freeboard SET reply_count = reply_count + 1 WHERE board_id = #{boardId}
     </update>
 
 </mapper>

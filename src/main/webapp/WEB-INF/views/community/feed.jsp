@@ -426,6 +426,7 @@
   <jsp:include page="/WEB-INF/views/member/loginModal.jsp" />
 
   <script>
+	
     function startRoulette() {
       const dests = ['여수 밤바다 낭만 투어', '경주 황리단길 카페 투어', '강원도 양양 서핑 트립', '제주도 한라산 등반'];
       const random = dests[Math.floor(Math.random() * dests.length)];
@@ -776,7 +777,7 @@
 	                return;
 	            }
 
-	            const icons = ['🌴', '🌊', '🏔️', '🌃', '🎎'];
+	            const icons = ['\uD83C\uDF34', '\uD83C\uDF0A', '\uD83C\uDFD4\uFE0F', '\uD83C\uDF03', '\uD83C\uDF8E'];
 	            let html = '';
 
 	            rooms.forEach((room, index) => {
@@ -812,6 +813,73 @@
 	            loadTabContent(tabParams, null);
 	        }
 	    });
+		
+		function loadBoardDetail(boardId) {
+		    const contentArea = document.getElementById('dynamic-content');
+		    contentArea.innerHTML = '<div style="text-align:center; padding: 100px 20px; color:var(--sky-blue); font-size: 18px; font-weight:800;">게시글을 불러오는 중입니다... ✈️</div>';
+
+		    const url = `${pageContext.request.contextPath}/community/freeboard/detail/` + boardId;
+		    
+		    fetch(url, {
+		        headers: { 'X-Requested-With': 'Fetch' }
+		    })
+		    .then(response => response.text())
+		    .then(html => {
+		        contentArea.innerHTML = html;
+		        window.scrollTo({ top: 0, behavior: 'smooth' }); // 최상단으로 이동
+		    })
+		    .catch(error => {
+		        console.error('Error:', error);
+		        alert('게시글을 불러오는데 실패했습니다.');
+		    });
+		}
+		
+		function submitComment(boardId) {
+		        if (!IS_LOGGED_IN) {
+		            showLoginModal();
+		            return;
+		        }
+
+		        const contentInput = document.getElementById('commentContent');
+		        const content = contentInput.value.trim();
+
+		        if (content === '') {
+		            alert('댓글 내용을 입력해주세요!');
+		            contentInput.focus();
+		            return;
+		        }
+
+		        const url = `${pageContext.request.contextPath}/community/freeboard/comment/add`;
+		        const data = {
+		            boardId: boardId,
+		            content: content
+		        };
+
+		        fetch(url, {
+		            method: 'POST',
+		            headers: {
+		                'Content-Type': 'application/json',
+		                'X-Requested-With': 'Fetch' 
+		            },
+		            body: JSON.stringify(data)
+		        })
+		        .then(response => {
+		            if (!response.ok) throw new Error('서버 통신 에러');
+		            return response.json();
+		        })
+		        .then(result => {
+		            if (result.status === 'success') {
+		                contentInput.value = '';
+		                loadBoardDetail(boardId); 
+		            } else {
+		                alert(result.message);
+		            }
+		        })
+		        .catch(error => {
+		            console.error('Error:', error);
+		            alert('댓글 등록에 실패했습니다.');
+		        });
+		    }
     
   </script>
 </body>

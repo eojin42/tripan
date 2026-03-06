@@ -3,6 +3,7 @@ package com.tripan.app.service;
 import java.util.List;
 
 import com.tripan.app.domain.dto.CommunityFreeBoardDto;
+import com.tripan.app.domain.dto.CommunityFreeboardCommentDto;
 
 public interface CommunityFreeboardService {
     // 게시글 전체 목록 조회
@@ -13,6 +14,10 @@ public interface CommunityFreeboardService {
     
     // 게시글 상세 조회 및 조회수 증가
     CommunityFreeBoardDto getBoardDetail(Long boardId);
+    
+    List<CommunityFreeboardCommentDto> getCommentList(Long boardId);
+    
+    void registerComment(CommunityFreeboardCommentDto dto);
     
     
 }
