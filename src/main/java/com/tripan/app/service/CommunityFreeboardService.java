@@ -1,6 +1,7 @@
 package com.tripan.app.service;
 
 import java.util.List;
+import java.util.Map;
 
 import com.tripan.app.domain.dto.CommunityFreeBoardDto;
 import com.tripan.app.domain.dto.CommunityFreeboardCommentDto;
@@ -13,11 +14,15 @@ public interface CommunityFreeboardService {
     void registerBoard(CommunityFreeBoardDto dto);
     
     // 게시글 상세 조회 및 조회수 증가
-    CommunityFreeBoardDto getBoardDetail(Long boardId);
+    CommunityFreeBoardDto getBoardDetail(Long boardId, boolean updateView);
     
     List<CommunityFreeboardCommentDto> getCommentList(Long boardId);
     
     void registerComment(CommunityFreeboardCommentDto dto);
+    int incrementLikeCount(Long boardId);
+    Map<String, Object> toggleLike(Long boardId, Long memberId);
+    
+    int checkLikeStatus(Long boardId, Long memberId); // 좋아요 여부 확인
     
     
 }

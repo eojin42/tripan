@@ -74,5 +74,31 @@
     <update id="updateReplyCount">
         UPDATE freeboard SET reply_count = reply_count + 1 WHERE board_id = #{boardId}
     </update>
+    
+    <update id="updateLikeCount">
+    UPDATE freeboard 
+    SET like_count = like_count + #{amount} 
+    WHERE board_id = #{boardId}
+	</update>
+
+	<select id="getLikeCount" resultType="int">
+	    SELECT like_count FROM freeboard WHERE board_id = #{boardId}
+	</select>
+	
+	<select id="checkLike" resultType="int">
+    SELECT COUNT(*) FROM likes 
+    WHERE target_id = #{boardId} AND member_id = #{memberId} AND target_type = 'FREEBOARD'
+	</select>
+
+	<insert id="insertLike">
+	    INSERT INTO likes (like_id, member_id, target_id, target_type, created_at)
+	    VALUES (SEQ_LIKES_ID.NEXTVAL, #{memberId}, #{boardId}, 'FREEBOARD', SYSDATE)
+	</insert>
+	
+	<delete id="deleteLike">
+	    DELETE FROM likes 
+	    WHERE target_id = #{boardId} AND member_id = #{memberId} AND target_type = 'FREEBOARD'
+	</delete>
+	
 
 </mapper>

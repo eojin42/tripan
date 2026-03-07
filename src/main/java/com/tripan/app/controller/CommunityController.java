@@ -11,16 +11,20 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 
 import com.tripan.app.config.WebSocketEventListener;
 import com.tripan.app.domain.dto.CommunityChatRoomDto;
 import com.tripan.app.domain.dto.CommunityFreeBoardDto;
 import com.tripan.app.domain.dto.CommunityFreeboardCommentDto;
+import com.tripan.app.domain.dto.MemberDto;
+import com.tripan.app.domain.dto.SessionInfo;
 import com.tripan.app.service.CommunityChatService;
 import com.tripan.app.service.CommunityFreeboardService;
 
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -83,17 +87,27 @@ public class CommunityController {
     }
  
     @GetMapping("/freeboard/detail/{boardId}")
-    public String handleFreeboardDetail(@PathVariable("boardId") Long boardId, HttpServletRequest request, Model model) {
-        String requestedWith = request.getHeader("X-Requested-With");
+    public String handleFreeboardDetail(@PathVariable("boardId") Long boardId, 
+                                        @RequestParam(value="updateView", defaultValue="true") boolean updateView, // 🌟 추가
+                                        HttpServletRequest request, Model model, HttpSession session) {
         
+        String requestedWith = request.getHeader("X-Requested-With");
         if ("Fetch".equals(requestedWith) || "XMLHttpRequest".equals(requestedWith)) {
-            CommunityFreeBoardDto board = freeboardService.getBoardDetail(boardId);
-
-            List<CommunityFreeboardCommentDto> comments = freeboardService.getCommentList(boardId);
-            model.addAttribute("board", board);
-            model.addAttribute("comments", comments); 
             
-            log.info("{}번 게시글 상세 조회", boardId);
+            // 🌟 수정: updateView 값 전달
+            CommunityFreeBoardDto board = freeboardService.getBoardDetail(boardId, updateView);
+            List<CommunityFreeboardCommentDto> comments = freeboardService.getCommentList(boardId);
+            
+            MemberDto loginUser = (MemberDto) session.getAttribute("loginUser");
+            int isLiked = 0;
+            if (loginUser != null) {
+                isLiked = freeboardService.checkLikeStatus(boardId, loginUser.getMemberId());
+            }
+            
+            model.addAttribute("board", board);
+            model.addAttribute("comments", comments);
+            model.addAttribute("isLiked", isLiked); 
+            
             return "community/fragment/freeboard_detail"; 
         }
         return "redirect:/community/freeboard";
@@ -119,6 +133,24 @@ public class CommunityController {
         } catch (Exception e) {
             log.error("댓글 등록 실패", e);
             return ResponseEntity.status(500).body(Map.of("status", "error", "message", "등록 중 오류가 발생했습니다."));
+        }
+    }
+    
+    @PostMapping("/freeboard/like/{boardId}")
+    @ResponseBody
+    public ResponseEntity<?> handleLike(@PathVariable("boardId") Long boardId, HttpSession session) {
+        MemberDto loginUser = (MemberDto) session.getAttribute("loginUser");
+        
+        if (loginUser == null) {
+            return ResponseEntity.status(401).build(); 
+        }
+
+        try {
+            Map<String, Object> result = freeboardService.toggleLike(boardId, loginUser.getMemberId());
+            return ResponseEntity.ok(result);
+        } catch (Exception e) {
+            log.error("좋아요 처리 에러", e);
+            return ResponseEntity.status(500).build();
         }
     }
     

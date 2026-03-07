@@ -356,7 +356,7 @@
         </div>
       `; 
 
-      const socket = new SockJS(contextPath + '/ws-chat');
+      const socket = new SockJS(contextPath + '/ws-tripan');
       stompClient = Stomp.over(socket);
       stompClient.debug = null; 
 
