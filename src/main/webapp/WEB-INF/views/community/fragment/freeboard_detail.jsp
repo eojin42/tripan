@@ -16,10 +16,7 @@
 	.content-title { font-size: 24px; font-weight: 900; margin: 0 0 20px 0; line-height: 1.4; color: var(--text-black); }
 	.content-text { font-size: 16px; line-height: 1.8; color: var(--text-dark); white-space: pre-wrap; word-break: break-all; }
 	
-	.content-image { width: 100%; border-radius: 16px; margin: 20px 0; max-height: 600px; object-fit: contain; background: #fafafa; }
-	
-	.detail-stats { display: flex; gap: 16px; font-size: 14px; color: var(--text-gray); font-weight: 600; padding-top: 24px; border-top: 1px solid #f1f5f9; }
-  
+	.content-image { width: 100%; border-radius: 16px; margin: 20px 0; max-height: 600px; object-fit: contain; background: #fafafa; }  
 	.comment-section { margin-top: 30px; padding-top: 30px; border-top: 2px solid #f1f5f9; }
 	.comment-count { font-size: 16px; font-weight: 900; margin-bottom: 20px; color: var(--text-black); }
 	
@@ -36,7 +33,37 @@
 	.comment-input-box textarea:focus { border-color: var(--sky-blue); box-shadow: 0 0 0 3px rgba(137,207,240,0.1); }
 	.btn-comment-submit { background: var(--text-black); color: white; border: none; border-radius: 12px; padding: 12px 20px; font-weight: 800; cursor: pointer; transition: 0.2s; height: 46px; white-space: nowrap; }
 	.btn-comment-submit:hover { background: var(--sky-blue); }
-  
+	
+	.detail-stats { 
+	        display: flex; 
+	        align-items: center; 
+	        gap: 16px; 
+	        font-size: 14px; 
+	        color: var(--text-gray); 
+	        font-weight: 600; 
+	        padding-top: 24px; 
+	        border-top: 1px solid #f1f5f9; 
+	    }
+		
+	.like-btn-area {
+	    display: inline-flex;
+	    align-items: center;
+	    gap: 4px;
+	    cursor: pointer;
+	    color: #E8849A;
+	    user-select: none;
+	    transition: opacity 0.2s;
+	}
+	
+	.like-btn-area:hover {
+	    opacity: 0.7;
+	}
+	
+	#heartIcon {
+	    font-size: 14px; 
+	    line-height: 1;
+	}
+		
   
 </style>
 
@@ -78,11 +105,14 @@
   </div>
 
   <div class="detail-stats">
-    <span>👁 조회 ${board.viewCount}</span>
-    <span>💬 댓글 ${board.replyCount}</span>
-    <span style="color:#E8849A">♥ 좋아요 ${board.likeCount}</span>
+	<span>👁 조회 ${board.viewCount}</span>
+	<span>💬 댓글 ${board.replyCount}</span>
+    
+    <span id="likeBtn" style="color:#E8849A; cursor: pointer; font-size: 1rem;" onclick="toggleLike(${board.boardId})">
+      <span id="heartIcon">${isLiked > 0 ? '♥' : '♡'}</span> 
+      좋아요 <span id="detailLikeCount">${board.likeCount}</span>
+    </span>
   </div>
-</div>
 
 <div class="comment-section">
   <div class="comment-count">댓글 ${not empty comments ? comments.size() : 0}개</div>

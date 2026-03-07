@@ -755,132 +755,153 @@
 	        }
 	    }
 
-	    function clearFestivalHighlights() {
-	        document.querySelectorAll('.fc-festival-hover').forEach(el => {
-	            el.classList.remove('fc-festival-hover');
+    function clearFestivalHighlights() {
+        document.querySelectorAll('.fc-festival-hover').forEach(el => {
+            el.classList.remove('fc-festival-hover');
+        });
+    }
+	    
+    async function loadLiveChatSidebar() {
+        const chatListEl = document.getElementById('live-chat-list');
+        if (!chatListEl) return;
+
+        try {
+            const url = '${pageContext.request.contextPath}/community/api/chat/top-rooms';
+            const response = await fetch(url);
+            if (!response.ok) throw new Error('채팅방 로딩 실패');
+            
+            const rooms = await response.json();
+
+            if (!rooms || rooms.length === 0) {
+                chatListEl.innerHTML = `<p style="text-align:center; font-size:12px; color:var(--text-gray); padding: 10px 0;">현재 활성화된 방이 없습니다.</p>`;
+                return;
+            }
+
+            const icons = ['\uD83C\uDF34', '\uD83C\uDF0A', '\uD83C\uDFD4\uFE0F', '\uD83C\uDF03', '\uD83C\uDF8E'];
+            let html = '';
+
+            rooms.forEach((room, index) => {
+                const icon = icons[index % icons.length];
+                html += `
+                    <div class="chat-room">
+                      <div class="chat-icon">\${icon}</div>
+                      <div class="chat-info">
+                        <h4>\${room.chatRoomName}</h4>
+                        <p>현재 \${room.userCount}명 접속 중</p>
+                      </div>
+                    </div>
+                `;
+            });
+            chatListEl.innerHTML = html;
+
+        } catch (error) {
+            console.error("인기 채팅방을 불러오지 못했습니다:", error);
+            chatListEl.innerHTML = `<p style="text-align:center; font-size:12px; color:#FF6B6B; padding: 10px 0;">목록 로딩 실패 😢</p>`;
+        }
+    }
+
+    window.addEventListener('DOMContentLoaded', () => { 
+        setupInfiniteScroll(); 
+        const now = new Date();
+        loadMiniFestivalSidebar(now.getFullYear(), now.getMonth() + 1);
+        
+        loadLiveChatSidebar();
+
+        const urlParams = new URLSearchParams(window.location.search);
+        const tabParams = urlParams.get('tab');
+        if (tabParams && tabParams !== 'feed') {
+            loadTabContent(tabParams, null);
+        }
+    });
+	
+	function loadBoardDetail(boardId, updateView = true) {
+	    const contentArea = document.getElementById('dynamic-content');
+	    contentArea.innerHTML = '<div style="...">데이터 로딩 중...</div>';
+
+	    const url = `${pageContext.request.contextPath}/community/freeboard/detail/` + boardId + "?updateView=" + updateView;
+
+	    fetch(url, { headers: { 'X-Requested-With': 'Fetch' } })
+	    .then(res => res.text())
+	    .then(html => {
+	        contentArea.innerHTML = html;
+	        if(updateView) window.scrollTo({ top: 0, behavior: 'smooth' });
+	    });
+	}
+	
+	function submitComment(boardId) {
+	        if (!IS_LOGGED_IN) {
+	            showLoginModal();
+	            return;
+	        }
+
+	        const contentInput = document.getElementById('commentContent');
+	        const content = contentInput.value.trim();
+
+	        if (content === '') {
+	            alert('댓글 내용을 입력해주세요!');
+	            contentInput.focus();
+	            return;
+	        }
+
+	        const url = `${pageContext.request.contextPath}/community/freeboard/comment/add`;
+	        const data = {
+	            boardId: boardId,
+	            content: content
+	        };
+
+	        fetch(url, {
+	            method: 'POST',
+	            headers: {
+	                'Content-Type': 'application/json',
+	                'X-Requested-With': 'Fetch' 
+	            },
+	            body: JSON.stringify(data)
+	        })
+	        .then(response => {
+	            if (!response.ok) throw new Error('서버 통신 에러');
+	            return response.json();
+	        })
+	        .then(result => {
+	            if (result.status === 'success') {
+					document.getElementById('commentContent').value = '';
+					loadBoardDetail(boardId, false); 
+	            } else {
+	                alert(result.message);
+	            }
+	        })
+	        .catch(error => {
+	            console.error('Error:', error);
+	            alert('댓글 등록에 실패했습니다.');
 	        });
 	    }
-	    
-	    async function loadLiveChatSidebar() {
-	        const chatListEl = document.getElementById('live-chat-list');
-	        if (!chatListEl) return;
-
-	        try {
-	            const url = '${pageContext.request.contextPath}/community/api/chat/top-rooms';
-	            const response = await fetch(url);
-	            if (!response.ok) throw new Error('채팅방 로딩 실패');
-	            
-	            const rooms = await response.json();
-
-	            if (!rooms || rooms.length === 0) {
-	                chatListEl.innerHTML = `<p style="text-align:center; font-size:12px; color:var(--text-gray); padding: 10px 0;">현재 활성화된 방이 없습니다.</p>`;
-	                return;
-	            }
-
-	            const icons = ['\uD83C\uDF34', '\uD83C\uDF0A', '\uD83C\uDFD4\uFE0F', '\uD83C\uDF03', '\uD83C\uDF8E'];
-	            let html = '';
-
-	            rooms.forEach((room, index) => {
-	                const icon = icons[index % icons.length];
-	                html += `
-	                    <div class="chat-room">
-	                      <div class="chat-icon">\${icon}</div>
-	                      <div class="chat-info">
-	                        <h4>\${room.chatRoomName}</h4>
-	                        <p>현재 \${room.userCount}명 접속 중</p>
-	                      </div>
-	                    </div>
-	                `;
-	            });
-	            chatListEl.innerHTML = html;
-
-	        } catch (error) {
-	            console.error("인기 채팅방을 불러오지 못했습니다:", error);
-	            chatListEl.innerHTML = `<p style="text-align:center; font-size:12px; color:#FF6B6B; padding: 10px 0;">목록 로딩 실패 😢</p>`;
-	        }
-	    }
-
-	    window.addEventListener('DOMContentLoaded', () => { 
-	        setupInfiniteScroll(); 
-	        const now = new Date();
-	        loadMiniFestivalSidebar(now.getFullYear(), now.getMonth() + 1);
-	        
-	        loadLiveChatSidebar();
-
-	        const urlParams = new URLSearchParams(window.location.search);
-	        const tabParams = urlParams.get('tab');
-	        if (tabParams && tabParams !== 'feed') {
-	            loadTabContent(tabParams, null);
-	        }
-	    });
 		
-		function loadBoardDetail(boardId) {
-		    const contentArea = document.getElementById('dynamic-content');
-		    contentArea.innerHTML = '<div style="text-align:center; padding: 100px 20px; color:var(--sky-blue); font-size: 18px; font-weight:800;">게시글을 불러오는 중입니다... ✈️</div>';
-
-		    const url = `${pageContext.request.contextPath}/community/freeboard/detail/` + boardId;
+		function toggleLike(boardId) {
+		    const url = `${pageContext.request.contextPath}/community/freeboard/like/` + boardId;
 		    
-		    fetch(url, {
-		        headers: { 'X-Requested-With': 'Fetch' }
+		    fetch(url, { 
+		        method: 'POST', 
+		        headers: { 'X-Requested-With': 'Fetch' } 
 		    })
-		    .then(response => response.text())
-		    .then(html => {
-		        contentArea.innerHTML = html;
-		        window.scrollTo({ top: 0, behavior: 'smooth' }); // 최상단으로 이동
+		    .then(res => {
+		        if (res.status === 401) { 
+		            showLoginModal();
+		            return null;
+		        }
+		        if (!res.ok) throw new Error('서버 에러');
+		        return res.json();
 		    })
-		    .catch(error => {
-		        console.error('Error:', error);
-		        alert('게시글을 불러오는데 실패했습니다.');
-		    });
+		    .then(data => {
+		        if (data) {
+		            const heart = document.getElementById('heartIcon');
+		            const count = document.getElementById('detailLikeCount');
+		            
+		            heart.innerText = (data.status === 'liked') ? '♥' : '♡';
+		            count.innerText = data.count;
+		        }
+		    })
+		    .catch(err => console.error("좋아요 처리 중 오류:", err));
 		}
 		
-		function submitComment(boardId) {
-		        if (!IS_LOGGED_IN) {
-		            showLoginModal();
-		            return;
-		        }
-
-		        const contentInput = document.getElementById('commentContent');
-		        const content = contentInput.value.trim();
-
-		        if (content === '') {
-		            alert('댓글 내용을 입력해주세요!');
-		            contentInput.focus();
-		            return;
-		        }
-
-		        const url = `${pageContext.request.contextPath}/community/freeboard/comment/add`;
-		        const data = {
-		            boardId: boardId,
-		            content: content
-		        };
-
-		        fetch(url, {
-		            method: 'POST',
-		            headers: {
-		                'Content-Type': 'application/json',
-		                'X-Requested-With': 'Fetch' 
-		            },
-		            body: JSON.stringify(data)
-		        })
-		        .then(response => {
-		            if (!response.ok) throw new Error('서버 통신 에러');
-		            return response.json();
-		        })
-		        .then(result => {
-		            if (result.status === 'success') {
-		                contentInput.value = '';
-		                loadBoardDetail(boardId); 
-		            } else {
-		                alert(result.message);
-		            }
-		        })
-		        .catch(error => {
-		            console.error('Error:', error);
-		            alert('댓글 등록에 실패했습니다.');
-		        });
-		    }
-    
   </script>
 </body>
 </html>
