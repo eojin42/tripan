@@ -1,6 +1,5 @@
 <%@ page contentType="text/html; charset=UTF-8" %>
 <%@ taglib prefix="c" uri="jakarta.tags.core"%>
-<%@ taglib prefix="fmt" uri="jakarta.tags.fmt"%>
 
 <div class="modal-overlay" id="filterOverlay" onclick="closeFilterModal()"></div>
 <div class="custom-modal" id="filterModal">
@@ -12,52 +11,63 @@
   <div class="c-modal-body">
     <div class="filter-section">
       <h4 class="filter-label">요금 범위 (1박 기준)</h4>
-      <p style="text-align:center; font-weight:800; font-size:18px; margin-bottom:16px;">0만원 ~ 50만원+</p>
+      <p style="text-align:center; font-weight:800; font-size:18px; margin-bottom:16px;">
+        <span id="disp-min-price">0</span>만원 ~ <span id="disp-max-price">50</span>만원+
+      </p>
       <div style="display:flex; gap:12px; align-items:center;">
-        <input type="number" class="price-input" placeholder="최소 0" value="0">
+        <input type="number" id="input-min-price" class="price-input" placeholder="최소 0" value="0" oninput="updatePriceUI()">
         <span>-</span>
-        <input type="number" class="price-input" placeholder="최대 100" value="500000">
+        <input type="number" id="input-max-price" class="price-input" placeholder="최대 50" value="500000" oninput="updatePriceUI()">
       </div>
     </div>
 
     <div class="filter-section">
-      <h4 class="filter-label">객실 구성</h4>
-      <div class="guest-row" style="padding:10px 0;">
-        <div class="guest-info"><h4>침실</h4></div>
-        <div class="counter-box">
-          <div class="btn-count">-</div>
-          <span class="count-val">0</span>
-          <div class="btn-count">+</div>
-        </div>
-      </div>
-      <div class="guest-row" style="padding:10px 0;">
-        <div class="guest-info"><h4>욕실</h4></div>
-        <div class="counter-box">
-          <div class="btn-count">-</div>
-          <span class="count-val">0</span>
-          <div class="btn-count">+</div>
-        </div>
+      <h4 class="filter-label">숙소 타입</h4>
+      <div class="amenity-grid" id="accTypeGrid">
+        <label class="amenity-chip"><input type="checkbox" value="관광호텔"> 🏨 관광호텔</label>
+        <label class="amenity-chip"><input type="checkbox" value="모텔"> 🛏️ 모텔</label>
+        <label class="amenity-chip"><input type="checkbox" value="펜션"> 🏡 펜션</label>
+        <label class="amenity-chip"><input type="checkbox" value="게스트하우스"> 🎒 게스트하우스</label>
+        <label class="amenity-chip"><input type="checkbox" value="한옥"> 🏯 한옥</label>
+        <label class="amenity-chip"><input type="checkbox" value="기타"> ⛺ 기타</label>
       </div>
     </div>
 
     <div class="filter-section">
-      <h4 class="filter-label">편의시설</h4>
-      <div class="amenity-grid">
-        <label class="amenity-chip"><input type="checkbox"> 📶 와이파이</label>
-        <label class="amenity-chip"><input type="checkbox"> 🍳 조식</label>
-        <label class="amenity-chip"><input type="checkbox"> 🏊‍♀️ 수영장</label>
-        <label class="amenity-chip"><input type="checkbox"> 💪 피트니스</label>
-        <label class="amenity-chip"><input type="checkbox"> 🛁 스파/마사지</label>
-        <label class="amenity-chip"><input type="checkbox"> 🍖 바베큐</label>
-        <label class="amenity-chip"><input type="checkbox"> 🅿️ 주차 가능</label>
-        <label class="amenity-chip"><input type="checkbox"> 🐶 반려동물</label>
+      <h4 class="filter-label">숙소 편의 시설</h4>
+      <div class="amenity-grid" id="accAmenityGrid">
+        <label class="amenity-chip"><input type="checkbox" value="FITNESS"> 💪 피트니스</label>
+        <label class="amenity-chip"><input type="checkbox" value="CHKCOOKING"> 🍳 취사 가능</label>
+        <label class="amenity-chip"><input type="checkbox" value="BARBECUE"> 🍖 바베큐장</label>
+        <label class="amenity-chip"><input type="checkbox" value="BEVERAGE"> ☕ 식음료장</label>
+        <label class="amenity-chip"><input type="checkbox" value="KARAOKE"> 🎤 노래방</label>
+        <label class="amenity-chip"><input type="checkbox" value="PUBLICPC"> 💻 공용 PC</label>
+        <label class="amenity-chip"><input type="checkbox" value="SAUNA"> ♨️ 사우나</label>
+      </div>
+    </div>
+
+    <div class="filter-section">
+      <h4 class="filter-label">객실 편의 시설</h4>
+      <div class="amenity-grid" id="roomAmenityGrid">
+        <label class="amenity-chip"><input type="checkbox" value="ROOMBATHFACILITY"> 🚿 객실 내 목욕시설</label>
+        <label class="amenity-chip"><input type="checkbox" value="ROOMBATH"> 🛁 욕조</label>
+        <label class="amenity-chip"><input type="checkbox" value="ROOMHOMETHEATER"> 🎬 홈시어터</label>
+        <label class="amenity-chip"><input type="checkbox" value="ROOMAIRCONDITION"> ❄️ 에어컨</label>
+        <label class="amenity-chip"><input type="checkbox" value="ROOMTV"> 📺 TV</label>
+        <label class="amenity-chip"><input type="checkbox" value="ROOMPC"> 🖥️ 객실 PC</label>
+        <label class="amenity-chip"><input type="checkbox" value="ROOMINTERNET"> 📶 인터넷/와이파이</label>
+        <label class="amenity-chip"><input type="checkbox" value="ROOMREFRIGERATOR"> 🧊 냉장고</label>
+        <label class="amenity-chip"><input type="checkbox" value="ROOMTOILETRIES"> 🪥 세면도구</label>
+        <label class="amenity-chip"><input type="checkbox" value="ROOMSOFA"> 🛋️ 소파</label>
+        <label class="amenity-chip"><input type="checkbox" value="ROOMTABLE"> 🪑 테이블</label>
+        <label class="amenity-chip"><input type="checkbox" value="ROOMHAIRDRYER"> 💨 헤어드라이어</label>
       </div>
     </div>
   </div>
 
   <div class="c-modal-footer">
-    <button class="btn-reset">초기화</button>
-    <button class="btn-search-black" onclick="closeFilterModal()">적용하기</button>
+    <button class="btn-reset" onclick="resetFilters()">초기화</button>
+    <button class="btn-search-black" onclick="applyFilters()">적용하기</button>
   </div>
 </div>
 
@@ -77,21 +87,136 @@
     transition: all 0.2s; display: flex; align-items: center; gap: 6px;
   }
   .amenity-chip input { display: none; }
-  /* 체크박스 선택 시 스타일 */
   .amenity-chip:has(input:checked) {
     border-color: var(--text-black); background: var(--text-black); color: white;
   }
 </style>
 
 <script>
+  // --- 상태 변수 ---
+  let filterState = {
+    minPrice: 0,
+    maxPrice: 500000,
+    accTypes: [],        // 숙소 타입
+    accFacilities: [],   // 숙소 편의 시설
+    roomFacilities: []   // 객실 편의 시설
+  };
+
+  // ✅ 페이지 로드 시 URL 파라미터 읽어서 상태 복원
+  document.addEventListener("DOMContentLoaded", () => {
+    const params = new URLSearchParams(window.location.search);
+
+    if (params.has('minPrice')) filterState.minPrice = parseInt(params.get('minPrice'));
+    if (params.has('maxPrice')) filterState.maxPrice = parseInt(params.get('maxPrice'));
+    
+    // 숙소 타입 파라미터 복원
+    if (params.has('accTypes')) {
+      filterState.accTypes = params.get('accTypes').split(',');
+    }
+
+    if (params.has('accFacilities')) {
+      filterState.accFacilities = params.get('accFacilities').split(',');
+    }
+    if (params.has('roomFacilities')) {
+      filterState.roomFacilities = params.get('roomFacilities').split(',');
+    }
+
+    syncFilterUI();
+  });
+
+  // UI 동기화
+  function syncFilterUI() {
+    document.getElementById('input-min-price').value = filterState.minPrice;
+    document.getElementById('input-max-price').value = filterState.maxPrice;
+    updatePriceUI(); 
+
+    // 숙소 타입 체크박스 갱신
+    document.querySelectorAll('#accTypeGrid input[type="checkbox"]').forEach(cb => {
+      cb.checked = filterState.accTypes.includes(cb.value);
+    });
+
+    document.querySelectorAll('#accAmenityGrid input[type="checkbox"]').forEach(cb => {
+      cb.checked = filterState.accFacilities.includes(cb.value);
+    });
+
+    document.querySelectorAll('#roomAmenityGrid input[type="checkbox"]').forEach(cb => {
+      cb.checked = filterState.roomFacilities.includes(cb.value);
+    });
+  }
+
   function openFilterModal() {
     document.getElementById('filterOverlay').classList.add('open');
     document.getElementById('filterModal').classList.add('open');
     document.body.style.overflow = 'hidden';
   }
+
   function closeFilterModal() {
     document.getElementById('filterOverlay').classList.remove('open');
     document.getElementById('filterModal').classList.remove('open');
     document.body.style.overflow = '';
+  }
+
+  function updatePriceUI() {
+    const minVal = document.getElementById('input-min-price').value;
+    const maxVal = document.getElementById('input-max-price').value;
+    
+    document.getElementById('disp-min-price').innerText = Math.floor(minVal / 10000);
+    document.getElementById('disp-max-price').innerText = Math.floor(maxVal / 10000);
+    
+    filterState.minPrice = minVal;
+    filterState.maxPrice = maxVal;
+  }
+
+  function resetFilters() {
+    filterState = { minPrice: 0, maxPrice: 500000, accTypes: [], accFacilities: [], roomFacilities: [] };
+    syncFilterUI();
+  }
+
+  // ✅ AJAX로 필터 검색 요청
+  async function applyFilters() {
+    const urlParams = new URLSearchParams(window.location.search);
+    
+    // 선택된 값들 배열화
+    const checkedTypes = Array.from(document.querySelectorAll('#accTypeGrid input:checked')).map(cb => cb.value);
+    const checkedAcc = Array.from(document.querySelectorAll('#accAmenityGrid input:checked')).map(cb => cb.value);
+    const checkedRoom = Array.from(document.querySelectorAll('#roomAmenityGrid input:checked')).map(cb => cb.value);
+
+    // 백엔드로 보낼 완전한 JSON 데이터
+    const requestData = {
+      region: urlParams.get('regions') || '',
+      checkin: urlParams.get('checkin') || '',
+      checkout: urlParams.get('checkout') || '',
+      adult: parseInt(urlParams.get('adult')) || 0,
+      child: parseInt(urlParams.get('child')) || 0,
+
+      minPrice: filterState.minPrice,
+      maxPrice: filterState.maxPrice,
+      
+      accTypes: checkedTypes,       
+      accFacilities: checkedAcc,
+      roomFacilities: checkedRoom
+    };
+
+    try {
+      const response = await fetch('${pageContext.request.contextPath}/api/accommodation/search', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(requestData)
+      });
+
+      if (!response.ok) throw new Error('서버 통신 오류');
+      const list = await response.json(); 
+      
+      // list.jsp에 있는 화면 렌더링 함수 호출
+      if (typeof window.renderAccommodations === 'function') {
+        window.renderAccommodations(list);
+      }
+
+      closeFilterModal();
+
+    } catch (error) {
+      console.error('필터 적용 실패:', error);
+      alert('검색 중 오류가 발생했습니다.');
+    }
   }
 </script>
