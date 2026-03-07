@@ -102,27 +102,27 @@
   .cat-item span { font-size: 13px; font-weight: 700; color: var(--text-black); white-space: nowrap; }
   .cat-item.active { border-bottom: 2px solid var(--text-black); padding-bottom: 10px; margin-bottom: -18px; }
 
-  .stay-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 40px 32px; }
-  .stay-item { cursor: pointer; transition: transform 0.2s; }
-  .stay-item:hover { transform: translateY(-4px); }
-  .stay-thumb { width: 100%; aspect-ratio: 4/3; border-radius: 16px; overflow: hidden; margin-bottom: 16px; position: relative; background: #eee; }
-  .stay-thumb img { width: 100%; height: 100%; object-fit: cover; transition: transform 0.4s; }
-  .stay-item:hover .stay-thumb img { transform: scale(1.05); }
-  .stay-meta h3 { font-size: 18px; font-weight: 800; margin-bottom: 6px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .stay-desc { font-size: 14px; color: var(--text-gray); margin-bottom: 8px; }
-  .stay-price { font-size: 17px; font-weight: 800; }
-  .stay-discount { color: var(--point-blue); margin-right: 4px; }
+  .accommodation-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 40px 32px; }
+  .accommodation-item { cursor: pointer; transition: transform 0.2s; }
+  .accommodation-item:hover { transform: translateY(-4px); }
+  .accommodation-thumb { width: 100%; aspect-ratio: 4/3; border-radius: 16px; overflow: hidden; margin-bottom: 16px; position: relative; background: #eee; }
+  .accommodation-thumb img { width: 100%; height: 100%; object-fit: cover; transition: transform 0.4s; }
+  .accommodation-item:hover .accommodation-thumb img { transform: scale(1.05); }
+  .accommodation-meta h3 { font-size: 18px; font-weight: 800; margin-bottom: 6px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .accommodation-desc { font-size: 14px; color: var(--text-gray); margin-bottom: 8px; }
+  .accommodation-price { font-size: 17px; font-weight: 800; }
+  .accommodation-discount { color: var(--point-blue); margin-right: 4px; }
 
-  @media (max-width: 1200px) { .stay-grid { grid-template-columns: repeat(3, 1fr); } }
+  @media (max-width: 1200px) { .accommodation-grid { grid-template-columns: repeat(3, 1fr); } }
   @media (max-width: 992px) { 
-    .stay-grid { grid-template-columns: repeat(2, 1fr); } 
+    .accommodation-grid { grid-template-columns: repeat(2, 1fr); } 
     .unified-search-bar { width: 100%; justify-content: space-between; }
     .search-segment { padding: 12px 16px; font-size: 14px; }
     .btn-filter-icon { position: static; transform: none; margin-left: 12px; }
     .list-search-bar { justify-content: space-between; }
   }
   @media (max-width: 600px) { 
-    .stay-grid { grid-template-columns: 1fr; } 
+    .accommodation-grid { grid-template-columns: 1fr; } 
     .list-container { padding: 0 20px; margin-top: 120px; } 
     .search-segment span { display: none; }
   }
@@ -173,70 +173,94 @@
     <div class="cat-item"><span>🐶 반려동물</span></div>
   </div>
 
-  <div class="stay-grid">
-    <div class="stay-item" onclick="location.href='${pageContext.request.contextPath}/accommodation/detail?id=1'">
-      <div class="stay-thumb">
-        <img src="https://images.unsplash.com/photo-1542314831-068cd1dbfeeb?w=600" alt="img">
-        <div style="position:absolute; top:12px; right:12px; color:white;">♡</div>
-      </div>
-      <div class="stay-meta">
-        <h3>자하 (JAHA)</h3>
-        <p class="stay-desc">서울 종로구 · 2-8명</p>
-        <div class="stay-price"><span class="stay-discount">10%</span> ₩300,000~</div>
-      </div>
-    </div>
-    
-    <div class="stay-item">
-      <div class="stay-thumb">
-        <img src="https://images.unsplash.com/photo-1520250497591-112f2f40a3f4?w=600" alt="img">
-        <div class="wish-btn">♡</div>
-      </div>
-      <div class="stay-meta">
-        <h3>히가공덕</h3>
-        <p class="stay-desc">서울 마포구 · 4-6명</p>
-        <div class="stay-price"><span class="stay-discount">20%</span> ₩236,000~</div>
-      </div>
-    </div>
-    
-    <div class="stay-item">
-      <div class="stay-thumb">
-        <img src="https://images.unsplash.com/photo-1566073771259-6a8506099945?w=600" alt="img">
-        <div class="wish-btn">♡</div>
-      </div>
-      <div class="stay-meta">
-        <h3>무보재</h3>
-        <p class="stay-desc">서울 종로구 · 4-8명</p>
-        <div class="stay-price">₩370,000~</div>
-      </div>
-    </div>
-    
-    <div class="stay-item">
-      <div class="stay-thumb">
-        <img src="https://images.unsplash.com/photo-1582719508461-905c673771fd?w=600" alt="img">
-        <div class="wish-btn">♡</div>
-      </div>
-      <div class="stay-meta">
-        <h3>서촌 스테이</h3>
-        <p class="stay-desc">서울 종로구 · 2명</p>
-        <div class="stay-price">₩180,000~</div>
-      </div>
-    </div>
-    
-    <div class="stay-item">
-      <div class="stay-thumb">
-        <img src="https://images.unsplash.com/photo-1571003123894-1f0594d2b5d9?w=600" alt="img">
-        <div class="wish-btn">♡</div>
-      </div>
-      <div class="stay-meta">
-        <h3>아만 도쿄</h3>
-        <p class="stay-desc">일본 도쿄 · 2명</p>
-        <div class="stay-price">₩1,200,000~</div>
-      </div>
-    </div>
-
+  <div class="accommodation-grid" id="accommodation-list-container">
   </div>
 
 </main>
+
+<script>
+  // 1️⃣ 서버에서 받은 리스트(JSON)를 화면에 HTML로 그려주는 함수
+  // 1️⃣ 서버에서 받은 리스트(JSON)를 화면에 HTML로 그려주는 함수
+  window.renderAccommodations = function(list) {
+    const container = document.getElementById('accommodation-list-container'); // id 변경 반영
+    
+    // 검색 결과가 없을 때
+    if (!list || list.length === 0) {
+      container.innerHTML = '<div style="grid-column:1/-1; text-align:center; padding:80px 0; font-size:16px; color:#718096;">조건에 맞는 숙소가 없습니다. 텅! 🗑️</div>';
+      return;
+    }
+
+    // 검색 결과가 있을 때 HTML 조립
+    let html = '';
+    list.forEach(item => {
+      // 가격에 콤마(,) 찍기
+      const formattedPrice = item.minPrice ? item.minPrice.toLocaleString() : '0';
+      
+      // 이미지 경로 (DB에 풀 URL이 있다고 하셨으므로 그대로 사용, 없으면 기본 이미지)
+      const imgPath = item.imageUrl ? item.imageUrl : 'https://images.unsplash.com/photo-1542314831-068cd1dbfeeb?w=600';
+
+      html += `
+        <div class="accommodation-item" onclick="location.href='\${pageContext.request.contextPath}/accommodation/detail?id=\${item.placeId}'">
+          <div class="accommodation-thumb">
+            <img src="\${imgPath}" alt="\${item.name}">
+            <div class="wish-btn" style="position:absolute; top:12px; right:12px; color:white; font-size:20px; cursor:pointer;">♡</div>
+          </div>
+          <div class="accommodation-meta">
+            <h3>\${item.name}</h3>
+            <p class="accommodation-desc">\${item.region} · \${item.accommodationType || '숙소'}</p>
+            <div class="accommodation-price">₩\${formattedPrice}~</div>
+          </div>
+        </div>
+      `;
+    });
+    
+    container.innerHTML = html; 
+  };
+
+
+  // 2️⃣ 리스트 페이지가 처음 열렸을 때 바로 서버에 데이터를 달라고 요청하는 함수
+  async function fetchInitialList() {
+    const urlParams = new URLSearchParams(window.location.search);
+    
+    // 주소창의 파라미터를 DTO 형식에 맞춰 객체로 조립
+    const requestData = {
+      regions: urlParams.get('regions') || '',
+      checkin: urlParams.get('checkin') || '',
+      checkout: urlParams.get('checkout') || '',
+      adult: parseInt(urlParams.get('adult')) || 0,
+      child: parseInt(urlParams.get('child')) || 0,
+      
+      // 초기 로딩이므로 필터값은 기본값(빈 배열)으로 세팅
+      accTypes: [],
+      accFacilities: [],
+      roomFacilities: []
+    };
+
+    try {
+      // 작성하신 AccommodationController의 @PostMapping("/api/accommodation/search")로 전송
+      const response = await fetch('${pageContext.request.contextPath}/api/accommodation/search', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(requestData)
+      });
+
+      if (!response.ok) throw new Error('데이터를 불러오지 못했습니다.');
+      
+      const data = await response.json(); // 백엔드에서 준 데이터 받기
+      window.renderAccommodations(data);  // 1번 함수 호출해서 화면 그리기!
+
+    } catch (error) {
+      console.error(error);
+      document.getElementById('accommodation-list-container').innerHTML = 
+        '<div style="grid-column:1/-1; text-align:center;">데이터를 불러오는 중 오류가 발생했습니다.</div>';
+    }
+  }
+
+  // 화면이 켜지자마자 데이터 요청 함수 실행
+  document.addEventListener("DOMContentLoaded", () => {
+    fetchInitialList();
+  });
+</script>
 
 <jsp:include page="../accommodation/searchModal.jsp" /> 
 <jsp:include page="../accommodation/filterModal.jsp" /> 
