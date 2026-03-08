@@ -2,6 +2,92 @@
 
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.tripan.app.mapper.AccommodationMapper">
+	<select id="selectAccommodationList" parameterType="com.tripan.app.domain.dto.AdSearchConditionDto" resultType="com.tripan.app.domain.dto.AccommodationDto">
+        SELECT 
+            p.PLACE_ID as placeId,
+            p.PLACE_NAME as name,
+            p.IMAGE_URL as imageUrl,
+            p.ADDRESS as region, a.ACCOMMODATION_TYPE as accommodationType,
+            MIN(r.AMOUNT) as minPrice
+        FROM PLACE p
+        JOIN ACCOMMODATION a ON p.PLACE_ID = a.PLACE_ID
+        JOIN ROOM r ON a.PLACE_ID = r.PLACE_ID
+        JOIN ACCOMMODATION_FACILITY af ON a.AF_ID = af.AF_ID
+        JOIN ROOM_FACILITY rf ON r.RF_ID = rf.RF_ID
+        WHERE 1=1
+        
+        <if test="region != null and region != ''">
+            AND p.ADDRESS LIKE '%' || #{region} || '%'
+        </if>
 
+        <if test="accTypes != null and accTypes.size() > 0">
+            AND a.ACCOMMODATION_TYPE IN
+            <foreach item="type" collection="accTypes" open="(" separator="," close=")">
+                #{type}
+            </foreach>
+        </if>
 
+        <if test="minPrice != null">
+            AND r.AMOUNT <![CDATA[>=]]> #{minPrice}
+        </if>
+        <if test="maxPrice != null">
+            AND r.AMOUNT <![CDATA[<=]]> #{maxPrice}
+        </if>
+
+        <if test="adult + child > 0">
+            AND r.MAX_CAPACITY <![CDATA[>=]]> (#{adult} + #{child})
+        </if>
+
+        <if test="accFacilities != null and accFacilities.size() > 0">
+            <foreach item="fac" collection="accFacilities">
+                <choose>
+                    <when test="fac == 'FITNESS'"> AND af.FITNESS = 1 </when>
+                    <when test="fac == 'CHKCOOKING'"> AND af.CHKCOOKING = 1 </when>
+                    <when test="fac == 'BARBECUE'"> AND af.BARBECUE = 1 </when>
+                    <when test="fac == 'BEVERAGE'"> AND af.BEVERAGE = 1 </when>
+                    <when test="fac == 'KARAOKE'"> AND af.KARAOKE = 1 </when>
+                    <when test="fac == 'PUBLICPC'"> AND af.PUBLICPC = 1 </when>
+                    <when test="fac == 'SAUNA'"> AND af.SAUNA = 1 </when>
+                </choose>
+            </foreach>
+        </if>
+
+        GROUP BY p.PLACE_ID, p.PLACE_NAME, p.IMAGE_URL, p.ADDRESS, a.ACCOMMODATION_TYPE
+    </select>
+    
+    <select id="selectAccommodationDetail" resultType="com.tripan.app.domain.dto.AccommodationDetailDto">
+        SELECT 
+            p.PLACE_ID as placeId,
+            p.PLACE_NAME as name,
+            p.ADDRESS as region, p.DESCRIPTION as description,
+            a.CHECKINTIME as checkinTime,
+            a.CHECKOUTTIME as checkoutTime
+        FROM PLACE p
+        JOIN ACCOMMODATION a ON p.PLACE_ID = a.PLACE_ID
+        WHERE p.PLACE_ID = #{placeId}
+    </select>
+
+    <select id="selectAccommodationImages" resultType="string">
+        SELECT IMAGE_URL 
+        FROM ACCOMMODATION_IMAGE 
+        WHERE PLACE_ID = #{placeId}
+    </select>
+    
+    <select id="selectRoomsByPlaceId" resultType="com.tripan.app.domain.dto.RoomDto">
+        SELECT 
+            r.ROOM_ID as roomId,
+            r.ROOM_NAME as roomName,
+            r.ROOMBASECOUNT as roomBaseCount,
+            r.MAX_CAPACITY as maxCapacity,
+            r.AMOUNT as amount,
+            r.ROOMINTRO as roomIntro,
+            
+            (SELECT MIN(ri.IMAGE_URL) 
+             FROM ROOM_IMAGE ri 
+             WHERE ri.ROOM_ID = r.ROOM_ID) as roomImageUrl
+             
+        FROM ROOM r
+        WHERE r.PLACE_ID = #{placeId}
+        ORDER BY r.AMOUNT ASC
+    </select>
 </mapper>

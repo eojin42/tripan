@@ -198,7 +198,7 @@
     };
 
     try {
-      const response = await fetch('${pageContext.request.contextPath}/api/accommodation/search', {
+      const response = await fetch('${pageContext.request.contextPath}/accommodation/search', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(requestData)
