@@ -46,5 +46,6 @@ public class MemberDto {
 	
 	private String reason;
 	private Long reporterId;
+	private int reportCount;
 	
 }

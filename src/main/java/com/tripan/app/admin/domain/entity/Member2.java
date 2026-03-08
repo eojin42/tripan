@@ -20,7 +20,7 @@ public class Member2 {
 
     @Id
     @Column(name = "member_id")
-    private Long id;
+    private Long memberId;
 
     @MapsId 
     @OneToOne(fetch = FetchType.LAZY)

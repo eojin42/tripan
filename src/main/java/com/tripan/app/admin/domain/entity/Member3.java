@@ -14,15 +14,10 @@ public class Member3 {
     @Column(name = "member_id")
     private Long id;
 
-    // Member1과 1:1 관계 (식별 관계)
     @MapsId
     @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "member_id")
     private Member1 member1;
-
-    // ERD 상의 가입일
-    @Column(name = "register_date", nullable = false)
-    private LocalDateTime registerDate;
 
     // 탈퇴일
     @Column(name = "withdraw_date", nullable = false)

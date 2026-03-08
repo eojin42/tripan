@@ -1,0 +1,101 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.tripan.app.admin.mapper.MemberManageMapper">
+
+    <select id="selectAllMembers" resultType="com.tripan.app.admin.domain.dto.MemberDto">
+	    SELECT 
+	        m1.member_id as memberId, m1.login_id AS loginId, m1.email, m1.username, m1.status, m1.role, 
+	        m1.register_date as regDate, m2.nickname, m2.phone_number as phoneNumber, NVL(ms_cur.status_code, 1) AS statusCode, ms_cur.memo
+	    FROM member1 m1
+	    LEFT JOIN member2 m2 ON m1.member_id = m2.member_id
+	    LEFT JOIN (
+            SELECT member_id, status_code, memo,
+                   ROW_NUMBER() OVER (PARTITION BY member_id ORDER BY reg_date DESC) AS rn
+            FROM   memberStatus
+        ) ms_cur ON ms_cur.member_id = m1.member_id AND ms_cur.rn = 1
+        WHERE NVL(ms_cur.status_code, 1) != 4
+        ORDER BY m1.member_id DESC
+	</select>
+
+    <select id="selectMemberDetail" parameterType="Long" resultType="com.tripan.app.admin.domain.dto.MemberDto">
+        SELECT 
+            m1.member_id AS memberId, m1.login_id AS loginId, m1.email, m1.username, m1.status, m1.role, m1.gender, m1.birthday,
+            m2.nickname, m2.profile_image AS profilePhoto, m2.bio, m2.phone_number AS phoneNumber, m2.last_login_at AS lastLoginAt, m2.equipped_badge_id AS equippedBadgeId,
+            NVL(ms_cur.status_code, 1) AS statusCode,(SELECT COUNT(*) FROM report r WHERE r.target_id = m1.member_id) as reportCount
+        FROM member1 m1
+        LEFT JOIN member2 m2 ON m1.member_id = m2.member_id
+        LEFT JOIN (
+            SELECT member_id, status_code, memo,
+                   ROW_NUMBER() OVER (PARTITION BY member_id ORDER BY reg_date DESC) AS rn
+            FROM   memberStatus
+        ) ms_cur ON ms_cur.member_id = m1.member_id AND ms_cur.rn = 1
+        WHERE m1.member_id = #{memberId}
+    </select>
+    
+    <select id="selectMemberKpi" resultType="com.tripan.app.admin.domain.dto.MemberKpiDto">
+	    SELECT 
+	        COUNT(*) AS totalCount,
+	        COUNT(CASE WHEN m1.role = 'ROLE_USER' THEN 1 END) AS userCount,
+	        COUNT(CASE WHEN m1.role = 'ROLE_PARTNER' THEN 1 END) AS partnerCount,
+	        COUNT(CASE WHEN m1.role = 'ROLE_ADMIN' THEN 1 END) AS adminCount,
+	        COUNT(CASE WHEN m1.status = 1 THEN 1 END) AS activeCount,
+	        COUNT(CASE WHEN m1.status = 2 THEN 1 END) AS banCount,
+	        COUNT(CASE WHEN m1.status = 3 THEN 1 END) AS dormantCount,
+	        COUNT(CASE WHEN m1.status = 4 THEN 1 END) AS withdrawCount,
+	        
+	        COUNT(CASE WHEN TRUNC(m1.register_date) = TRUNC(SYSDATE) THEN 1 END) AS todayNewCount,
+	        COUNT(CASE WHEN TRUNC(m1.register_date) = TRUNC(SYSDATE - 1) THEN 1 END) AS yesterdayNewCount
+	    FROM member1 m1
+	    LEFT JOIN (
+            SELECT member_id, status_code,
+                   ROW_NUMBER() OVER (PARTITION BY member_id ORDER BY reg_date DESC) AS rn
+            FROM   memberStatus
+        ) ms_cur ON ms_cur.member_id = m1.member_id AND ms_cur.rn = 1
+</select>
+
+<select id="selectDormantKpi" resultType="com.tripan.app.admin.domain.dto.DormantKpiDto">
+        SELECT
+            /* 전체 휴면 회원 수 */
+            (
+                SELECT COUNT(*)
+                FROM (
+                    SELECT member_id, status_code,
+                           ROW_NUMBER() OVER (PARTITION BY member_id ORDER BY reg_date DESC) AS rn
+                    FROM   memberStatus
+                ) t
+                WHERE t.rn = 1 AND t.status_code = 3
+            ) AS totalDormant,
+
+            /* 최근 7일 내 복귀 */
+            (
+                SELECT COUNT(DISTINCT ms.member_id)
+                FROM   memberStatus ms
+                WHERE  ms.status_code   = 1
+                  AND  ms.reg_date >= SYSDATE - 7
+                  AND  EXISTS (
+                           SELECT 1 FROM memberStatus ms2
+                           WHERE  ms2.member_id = ms.member_id
+                             AND  ms2.status_code = 3
+                             AND  ms2.reg_date  &lt; ms.reg_date
+                       )
+            ) AS reactivatedCount
+        FROM dual
+    </select>
+    
+    <select id="selectDormantMembers" resultType="com.tripan.app.admin.domain.dto.DormantMemberDto">
+        SELECT
+            m1.member_id AS memberId, m1.email, m2.nickname, m2.last_login_at AS lastLoginDate,
+            ms_d.reg_date AS dormantDate, ADD_MONTHS(ms_d.reg_date, 12) AS deleteScheduledDate
+        FROM member1 m1
+        LEFT JOIN member2 m2 ON m2.member_id = m1.member_id
+        JOIN (
+            SELECT member_id, reg_date, status_code,
+                   ROW_NUMBER() OVER (PARTITION BY member_id ORDER BY reg_date DESC) AS rn
+            FROM   memberStatus
+        ) ms_d ON ms_d.member_id = m1.member_id
+               AND ms_d.rn = 1
+               AND ms_d.status_code = 3
+        ORDER BY deleteScheduledDate ASC
+    </select>
+</mapper>

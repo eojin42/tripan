@@ -45,7 +45,7 @@
     .search-btn-black { height: 42px; padding: 0 24px; background: #000; color: #fff; border-radius: 10px; font-weight: 800; border: none; cursor: pointer; transition: opacity 0.2s; white-space: nowrap; }
     .search-btn-black:hover { opacity: 0.8; }
 
-    /* ── 뱃지 관리 ── */
+    /* 뱃지 관리 */
     .badge-manage-row { display: flex; align-items: center; justify-content: space-between; padding: 12px 0; border-bottom: 1px solid var(--border); }
     .badge-manage-row:last-child { border-bottom: none; }
     .badge-info { display: flex; align-items: center; gap: 12px; }
@@ -57,9 +57,7 @@
     .btn-badge-add { height: 38px; padding: 0 16px; border-radius: 10px; border: 1.5px dashed var(--border); color: var(--muted); background: transparent; font-size: 13px; font-weight: 700; cursor: pointer; transition: all 0.2s; width: 100%; margin-top: 16px; }
     .btn-badge-add:hover { border-color: var(--primary); color: var(--primary); background: var(--primary-10); }
 
-    /* ══════════════════════════════════════
-       공통 모달 기반 — 완전히 새로 작성
-    ══════════════════════════════════════ */
+    /* 공통 모달 기반 */
     .modal-overlay {
       position: fixed; inset: 0;
       background: rgba(15, 23, 42, 0.55);
@@ -200,14 +198,16 @@
           <h1>회원 상세 정보</h1>
         </div>
         <div class="header-actions">
-          <button class="btn btn-primary" onclick="openSuspendModal()"
-            style="background:var(--danger); display:inline-flex; align-items:center; gap:8px;">
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-              <circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/>
-            </svg>
-            즉시 활동 정지
-          </button>
-        </div>
+		  <button class="btn btn-primary" onclick="openSuspendModal()"
+		    style="background: var(--danger); display: inline-flex; align-items: center; gap: 8px; width: fit-content; border-radius: 9999px;">
+		    
+		    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+		      <path d="M12 20h9"></path>
+		      <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path>
+		    </svg>
+		    멤버 상태 변경
+		  </button>
+		</div>
       </div>
 
       <!-- 프로필 카드 -->
@@ -399,6 +399,7 @@
     </div>
 
     <div class="ms-body">
+      <input type="hidden" id="suspendMemberId" value="${member.memberId}">
       <div class="fg">
         <label>대상 회원</label>
         <input type="text" id="suspendMemberDisplay"
@@ -548,19 +549,32 @@ function saveSuspendStatus() {
     return;
   }
 
-  // TODO: fetch POST /admin/member/status
-  const map = {
-    '1': { text:'정상 활동', cls:'badge badge-done'   },
-    '2': { text:'활동 정지', cls:'badge badge-danger'  },
-    '3': { text:'휴면',      cls:'badge badge-wait'    },
-    '4': { text:'탈퇴',      cls:'badge badge-wait'    }
-  };
-  const s = map[newStatus];
-  const el = document.getElementById('profileStatusBadge');
-  if (el && s) { el.textContent = s.text; el.className = s.cls; }
+  const memberId = document.getElementById('suspendMemberId').value;
 
-  closeSuspendModal();
-  alert('회원 상태가 변경되었습니다.');
+  fetch(contextPath + '/admin/member/status', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      memberId:   parseInt(memberId),
+      statusCode: parseInt(newStatus),
+      memo:       reason
+    })
+  })
+  .then(res => {
+    if (!res.ok) throw new Error('서버 오류');
+    const map = {
+      '1': { text:'정상 활동', cls:'badge badge-done'   },
+      '2': { text:'활동 정지', cls:'badge badge-danger'  },
+      '3': { text:'휴면',      cls:'badge badge-wait'    },
+      '4': { text:'탈퇴',      cls:'badge badge-wait'    }
+    };
+    const s  = map[newStatus];
+    const el = document.getElementById('profileStatusBadge');
+    if (el && s) { el.textContent = s.text; el.className = s.cls; }
+    closeSuspendModal();
+    alert('회원 상태가 변경되었습니다.');
+  })
+  .catch(() => alert('상태 변경 중 오류가 발생했습니다.'));
 }
 
 /* ── 예약 영수증 모달 ── */

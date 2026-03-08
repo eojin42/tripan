@@ -18,12 +18,10 @@ public class MemberDto {
 	private String nickname;
 	private String username;
 	private String snsProvider;
-	
 	private String snsId;
 	private String phoneNumber;
 	private String email;
 	private String preferredRegion;
-	
 	private String bio;
 	
 	private String ipInfo;
@@ -62,9 +60,5 @@ public class MemberDto {
     private Long registerId;
     
     private List<BookingResponseDto> bookingList;
-    
-    private Integer followerCount;  // 팔로워 수
-    private Integer followingCount; // 팔로잉 수
-    private Integer badgeCount;     // 획득 뱃지 수
-	private Long equippedBadgeId;
+	private List<Long> targetIds;
 }

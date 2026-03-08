@@ -1,17 +1,19 @@
-package com.tripan.app.admin.domain.entity;
+package com.tripan.app.domain.entity;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
 import java.time.LocalDateTime;
 
+import com.tripan.app.admin.domain.entity.Member1;
+
 @Entity
-@Table(name = "memberStatus")
+@Table(name = "MEMBERSTATUS")
 @Getter @Setter
 public class MemberStatus {
 
     @Id
-    @SequenceGenerator(name="MEMBER_STATUS_SEQ_GEN", sequenceName="MEMBER_STATUS_SEQ", allocationSize=1)
-    @GeneratedValue(strategy=GenerationType.SEQUENCE, generator="MEMBER_STATUS_SEQ_GEN")
+    @SequenceGenerator(name="MEMBERSTATUS_SEQ_GEN", sequenceName="MEMBERSTATUS_SEQ", allocationSize=1)
+    @GeneratedValue(strategy=GenerationType.SEQUENCE, generator="MEMBERSTATUS_SEQ_GEN")
     private Long num;
 
     // 상태가 변경된 대상 회원
@@ -20,7 +22,7 @@ public class MemberStatus {
     private Member1 targetMember;
 
     // 1: 정상, 2: 활동 정지(Ban), 3: 휴면, 4: 탈퇴
-    @Column(name = "memberStatus", nullable = false)
+    @Column(name = "status_code", nullable = false)
     private Integer status;
 
     @Lob
