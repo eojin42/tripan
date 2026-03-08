@@ -18,10 +18,12 @@ import com.tripan.app.config.WebSocketEventListener;
 import com.tripan.app.domain.dto.CommunityChatRoomDto;
 import com.tripan.app.domain.dto.CommunityFreeBoardDto;
 import com.tripan.app.domain.dto.CommunityFreeboardCommentDto;
+import com.tripan.app.domain.dto.CommunityMateDto;
 import com.tripan.app.domain.dto.MemberDto;
 import com.tripan.app.domain.dto.SessionInfo;
 import com.tripan.app.service.CommunityChatService;
 import com.tripan.app.service.CommunityFreeboardService;
+import com.tripan.app.service.CommunityMateService;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
@@ -36,6 +38,7 @@ public class CommunityController {
 	
 	private final CommunityFreeboardService freeboardService;
 	private final CommunityChatService chatService;
+	private final CommunityMateService mateService;
 
     @GetMapping({"", "/", "/feed"})
     public String handleCommunityFeed(Model model) {
@@ -63,12 +66,17 @@ public class CommunityController {
                 model.addAttribute("boardList", list);
                 log.info("자유게시판 목록 조회 완료: {}건", list.size());
             }
+            else if ("mate".equals(tabType)) {
+                return "community/fragment/mate/mate_list"; 
+            }
             
             return "community/fragment/" + tabType + "_list"; 
         }
         else {
             if ("freeboard".equals(tabType)) {
                 return "redirect:/community/freeboard";
+            } else if ("mate".equals(tabType)) {
+                return "redirect:/community/feed?tab=mate";
             }
             return "redirect:/community/feed?tab=" + tabType;
         }
@@ -94,7 +102,6 @@ public class CommunityController {
         String requestedWith = request.getHeader("X-Requested-With");
         if ("Fetch".equals(requestedWith) || "XMLHttpRequest".equals(requestedWith)) {
             
-            // 🌟 수정: updateView 값 전달
             CommunityFreeBoardDto board = freeboardService.getBoardDetail(boardId, updateView);
             List<CommunityFreeboardCommentDto> comments = freeboardService.getCommentList(boardId);
             
@@ -160,4 +167,38 @@ public class CommunityController {
         
         return "community/chat/openlounge"; 
     }
+    
+    @PostMapping("/mate/write")
+    @ResponseBody
+    public ResponseEntity<?> writeMatePost(@RequestBody CommunityMateDto dto, HttpSession session) {
+        try {
+        	MemberDto loginUser = (MemberDto) session.getAttribute("loginUser");
+
+            if (loginUser == null) {
+                return ResponseEntity.status(401).body(Map.of("status", "error", "message", "로그인이 필요합니다."));
+            }
+
+            dto.setMemberId(loginUser.getMemberId());
+
+            mateService.registerMate(dto);
+            return ResponseEntity.ok(Map.of("status", "success", "message", "동행 모집글이 성공적으로 등록되었습니다!"));
+            
+        } catch (Exception e) {
+            log.error("동행 모집글 등록 에러", e);
+            return ResponseEntity.status(500).body(Map.of("status", "error", "message", "서버 오류가 발생했습니다."));
+        }
+    }
+    
+    @GetMapping("/api/mate/list")
+    @ResponseBody
+    public ResponseEntity<List<CommunityMateDto>> getMateList(
+            @RequestParam(value = "regionId", required = false) Long regionId,
+            @RequestParam(value = "startDate", required = false) String startDate,
+            @RequestParam(value = "endDate", required = false) String endDate,
+            @RequestParam(value = "searchTag", required = false) String searchTag) {
+        
+        List<CommunityMateDto> list = mateService.getMateList(regionId, startDate, endDate, searchTag);
+        return ResponseEntity.ok(list);
+    }
+    
 }

@@ -31,7 +31,6 @@
   .card-thumb { width: 120px; height: 120px; border-radius: 12px; overflow: hidden; flex-shrink: 0; }
   .card-thumb img { width: 100%; height: 100%; object-fit: cover; }
   
-  
 </style>
 
 <div class="board-header">
@@ -46,7 +45,7 @@
     <button class="f-chip">🙋‍♂️ 질문있어요</button>
     <button class="f-chip">📸 다녀온 후기</button>
   </div>
-  <button class="btn-write">✏️ 글쓰기</button>
+  <button class="btn-write" onclick="openLoungeModal()">✏️ 글쓰기</button>
 </div>
 
 <div class="board-list">

@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.tripan.app.mapper.CommunityMateMapper">
+
+<select id="selectMateList" resultType="com.tripan.app.domain.dto.CommunityMateDto">
+        SELECT 
+            m.mate_id as mateId,
+            m.member_id as memberId,
+            m.region_id as regionId,
+            m.trip_id as tripId,
+            m.target_count as targetCount,
+            TO_CHAR(m.start_date, 'YYYY-MM-DD') as startDate,
+            TO_CHAR(m.end_date, 'YYYY-MM-DD') as endDate,
+            m.title,
+            m.content,
+            m.tags,
+            m.status,
+            m.view_count as viewCount,
+            TO_CHAR(m.created_at, 'YYYY-MM-DD HH24:MI') as createdAt,
+            u.nickname,
+            u.profile_image as profilePhoto,
+            r.sido_name as sidoName
+        FROM travel_mate m
+        JOIN member2 u ON m.member_id = u.member_id
+        JOIN region r ON m.region_id = r.region_id
+        WHERE 1=1
+        
+        <if test="regionId != null and regionId != ''">
+            AND m.region_id = #{regionId}
+        </if>
+        
+        <if test="startDate != null and startDate != '' and endDate != null and endDate != ''">
+            AND m.start_date &lt;= TO_DATE(#{endDate}, 'YYYY-MM-DD')
+            AND m.end_date &gt;= TO_DATE(#{startDate}, 'YYYY-MM-DD')
+        </if>
+        
+        <if test="searchTag != null and searchTag != ''">
+            AND m.tags LIKE '%' || #{searchTag} || '%'
+        </if>
+        
+        ORDER BY m.status DESC, m.created_at DESC
+    </select>
+
+    <insert id="insertMate" parameterType="com.tripan.app.domain.dto.CommunityMateDto">
+        INSERT INTO travel_mate (
+            mate_id, member_id, region_id, trip_id, target_count, 
+            start_date, end_date, title, content, tags
+        ) VALUES (
+            SEQ_TRAVEL_MATE_ID.NEXTVAL, 
+            #{memberId}, 
+            #{regionId}, 
+            #{tripId, jdbcType=NUMERIC}, #{targetCount},
+            TO_DATE(#{startDate}, 'YYYY-MM-DD'), 
+            TO_DATE(#{endDate}, 'YYYY-MM-DD'),
+            #{title}, 
+            #{content}, 
+            #{tags}
+        )
+    </insert>
+
+    <select id="selectMateById" resultType="com.tripan.app.domain.dto.CommunityMateDto">
+        SELECT m.*, u.nickname, u.profile_image as profilePhoto, r.sido_name as sidoName
+        FROM travel_mate m
+        JOIN member2 u ON m.member_id = u.member_id
+        JOIN region r ON m.region_id = r.region_id
+        WHERE m.mate_id = #{mateId}
+    </select>
+
+
+</mapper>

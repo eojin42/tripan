@@ -364,7 +364,7 @@
           console.log('방 번호 [' + roomId + '] 에 연결되었습니다!');
 
           stompClient.subscribe('/sub/chat/room/' + roomId + '/count', function (message) {
-            const count = message.body; // 백엔드에서 보낸 숫자(count)를 받음
+            const count = message.body; 
             
             const countSpan = document.querySelector('.chat-title-info span');
             if (countSpan) {
