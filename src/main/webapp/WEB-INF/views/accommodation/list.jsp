@@ -190,31 +190,35 @@
       return;
     }
 
-    // 검색 결과가 있을 때 HTML 조립
+ 	// 검색 결과가 있을 때 HTML 조립
     let html = '';
     list.forEach(item => {
       // 가격에 콤마(,) 찍기
       const formattedPrice = item.minPrice ? item.minPrice.toLocaleString() : '0';
       
-      // 이미지 경로 (DB에 풀 URL이 있다고 하셨으므로 그대로 사용, 없으면 기본 이미지)
+      // 이미지 경로
       const imgPath = item.imageUrl ? item.imageUrl : 'https://images.unsplash.com/photo-1542314831-068cd1dbfeeb?w=600';
 
+      // DB에서 통째로 가져온 주소(ADDRESS)에서 첫 번째 띄어쓰기 앞부분만 추출
+      const regionName = item.region ? item.region.split(' ')[0] : '숙소';
+
+      // 🌟 핵심 수정 포인트: pageContext 앞의 역슬래시(\) 제거, item.placeId 앞의 역슬래시는 유지!
       html += `
-        <div class="accommodation-item" onclick="location.href='\${pageContext.request.contextPath}/accommodation/detail?id=\${item.placeId}'">
+        <div class="accommodation-item" onclick="location.href='${pageContext.request.contextPath}/accommodation/detail/\${item.placeId}'">
           <div class="accommodation-thumb">
             <img src="\${imgPath}" alt="\${item.name}">
             <div class="wish-btn" style="position:absolute; top:12px; right:12px; color:white; font-size:20px; cursor:pointer;">♡</div>
           </div>
           <div class="accommodation-meta">
             <h3>\${item.name}</h3>
-            <p class="accommodation-desc">\${item.region} · \${item.accommodationType || '숙소'}</p>
+            <p class="accommodation-desc">\${regionName} · \${item.accommodationType || '숙소'}</p>
             <div class="accommodation-price">₩\${formattedPrice}~</div>
           </div>
         </div>
       `;
     });
     
-    container.innerHTML = html; 
+    container.innerHTML = html;
   };
 
 
@@ -224,7 +228,7 @@
     
     // 주소창의 파라미터를 DTO 형식에 맞춰 객체로 조립
     const requestData = {
-      regions: urlParams.get('regions') || '',
+      region: urlParams.get('regions') || '',
       checkin: urlParams.get('checkin') || '',
       checkout: urlParams.get('checkout') || '',
       adult: parseInt(urlParams.get('adult')) || 0,
@@ -237,8 +241,7 @@
     };
 
     try {
-      // 작성하신 AccommodationController의 @PostMapping("/api/accommodation/search")로 전송
-      const response = await fetch('${pageContext.request.contextPath}/api/accommodation/search', {
+      const response = await fetch('${pageContext.request.contextPath}/accommodation/search', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(requestData)
