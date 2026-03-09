@@ -12,4 +12,9 @@ public interface CommunityChatService {
     List<CommunityChatRoomDto> getAllChatRooms();
     
     List<CommunityChatRoomDto> getTopChatRooms();
+    
+    Long getOrMakePrivateChat(Long myId, Long targetId);
+    
+    List<CommunityChatRoomDto> getRegionRooms();
+    List<CommunityChatRoomDto> getMyPrivateRooms(Long memberId);
 }

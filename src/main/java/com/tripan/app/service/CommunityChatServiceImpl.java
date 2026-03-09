@@ -23,15 +23,13 @@ public class CommunityChatServiceImpl implements CommunityChatService {
 	private final WebSocketEventListener contentEventListener;
 
     @Override
-    @Transactional // DB 작업이므로 트랜잭션 처리를 해주는 것이 안전합니다.
+    @Transactional 
     public void saveMessage(CommunityChatMessageDto message) {
-        // 컨트롤러에서 넘어온 DTO 데이터를 Mapper를 통해 DB에 저장합니다.
         chatMapper.insertMessage(message);
     }
 
     @Override
     public List<CommunityChatMessageDto> getChatHistory(Long roomId) {
-        // 나중에 상담 채팅이나 워크스페이스 채팅 시 과거 내역을 불러올 때 사용합니다.
         return chatMapper.selectChatHistory(roomId);
     }
     
@@ -52,8 +50,37 @@ public class CommunityChatServiceImpl implements CommunityChatService {
                     room.setUserCount(count != null ? count.get() : 0);
                 })
                 .sorted(Comparator.comparingInt(CommunityChatRoomDto::getUserCount).reversed())
-                .limit(3) // 최상단부터 몇개 가져올건지 조절 가능 
+                .limit(3) 
                 .collect(Collectors.toList());
+    }
+    
+    @Override
+    @Transactional 
+    public Long getOrMakePrivateChat(Long myId, Long targetId) {
+        Long existingRoomId = chatMapper.findPrivateRoom(myId, targetId);
+        if (existingRoomId != null) {
+            return existingRoomId;
+        }
+
+        CommunityChatRoomDto newRoom = new CommunityChatRoomDto();
+        newRoom.setChatRoomName("1:1 대화방");
+        chatMapper.insertChatRoom(newRoom);
+        Long newRoomId = newRoom.getChatRoomId();
+
+        chatMapper.insertChatMember(newRoomId, myId);
+        chatMapper.insertChatMember(newRoomId, targetId);
+
+        return newRoomId;
+    }
+    
+    @Override
+    public List<CommunityChatRoomDto> getRegionRooms() {
+        return chatMapper.selectRegionRooms();
+    }
+
+    @Override
+    public List<CommunityChatRoomDto> getMyPrivateRooms(Long memberId) {
+        return chatMapper.selectMyPrivateRooms(memberId);
     }
     
 }

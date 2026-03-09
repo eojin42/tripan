@@ -883,44 +883,47 @@
 	        });
 	    }
 		    
-	    async function loadLiveChatSidebar() {
-	        const chatListEl = document.getElementById('live-chat-list');
-	        if (!chatListEl) return;
-	
-	        try {
-	            const url = '${pageContext.request.contextPath}/community/api/chat/top-rooms';
-	            const response = await fetch(url);
-	            if (!response.ok) throw new Error('채팅방 로딩 실패');
-	            
-	            const rooms = await response.json();
-	
-	            if (!rooms || rooms.length === 0) {
-	                chatListEl.innerHTML = `<p style="text-align:center; font-size:12px; color:var(--text-gray); padding: 10px 0;">현재 활성화된 방이 없습니다.</p>`;
-	                return;
-	            }
-	
-	            const icons = ['\uD83C\uDF34', '\uD83C\uDF0A', '\uD83C\uDFD4\uFE0F', '\uD83C\uDF03', '\uD83C\uDF8E'];
-	            let html = '';
-	
-	            rooms.forEach((room, index) => {
-	                const icon = icons[index % icons.length];
-	                html += `
-	                    <div class="chat-room">
-	                      <div class="chat-icon">\${icon}</div>
-	                      <div class="chat-info">
-	                        <h4>\${room.chatRoomName}</h4>
-	                        <p>현재 \${room.userCount}명 접속 중</p>
-	                      </div>
-	                    </div>
-	                `;
-	            });
-	            chatListEl.innerHTML = html;
-	
-	        } catch (error) {
-	            console.error("인기 채팅방을 불러오지 못했습니다:", error);
-	            chatListEl.innerHTML = `<p style="text-align:center; font-size:12px; color:#FF6B6B; padding: 10px 0;">목록 로딩 실패 😢</p>`;
-	        }
-	    }
+		async function loadLiveChatSidebar() {
+		    const chatListEl = document.getElementById('live-chat-list');
+		    if (!chatListEl) return; 
+
+		    try {
+		        const url = '${pageContext.request.contextPath}/api/chat/rooms/region'; 
+		        const response = await fetch(url);
+		        if (!response.ok) throw new Error('채팅방 로딩 실패'); 
+		        
+		        let rooms = await response.json(); 
+		        
+		        if (!rooms || rooms.length === 0) { 
+		            chatListEl.innerHTML = `<p style="text-align:center; font-size:12px; color:var(--text-gray); padding: 10px 0;">현재 활성화된 방이 없습니다.</p>`; // [cite: 283]
+		            return; 
+		        }
+
+		        rooms.sort((a, b) => (b.userCount || 0) - (a.userCount || 0));
+		        const topRooms = rooms.slice(0, 3); 
+
+		        const icons = ['\uD83C\uDF34', '\uD83C\uDF0A', '\uD83C\uDFD4\uFE0F', '\uD83C\uDF03', '\uD83C\uDF8E']; // [cite: 284]
+		        let html = '';
+
+		        topRooms.forEach((room, index) => {
+		            const icon = icons[index % icons.length]; 
+		            html += `
+		                <div class="chat-room">
+		                  <div class="chat-icon">\${icon}</div>
+		                  <div class="chat-info">
+		                    <h4>\${room.chatRoomName}</h4>
+		                    <p>현재 \${room.userCount || 0}명 접속 중</p>
+		                  </div>
+		                </div>
+		            `;
+		        });
+		        chatListEl.innerHTML = html; 
+
+		    } catch (error) {
+		        console.error("인기 채팅방을 불러오지 못했습니다:", error); 
+		        chatListEl.innerHTML = `<p style="text-align:center; font-size:12px; color:#FF6B6B; padding: 10px 0;">목록 로딩 실패 😢</p>`; // [cite: 289]
+		    }
+		}
 	
 	    window.addEventListener('DOMContentLoaded', () => { 
 	        setupInfiniteScroll(); 
@@ -1122,6 +1125,43 @@
 		    alert("비동기 작성이 완료되었습니다! (콘솔 확인)");
 		    closeLoungeModal();
 		  }
+		  
+		  window.startPrivateChat = function(targetMemberId, targetNickname) {
+		      if (typeof IS_LOGGED_IN !== 'undefined' && !IS_LOGGED_IN) {
+		          showLoginModal();
+		          return;
+		      }
+		      
+		      const myId = '${sessionScope.loginUser != null ? sessionScope.loginUser.memberId : ""}';
+		      if(myId == targetMemberId) {
+		          alert("나 자신과는 1:1 대화를 할 수 없습니다!");
+		          return;
+		      }
+
+		      fetch('${pageContext.request.contextPath}/api/chat/private?targetId=' + targetMemberId, {
+		          method: 'POST',
+		          headers: { 'X-Requested-With': 'Fetch' }
+		      })
+		      .then(res => res.json())
+		      .then(data => {
+		          if(data.roomId) {
+		              window.openGlobalChat();
+		              
+		              document.getElementById('chatEmptyState').style.display = 'none';
+		              document.getElementById('chatRoomView').style.display = 'flex';
+		              
+		              document.querySelector('.chat-title-info h2').innerText = '💬 @' + targetNickname + ' 님과의 대화';
+		              const countSpan = document.querySelector('.chat-title-info span');
+		              if(countSpan) countSpan.style.display = 'none'; // 1:1방은 접속자 수 숨김
+		              
+		              if(typeof connectChatRoom === 'function') {
+		                  connectChatRoom(data.roomId);
+		              }
+		          }
+		      })
+		      .catch(err => console.error("채팅방 연결 오류:", err));
+		  }
+		  
 	  </script>
 	  
 	</body>

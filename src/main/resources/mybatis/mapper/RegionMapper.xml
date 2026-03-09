@@ -25,5 +25,16 @@
             INSERT (region_id, sido_name, sigungu_name, api_area_code, api_sigungu_code)
             VALUES (region_seq.NEXTVAL, src.sido_name, src.sigungu_name, src.api_area_code, src.api_sigungu_code)
     </update>
+    
+    <select id="selectSidoList" resultType="com.tripan.app.domain.dto.RegionDto">
+        SELECT 
+            region_id, 
+            sido_name, 
+            api_area_code
+        FROM region
+        WHERE api_sigungu_code IS NULL 
+          AND api_area_code IS NOT NULL
+        ORDER BY api_area_code ASC
+    </select>
 
 </mapper>

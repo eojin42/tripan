@@ -35,15 +35,52 @@
         ORDER BY m.created_at ASC
     </select>
     
-    <select id="selectAllChatRooms" resultType="com.tripan.app.domain.dto.CommunityChatRoomDto">
+    <select id="selectRegionRooms" resultType="com.tripan.app.domain.dto.CommunityChatRoomDto">
         SELECT 
             chat_room_id as chatRoomId, 
             chat_room_name as chatRoomName, 
             chat_room_type as chatRoomType, 
             status 
         FROM chat_room 
-        WHERE status = 'ACTIVE' 
+        WHERE chat_room_type = 'REGION' AND status = 'ACTIVE'
         ORDER BY chat_room_id ASC
     </select>
+
+    <select id="selectMyPrivateRooms" parameterType="long" resultType="com.tripan.app.domain.dto.CommunityChatRoomDto">
+        SELECT 
+            r.chat_room_id as chatRoomId, 
+            (SELECT u.nickname 
+             FROM chat_member m2 
+             JOIN member2 u ON m2.member_id = u.member_id 
+             WHERE m2.chat_room_id = r.chat_room_id AND m2.member_id != #{memberId}
+             FETCH FIRST 1 ROWS ONLY) as chatRoomName,
+            r.chat_room_type as chatRoomType, 
+            r.status
+        FROM chat_room r
+        JOIN chat_member m ON r.chat_room_id = m.chat_room_id
+        WHERE r.chat_room_type = 'PRIVATE' AND r.status = 'ACTIVE' AND m.member_id = #{memberId}
+        ORDER BY r.chat_room_id DESC
+    </select>
+    
+    <select id="findPrivateRoom" resultType="java.lang.Long">
+        SELECT r.chat_room_id
+        FROM chat_room r
+        JOIN chat_member m1 ON r.chat_room_id = m1.chat_room_id AND m1.member_id = #{myId}
+        JOIN chat_member m2 ON r.chat_room_id = m2.chat_room_id AND m2.member_id = #{targetId}
+        WHERE r.chat_room_type = 'PRIVATE'
+    </select>
+
+    <insert id="insertChatRoom" parameterType="com.tripan.app.domain.dto.CommunityChatRoomDto">
+        <selectKey keyProperty="chatRoomId" resultType="long" order="BEFORE">
+            SELECT SEQ_CHAT_ROOM_ID.NEXTVAL FROM DUAL
+        </selectKey>
+        INSERT INTO chat_room (chat_room_id, chat_room_type, chat_room_name, region_id, status)
+        VALUES (#{chatRoomId}, 'PRIVATE', #{chatRoomName}, 0, 'ACTIVE')
+    </insert>
+
+    <insert id="insertChatMember">
+        INSERT INTO chat_member (chat_member_id, chat_room_id, member_id)
+        VALUES (SEQ_CHAT_MEMBER_ID.NEXTVAL, #{roomId}, #{memberId})
+    </insert>
 
 </mapper>
