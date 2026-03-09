@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.tripan.app.mapper.CommunityMateCommentMapper">
+
+<insert id="insertComment">
+        INSERT INTO travel_mate_comment (comment_id, mate_id, member_id, content, parent_id)
+        VALUES (SEQ_MATE_COMMENT_ID.NEXTVAL, #{mateId}, #{memberId}, #{content}, #{parentId, jdbcType=NUMERIC})
+    </insert>
+
+    <select id="selectComments" resultType="com.tripan.app.domain.dto.CommunityMateCommentDto">
+        SELECT * FROM (
+            SELECT a.*, ROWNUM rnum FROM (
+                SELECT 
+                    c.comment_id as commentId,
+                    c.mate_id as mateId,
+                    c.member_id as memberId,
+                    c.content,
+                    c.parent_id as parentId,
+                    TO_CHAR(c.created_at, 'YYYY-MM-DD HH24:MI') as createdAt,
+                    u.nickname,
+                    u.profile_image as profilePhoto
+                FROM travel_mate_comment c
+                JOIN member2 u ON c.member_id = u.member_id
+                WHERE c.mate_id = #{mateId} 
+                  AND c.parent_id IS NULL
+                ORDER BY c.created_at DESC
+            ) a WHERE ROWNUM <![CDATA[<=]]> #{offset} + #{limit}
+        ) WHERE rnum > #{offset}
+    </select>
+
+    <select id="countComments" resultType="int">
+        SELECT COUNT(*) FROM travel_mate_comment
+        WHERE mate_id = #{mateId} AND parent_id IS NULL
+    </select> 
+    
+    <select id="selectChildComments" resultType="com.tripan.app.domain.dto.CommunityMateCommentDto">
+        SELECT 
+            c.comment_id as commentId,
+            c.mate_id as mateId,
+            c.member_id as memberId,
+            c.content,
+            c.parent_id as parentId,
+            TO_CHAR(c.created_at, 'YYYY-MM-DD HH24:MI') as createdAt,
+            u.nickname,
+            u.profile_image as profilePhoto
+        FROM travel_mate_comment c
+        JOIN member2 u ON c.member_id = u.member_id
+        WHERE c.mate_id = #{mateId} 
+          AND c.parent_id IS NOT NULL
+        ORDER BY c.created_at ASC
+    </select>
+    
+    <select id="selectCommentOwner" resultType="java.lang.Long">
+        SELECT member_id FROM travel_mate_comment WHERE comment_id = #{commentId}
+    </select>
+
+    <delete id="deleteCommentAndChildren">
+        DELETE FROM travel_mate_comment 
+        WHERE comment_id = #{commentId} OR parent_id = #{commentId}
+    </delete>
+
+</mapper>

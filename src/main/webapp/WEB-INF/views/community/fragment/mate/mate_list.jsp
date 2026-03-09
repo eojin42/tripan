@@ -139,6 +139,14 @@
 	.kebab-item.danger:hover { background: #FFF5F5; }
     .kebab-divider { border-top: 1px solid #f1f5f9; margin: 4px 0; }
 	
+	.btn-status-toggle {
+	    background: #FF6B6B; color: white; border: none; padding: 4px 10px; 
+	    border-radius: 6px; font-size: 11px; font-weight: 800; cursor: pointer; transition: 0.2s;
+	}
+	.btn-status-toggle:hover { background: #fa5252; transform: scale(1.05); }
+	.btn-status-toggle.closed { background: var(--text-dark); }
+	.btn-status-toggle.closed:hover { background: var(--sky-blue); }
+	
 </style>
 
 <div class="mate-header">
@@ -151,9 +159,6 @@
   <div class="filter-row-1">
     <select class="mate-select" id="filterRegion">
       <option value="">📍 모든 지역</option>
-      <option value="1">서울/경기</option>
-      <option value="2">부산/경상</option>
-      <option value="3">제주도</option>
     </select>
     
     <div class="date-group">

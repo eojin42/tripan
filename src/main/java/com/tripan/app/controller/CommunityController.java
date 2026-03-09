@@ -1,8 +1,10 @@
 package com.tripan.app.controller;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -18,9 +20,11 @@ import com.tripan.app.config.WebSocketEventListener;
 import com.tripan.app.domain.dto.CommunityChatRoomDto;
 import com.tripan.app.domain.dto.CommunityFreeBoardDto;
 import com.tripan.app.domain.dto.CommunityFreeboardCommentDto;
+import com.tripan.app.domain.dto.CommunityMateCommentDto;
 import com.tripan.app.domain.dto.CommunityMateDto;
 import com.tripan.app.domain.dto.MemberDto;
 import com.tripan.app.domain.dto.SessionInfo;
+import com.tripan.app.mapper.CommunityMateCommentMapper;
 import com.tripan.app.service.CommunityChatService;
 import com.tripan.app.service.CommunityFreeboardService;
 import com.tripan.app.service.CommunityMateService;
@@ -39,6 +43,7 @@ public class CommunityController {
 	private final CommunityFreeboardService freeboardService;
 	private final CommunityChatService chatService;
 	private final CommunityMateService mateService;
+    private final CommunityMateCommentMapper mateCommentMapper;
 
     @GetMapping({"", "/", "/feed"})
     public String handleCommunityFeed(Model model) {
@@ -199,6 +204,80 @@ public class CommunityController {
         
         List<CommunityMateDto> list = mateService.getMateList(regionId, startDate, endDate, searchTag);
         return ResponseEntity.ok(list);
+    }
+    
+
+    @PostMapping("/api/mate/comment/add")
+    @ResponseBody
+    public ResponseEntity<Map<String, Object>> addMateComment(
+            @RequestBody CommunityMateCommentDto dto, 
+            HttpSession session) {
+        
+        Map<String, Object> response = new HashMap<>();
+        MemberDto loginUser = (MemberDto) session.getAttribute("loginUser");
+        
+        if (loginUser == null) {
+            response.put("status", "error");
+            response.put("message", "로그인이 필요합니다.");
+            return ResponseEntity.status(401).body(response);
+        }
+        
+        dto.setMemberId(loginUser.getMemberId()); 
+        mateService.registerMateComment(dto); 
+        
+        response.put("status", "success");
+        response.put("message", "댓글이 등록되었습니다.");
+        return ResponseEntity.ok(response);
+    }
+
+    @GetMapping("/api/mate/{mateId}/comments")
+    @ResponseBody
+    public ResponseEntity<Map<String, Object>> getMateComments(
+            @PathVariable("mateId") Long mateId,
+            @RequestParam(value = "page", defaultValue = "1") int page) {
+        
+        Map<String, Object> response = mateService.getMateComments(mateId, page);
+        return ResponseEntity.ok(response);
+    }
+    
+    @PostMapping("/api/mate/comment/delete/{commentId}")
+    @ResponseBody
+    public ResponseEntity<Map<String, Object>> deleteMateComment(
+            @PathVariable("commentId") Long commentId, HttpSession session) {
+        
+        MemberDto loginUser = (MemberDto) session.getAttribute("loginUser");
+        if (loginUser == null) {
+            return ResponseEntity.status(401).body(Map.of("status", "error", "message", "로그인이 필요합니다."));
+        }
+        
+        boolean isDeleted = mateService.deleteMateComment(commentId, loginUser.getMemberId());
+        
+        if (isDeleted) {
+            return ResponseEntity.ok(Map.of("status", "success", "message", "댓글이 삭제되었습니다."));
+        } else {
+            return ResponseEntity.status(403).body(Map.of("status", "error", "message", "삭제 권한이 없습니다."));
+        }
+    }    
+    
+    @PostMapping("/api/mate/{mateId}/status")
+    @ResponseBody
+    public ResponseEntity<Map<String, Object>> changeMateStatus(
+            @PathVariable("mateId") Long mateId,
+            @RequestParam("status") String status,
+            HttpSession session) {
+        
+        MemberDto loginUser = (MemberDto) session.getAttribute("loginUser");
+        if (loginUser == null) {
+            return ResponseEntity.status(401).body(Map.of("status", "error", "message", "로그인이 필요합니다."));
+        }
+        
+        boolean result = mateService.changeMateStatus(mateId, status, loginUser.getMemberId());
+        
+        if (result) {
+            return ResponseEntity.ok(Map.of("status", "success", "message", "상태가 변경되었습니다."));
+        } else {
+            return ResponseEntity.status(403).body(Map.of("status", "error", "message", "권한이 없습니다."));
+        }
     }
     
 }

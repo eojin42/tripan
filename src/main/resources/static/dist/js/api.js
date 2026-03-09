@@ -28,5 +28,8 @@ const TripanAPI = {
     },
     getFestivals: async function(year, month) {
         return await this.get(`/festivals?year=${year}&month=${month}`);
-    }
+    },
+	getSidoRegions: async function() {
+	        return await this.get('/regions/sido');
+	    }
 };
