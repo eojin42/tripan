@@ -15,31 +15,28 @@ public class MypageController {
 	
 	@GetMapping({"", "/", "/main"})
 	public String main() {
-		
 		return "mypage/main";
 	}
 	
 	@GetMapping("schedule")
 	public String schedule() {
-		
 		return "mypage/schedule";
 	}
 	
 	@GetMapping("bookmark")
 	public String bookmark() {
-		
 		return "mypage/bookmark";
 	}
 	
 	@GetMapping("review")
 	public String review() {
-		
 		return "mypage/review";
 	}
 	
 	@GetMapping("coupon")
 	public String coupon() {
-		
 		return "mypage/coupon";
 	}
+	
+	
 }

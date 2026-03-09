@@ -88,36 +88,8 @@
 <jsp:include page="/WEB-INF/views/layout/header.jsp"/>
 
 <main class="mypage-container">
-  <!-- 사이드바 -->
-  <aside class="sidebar">
-    <div class="glass-card profile-widget">
-      <div class="profile-avatar">
-        <c:choose>
-          <c:when test="${not empty sessionScope.loginUser.profilePhoto}">
-            <img src="${pageContext.request.contextPath}/uploads/member/${sessionScope.loginUser.profilePhoto}" alt="프로필">
-          </c:when>
-          <c:otherwise><div class="profile-avatar-default" id="avatar-initial">T</div></c:otherwise>
-        </c:choose>
-      </div>
-      <div class="profile-name">${sessionScope.loginUser.nickname} 님</div>
-      <div class="profile-bio">${not empty sessionScope.loginUser.bio ? sessionScope.loginUser.bio : '등록된 소개글이 없습니다.'}</div>
-      <button class="btn-edit-profile" onclick="location.href='${pageContext.request.contextPath}/mypage/edit'">프로필 수정</button>
-      <div class="profile-stats">
-        <div class="stat-box"><strong id="stat-follower">-</strong>팔로워</div>
-        <div class="stat-box"><strong id="stat-following">-</strong>팔로잉</div>
-        <div class="stat-box"><strong id="stat-badge">-</strong>배지</div>
-      </div>
-    </div>
-    <div class="glass-card">
-      <ul class="side-nav">
-        <li><a href="${pageContext.request.contextPath}/mypage/main"><i class="bi bi-bar-chart-line"></i> 여행 대시보드</a></li>
-        <li class="active"><a href="${pageContext.request.contextPath}/mypage/schedule"><i class="bi bi-suitcase-lg"></i> 내 일정 / 예약</a></li>
-        <li><a href="${pageContext.request.contextPath}/mypage/bookmark"><i class="bi bi-bookmark-heart"></i> 관심 및 저장(찜)</a></li>
-        <li><a href="${pageContext.request.contextPath}/mypage/review"><i class="bi bi-chat-square-text"></i> 나의 리뷰 기록</a></li>
-        <li><a href="${pageContext.request.contextPath}/mypage/coupon"><i class="bi bi-ticket-perforated"></i> 보유 쿠폰함</a></li>
-      </ul>
-    </div>
-  </aside>
+ <jsp:include page="/WEB-INF/views/layout/mypage_sidebar.jsp">
+    <jsp:param name="activeMenu" value="schedule"/> </jsp:include>
 
   <!-- 콘텐츠 -->
   <div class="content-area">
@@ -258,7 +230,8 @@
   }
 
   function renderEmpty(icon, msg) {
-    return '<div class="empty-state"><i class="bi ' + icon + '"></i><p>' + msg + '</p><button class="btn-primary" onclick="location.href=\'/trip/create\'">일정 만들기</button></div>';
+	 
+    return '<div class="empty-state"><i class="bi ' + icon + '"></i><p>' + msg + '</p><button class="btn-primary" onclick="location.href=\'/trip/trip_create\'">일정 만들기</button></div>';
   }
   function fmtDate(v) { if (!v) return ''; return new Date(v).toLocaleDateString('ko-KR',{month:'2-digit',day:'2-digit'}); }
   function escHtml(s) { if (!s) return ''; return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }

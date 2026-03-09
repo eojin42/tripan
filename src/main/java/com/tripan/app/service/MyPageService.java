@@ -34,7 +34,7 @@ public interface MyPageService {
     void deleteReview(Long memberId, Long reviewId);
 
     // 찜 (bookmark)
-    List<BookmarkDto> getMyBookmarks(Long memberId);
+    List<BookmarkDto> getMyBookmarks(Long memberId, String type);
     void deleteBookmark(Long memberId, Long bookmarkId);
 
     // 배지 & 칭호

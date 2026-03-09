@@ -1,6 +1,7 @@
 package com.tripan.app.service;
 
 import java.security.SecureRandom;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -9,12 +10,17 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.tripan.app.admin.domain.entity.Member1;
+import com.tripan.app.admin.domain.entity.Member2;
+import com.tripan.app.domain.entity.MemberStatus;
 import com.tripan.app.common.StorageService;
 import com.tripan.app.domain.dto.MemberDto;
 import com.tripan.app.mail.Mail;
 import com.tripan.app.mail.MailSender;
 import com.tripan.app.mapper.MemberMapper;
-
+import com.tripan.app.repository.Member2Repository;
+import com.tripan.app.repository.MemberRepository;
+import com.tripan.app.repository.MemberStatusRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -22,431 +28,388 @@ import lombok.extern.slf4j.Slf4j;
 @RequiredArgsConstructor
 @Slf4j
 public class MemberServiceImpl implements MemberService {
-	private final MemberMapper mapper;
-	private final StorageService storageService;
-	private final PasswordEncoder bcryptEncoder;
-	private final MailSender mailSender;
-	
-	@Override
-	public MemberDto loginSnsMember(Map<String, Object> map) {
-		MemberDto dto = null;
 
-		try {
-			dto = mapper.loginSnsMember(map);
-		} catch (Exception e) {
+    private final MemberMapper mapper;
+    private final MemberRepository memberRepository;
+    private final Member2Repository member2Repository;
+    private final MemberStatusRepository memberStatusRepository;
+    private final StorageService storageService;
+    private final PasswordEncoder bcryptEncoder;
+    private final MailSender mailSender;
 
-			log.info("loginSnsMember : ", e);
-		}
+    // SNS 로그인 조회
+    @Override
+    public MemberDto loginSnsMember(Map<String, Object> map) {
+        MemberDto dto = null;
+        try {
+            dto = mapper.loginSnsMember(map);
+        } catch (Exception e) {
+            log.info("loginSnsMember : ", e);
+        }
+        return dto;
+    }
 
-		return dto;
-	}
-	  
-	
-	@Transactional(rollbackFor = {Exception.class})
-	@Override
-	public void insertMember(MemberDto dto, String uploadPath) throws Exception {
-		try {
-			if(! dto.getSelectFile().isEmpty()) {
-				String saveFilename = storageService.uploadFileToServer(dto.getSelectFile(), uploadPath);
-				dto.setProfilePhoto(saveFilename);
-			}			
-			
-			// 회원정보 저장
-			
-			// 패스워드 암호화
-			String encPassword = bcryptEncoder.encode(dto.getPassword());
-			dto.setPassword(encPassword);
-						
-			/*
-			Long seq = mapper.memberSeq();
-			dto.setMember_id(seq);
-			mapper.insertMember1(dto);
-			mapper.insertMember2(dto);
-			*/
-			
-			dto.setRole("ROLE_USER");
-			mapper.insertMember12(dto); // member1, member2 테이블 동시에
-			
-			// 권한저장
-			// mapper.insertAuthority(dto);
-			
-		} catch (Exception e) {
-			log.info("insertMember : ", e);
-			
-			throw e;
-		}
-	}
+    // 일반 회원가입
+    @Transactional(rollbackFor = {Exception.class})
+    @Override
+    public void insertMember(MemberDto dto, String uploadPath) throws Exception {
+        try {
+            if (dto.getSelectFile() != null && !dto.getSelectFile().isEmpty()) {
+                String saveFilename = storageService.uploadFileToServer(dto.getSelectFile(), uploadPath);
+                dto.setProfilePhoto(saveFilename);
+            }
 
-	@Transactional(rollbackFor = {Exception.class})
-	@Override
-	public void insertSnsMember(MemberDto dto) throws Exception {
-		try {
-			Long seq = mapper.memberSeq();
-			dto.setMemberId(seq);
-			
-			mapper.insertSnsMember(dto);
-		} catch (Exception e) {
-			log.info("insertSnsMember : ", e);
-			throw e;
-		}
-	}
+            String encPassword = bcryptEncoder.encode(dto.getPassword());
 
-	@Override
-	public void insertMemberStatus(MemberDto dto) throws Exception {
-		try {
-			mapper.insertMemberStatus(dto);
-		} catch (Exception e) {
-			log.info("updateLastLogin : ", e);
-			
-			throw e;
-		}
-	}
+            Member1 member1 = new Member1();
+            member1.setLoginId(dto.getLoginId());
+            member1.setEmail(dto.getEmail());
+            member1.setPassword(encPassword);
+            member1.setUsername(dto.getUsername());
+            member1.setStatus(1);
+            member1.setRole("ROLE_USER");
+            member1.setGender(dto.getGender());
+            member1.setBirthday(dto.getBirthday());
+            member1.setFailureCnt(0);
+            memberRepository.save(member1);
 
-	@Override
-	public void updatePassword(MemberDto dto) throws Exception {
-		if( isPasswordCheck(dto.getLoginId(), dto.getPassword()) ) {
-			throw new RuntimeException("패스워드가 기존 패스워드와 일치합니다.");
-		}
+            Member2 member2 = new Member2();
+            member2.setMemberId(member1.getId());
+            member2.setMember1(member1);
+            member2.setNickname(dto.getNickname());
+            member2.setProfileImage(dto.getProfilePhoto());
+            member2.setPhoneNumber(dto.getPhoneNumber());
+            member2Repository.save(member2);
 
-		try {
-			String encPassword = bcryptEncoder.encode(dto.getPassword());
-			dto.setPassword(encPassword);
-			
-			mapper.updateMemberPassword(dto);
-		} catch (Exception e) {
-			log.info("updatePassword : ", e);
-			
-			throw e;
-		}
-	}
+        } catch (Exception e) {
+            log.info("insertMember : ", e);
+            throw e;
+        }
+    }
 
-	@Override
-	public void updateMemberEnabled(Map<String, Object> map) throws Exception {
-		try {
-			mapper.updateMemberEnabled(map);
-		} catch (Exception e) {
-			log.info("updateMemberEnabled : ", e);
-			
-			throw e;
-		}
-	}
+    // SNS 회원가입
+    @Transactional(rollbackFor = {Exception.class})
+    @Override
+    public void insertSnsMember(MemberDto dto) throws Exception {
+        try {
+            Member1 member1 = new Member1();
+            member1.setLoginId(dto.getLoginId() != null ? dto.getLoginId() : dto.getEmail());
+            member1.setEmail(dto.getEmail());
+            member1.setPassword("");
+            member1.setUsername(dto.getUsername());
+            member1.setStatus(1);
+            member1.setRole("ROLE_USER");
+            member1.setProvider(dto.getSnsProvider());
+            member1.setProviderId(dto.getSnsId());
+            member1.setFailureCnt(0);
+            memberRepository.save(member1);
 
-	@Transactional(rollbackFor = {Exception.class})
-	@Override
-	public void updateMember(MemberDto dto, String uploadPath) throws Exception {
-		try {
-			// 업로드한 파일이 존재한 경우
-			if(dto.getSelectFile() != null && ! dto.getSelectFile().isEmpty()) {
-				if(! dto.getProfilePhoto().isBlank()) {
-					storageService.deleteFile(uploadPath, dto.getProfilePhoto());
-				}
-				
-				String saveFilename = storageService.uploadFileToServer(dto.getSelectFile(), uploadPath);
-				dto.setProfilePhoto(saveFilename);
-			}			
-			
-			boolean bPwdUpdate = ! isPasswordCheck(dto.getLoginId(), dto.getPassword());
-			if( bPwdUpdate ) {
-				// 패스워드가 변경된 경우만 member1 테이블의 패스워드 변경
-				String encPassword = bcryptEncoder.encode(dto.getPassword());
-				dto.setPassword(encPassword);
-				
-				mapper.updateMemberPassword(dto);
-			}
-			mapper.updateMember2(dto);
-			
-		} catch (Exception e) {
-			log.info("updateMember : ", e);
-			
-			throw e;
-		}
-	}
-	
+            Member2 member2 = new Member2();
+            member2.setMemberId(member1.getId());
+            member2.setMember1(member1);
+            member2.setNickname(dto.getNickname());
+            member2Repository.save(member2);
 
-	@Override
-	public void updateLastLogin(Long member_id) throws Exception {
-		try {
-			mapper.updateLastLogin(member_id);
-		} catch (Exception e) {
-			log.info("updateLastLogin : ", e);
-			
-			throw e;
-		}
-	}
+            dto.setMemberId(member1.getId());
 
-	@Override
-	public void updateLastLogin(String login_id) throws Exception {
-		try {
-			mapper.updateLastLoginId(login_id);
-		} catch (Exception e) {
-			log.info("updateLastLoginId : ", e);
-			
-			throw e;
-		}
-	}
+        } catch (Exception e) {
+            log.info("insertSnsMember : ", e);
+            throw e;
+        }
+    }
 
-	@Override
-	public MemberDto findById(Long member_id) {
-		MemberDto dto = null;
+    // 회원 상태 로그 저장
+    @Override
+    public void insertMemberStatus(MemberDto dto) throws Exception {
+        try {
+            MemberStatus memberStatus = new MemberStatus();
+            memberStatus.setNum(dto.getMemberId());
+            memberStatus.setStatus(dto.getStatus());
+            memberStatusRepository.save(memberStatus);
+        } catch (Exception e) {
+            log.info("insertMemberStatus : ", e);
+            throw e;
+        }
+    }
 
-		try {
-			dto = Objects.requireNonNull(mapper.findById(member_id));
-		} catch (NullPointerException e) {
-		} catch (ArrayIndexOutOfBoundsException e) {
-		} catch (Exception e) {
-			log.info("findById : ", e);
-		}
+    // 패스워드 변경
+    @Override
+    public void updatePassword(MemberDto dto) throws Exception {
+        if (isPasswordCheck(dto.getLoginId(), dto.getPassword())) {
+            throw new RuntimeException("패스워드가 기존 패스워드와 일치합니다.");
+        }
+        try {
+            String encPassword = bcryptEncoder.encode(dto.getPassword());
+            memberRepository.updatePassword(dto.getLoginId(), encPassword);
+        } catch (Exception e) {
+            log.info("updatePassword : ", e);
+            throw e;
+        }
+    }
 
-		return dto;
-	}
+    // 계정 활성/비활성 변경
+    @Override
+    public void updateMemberEnabled(Map<String, Object> map) throws Exception {
+        try {
+            Long memberId = (Long) map.get("memberId");
+            Integer status = (Integer) map.get("enabled");
+            memberRepository.updateStatus(memberId, status);
+        } catch (Exception e) {
+            log.info("updateMemberEnabled : ", e);
+            throw e;
+        }
+    }
 
-	@Override
-	public MemberDto findById(String login_id) {
-		MemberDto dto = null;
+    // 회원정보 수정
+    @Transactional(rollbackFor = {Exception.class})
+    @Override
+    public void updateMember(MemberDto dto, String uploadPath) throws Exception {
+        try {
+            if (dto.getSelectFile() != null && !dto.getSelectFile().isEmpty()) {
+                if (dto.getProfilePhoto() != null && !dto.getProfilePhoto().isBlank()) {
+                    storageService.deleteFile(uploadPath, dto.getProfilePhoto());
+                }
+                String saveFilename = storageService.uploadFileToServer(dto.getSelectFile(), uploadPath);
+                dto.setProfilePhoto(saveFilename);
+                member2Repository.updateProfileImage(dto.getMemberId(), dto.getProfilePhoto());
+            }
 
-		try {
-			dto = Objects.requireNonNull(mapper.findByLoginId(login_id));
-		} catch (NullPointerException e) {
-		} catch (Exception e) {
-			log.info("findById : ", e);
-		}
+            boolean bPwdUpdate = !isPasswordCheck(dto.getLoginId(), dto.getPassword());
+            if (bPwdUpdate) {
+                String encPassword = bcryptEncoder.encode(dto.getPassword());
+                memberRepository.updatePassword(dto.getLoginId(), encPassword);
+            }
 
-		return dto;
-	}
+            member2Repository.updateProfile(
+                dto.getMemberId(),
+                dto.getNickname(),
+                dto.getBio(),
+                dto.getPhoneNumber(),
+                dto.getPreferredRegion()
+            );
 
-	@Override
-	public Long getMemberId(String login_id) {
-		try {
-			Long result = Objects.requireNonNull(mapper.getMemberId(login_id));
-			return result;
-		} catch (Exception e) {
-			log.info("getMemberId : ", e);
-		}
+        } catch (Exception e) {
+            log.info("updateMember : ", e);
+            throw e;
+        }
+    }
 
-		return 0L;
-	}
-	
-	@Override
-	public int checkFailureCount(String login_id) {
-		int result = 0;
-		
-		try {
-			result = mapper.checkFailureCount(login_id);
-		} catch (Exception e) {
-			log.info("checkFailureCount : ", e);
-		}
-		
-		return result;
-	}
+    // 마지막 로그인 시간 갱신
+    @Override
+    public void updateLastLogin(Long memberId) throws Exception {
+        try {
+            member2Repository.updateLastLoginAt(memberId, LocalDateTime.now());
+        } catch (Exception e) {
+            log.info("updateLastLogin : ", e);
+            throw e;
+        }
+    }
 
-	@Override
-	public void updateFailureCountReset(String login_id) throws Exception {
-		try {
-			mapper.updateFailureCountReset(login_id);
-		} catch (Exception e) {
-			log.info("updateFailureCountReset : ", e);
-			
-			throw e;
-		}
-	}
+    @Override
+    public void updateLastLogin(String loginId) throws Exception {
+        try {
+            Long memberId = mapper.getMemberId(loginId);
+            if (memberId != null) {
+                member2Repository.updateLastLoginAt(memberId, LocalDateTime.now());
+            }
+        } catch (Exception e) {
+            log.info("updateLastLogin : ", e);
+            throw e;
+        }
+    }
 
-	@Override
-	public void updateFailureCount(String login_id) throws Exception {
-		try {
-			mapper.updateFailureCount(login_id);
-		} catch (Exception e) {
-			log.info("updateFailureCount : ", e);
-			
-			throw e;
-		}
-	}
+    // 로그인 실패 횟수 증가
+    @Override
+    public void updateFailureCount(String loginId) throws Exception {
+        try {
+            memberRepository.incrementFailureCount(loginId);
+        } catch (Exception e) {
+            log.info("updateFailureCount : ", e);
+            throw e;
+        }
+    }
 
-	@Transactional(rollbackFor = {Exception.class})
-	@Override
-	public void deleteMember(Map<String, Object> map, String uploadPath) throws Exception {
-		try {
-			mapper.deleteAuthority(map);
-			
-			map.put("enabled", 0);
-			mapper.updateMemberEnabled(map);			
-			
-			String filename = (String)map.get("filename");
-			if(filename!= null && ! filename.isBlank()) {
-				storageService.deleteFile(uploadPath, filename);
-			}
-			
-			mapper.deleteMember2(map);
-			// mapper.deleteMember1(map);
-		} catch (Exception e) {
-			log.info("deleteMember : ", e);
-			
-			throw e;
-		}
-	}
+    // 로그인 실패 횟수 초기화
+    @Override
+    public void updateFailureCountReset(String loginId) throws Exception {
+        try {
+            memberRepository.resetFailureCount(loginId);
+        } catch (Exception e) {
+            log.info("updateFailureCountReset : ", e);
+            throw e;
+        }
+    }
 
-	@Override
-	public void deleteProfilePhoto(Map<String, Object> map, String uploadPath) throws Exception {
-		try {
-			String filename = (String)map.get("filename");
-			if(filename!= null && ! filename.isBlank()) {
-				storageService.deleteFile(uploadPath, filename);
-			}
-			
-			mapper.deleteProfilePhoto(map);
-		} catch (Exception e) {
-			log.info("deleteProfilePhoto : ", e);
-			
-			throw e;
-		}
-	}
-	
-	
-	@Override
-	public void generatePwd(MemberDto dto) throws Exception {
-		// 10 자리 임시 패스워드 생성
-		
-		String lowercase = "abcdefghijklmnopqrstuvwxyz";
-		String uppercase = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
-		String digits = "0123456789";
-		String special_characters = "!#@$%^&*()-_=+[]{}?";
-		String all_characters = lowercase + digits + uppercase + special_characters;
-		
-		try {
-			// 암호화적으로 안전한 난수 생성(예측 불가 난수 생성)
-			SecureRandom random = new SecureRandom();
-			
-			StringBuilder sb = new StringBuilder();
-			
-			// 각 문자는 최소 하나 이상 포함
-			sb.append(lowercase.charAt(random.nextInt(lowercase.length())));
-			sb.append(uppercase.charAt(random.nextInt(uppercase.length())));
-			sb.append(digits.charAt(random.nextInt(digits.length())));
-			sb.append(special_characters.charAt(random.nextInt(special_characters.length())));
-			
-			for(int i = sb.length(); i < 10; i++) {
-				int index = random.nextInt(all_characters.length());
-				
-				sb.append(all_characters.charAt(index));
-			}
-			
-			// 문자 섞기
-			StringBuilder password = new StringBuilder();
-			while (sb.length() > 0) {
-				int index = random.nextInt(sb.length());
-				password.append(sb.charAt(index));
-				sb.deleteCharAt(index);
-			}
-	        
-			String result;
-			result = dto.getName() +"님의 새로 발급된 임시 패스워드는 <b> "
-					+ password.toString() + " </b> 입니다.<br>"
-					+ "로그인 후 반드시 패스워드를 변경하시기 바랍니다.";
-			
-			Mail mail = new Mail();
-			mail.setReceiverEmail(dto.getEmail());
-			
-			mail.setSenderEmail("메일설정이메일@도메인");
-			mail.setSenderName("관리자");
-			mail.setSubject("임시 패스워드 발급");
-			mail.setContent(result);
-			
-			// 테이블의 패스워드 변경
-			String encPassword = bcryptEncoder.encode(password.toString());
-			dto.setPassword(encPassword);
-			mapper.updateMemberPassword(dto);
-			
-			mapper.updateFailureCountReset(dto.getLoginId());
-			
-			// 메일 전송
-			boolean b = mailSender.mailSend(mail);
-			
-			if( ! b ) {
-				throw new Exception("이메일 전송중 오류가 발생했습니다.");
-			}
+    // 회원 탈퇴
+    @Transactional(rollbackFor = {Exception.class})
+    @Override
+    public void deleteMember(Map<String, Object> map, String uploadPath) throws Exception {
+        try {
+            mapper.deleteAuthority(map);
 
-		} catch (Exception e) {
-			throw e;
-		}
+            Long memberId = (Long) map.get("memberId");
+            memberRepository.updateStatus(memberId, 0);
 
-	}
-	
+            String filename = (String) map.get("filename");
+            if (filename != null && !filename.isBlank()) {
+                storageService.deleteFile(uploadPath, filename);
+            }
 
-	@Override
-	public List<MemberDto> listFindMember(Map<String, Object> map) {
-		List<MemberDto> list = null;
-		
-		try {
-			list = mapper.listFindMember(map);
-		} catch (Exception e) {
-			log.info("listFindMember : ", e);
-		}
-		
-		return list;
-	}
+            member2Repository.deleteById(memberId);
 
-	@Override
-	public String findByAuthority(String login_id) {
-		String authority = null;
-		
-		try {
-			authority = mapper.findByAuthority(login_id);
-		} catch (Exception e) {
-			log.info("findByAuthority", e);
-		}
-		
-		return authority;
-	}
+        } catch (Exception e) {
+            log.info("deleteMember : ", e);
+            throw e;
+        }
+    }
 
-	@Override
-	public void insertRefreshToken(MemberDto dto) throws Exception {
-		try {
-			mapper.insertRefreshToken(dto);
-		} catch (Exception e) {
-			log.info("insertRefreshToken", e);
-			throw e;
-		}
-	}
+    // 프로필 이미지 삭제
+    @Override
+    public void deleteProfilePhoto(Map<String, Object> map, String uploadPath) throws Exception {
+        try {
+            String filename = (String) map.get("filename");
+            if (filename != null && !filename.isBlank()) {
+                storageService.deleteFile(uploadPath, filename);
+            }
+            Long memberId = (Long) map.get("memberId");
+            member2Repository.updateProfileImage(memberId, null);
+        } catch (Exception e) {
+            log.info("deleteProfilePhoto : ", e);
+            throw e;
+        }
+    }
 
-	@Transactional(rollbackFor = {Exception.class})
-	@Override
-	public void updateRefreshToken(MemberDto dto) throws Exception {
-		try {
-			mapper.updateRefreshToken(dto);
-		} catch (Exception e) {
-			log.info("updateRefreshToken", e);
-			throw e;
-		}
-	}
+    // 임시 패스워드 발급 및 메일 발송
+    @Override
+    public void generatePwd(MemberDto dto) throws Exception {
+        String lowercase          = "abcdefghijklmnopqrstuvwxyz";
+        String uppercase          = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+        String digits             = "0123456789";
+        String specialChars       = "!#@$%^&*()-_=+[]{}?";
+        String allChars           = lowercase + digits + uppercase + specialChars;
 
-	@Override
-	public MemberDto findByToken(String login_id) {
-		MemberDto dto = null;
+        try {
+            SecureRandom random = new SecureRandom();
+            StringBuilder sb = new StringBuilder();
 
-		try {
-			dto = mapper.findByToken(login_id);
-		} catch (Exception e) {
-			log.info("findByToken", e);
-		}
+            sb.append(lowercase.charAt(random.nextInt(lowercase.length())));
+            sb.append(uppercase.charAt(random.nextInt(uppercase.length())));
+            sb.append(digits.charAt(random.nextInt(digits.length())));
+            sb.append(specialChars.charAt(random.nextInt(specialChars.length())));
 
-		return dto;
-	}
+            for (int i = sb.length(); i < 10; i++) {
+                sb.append(allChars.charAt(random.nextInt(allChars.length())));
+            }
 
-	@Override
-	public boolean isPasswordCheck(String login_id, String password) {
-		try {
-			// 패스워드 비교(userPwd를 암호화 해서 dto.getPassword()와 비교하면 안된다.)
-			//                 password를 암호화하면 가입할때의 암호화 값과 다름. 암호화할때 마다 다른 값
-			
-			MemberDto dto = Objects.requireNonNull(findById(login_id));
-			
-			return bcryptEncoder.matches(password, dto.getPassword());
-		} catch (NullPointerException e) {
-		} catch (Exception e) {
-		}
-		
-		return false;
-	}
+            StringBuilder password = new StringBuilder();
+            while (sb.length() > 0) {
+                int index = random.nextInt(sb.length());
+                password.append(sb.charAt(index));
+                sb.deleteCharAt(index);
+            }
 
+            Mail mail = new Mail();
+            mail.setReceiverEmail(dto.getEmail());
+            mail.setSenderEmail("메일설정이메일@도메인");
+            mail.setSenderName("관리자");
+            mail.setSubject("임시 패스워드 발급");
+            mail.setContent(dto.getName() + "님의 새로 발급된 임시 패스워드는 <b> "
+                    + password + " </b> 입니다.<br>로그인 후 반드시 패스워드를 변경하시기 바랍니다.");
 
+            String encPassword = bcryptEncoder.encode(password.toString());
+            memberRepository.updatePassword(dto.getLoginId(), encPassword);
+            memberRepository.resetFailureCount(dto.getLoginId());
 
+            boolean b = mailSender.mailSend(mail);
+            if (!b) throw new Exception("이메일 전송중 오류가 발생했습니다.");
+
+        } catch (Exception e) {
+            log.info("generatePwd : ", e);
+            throw e;
+        }
+    }
+
+    // 회원 목록 조회
+    @Override
+    public List<MemberDto> listFindMember(Map<String, Object> map) {
+        List<MemberDto> list = null;
+        try {
+            list = mapper.listFindMember(map);
+        } catch (Exception e) {
+            log.info("listFindMember : ", e);
+        }
+        return list;
+    }
+
+    // 권한 조회
+    @Override
+    public String findByAuthority(String loginId) {
+        String authority = null;
+        try {
+            authority = mapper.findByAuthority(loginId);
+        } catch (Exception e) {
+            log.info("findByAuthority : ", e);
+        }
+        return authority;
+    }
+
+    // 회원 조회 (ID)
+    @Override
+    public MemberDto findById(Long memberId) {
+        MemberDto dto = null;
+        try {
+            dto = Objects.requireNonNull(mapper.findById(memberId));
+        } catch (NullPointerException | ArrayIndexOutOfBoundsException e) {
+        } catch (Exception e) {
+            log.info("findById : ", e);
+        }
+        return dto;
+    }
+
+    // 회원 조회 (로그인 ID)
+    @Override
+    public MemberDto findById(String loginId) {
+        MemberDto dto = null;
+        try {
+            dto = Objects.requireNonNull(mapper.findByLoginId(loginId));
+        } catch (NullPointerException e) {
+        } catch (Exception e) {
+            log.info("findById : ", e);
+        }
+        return dto;
+    }
+
+    // memberId 조회
+    @Override
+    public Long getMemberId(String loginId) {
+        try {
+            return Objects.requireNonNull(mapper.getMemberId(loginId));
+        } catch (Exception e) {
+            log.info("getMemberId : ", e);
+        }
+        return 0L;
+    }
+
+    // 실패 횟수 조회
+    @Override
+    public int checkFailureCount(String loginId) {
+        int result = 0;
+        try {
+            result = mapper.checkFailureCount(loginId);
+        } catch (Exception e) {
+            log.info("checkFailureCount : ", e);
+        }
+        return result;
+    }
+
+    // 패스워드 일치 여부 확인
+    @Override
+    public boolean isPasswordCheck(String loginId, String password) {
+        try {
+            MemberDto dto = Objects.requireNonNull(findById(loginId));
+            return bcryptEncoder.matches(password, dto.getPassword());
+        } catch (Exception e) {
+        }
+        return false;
+    }
 }

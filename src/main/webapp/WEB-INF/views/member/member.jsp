@@ -18,7 +18,7 @@
     <div class="signup-card">
       <div style="text-align: center; margin-bottom: 32px;">
         <div class="brand-logo">
-          <span class="tri">Tri</span><span class="pan">pan</span><span style="color: var(--light-pink);">.</span>
+          <span class="tri">Trip</span><span class="pan">pan</span><span style="color: var(--light-pink);">.</span>
         </div>
         <p style="color: var(--text-dark); font-size: 15px; font-weight: 600;">${mode=="update" ? "회원정보를 안전하게 수정하세요" : "새로운 여행의 시작, Tripan"}</p>
       </div>
@@ -28,7 +28,7 @@
         <div style="text-align: center; margin-bottom: 32px;">
           <label for="selectFile" class="profile-preview">
             <svg id="placeholderIcon" class="profile-airplane-icon" viewBox="0 0 24 24"><path d="M22,16v-2l-8.5-5V3.5C13.5,2.67 12.83,2 12,2s-1.5,0.67-1.5,1.5V9L2,14v2l8.5-2.5V19L8.5,20.5V22L12,21l3.5,1v-1.5L13.5,19v-5.5L22,16z"></path></svg>
-            <img id="profileImg" src="" style="width:100%; height:100%; object-fit:cover; display:none;">
+            <img id="profileImg" src="${pageContext.request.contextPath}/uploads/member/${dto.profilePhoto}" style="width:100%; height:100%; object-fit:cover; display:none;">
           </label>
           <input type="file" name="selectFile" id="selectFile" accept="image/*" style="display: none;">
           <div class="help-block">나를 표현하는 프로필 사진</div>
@@ -37,11 +37,14 @@
         <div class="form-row">
           <label class="form-label">아이디</label>
           <div class="input-group">
-            <input type="text" name="loginId" value="${dto.loginId}" class="form-input" ${mode=="update" ? "readonly":""} placeholder="5~10자 영문/숫자">
-            <c:if test="${mode!='update'}"><button type="button" class="btn-side" onclick="checkId()">중복확인</button></c:if>
-          </div>
-          <div class="help-block" id="id-msg">영문자로 시작하는 5~10자 영문/숫자</div>
-        </div>
+			  <input type="text" name="loginId" value="${dto.loginId}" class="form-input" ${mode=="update" ? "readonly":""} placeholder="5~10자 영문/숫자">
+			  <c:if test="${mode!='update'}"><button type="button" class="btn-side" onclick="checkId()">중복확인</button></c:if>
+			</div>
+			
+			<c:if test="${mode!='update'}">
+			  <div class="help-block" id="id-msg">영문자로 시작하는 5~10자 영문/숫자</div>
+			</c:if>
+		</div>
 
         <div class="form-row">
           <label class="form-label">비밀번호</label>
@@ -62,7 +65,7 @@
         <div class="form-row">
           <label class="form-label">이름 / 생년월일</label>
           <div class="input-group">
-            <input type="text" name="name" value="${dto.name}" class="form-input" placeholder="이름" ${mode=="update" ? "readonly":""}>
+            <input type="text" name="name" value="${dto.username}" class="form-input" placeholder="이름" ${mode=="update" ? "readonly":""}>
             <input type="date" name="birthday" value="${dto.birthday}" class="form-input" required="required" ${mode=="update" ? "readonly":""}>
           </div>
           <div class="help-block" id="info-msg"></div>
@@ -112,6 +115,7 @@
 
         <input type="hidden" name="idChecked" value="false">
         <input type="hidden" name="nickChecked" value="false">
+        <input type="hidden" name="mode" value="${mode}">
       </form>
     </div>
   </main>
@@ -197,7 +201,7 @@
   function memberOk() {
     const f = document.memberForm;
     
-    if(f.mode !== 'update' && f.idChecked.value !== "true") { 
+    if(f.mode.value !== 'update' && f.idChecked.value !== "true") { 
       showMsg('id-msg', '아이디 중복확인이 필요합니다.', true); 
       f.loginId.focus(); return; 
     }
