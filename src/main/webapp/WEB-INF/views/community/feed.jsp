@@ -591,50 +591,54 @@
 	      }, 800);
 	    }
 	
-	    function loadTabContent(tabType, event) {
-	        if(event) event.preventDefault();
-	        
-	        if (!IS_LOGGED_IN && (tabType === 'mate' || tabType === 'freeboard')) {
-	            showLoginModal();
-	            return; 
-	        }
-	
-	        document.querySelectorAll('.side-nav li').forEach(li => li.classList.remove('active'));
-	        document.getElementById('tab-' + tabType).classList.add('active'); 
-	
-	        const contentArea = document.getElementById('dynamic-content');
-	        contentArea.innerHTML = '<div style="text-align:center; padding: 100px 20px; color:var(--sky-blue); font-size: 18px; font-weight:800;">데이터를 불러오는 중입니다... ✈️</div>';
-	
-	        const url = '${pageContext.request.contextPath}/community/fragment/' + tabType;
-	        fetch(url, {
-	        	headers: {
-	        		'X-Requested-With': 'Fetch'
-	        	}
-	        })
-	          .then(response => {
-	            if(!response.ok) throw new Error("네트워크 응답 에러!");
-	            return response.text();
-	          })
-	          .then(html => {
-	            contentArea.innerHTML = html;
-	            setupInfiniteScroll();
-	            
-	            window.scrollTo({
-	            	top: 0,
-	            	behavior: 'smooth'
-	            })
-				if (tabType === 'mate') {
-				                searchMates();
-				            }
-	            
-	          })
-	          .catch(error => {
-	            console.error('Error:', error);
-	            contentArea.innerHTML = '<div style="text-align:center; padding: 50px; color:red;">데이터를 불러오는데 실패했습니다. 😢</div>';
-	          });
-	    }
-	    
-	    
+    function loadTabContent(tabType, event) {
+        if(event) event.preventDefault();
+        
+        if (!IS_LOGGED_IN && (tabType === 'mate' || tabType === 'freeboard')) {
+            showLoginModal();
+            return; 
+        }
+
+        document.querySelectorAll('.side-nav li').forEach(li => li.classList.remove('active'));
+        document.getElementById('tab-' + tabType).classList.add('active'); 
+
+        const contentArea = document.getElementById('dynamic-content');
+        contentArea.innerHTML = '<div style="text-align:center; padding: 100px 20px; color:var(--sky-blue); font-size: 18px; font-weight:800;">데이터를 불러오는 중입니다... ✈️</div>';
+
+        const url = '${pageContext.request.contextPath}/community/fragment/' + tabType;
+        fetch(url, {
+            headers: {
+                'X-Requested-With': 'Fetch'
+            }
+        })
+        .then(response => {
+            if(!response.ok) throw new Error("네트워크 응답 에러!");
+            return response.text();
+        })
+        .then(html => {
+            contentArea.innerHTML = html;
+            setupInfiniteScroll();
+            
+            window.scrollTo({
+                top: 0,
+                behavior: 'smooth'
+            });
+            
+            // 🌟 수정된 동행 탭 로직 🌟
+            if (tabType === 'mate') {
+                if(typeof populateRegionSelects === 'function') {
+                    populateRegionSelects().then(() => searchMates());
+                } else {
+                    searchMates();
+                }
+            }
+            
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            contentArea.innerHTML = '<div style="text-align:center; padding: 50px; color:red;">데이터를 불러오는데 실패했습니다. 😢</div>';
+        });
+    }
 	    
 	    window.addEventListener('DOMContentLoaded', () => { 
 	    	setupInfiniteScroll(); 
