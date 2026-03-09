@@ -36,9 +36,5 @@ public interface MemberService {
 	
 	public String findByAuthority(String login_id);
 	
-	public void insertRefreshToken(MemberDto dto) throws Exception;
-	public void updateRefreshToken(MemberDto dto) throws Exception;
-	public MemberDto findByToken(String login_id);
-	
 	public boolean isPasswordCheck(String login_id, String password);		
 }

@@ -14,12 +14,11 @@ import lombok.Setter;
 @NoArgsConstructor
 @AllArgsConstructor
 public class BookmarkDto {
-
     private Long   bookmarkId;
     private Long   placeId;
-    private String placeName;
-    private String placeAddress;
-    private String placeCategory;       // 관광지 / 맛집 / 카페 등
-    private String thumbnailUrl;
+    private String placeName;   // place.place_name
+    private String address;     // place.address
+    private String imageUrl;    // place.image_url
+    private String category;    // place.category (ATTRACTION/ACCOMMODATION)
     private LocalDateTime createdAt;
 }

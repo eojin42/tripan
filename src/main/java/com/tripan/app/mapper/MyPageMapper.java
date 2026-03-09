@@ -1,41 +1,50 @@
 package com.tripan.app.mapper;
 
-import com.tripan.app.domain.dto.*;
-import org.apache.ibatis.annotations.Mapper;
-import org.apache.ibatis.annotations.Param;
 import java.util.List;
+import java.util.Set;
+
+import org.apache.ibatis.annotations.Mapper;
+
+import com.tripan.app.domain.dto.BadgeInfoDto;
+import com.tripan.app.domain.dto.BookmarkDto;
+import com.tripan.app.domain.dto.FollowDto;
+import com.tripan.app.domain.dto.MyPageSummaryDto;
+import com.tripan.app.domain.dto.MyPageSummaryDto.ActivityItem;
+import com.tripan.app.domain.dto.MyReviewDto;
+import com.tripan.app.domain.dto.MyTripDto;
 
 
 @Mapper
 public interface MyPageMapper {
 
     // 종합 요약 (Member1 + Member2 + follow 집계)
-    MyPageSummaryDto selectMyPageSummary(@Param("memberId") Long memberId);
+    MyPageSummaryDto selectMyPageSummary(Long memberId);
 
     // 여행 통계 (trip_member + trip + review 집계)
-    MyPageSummaryDto selectTravelStats(@Param("memberId") Long memberId);
+    MyPageSummaryDto selectTravelStats(Long memberId);
 
     // 나의 여행 지도 (trip_member JOIN trip JOIN region)
-    List<MyPageSummaryDto> selectVisitedRegions(@Param("memberId") Long memberId);
+    List<MyPageSummaryDto> selectVisitedRegions(Long memberId);
+    Set<Long> selectVisitedRegionIds(Long memberId);
 
     // 내 여행 일정 (trip_member JOIN trip)
-    List<MyTripDto> selectMyTrips(@Param("memberId") Long memberId);
+    List<MyTripDto> selectMyTrips(Long memberId);
 
     // 내 리뷰
-    List<MyReviewDto> selectMyReviews(@Param("memberId") Long memberId);
+    List<MyReviewDto> selectMyReviews(Long memberId);
 
     // 찜 목록 (bookmark 테이블)
-    List<BookmarkDto> selectMyBookmarks(@Param("memberId") Long memberId);
+    List<BookmarkDto> selectMyBookmarks(Long memberId, String type);
 
     // 배지 전체 (badge LEFT JOIN member_badge)
-    List<BadgeInfoDto> selectAllBadgesWithStatus(@Param("memberId") Long memberId);
+    List<BadgeInfoDto> selectAllBadgesWithStatus(Long memberId);
 
     // 팔로잉 목록
-    List<FollowDto> selectFollowingList(@Param("memberId") Long memberId);
+    List<FollowDto> selectFollowingList(Long memberId);
 
     // 팔로워 목록
-    List<FollowDto> selectFollowerList(@Param("memberId") Long memberId);
+    List<FollowDto> selectFollowerList(Long memberId);
 
     // 활동 요약 (bookmark + follow + review + trip UNION)
-    List<MyPageSummaryDto> selectActivitySummary(@Param("memberId") Long memberId);
+    List<ActivityItem> selectActivitySummary(Long memberId);
 }

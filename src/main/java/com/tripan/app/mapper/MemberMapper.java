@@ -46,8 +46,4 @@ public interface MemberMapper {
 	public void deleteAuthority(Map<String, Object> map) throws SQLException;
 	public String findByAuthority(String login_id);
 	
-	public void insertRefreshToken(MemberDto dto) throws SQLException;
-	public void updateRefreshToken(MemberDto dto) throws SQLException;
-	public void deleteRefreshToken(String login_id) throws SQLException;
-	public MemberDto findByToken(String login_id);	
 }
