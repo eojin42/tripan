@@ -68,11 +68,11 @@ public class MemberController {
         try {
             service.insertMember(dto, uploadPath);
             
-            StringBuilder sb = new StringBuilder();
-            sb.append(dto.getName() + "님의 회원 가입이 정상적으로 처리되었습니다.<br>");
-            sb.append("메인화면으로 이동하여 로그인 하시기 바랍니다.<br>");
+            //StringBuilder sb = new StringBuilder();
+            //sb.append(dto.getName() + "님의 회원 가입이 정상적으로 처리되었습니다.<br>");
+            //sb.append("메인화면으로 이동하여 로그인 하시기 바랍니다.<br>");
 
-            rAttr.addFlashAttribute("message", sb.toString());
+            //rAttr.addFlashAttribute("message", sb.toString());
             rAttr.addFlashAttribute("title", "회원 가입");
 
             return "redirect:/member/complete";
@@ -82,7 +82,7 @@ public class MemberController {
             model.addAttribute("message", "회원가입이 실패했습니다.");
         }
         
-        return "member/member";
+        return "redirect:/member/complete";
     }
     
     @ResponseBody
@@ -209,7 +209,7 @@ public class MemberController {
         return "member/pwdFind";
     }
     
-    // ✨ 누락되었던 매핑 어노테이션 추가 완료!
+    // 누락되었던 매핑 어노테이션 추가
     @PostMapping("pwdFind")
     public String pwdFindSubmit(@RequestParam(name="loginId") String loginId, 
             final RedirectAttributes reAttr, Model model) throws Exception {
@@ -237,6 +237,35 @@ public class MemberController {
         
         return "member/pwdFind";
     }
+    
+    @ResponseBody
+	@PostMapping("deleteProfile")
+	public Map<String, ?> deleteProfilePhoto(@RequestParam(name = "profile_photo") String profile_photo) {
+		// 프로파일 포토 삭제
+		Map<String, Object> model = new HashMap<String, Object>();
+		
+		SessionInfo info = LoginMemberUtil.getsessionInfo();
+
+		String state = "false";
+		try {
+			if(! profile_photo.isBlank()) {
+				Map<String, Object> map = new HashMap<>();
+				map.put("member_id", info.getMemberId());
+				map.put("filename", info.getAvatar());
+				// map.put("filename", profile_photo);
+				
+				service.deleteProfilePhoto(map, uploadPath);
+				
+				info.setAvatar("");
+				state = "true";
+			}
+		} catch (Exception e) {
+		}
+		
+		model.put("state", state);
+		
+		return model;
+	}
     
     @GetMapping("noAuthorized")
     public String noAuthorized(Model model) {
