@@ -33,27 +33,27 @@
 
   <div class="glass-card">
     <ul class="side-nav">
-      <li class="${param.activeMenu == 'main' ? 'active' : ''}">
+      <li class="${activeMenu == 'main' ? 'active' : ''}">
         <a href="${pageContext.request.contextPath}/mypage/main">
           <i class="bi bi-bar-chart-line"></i> 여행 대시보드
         </a>
       </li>
-      <li class="${param.activeMenu == 'schedule' ? 'active' : ''}">
+      <li class="${activeMenu == 'schedule' ? 'active' : ''}">
         <a href="${pageContext.request.contextPath}/mypage/schedule">
           <i class="bi bi-suitcase-lg"></i> 내 일정 / 예약
         </a>
       </li>
-      <li class="${param.activeMenu == 'bookmark' ? 'active' : ''}">
+      <li class="${activeMenu == 'bookmark' ? 'active' : ''}">
         <a href="${pageContext.request.contextPath}/mypage/bookmark">
           <i class="bi bi-bookmark-heart"></i> 관심 및 저장(찜)
         </a>
       </li>
-      <li class="${param.activeMenu == 'review' ? 'active' : ''}">
+      <li class="${activeMenu == 'review' ? 'active' : ''}">
         <a href="${pageContext.request.contextPath}/mypage/review">
           <i class="bi bi-chat-square-text"></i> 나의 리뷰 기록
         </a>
       </li>
-      <li class="${param.activeMenu == 'coupon' ? 'active' : ''}">
+      <li class="${activeMenu == 'coupon' ? 'active' : ''}">
         <a href="${pageContext.request.contextPath}/mypage/coupon">
           <i class="bi bi-ticket-perforated"></i> 보유 쿠폰함
         </a>

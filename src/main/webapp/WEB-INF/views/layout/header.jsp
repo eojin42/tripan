@@ -110,11 +110,12 @@
 		    </a>
              
              <div class="dropdown-menu" style="left: auto; right: 0; transform-origin: top right; transform: translateY(10px) scale(0.95);">
-               <a href="#">마이페이지 홈</a>
-               <a href="#">나의 여행 지도 (국토 정복)</a>
-               <a href="#">내 여행 일정 / 동행 코스</a>
-               <a href="#">내 쿠폰 및 저장(찜)</a>
-               <a href="#">내 활동 배지 / 칭호</a>
+               <a href="${pageContext.request.contextPath}/mypage/">마이페이지 홈</a>
+               <a href="${pageContext.request.contextPath}/mypage/schedule">내 일정/예약</a>
+               <a href="${pageContext.request.contextPath}/mypage/bookmark">내 찜 목록</a>
+               <a href="${pageContext.request.contextPath}/member/pwd">내 정보 수정</a>
+                <!--  <a href="#">나의 여행 지도 (국토 정복)</a>
+               <a href="#">내 활동 배지 / 칭호</a>-->
                <hr style="border: none; border-top: 1px solid rgba(255, 255, 255, 0.4); margin: 8px 0;">
 	              <form action="${pageContext.request.contextPath}/member/logout" method="post" style="margin: 0; display: block;">
                    <sec:csrfInput/> <button type="submit" style="width: 100%; text-align: left; padding: 12px 16px; border-radius: 12px; color: var(--error-pink); font-size: 14px; font-weight: 600; cursor: pointer; transition: all 0.2s; background: transparent; border: none; font-family: var(--font-sans);">

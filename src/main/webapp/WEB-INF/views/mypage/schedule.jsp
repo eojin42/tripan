@@ -208,7 +208,7 @@
         }).join('') +
       '</div>';
     } catch(e) {
-      area.innerHTML = renderEmpty('bi-building', '예약 내역을 불러올 수 없어요');
+      area.innerHTML = renderEmpty('bi-building', '예약 내역을 불러올 수 없어요','booking');
     }
   }
 
@@ -229,10 +229,12 @@
     renderTrips();
   }
 
-  function renderEmpty(icon, msg) {
-	 
-    return '<div class="empty-state"><i class="bi ' + icon + '"></i><p>' + msg + '</p><button class="btn-primary" onclick="location.href=\'/trip/trip_create\'">일정 만들기</button></div>';
-  }
+  function renderEmpty(icon, msg, type) {
+	    var btn = type === 'booking'? 
+	    	'<button class="btn-primary" onclick="location.href=\'/accommodation/list\'">숙소 둘러보기</button>'
+	        : '<button class="btn-primary" onclick="location.href=\'/trip/trip_create\'">일정 만들기</button>';
+	    return '<div class="empty-state"><i class="bi ' + icon + '"></i><p>' + msg + '</p>' + btn + '</div>';
+	}
   function fmtDate(v) { if (!v) return ''; return new Date(v).toLocaleDateString('ko-KR',{month:'2-digit',day:'2-digit'}); }
   function escHtml(s) { if (!s) return ''; return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
 

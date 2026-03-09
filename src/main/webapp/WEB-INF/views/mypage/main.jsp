@@ -157,13 +157,12 @@
     .map-header h3 i { color:var(--sky-blue); }
     .btn-download { font-size:13px; font-weight:700; color:var(--sky-blue); background:white; padding:7px 14px; border-radius:8px; border:1px solid var(--sky-blue); cursor:pointer; transition:.2s; font-family:inherit; }
     .btn-download:hover { background:var(--sky-blue); color:white; }
-    .map-placeholder {
-      width:100%; height:360px; background:#F8FAFC; border-radius:16px;
-      display:flex; align-items:center; justify-content:center; flex-direction:column;
-      color:var(--text-gray); font-weight:600; font-size:14px;
-      border:2px dashed var(--border-light); gap:10px; box-sizing:border-box;
+    .mini-region { fill:#EDF2F7; stroke:white; stroke-width:1.5; transition:fill .25s; }
+    .mini-region.visited { fill:rgba(137,207,240,.6); }
+    .mini-visited-tag {
+      font-size:10px; font-weight:800; padding:3px 10px;
+      border-radius:20px; background:rgba(137,207,240,.15); color:var(--sky-blue);
     }
-    .map-placeholder i { font-size:36px; opacity:.2; color:var(--sky-blue); }
 
     /* ── 모달 ── */
     .modal-overlay {
@@ -263,9 +262,67 @@
 
 <main class="mypage-container">
 
-<jsp:include page="/WEB-INF/views/layout/mypage_sidebar.jsp">
-    <jsp:param name="activeMenu" value="schedule"/> </jsp:include>
+  <!-- ════ 사이드바 ════ -->
+  <aside class="sidebar">
+    <div class="glass-card profile-widget">
+      <div class="profile-avatar">
+        <c:choose>
+          <c:when test="${not empty sessionScope.loginUser.profilePhoto}">
+            <img src="${pageContext.request.contextPath}/uploads/member/${sessionScope.loginUser.profilePhoto}" alt="프로필">
+          </c:when>
+          <c:otherwise>
+            <div class="profile-avatar-default" id="avatar-initial">T</div>
+          </c:otherwise>
+        </c:choose>
+      </div>
+      <div class="profile-name">${sessionScope.loginUser.nickname} 님</div>
+      <div class="profile-bio">${not empty sessionScope.loginUser.bio ? sessionScope.loginUser.bio : '등록된 소개글이 없습니다.'}</div>
+      <button class="btn-edit-profile" onclick="location.href='${pageContext.request.contextPath}/mypage/edit'">프로필 수정</button>
+      <div class="profile-stats">
+        <div class="stat-box" onclick="openFollowModal('follower')">
+          <strong id="stat-follower">-</strong>팔로워
+        </div>
+        <div class="stat-box" onclick="openFollowModal('following')">
+          <strong id="stat-following">-</strong>팔로잉
+        </div>
+        <div class="stat-box" onclick="openBadgeModal()">
+          <strong id="stat-badge">-</strong>배지
+        </div>
+      </div>
+    </div>
 
+    <div class="glass-card">
+      <ul class="side-nav">
+        <li class="active">
+          <a href="${pageContext.request.contextPath}/mypage/main">
+            <i class="bi bi-bar-chart-line"></i> 여행 대시보드
+          </a>
+        </li>
+        <li>
+          <a href="${pageContext.request.contextPath}/mypage/schedule">
+            <i class="bi bi-suitcase-lg"></i> 내 일정 / 예약
+          </a>
+        </li>
+        <li>
+          <a href="${pageContext.request.contextPath}/mypage/wish">
+            <i class="bi bi-bookmark-heart"></i> 관심 및 저장(찜)
+          </a>
+        </li>
+        <li>
+          <a href="${pageContext.request.contextPath}/mypage/review">
+            <i class="bi bi-chat-square-text"></i> 나의 리뷰 기록
+          </a>
+        </li>
+        <li>
+          <a href="${pageContext.request.contextPath}/mypage/coupon">
+            <i class="bi bi-ticket-perforated"></i> 보유 쿠폰함
+          </a>
+        </li>
+      </ul>
+    </div>
+  </aside>
+
+  <!-- ════ 대시보드 ════ -->
   <div class="dashboard-content">
 
     <h2 class="welcome-title">반가워요, <span>${sessionScope.loginUser.nickname}</span>님!</h2>
@@ -292,7 +349,7 @@
           <div class="summary-value" id="val-avgdays">-</div>
           <div class="summary-label">평균 여행 기간</div>
         </div>
-        <!-- 일정 히스토리-->
+        <!-- ★ 리뷰 → 일정 히스토리로 변경 -->
         <div class="summary-card" style="cursor:pointer;" onclick="location.href='${pageContext.request.contextPath}/mypage/schedule'">
           <i class="bi bi-clock-history"></i>
           <div class="summary-value" id="val-history">-</div>
@@ -310,11 +367,55 @@
     <div class="clean-card">
       <div class="map-header">
         <h3><i class="bi bi-map"></i> 나의 여행 지도</h3>
-        <button class="btn-download"><i class="bi bi-download"></i> 이미지로 저장</button>
+        <a href="${pageContext.request.contextPath}/mypage/map" class="btn-download">
+          <i class="bi bi-arrow-right"></i> 전체 보기
+        </a>
       </div>
-      <div class="map-placeholder">
-        <i class="bi bi-geo-alt"></i>
-        이곳에 색칠된 대한민국 지도가 표시됩니다.
+      <!-- 미니 지도 -->
+      <div style="display:grid;grid-template-columns:1fr 160px;gap:16px;align-items:center;">
+        <div id="mini-map-wrap" style="background:#F8FAFC;border-radius:16px;padding:12px;overflow:hidden;">
+          <svg id="mini-map-svg" viewBox="0 0 500 600" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:auto;display:block;">
+            <path class="mini-region" data-sido="서울특별시" d="M178,142 L192,138 L200,145 L198,158 L185,162 L175,155 Z"/>
+            <path class="mini-region" data-sido="인천광역시" d="M155,148 L172,142 L178,150 L170,162 L158,165 L150,158 Z"/>
+            <path class="mini-region" data-sido="경기도" d="M148,120 L205,108 L225,125 L222,170 L205,185 L178,188 L155,180 L138,165 L135,145 Z"/>
+            <path class="mini-region" data-sido="강원특별자치도" d="M222,95 L295,88 L318,105 L320,155 L295,175 L265,180 L238,168 L222,148 L218,125 Z"/>
+            <path class="mini-region" data-sido="충청북도" d="M205,185 L248,178 L265,195 L262,228 L240,242 L215,238 L198,220 L198,202 Z"/>
+            <path class="mini-region" data-sido="충청남도" d="M138,175 L198,168 L205,185 L198,220 L178,238 L155,245 L132,232 L118,212 L122,192 Z"/>
+            <path class="mini-region" data-sido="대전광역시" d="M195,222 L212,218 L218,230 L210,240 L196,238 Z"/>
+            <path class="mini-region" data-sido="세종특별자치시" d="M185,210 L198,206 L200,218 L190,222 Z"/>
+            <path class="mini-region" data-sido="전라북도" d="M138,248 L178,240 L215,242 L222,268 L208,295 L180,305 L152,298 L128,278 L125,258 Z"/>
+            <path class="mini-region" data-sido="전라남도" d="M128,298 L178,305 L208,298 L218,325 L205,365 L178,385 L148,388 L118,368 L105,338 L108,312 Z"/>
+            <path class="mini-region" data-sido="광주광역시" d="M155,318 L172,312 L180,322 L175,335 L160,338 L150,328 Z"/>
+            <path class="mini-region" data-sido="경상북도" d="M262,165 L322,158 L352,178 L358,215 L342,255 L310,272 L278,268 L252,248 L245,215 L248,185 Z"/>
+            <path class="mini-region" data-sido="대구광역시" d="M290,255 L310,250 L318,262 L312,275 L295,278 L285,268 Z"/>
+            <path class="mini-region" data-sido="경상남도" d="M218,272 L278,268 L315,278 L332,305 L322,342 L295,358 L258,362 L228,348 L210,320 L212,295 Z"/>
+            <path class="mini-region" data-sido="울산광역시" d="M330,255 L352,250 L358,268 L348,282 L330,285 L320,272 Z"/>
+            <path class="mini-region" data-sido="부산광역시" d="M318,342 L342,335 L352,352 L340,368 L318,368 L308,355 Z"/>
+            <path class="mini-region" data-sido="제주특별자치도" d="M148,458 L192,452 L208,462 L205,475 L185,482 L158,478 L142,468 Z"/>
+            <!-- 라벨 -->
+            <text x="185" y="152" text-anchor="middle" font-size="8" font-weight="700" fill="#4A5568" pointer-events="none">서울</text>
+            <text x="268" y="138" text-anchor="middle" font-size="9" font-weight="700" fill="#4A5568" pointer-events="none">강원</text>
+            <text x="182" y="148" text-anchor="middle" font-size="8" font-weight="700" fill="#4A5568" pointer-events="none">경기</text>
+            <text x="232" y="215" text-anchor="middle" font-size="8" font-weight="700" fill="#4A5568" pointer-events="none">충북</text>
+            <text x="162" y="208" text-anchor="middle" font-size="8" font-weight="700" fill="#4A5568" pointer-events="none">충남</text>
+            <text x="172" y="272" text-anchor="middle" font-size="8" font-weight="700" fill="#4A5568" pointer-events="none">전북</text>
+            <text x="162" y="345" text-anchor="middle" font-size="8" font-weight="700" fill="#4A5568" pointer-events="none">전남</text>
+            <text x="302" y="218" text-anchor="middle" font-size="9" font-weight="700" fill="#4A5568" pointer-events="none">경북</text>
+            <text x="268" y="318" text-anchor="middle" font-size="8" font-weight="700" fill="#4A5568" pointer-events="none">경남</text>
+            <text x="178" y="468" text-anchor="middle" font-size="8" font-weight="700" fill="#4A5568" pointer-events="none">제주</text>
+          </svg>
+        </div>
+        <!-- 우측 통계 -->
+        <div style="display:flex;flex-direction:column;gap:12px;">
+          <div style="text-align:center;padding:16px;background:#F8FAFC;border-radius:14px;">
+            <div style="font-size:32px;font-weight:900;color:var(--text-black);" id="mini-visited-cnt">-</div>
+            <div style="font-size:11px;color:var(--text-gray);font-weight:700;">/ 17 지역 방문</div>
+            <div style="height:6px;background:#E2E8F0;border-radius:4px;margin-top:8px;overflow:hidden;">
+              <div id="mini-progress" style="height:100%;background:var(--grad-main);border-radius:4px;width:0%;transition:width .6s ease;"></div>
+            </div>
+          </div>
+          <div id="mini-visited-tags" style="display:flex;flex-wrap:wrap;gap:6px;"></div>
+        </div>
       </div>
     </div>
 
@@ -563,8 +664,37 @@
     return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
   }
 
+  // ─── 미니 지도 로드 ───
+  async function loadMiniMap() {
+    try {
+      var res = await fetch('/mypage/api/visited-regions');
+      if (!res.ok) return;
+      var list = await res.json();
+
+      // 방문 지역 색칠
+      list.forEach(function(r) {
+        document.querySelectorAll('[data-sido="' + r.sidoName + '"]').forEach(function(el) {
+          el.classList.add('visited');
+        });
+      });
+
+      // 통계
+      var cnt = list.length;
+      document.getElementById('mini-visited-cnt').textContent = cnt;
+      document.getElementById('mini-progress').style.width = Math.round(cnt / 17 * 100) + '%';
+
+      // 방문 태그 (최대 5개)
+      var tags = list.slice(0, 5).map(function(r) {
+        return '<span class="mini-visited-tag">' + escHtml(r.sidoName.replace('특별자치도','').replace('광역시','').replace('특별시','').replace('특별자치시','')) + '</span>';
+      }).join('');
+      if (list.length > 5) tags += '<span class="mini-visited-tag">+' + (list.length - 5) + '</span>';
+      document.getElementById('mini-visited-tags').innerHTML = tags || '<span style="font-size:12px;color:var(--text-gray);">아직 방문 기록이 없어요</span>';
+
+    } catch(e) {}
+  }
+
   // ─── 초기 로드 ───
-  document.addEventListener('DOMContentLoaded', loadSummary);
+  document.addEventListener('DOMContentLoaded', function() { loadSummary(); loadMiniMap(); });
 </script>
 </body>
 </html>

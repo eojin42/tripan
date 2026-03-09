@@ -24,27 +24,32 @@
       </div>
 
       <form name="memberForm" method="post" enctype="multipart/form-data">
-        
+
         <div style="text-align: center; margin-bottom: 32px;">
           <label for="selectFile" class="profile-preview">
-            <svg id="placeholderIcon" class="profile-airplane-icon" viewBox="0 0 24 24"><path d="M22,16v-2l-8.5-5V3.5C13.5,2.67 12.83,2 12,2s-1.5,0.67-1.5,1.5V9L2,14v2l8.5-2.5V19L8.5,20.5V22L12,21l3.5,1v-1.5L13.5,19v-5.5L22,16z"></path></svg>
-            <img id="profileImg" src="${pageContext.request.contextPath}/uploads/member/${dto.profilePhoto}" style="width:100%; height:100%; object-fit:cover; display:none;">
+            <svg id="placeholderIcon" class="profile-airplane-icon" viewBox="0 0 24 24">
+              <path d="M22,16v-2l-8.5-5V3.5C13.5,2.67 12.83,2 12,2s-1.5,0.67-1.5,1.5V9L2,14v2l8.5-2.5V19L8.5,20.5V22L12,21l3.5,1v-1.5L13.5,19v-5.5L22,16z"/>
+            </svg>
+            <img class="img-avatar" src="${pageContext.request.contextPath}/dist/images/user.png"
+              style="width:100%; height:100%; object-fit:cover; display:none;">
           </label>
-          <input type="file" name="selectFile" id="selectFile" accept="image/*" style="display: none;">
+          <input type="file" name="selectFile" id="selectFile" accept="image/*" style="display:none;">
+          <c:if test="${mode=='update'}">
+            <button type="button" class="btn-photo-init" style="margin-top:8px; font-size:12px; color:var(--text-gray);">이미지 초기화</button>
+          </c:if>
           <div class="help-block">나를 표현하는 프로필 사진</div>
         </div>
 
         <div class="form-row">
           <label class="form-label">아이디</label>
           <div class="input-group">
-			  <input type="text" name="loginId" value="${dto.loginId}" class="form-input" ${mode=="update" ? "readonly":""} placeholder="5~10자 영문/숫자">
-			  <c:if test="${mode!='update'}"><button type="button" class="btn-side" onclick="checkId()">중복확인</button></c:if>
-			</div>
-			
-			<c:if test="${mode!='update'}">
-			  <div class="help-block" id="id-msg">영문자로 시작하는 5~10자 영문/숫자</div>
-			</c:if>
-		</div>
+            <input type="text" name="loginId" value="${dto.loginId}" class="form-input" ${mode=="update" ? "readonly":""} placeholder="5~10자 영문/숫자">
+            <c:if test="${mode!='update'}"><button type="button" class="btn-side" onclick="checkId()">중복확인</button></c:if>
+          </div>
+          <c:if test="${mode!='update'}">
+            <div class="help-block" id="id-msg">영문자로 시작하는 5~10자 영문/숫자</div>
+          </c:if>
+        </div>
 
         <div class="form-row">
           <label class="form-label">비밀번호</label>
@@ -75,12 +80,12 @@
           <label class="form-label">관심 여행지</label>
           <select name="preferredRegion" class="form-input" required="required">
             <option value="" disabled selected hidden>선호하는 지역을 선택해주세요</option>
-            <option value="서울" ${dto.preferredRegion == '서울' ? 'selected':''}>서울</option>
-            <option value="제주" ${dto.preferredRegion == '제주' ? 'selected':''}>제주도</option>
-            <option value="부산" ${dto.preferredRegion == '부산' ? 'selected':''}>부산</option>
-            <option value="강원" ${dto.preferredRegion == '강원' ? 'selected':''}>강릉/속초</option>
-            <option value="전라" ${dto.preferredRegion == '전라' ? 'selected':''}>여수/전주</option>
-            <option value="경상" ${dto.preferredRegion == '경상' ? 'selected':''}>경주/거제</option>
+            <option value="서울"  ${dto.preferredRegion == '서울'  ? 'selected':''}>서울</option>
+            <option value="제주"  ${dto.preferredRegion == '제주'  ? 'selected':''}>제주도</option>
+            <option value="부산"  ${dto.preferredRegion == '부산'  ? 'selected':''}>부산</option>
+            <option value="강원"  ${dto.preferredRegion == '강원'  ? 'selected':''}>강릉/속초</option>
+            <option value="전라"  ${dto.preferredRegion == '전라'  ? 'selected':''}>여수/전주</option>
+            <option value="경상"  ${dto.preferredRegion == '경상'  ? 'selected':''}>경주/거제</option>
           </select>
           <div class="help-block">선택한 지역의 핫플과 축제 정보를 우선 추천해요!</div>
         </div>
@@ -124,64 +129,113 @@
 <footer><jsp:include page="/WEB-INF/views/layout/footer.jsp"/></footer>
 
 <script>
-  document.getElementById('selectFile').addEventListener('change', function(e) {
-    const file = e.target.files[0];
-    if (file) {
+  document.addEventListener('DOMContentLoaded', function() {
+    let img = '${dto.profilePhoto}';
+    const ctx = '${pageContext.request.contextPath}';
+    const defaultImg = ctx + '/dist/images/user.png';
+
+    const avatarEl   = document.querySelector('.img-avatar');
+    const inputEl    = document.querySelector('form[name=memberForm] input[name=selectFile]');
+    const placeholderEl = document.getElementById('placeholderIcon');
+    const btnInitEl  = document.querySelector('form[name=memberForm] .btn-photo-init');
+
+    // 기존 사진 있으면 표시
+    if (img) {
+      avatarEl.src = ctx + '/uploads/member/' + img;
+      avatarEl.style.display = 'block';
+      placeholderEl.style.display = 'none';
+    }
+
+    const maxSize = 800 * 1024;
+
+    // 파일 선택 시 미리보기
+    inputEl.addEventListener('change', function(e) {
+      const file = e.target.files[0];
+      if (!file) {
+        avatarEl.src = img ? ctx + '/uploads/member/' + img : defaultImg;
+        return;
+      }
+      if (file.size > maxSize || !file.type.match('image.*')) {
+        alert('이미지 파일만 800KB 이하로 올려주세요.');
+        inputEl.value = '';
+        return;
+      }
       const reader = new FileReader();
       reader.onload = function(e) {
-        document.getElementById('profileImg').src = e.target.result;
-        document.getElementById('profileImg').style.display = 'block';
-        document.getElementById('placeholderIcon').style.display = 'none';
-      }
+        avatarEl.src = e.target.result;
+        avatarEl.style.display = 'block';
+        placeholderEl.style.display = 'none';
+      };
       reader.readAsDataURL(file);
+    });
+
+    // 이미지 초기화 버튼 (수정 모드에서만 표시)
+    if (btnInitEl) {
+      btnInitEl.addEventListener('click', function() {
+        if (img) {
+          if (!confirm('등록된 이미지를 삭제하시겠습니까?')) return;
+
+          fetch(ctx + '/member/deleteProfile', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'AJAX': 'true' },
+            body: 'profile_photo=' + img
+          })
+          .then(res => res.json())
+          .then(data => {
+            if (data.state === 'true') {
+              img = '';
+            }
+            inputEl.value = '';
+            avatarEl.src = defaultImg;
+            avatarEl.style.display = 'block';
+            placeholderEl.style.display = 'none';
+          })
+          .catch(err => console.error('이미지 삭제 오류:', err));
+
+        } else {
+          inputEl.value = '';
+          avatarEl.src = defaultImg;
+        }
+      });
     }
-  });
 
-  function showMsg(id, msg, isError) {
-    const el = document.getElementById(id);
-    el.innerHTML = msg;
-    el.style.color = isError ? 'var(--error-pink)' : 'var(--point-blue)';
-  }
-
-  document.addEventListener('DOMContentLoaded', function() {
+    // 비밀번호 실시간 유효성 검사
     const pwdInput = document.memberForm.password;
     const pwdConfirmInput = document.memberForm.passwordConfirm;
+    const pwdRegex = /^(?=.*[a-zA-Z])(?=.*[!@#$%^*+=-]|.*[0-9]).{5,10}$/i;
 
-    function validatePwdRealTime() {
+    function validatePwd() {
       const pwd = pwdInput.value;
       const pwdConfirm = pwdConfirmInput.value;
-
-      if (!pwd && !pwdConfirm) {
-        showMsg('pwd-msg', '', false);
-        return;
-      }
-      const pwdRegex = /^(?=.*[a-zA-Z])(?=.*[!@#$%^*+=-]|.*[0-9]).{5,10}$/i;
-
+      if (!pwd && !pwdConfirm) { showMsg('pwd-msg', '', false); return; }
       if (!pwdRegex.test(pwd)) {
-        showMsg('pwd-msg', '사용 불가: 영문/숫자/특수문자 조합 5~10자로 입력해주세요.', true);
-        return;
+        showMsg('pwd-msg', '사용 불가: 영문/숫자/특수문자 조합 5~10자로 입력해주세요.', true); return;
       }
       if (!pwdConfirm) {
-         showMsg('pwd-msg', '사용 가능: 아래 비밀번호 확인란도 동일하게 입력해주세요.', false);
-         return;
+        showMsg('pwd-msg', '사용 가능: 아래 비밀번호 확인란도 동일하게 입력해주세요.', false); return;
       }
       if (pwd !== pwdConfirm) {
-        showMsg('pwd-msg', '사용 불가: 비밀번호가 일치하지 않습니다.', true);
-        return;
+        showMsg('pwd-msg', '사용 불가: 비밀번호가 일치하지 않습니다.', true); return;
       }
       showMsg('pwd-msg', '사용 가능: 안전하고 완벽한 비밀번호입니다!', false);
     }
 
-    pwdInput.addEventListener('input', validatePwdRealTime);
-    pwdConfirmInput.addEventListener('input', validatePwdRealTime);
+    pwdInput.addEventListener('input', validatePwd);
+    pwdConfirmInput.addEventListener('input', validatePwd);
   });
+
+  function showMsg(id, msg, isError) {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.innerHTML = msg;
+    el.style.color = isError ? 'var(--error-pink)' : 'var(--point-blue)';
+  }
 
   function checkId() {
     const idStr = document.memberForm.loginId.value;
-    if(!/^[a-z][a-z0-9_]{4,9}$/i.test(idStr)) {
+    if (!/^[a-z][a-z0-9_]{4,9}$/i.test(idStr)) {
       showMsg('id-msg', '아이디는 영문자로 시작하는 5~10자 영문/숫자여야 합니다.', true);
-      document.memberForm.loginId.focus();
-      return;
+      document.memberForm.loginId.focus(); return;
     }
     showMsg('id-msg', '사용 가능한 아이디입니다!', false);
     document.memberForm.idChecked.value = "true";
@@ -189,10 +243,9 @@
 
   function checkNickname() {
     const nick = document.memberForm.nickname.value;
-    if(!/^[가-힣a-zA-Z0-9]{2,10}$/.test(nick)) {
+    if (!/^[가-힣a-zA-Z0-9]{2,10}$/.test(nick)) {
       showMsg('nick-msg', '닉네임은 특수문자를 제외한 2~10자여야 합니다.', true);
-      document.memberForm.nickname.focus();
-      return;
+      document.memberForm.nickname.focus(); return;
     }
     showMsg('nick-msg', '사용 가능한 닉네임입니다!', false);
     document.memberForm.nickChecked.value = "true";
@@ -200,39 +253,44 @@
 
   function memberOk() {
     const f = document.memberForm;
-    
-    if(f.mode.value !== 'update' && f.idChecked.value !== "true") { 
-      showMsg('id-msg', '아이디 중복확인이 필요합니다.', true); 
-      f.loginId.focus(); return; 
+    const isUpdate = f.mode.value === 'update';
+
+    if (!isUpdate && f.idChecked.value !== "true") {
+      showMsg('id-msg', '아이디 중복확인이 필요합니다.', true);
+      f.loginId.focus(); return;
     }
 
     const pwd = f.password.value;
-    if(!/^(?=.*[a-zA-Z])(?=.*[!@#$%^*+=-]|.*[0-9]).{5,10}$/i.test(pwd) || pwd !== f.passwordConfirm.value) { 
-      showMsg('pwd-msg', '사용 불가: 비밀번호를 다시 확인해주세요.', true);
-      f.password.focus(); return;
+    const pwdRegex = /^(?=.*[a-zA-Z])(?=.*[!@#$%^*+=-]|.*[0-9]).{5,10}$/i;
+    // 수정 모드에서 비밀번호 안 입력하면 패스, 입력했으면 유효성 검사
+    if (!isUpdate || pwd) {
+      if (!pwdRegex.test(pwd) || pwd !== f.passwordConfirm.value) {
+        showMsg('pwd-msg', '사용 불가: 비밀번호를 다시 확인해주세요.', true);
+        f.password.focus(); return;
+      }
     }
 
-    if(f.mode !== 'update' && f.nickChecked.value !== "true") { 
-      showMsg('nick-msg', '닉네임 중복확인이 필요합니다.', true); 
-      f.nickname.focus(); return; 
+    if (!isUpdate && f.nickChecked.value !== "true") {
+      showMsg('nick-msg', '닉네임 중복확인이 필요합니다.', true);
+      f.nickname.focus(); return;
     }
 
-    if(!/^[가-힣]{2,5}$/.test(f.name.value)) {
+    if (!/^[가-힣]{2,5}$/.test(f.name.value)) {
       showMsg('info-msg', '올바른 이름을 입력해주세요.', true);
       f.name.focus(); return;
     }
-    
-    if(!f.birthday.value) {
+
+    if (!f.birthday.value) {
       showMsg('info-msg', '생년월일을 선택해주세요.', true);
       f.birthday.focus(); return;
     } else { showMsg('info-msg', '', false); }
 
-    if(!/^(010)-?\d{4}-?\d{4}$/.test(f.phoneNumber.value)) {
+    if (!/^(010)-?\d{4}-?\d{4}$/.test(f.phoneNumber.value)) {
       showMsg('contact-msg', '올바른 전화번호를 입력해주세요 (예: 010-0000-0000).', true);
       f.phoneNumber.focus(); return;
     }
-    
-    if(!/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/.test(f.email.value)) {
+
+    if (!/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/.test(f.email.value)) {
       showMsg('contact-msg', '올바른 이메일 형식을 입력해주세요.', true);
       f.email.focus(); return;
     } else { showMsg('contact-msg', '', false); }
