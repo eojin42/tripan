@@ -153,19 +153,31 @@
     display: flex; justify-content: center; align-items: center;
     border: 2px solid white;
   }
+  
+    .chat-tabs { display: flex; gap: 16px; padding-top: 12px; }
+    .chat-tab { 
+      background: none; border: none; font-size: 14px; font-weight: 800; 
+      color: var(--text-gray); padding-bottom: 8px; cursor: pointer; 
+      border-bottom: 3px solid transparent; transition: 0.2s;
+    }
+    .chat-tab.active { color: var(--sky-blue); border-bottom-color: var(--sky-blue); }
+  
 </style>
 
 <div id="globalChatModal" class="global-chat-wrapper">
   <div class="chat-modal-container">
     
-    <div class="chat-sidebar">
-      <div class="chat-sidebar-header">
-        <h3>💬 참여중인 라운지</h3>
-      </div>
-      <div class="chat-room-list" id="dynamicChatRoomList">
-        
-      </div>
-    </div>
+	<div class="chat-sidebar">
+	      <div class="chat-sidebar-header" style="padding-bottom: 0;">
+	        <h3 style="margin-bottom: 12px;">채팅 목록</h3>
+	        <div class="chat-tabs">
+	           <button id="tabRegion" class="chat-tab active" onclick="loadRoomList('REGION')">🌍 라운지</button>
+	           <button id="tabPrivate" class="chat-tab" onclick="loadRoomList('PRIVATE')">💬 1:1 대화</button>
+	        </div>
+	      </div>
+	      <div class="chat-room-list" id="dynamicChatRoomList">
+	        </div>
+	    </div>
 
     <div class="chat-main" style="position: relative;">
       
@@ -264,76 +276,100 @@
     let stompClient = null;
     let currentRoomId = null;
     
-    const emptyState = document.getElementById('chatEmptyState');
-    const roomView = document.getElementById('chatRoomView');
-    const chatMessages = document.querySelector('.chat-messages');
-    const chatInput = document.querySelector('.chat-input');
-    const btnSend = document.querySelector('.btn-send');
+	const emptyState = document.getElementById('chatEmptyState');
+	    const roomView = document.getElementById('chatRoomView');
+	    const chatMessages = document.querySelector('.chat-messages');
+	    const chatInput = document.querySelector('.chat-input');
+	    const btnSend = document.querySelector('.btn-send');
 
-    if (memberId) {
-        fetch(contextPath + '/api/chat/rooms')
-        .then(response => {
-          // 서버가 에러나 로그인 페이지(HTML)를 던지면 여기서 걸러냅니다.
-          const contentType = response.headers.get("content-type");
-          if (!contentType || !contentType.includes("application/json")) {
-            throw new TypeError("JSON이 아닙니다! 시큐리티 설정이나 주소를 확인하세요.");
-          }
-          return response.json();
-        })
-        .then(rooms => {
-          const listEl = document.getElementById('dynamicChatRoomList');
-          if (!listEl) return;
-          
-          listEl.innerHTML = ''; 
+	    window.loadRoomList = function(type) {
+	        document.querySelectorAll('.chat-tab').forEach(tab => tab.classList.remove('active'));
+	        let url = contextPath;
+	        
+	        if (type === 'REGION') {
+	            document.getElementById('tabRegion').classList.add('active');
+	            url += '/api/chat/rooms/region'; 
+	        } else {
+	            document.getElementById('tabPrivate').classList.add('active');
+	            url += '/api/chat/rooms/private'; 
+	        }
 
-          const icons = ['🌴', '🌊', '🏔️', '🌃', '🎎'];
+	        fetch(url)
+	        .then(response => {
+	            if (!response.ok) throw new Error("목록 로딩 실패");
+	            return response.json();
+	        })
+	        .then(rooms => {
+	            const listEl = document.getElementById('dynamicChatRoomList');
+	            if (!listEl) return;
+	            
+	            listEl.innerHTML = ''; 
+	            if(!rooms || rooms.length === 0) {
+	                listEl.innerHTML = '<p style="text-align:center; font-size:12px; color:var(--text-gray); margin-top:20px;">참여 중인 대화방이 없습니다.</p>';
+	                return;
+	            }
 
-          rooms.forEach((room, index) => {
-            const icon = icons[index % icons.length];
-            const html = `
-              <div class="chat-room-item" data-room-id="\${room.chatRoomId}" data-room-name="\${room.chatRoomName}">
-                <div class="room-icon">\${icon}</div>
-                <div class="room-info">
-                  <h4>\${room.chatRoomName}</h4>
-                  <p>입장하여 대화를 나눠보세요!</p>
-                </div>
-              </div>
-            `;
-            listEl.insertAdjacentHTML('beforeend', html);
-          });
+	            const icons = type === 'REGION' ? ['🌴', '🌊', '🏔️', '🌃', '🎎'] : ['👤', '😎', '👨‍🚀', '👩‍🎤', '👽'];
 
-          document.querySelectorAll('.chat-room-item').forEach(item => {
-            item.addEventListener('click', function() {
-              document.querySelectorAll('.chat-room-item').forEach(el => el.classList.remove('active'));
-              this.classList.add('active');
-              emptyState.style.display = 'none';
-              roomView.style.display = 'flex';
+	            rooms.forEach((room, index) => {
+	                const icon = icons[index % icons.length];
+	                const roomTitle = room.chatRoomName || '이름 없음';
+	                const desc = type === 'REGION' ? '다같이 떠드는 라운지' : '1:1 비밀 대화방';
 
-              const roomId = this.getAttribute('data-room-id'); 
-              const roomName = this.getAttribute('data-room-name');
-              
-              const countSpan = document.querySelector('.chat-title-info span');
-              if (countSpan) {
-                  countSpan.innerText = '🔴 인원 확인 중...';
-              }
-              
-              document.querySelector('.chat-title-info h2').innerText = '💬 #' + roomName;
+	                const html = `
+	                  <div class="chat-room-item" data-room-id="\${room.chatRoomId}" data-room-name="\${roomTitle}" data-room-type="\${type}">
+	                    <div class="room-icon">\${icon}</div>
+	                    <div class="room-info">
+	                      <h4>\${roomTitle}</h4>
+	                      <p>\${desc}</p>
+	                    </div>
+	                  </div>
+	                `;
+	                listEl.insertAdjacentHTML('beforeend', html);
+	            });
 
-              connectChatRoom(roomId);
-            });
-          });
-        })
-        .catch(error => console.error('방 목록을 불러오지 못했습니다:', error));
-      }
+	            document.querySelectorAll('.chat-room-item').forEach(item => {
+	                item.addEventListener('click', function() {
+	                    document.querySelectorAll('.chat-room-item').forEach(el => el.classList.remove('active'));
+	                    this.classList.add('active');
+	                    emptyState.style.display = 'none';
+	                    roomView.style.display = 'flex';
 
-    btnSend.addEventListener('click', sendMessage);
-    chatInput.addEventListener('keypress', function(e) {
-      if (e.key === 'Enter') {
-        sendMessage();
-      }
-    });
+	                    const roomId = this.getAttribute('data-room-id'); 
+	                    const roomName = this.getAttribute('data-room-name');
+	                    const roomType = this.getAttribute('data-room-type');
+	                    
+	                    document.querySelector('.chat-title-info h2').innerText = (roomType === 'REGION' ? '🌴 #' : '💬 @') + roomName;
+	                    
+	                    const countSpan = document.querySelector('.chat-title-info span');
+	                    if (countSpan) {
+	                        if (roomType === 'REGION') {
+	                            countSpan.style.display = 'inline-block';
+	                            countSpan.innerText = '🔴 인원 확인 중...';
+	                        } else {
+	                            countSpan.style.display = 'none'; 
+	                        }
+	                    }
+	                    
+	                    window.connectChatRoom(roomId);
+	                });
+	            });
+	        })
+	        .catch(error => console.error('방 목록을 불러오지 못했습니다:', error));
+	    };
 
-    function connectChatRoom(roomId) {
+	    if (memberId) {
+	        window.loadRoomList('REGION');
+	    }
+
+	    btnSend.addEventListener('click', sendMessage);
+	    chatInput.addEventListener('keypress', function(e) {
+	      if (e.key === 'Enter') {
+	        sendMessage();
+	      }
+	    });
+
+    window.connectChatRoom = function(roomId) {
       if (!memberId) { 
         if (typeof showLoginModal === 'function') {
             showLoginModal();

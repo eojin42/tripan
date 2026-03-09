@@ -1,7 +1,11 @@
 package com.tripan.app.mapper;
 
+import java.util.List;
+
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
+
+import com.tripan.app.domain.dto.RegionDto;
 
 @Mapper
 public interface RegionMapper {
@@ -16,4 +20,5 @@ public interface RegionMapper {
         @Param("apiAreaCode") Integer apiAreaCode,
         @Param("apiSigunguCode") Integer apiSigunguCode
     );
+    List<RegionDto> selectSidoList();
 }
