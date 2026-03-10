@@ -1,5 +1,20 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.tripan.app.mapper.MyPageMapper">
-
+	<select id="selectMyPageSummary" resultType="com.tripan.app.domain.dto.MyPageSummaryDto">
+	    SELECT 
+	        (SELECT COUNT(*) FROM trip WHERE member_id = #{memberId}) as totalTripCount,
+	        
+	        (SELECT COUNT(DISTINCT r.sido_name) 
+	         FROM trip t
+	         JOIN trip_region tr ON t.trip_id = tr.trip_id
+	         JOIN region r ON tr.region_id = r.region_id
+	         WHERE t.member_id = #{memberId}
+	           AND t.status = 'COMPLETED') as visitedRegionCount,
+	        
+	        (SELECT COUNT(*) FROM trip WHERE member_id = #{memberId} AND status = 'COMPLETED') as completedTripCount,
+	        
+	        (SELECT NVL(AVG(end_date - start_date + 1), 0) FROM trip WHERE member_id = #{memberId}) as avgTripDays
+	    FROM dual
+	</select>
 </mapper>
