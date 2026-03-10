@@ -1,0 +1,139 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+    "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+
+<mapper namespace="com.tripan.app.mapper.TripPlaceMapper">
+
+    <resultMap id="DayPlaceMap" type="com.tripan.app.domain.dto.TripDto$TripDayDto">
+        <id     property="dayId"     column="day_id"/>
+        <result property="dayNumber" column="day_number"/>
+        <result property="tripDate"  column="trip_date"/>
+        <result property="dayMemo"   column="day_memo"/>
+        <collection property="items" ofType="com.tripan.app.domain.dto.TripDto$ItineraryItemDto">
+            <id     property="itemId"     column="item_id"/>
+            <result property="visitOrder" column="visit_order"/>
+            <result property="startTime"  column="start_time"/>
+            <result property="endTime"    column="end_time"/>
+            <result property="memo"       column="memo"/>
+            <result property="placeId"    column="trip_place_id"/>
+            <result property="placeName"  column="place_name"/>
+            <result property="latitude"   column="latitude"/>
+            <result property="longitude"  column="longitude"/>
+            <result property="category"   column="category_name"/>
+        </collection>
+    </resultMap>
+
+    <select id="findDayItemsByTripId" parameterType="long" resultMap="DayPlaceMap">
+        SELECT
+            d.day_id,
+            d.day_number,
+            DATE_FORMAT(d.trip_date, '%Y-%m-%d') AS trip_date,
+            d.memo                                AS day_memo,
+            i.item_id,
+            i.visit_order,
+            i.start_time,
+            i.end_time,
+            i.memo,
+            p.trip_place_id,
+            p.place_name,
+            p.latitude,
+            p.longitude,
+            p.category_name
+        FROM trip_day d
+        LEFT JOIN itinerary_item i  ON i.day_id        = d.day_id
+        LEFT JOIN trip_place     p  ON p.trip_place_id = i.trip_place_id
+        WHERE d.trip_id = #{tripId}
+        ORDER BY d.day_number ASC, i.visit_order ASC
+    </select>
+
+
+    <select id="searchPlaces" resultType="com.tripan.app.trip.domian.entity.TripPlace">
+        SELECT
+            trip_place_id,
+            member_id,
+            api_place_id,
+            place_name,
+            address,
+            latitude,
+            longitude,
+            category_name,
+            place_url
+        FROM trip_place
+        WHERE
+            (member_id IS NULL OR member_id = #{currentMemberId})
+            <if test="keyword != null and keyword != ''">
+                AND place_name LIKE CONCAT('%', #{keyword}, '%')
+            </if>
+            <if test="category != null and category != ''">
+                AND category_name = #{category}
+            </if>
+        ORDER BY
+            CASE WHEN member_id = #{currentMemberId} THEN 0 ELSE 1 END, -- 내 장소 우선
+            place_name
+        LIMIT 30
+    </select>
+
+
+    <select id="findPublicTripPlaces" parameterType="long"
+            resultType="com.tripan.app.trip.domian.entity.TripPlace">
+        SELECT DISTINCT
+            p.trip_place_id,
+            p.place_name,
+            p.latitude,
+            p.longitude,
+            p.category_name,
+            p.address
+        FROM trip t
+        JOIN trip_day       d  ON d.trip_id        = t.trip_id
+        JOIN itinerary_item i  ON i.day_id          = d.day_id
+        JOIN trip_place     p  ON p.trip_place_id   = i.trip_place_id
+        WHERE t.trip_id   = #{tripId}
+          AND t.is_public = 1
+    </select>
+
+
+    <select id="getExpenseSummary" parameterType="long"
+            resultType="map">
+        SELECT
+            COALESCE(SUM(e.amount), 0)                                           AS totalAmount,
+            COALESCE(SUM(e.amount) / NULLIF(COUNT(DISTINCT m.member_id), 0), 0) AS avgPerPerson
+        FROM expense e
+        JOIN trip_member m ON m.trip_id = e.trip_id
+        WHERE e.trip_id = #{tripId}
+          AND m.invitation_status = 'ACCEPTED'
+    </select>
+
+    <select id="getExpenseByCategory" parameterType="long"
+            resultType="map">
+        SELECT
+            category,
+            SUM(amount) AS totalAmount,
+            COUNT(*)    AS count
+        FROM expense
+        WHERE trip_id = #{tripId}
+        GROUP BY category
+        ORDER BY totalAmount DESC
+    </select>
+
+    <select id="getExpenseList" parameterType="map"
+            resultType="map">
+        SELECT
+            e.expense_id,
+            e.description,
+            e.amount,
+            e.category,
+            DATE_FORMAT(e.expense_date, '%Y-%m-%d') AS expenseDate,
+            e.payment_type,
+            m.nickname                               AS payerNickname,
+            ep.share_amount,
+            ep.is_settled
+        FROM expense e
+        JOIN member             m  ON m.member_id    = e.payer_id
+        JOIN expense_participant ep ON ep.expense_id = e.expense_id
+        WHERE e.trip_id        = #{tripId}
+          AND ep.member_id     = #{memberId}
+        ORDER BY e.expense_date DESC
+    </select>
+
+</mapper>
