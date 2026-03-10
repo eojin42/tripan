@@ -70,7 +70,7 @@ function _loadRoomList(type) {
   const apiMap = {
     REGION:  `${ctxPath}/api/chat/rooms/region`,
     PRIVATE: `${ctxPath}/api/chat/rooms/private`,
-    SUPPORT: `${ctxPath}/api/chat/rooms/support`,
+    SUPPORT: `${ctxPath}/admin/api/chat/rooms/support`,
   };
   const apiUrl = apiMap[type];
   if (!apiUrl) return;

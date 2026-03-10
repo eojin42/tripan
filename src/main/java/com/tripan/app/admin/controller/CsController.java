@@ -9,9 +9,11 @@ import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.ResponseBody;
 
 import com.tripan.app.admin.service.CsManageService;
 import com.tripan.app.domain.dto.CommunityChatRoomDto;
+import com.tripan.app.domain.dto.MemberDto;
 
 import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
@@ -20,17 +22,18 @@ import lombok.extern.slf4j.Slf4j;
 @Controller
 @Slf4j
 @RequiredArgsConstructor
-@RequestMapping("admin/*")
+@RequestMapping("admin")
 public class CsController {
 	private final CsManageService csService;
-	@GetMapping("member")
-	public String membermain() {
+	@GetMapping("/cs")
+	public String csmain() {
 		
-		return "admin/memberncs/member";
+		return "admin/cs/cs";
 	}
 	@GetMapping("/api/chat/rooms/support")
+	@ResponseBody
     public ResponseEntity<?> getSupportRooms(HttpSession session) {
-        com.tripan.app.admin.domain.dto.MemberDto loginUser = (com.tripan.app.admin.domain.dto.MemberDto) session.getAttribute("loginUser");
+        MemberDto loginUser = (MemberDto) session.getAttribute("loginUser");
         if (loginUser == null) {
         	return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
@@ -41,8 +44,9 @@ public class CsController {
     }
     
     @PostMapping("/api/chat/rooms/support/create")
+    @ResponseBody
     public ResponseEntity<?> createSupportRoom(HttpSession session) {
-        com.tripan.app.admin.domain.dto.MemberDto loginUser = (com.tripan.app.admin.domain.dto.MemberDto) session.getAttribute("loginUser");
+        MemberDto loginUser = (MemberDto) session.getAttribute("loginUser");
         if (loginUser == null) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
