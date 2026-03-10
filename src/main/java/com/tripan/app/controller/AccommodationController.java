@@ -20,6 +20,7 @@ import org.springframework.web.bind.annotation.ResponseBody;
 import com.tripan.app.domain.dto.AccommodationDetailDto;
 import com.tripan.app.domain.dto.AccommodationDto;
 import com.tripan.app.domain.dto.AdSearchConditionDto;
+import com.tripan.app.domain.dto.MemberDto;
 import com.tripan.app.domain.dto.ReservationRequestDto;
 import com.tripan.app.domain.dto.RoomDto;
 import com.tripan.app.service.AccommodationService;
@@ -39,7 +40,6 @@ public class AccommodationController {
 		return "accommodation/home";
 	}
 	
-	// 숙소 리스트 페이지 (지역 선택 시 이동)
     @GetMapping("/list")
     public String list(@RequestParam(value = "region", defaultValue = "서울 전체") String region,
     		Model model) {
@@ -75,25 +75,22 @@ public class AccommodationController {
             @RequestParam(value = "child", defaultValue = "0") int child,
             Model model) {
 
-    	// 1. 파라미터 기본 전달
         model.addAttribute("roomId", roomId);
         model.addAttribute("checkin", checkin);
         model.addAttribute("checkout", checkout);
         model.addAttribute("adult", adult);
         model.addAttribute("child", child);
 
-        // 2. DB에서 실제 객실 정보 가져오기
         RoomDto room = accommodationService.findRoomById(roomId);
         model.addAttribute("roomName", room.getRoomName());
         
-        // 3. 숙박 일수(Nights) 계산 로직
-        long nights = 1; // 기본 1박
+        // 숙박 일수(Nights) 계산 로직
+        long nights = 1; 
         if (!checkin.isEmpty() && !checkout.isEmpty()) {
             DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
             LocalDate inDate = LocalDate.parse(checkin, formatter);
             LocalDate outDate = LocalDate.parse(checkout, formatter);
             
-            // 날짜 차이 계산 (예: 10일 체크인, 12일 체크아웃이면 2박)
             nights = ChronoUnit.DAYS.between(inDate, outDate);
             if (nights <= 0) nights = 1; // 오류 방지용 최소 1박
         }
@@ -147,17 +144,18 @@ public class AccommodationController {
         Map<String, Object> response = new HashMap<>();
 
         try {
-            // 1. 세션에서 로그인한 유저의 ID를 꺼내서 DTO에 넣어줍니다.
-            // UserDto loginUser = (UserDto) session.getAttribute("loginUser");
-            // requestDto.setUserId(loginUser.getUserId());
-            
-            // (임시 테스트용 강제 세팅 - 나중에 지우세요!)
-            requestDto.setMemberId(1L); 
+        	MemberDto loginUser = (MemberDto) session.getAttribute("loginUser");
 
-            // 2. 대망의 트랜잭션 서비스 실행! (여기서 4개 테이블에 쫙 들어감)
+        	if (loginUser == null) {
+                response.put("success", false);
+                response.put("message", "로그인이 풀렸습니다. 다시 로그인해 주세요.");
+                return response;
+            }
+            
+            requestDto.setMemberId(loginUser.getMemberId()); 
+
             accommodationService.processReservation(requestDto);
             
-            // 3. 무사히 성공했다면 프론트엔드로 성공 신호 보내기
             response.put("success", true); 
 
         } catch (Exception e) {
