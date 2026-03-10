@@ -48,7 +48,7 @@
     <div class="sub-menu ${param.activePage == 'cs' || param.activePage == 'members' || param.activePage == 'dormant' ? 'open' : ''}">
       <a href="${pageContext.request.contextPath}/admin/member/main" class="sub-item ${param.activePage == 'members' ? 'active' : ''}">일반 회원 관리</a>
       <a href="${pageContext.request.contextPath}/admin/member/dormant" class="sub-item ${param.activePage == 'dormant' ? 'active' : ''}">휴면 회원 관리</a>
-      <a href="${pageContext.request.contextPath}/admin/inquiries" class="sub-item ${param.activePage == 'cs' ? 'active' : ''}">1:1 문의 관리</a>
+      <a href="${pageContext.request.contextPath}/admin/cs" class="sub-item ${param.activePage == 'cs' ? 'active' : ''}">1:1 문의 관리</a>
       <a href="${pageContext.request.contextPath}/admin/reports" class="sub-item">신고 게시물 관리</a>
     </div>
 

@@ -7,7 +7,9 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseBody;
 
@@ -22,14 +24,22 @@ import lombok.extern.slf4j.Slf4j;
 @Controller
 @Slf4j
 @RequiredArgsConstructor
-@RequestMapping("admin")
 public class CsController {
 	private final CsManageService csService;
-	@GetMapping("/cs")
+	@GetMapping("/admin/cs")
 	public String csmain() {
 		
 		return "admin/cs/cs";
 	}
+	
+	@GetMapping("/admin/inquiry") // 실제 주소: /api/admin/inquiry
+    @ResponseBody
+    public ResponseEntity<?> getInquiryList() {
+        // List<InquiryDto> list = csService.getAllInquiries();
+        // return ResponseEntity.ok(list);
+        return ResponseEntity.ok().build(); // 임시
+    }
+	
 	@GetMapping("/api/chat/rooms/support")
 	@ResponseBody
     public ResponseEntity<?> getSupportRooms(HttpSession session) {
@@ -57,5 +67,19 @@ public class CsController {
 			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
 						.body(Map.of("error",e.getMessage()));
 		}
+    }
+    
+    @PostMapping("/admin/inquiry/{id}/reply")
+    @ResponseBody
+    public ResponseEntity<?> replyInquiry(@PathVariable Long id, @RequestBody Map<String, String> body) {
+        // csService.replyInquiry(id, body.get("reply"));
+        return ResponseEntity.ok().build(); // 임시
+    }
+
+    @PostMapping("/api/chat/rooms/{roomId}/close")
+    @ResponseBody
+    public ResponseEntity<?> closeChatRoom(@PathVariable Long roomId) {
+        // csService.closeSupportRoom(roomId);
+        return ResponseEntity.ok().build(); // 임시
     }
 }
