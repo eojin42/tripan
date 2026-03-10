@@ -3,8 +3,11 @@ package com.tripan.app.admin.mapper;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.ibatis.annotations.Mapper;
+
 import com.tripan.app.domain.dto.CommunityChatRoomDto;
 
+@Mapper
 public interface CsManageMapper {
 	List<CommunityChatRoomDto> findSupportRooms(Long memberId);
     void insertSupportRoom(Map<String, Object> roomParams);

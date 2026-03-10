@@ -83,17 +83,6 @@
         VALUES (SEQ_CHAT_MEMBER_ID.NEXTVAL, #{roomId}, #{memberId})
     </insert>
     
-    <select id="findSupportRooms" resultType="com.tripan.app.domain.dto.CommunityChatRoomDto">
-        SELECT cr.chat_room_id as chatRoomId, 
-               cr.chat_room_name as chatRoomName, 
-               cr.chat_room_type as chatRoomType
-        FROM chat_room cr
-        JOIN chat_member cm ON cr.chat_room_id = cm.chat_room_id
-        WHERE cm.member_id = #{memberId}
-          AND cr.chat_room_type = 'SUPPORT'
-        ORDER BY cr.chat_room_id DESC
-    </select>
-
     <insert id="insertSupportRoom" parameterType="com.tripan.app.domain.dto.CommunityChatRoomDto">
         <selectKey keyProperty="chatRoomId" resultType="Long" order="BEFORE">
             SELECT seq_chat_room_id.NEXTVAL FROM dual
@@ -103,54 +92,4 @@
         VALUES (SEQ_CHAT_ROOM_ID.NEXTVAL, 'SUPPORT', 'Tripan 24시간 고객센터', '1', SYSDATE)
     </insert>
 	
-	<select id="selectAdminMemberId" resultType="long">
-	    SELECT member_id
-	    FROM   member1
-	    WHERE  role = 'ROLE_ADMIN'
-	    FETCH FIRST 1 ROWS ONLY
-	</select>
-	
-	<insert id="insertSupportRoom" parameterType="map">
-	    INSERT INTO chat_room (chat_room_id, chat_room_name, room_type, created_by, created_at) 
-	    VALUES (SEQ_CHAT_ROOM_ID.NEXTVAL, #{roomName}, 'SUPPORT', #{memberId}, SYSDATE
-	    )
-	</insert>
-	
-	<select id="selectLastRoomId" resultType="long">
-	    SELECT SEQ_CHAT_ROOM_ID.CURRVAL FROM DUAL
-	</select>
-	
-	<insert id="insertRoomMember" parameterType="map">
-	    INSERT INTO chat_room_member (room_member_id, chat_room_id, member_id, joined_at) 
-	    VALUES (
-	        SEQ_CHAT_ROOM_MEMBER_ID.NEXTVAL,  #{chatRoomId}, #{memberId}, SYSDATE
-	    )
-	</insert>
-	
-	<select id="selectRoomById" parameterType="long" resultType="com.tripan.app.domain.dto.CommunityChatRoomDto">
-	    SELECT chat_room_id AS chatRoomId, chat_room_name AS chatRoomName, room_type AS roomType, created_at AS createdAt
-	    FROM   chat_room
-	    WHERE  chat_room_id = #{chatRoomId}
-	</select>
-    
-    <select id="selectAllSupportRooms" resultType="com.tripan.app.domain.dto.CommunityChatRoomDto">
-	    SELECT cr.chat_room_id   AS chatRoomId,
-	           cr.chat_room_name AS chatRoomName,
-	           cr.room_type      AS roomType,
-	           cr.created_at     AS createdAt,
-	           cr.status         AS status,
-	           m2.nickname       AS userName
-	    FROM   chat_room cr
-	    JOIN   chat_room_member crm ON cr.chat_room_id = crm.chat_room_id
-	    JOIN   member1 m1  ON crm.member_id = m1.member_id
-	    JOIN   member2 m2  ON m1.member_id  = m2.member_id
-	    WHERE  cr.room_type = 'SUPPORT'
-	      AND  m1.role     != 'ROLE_ADMIN'
-	    ORDER  BY cr.created_at DESC
-	</select>
-    
-    <update id="updateRoomStatus" parameterType="map">
-    UPDATE chat_room SET status = #{status}
-    WHERE  chat_room_id = #{roomId}
-</update>
 </mapper>
