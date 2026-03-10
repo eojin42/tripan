@@ -35,79 +35,199 @@
     font-size: 15px; font-weight: 800; margin-bottom: 20px;
     opacity: 0.8; transition: opacity 0.3s;
   }
+  
+  .author-right { display: flex; align-items: center; gap: 10px; position: relative; }
+  
+  .kebab-menu { cursor: pointer; padding: 8px; border-radius: 50%; transition: 0.3s; color: var(--text-gray); }
+  .kebab-menu:hover { background: rgba(0,0,0,0.05); }
+  
+  .dropdown-content {
+    display: none; position: absolute; right: 0; top: 45px;
+    background: white; min-width: 140px; border-radius: 12px;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.1); z-index: 10; overflow: hidden;
+    border: 1px solid rgba(0,0,0,0.05);
+  }
+  .dropdown-content a {
+    display: block; padding: 12px 16px; font-size: 14px; font-weight: 600;
+    color: var(--text-dark); transition: 0.2s;
+  }
+  .dropdown-content a:hover { background: var(--bg-page); color: var(--sky-blue); }
+  .dropdown-content a.delete { color: #ff4d4d; }
+  
+  .show { display: block !important; }
+
+  .btn-follow.following { background: #eee; color: #666; }
+  .btn-follow.following::after { content: "중"; } 
+  
+  .feed-tag-container {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    margin-top: 16px;
+    padding: 14px 18px;
+    background: #F8FAFC; 
+    border-radius: 12px;
+    border: 1px dashed rgba(137, 207, 240, 0.6);
+  }
+
+  .feed-tag-icon {
+    font-size: 18px;
+    line-height: 1.2;
+    opacity: 0.9;
+    padding-top: 8.5px;
+  }
+
+  .feed-tag-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .feed-tag-badge {
+    color: var(--sky-blue);
+    background: white;
+    font-size: 14px;
+    font-weight: 800;
+    padding: 6px 14px;
+    border-radius: 20px;
+    box-shadow: 0 2px 6px rgba(137, 207, 240, 0.15);
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+
+  .feed-tag-badge:hover {
+    background: var(--sky-blue);
+    color: white;
+    transform: translateY(-2px);
+  }
+  
 </style>
 
+
+	<article class="glass-card composer-card" style="padding: 24px; margin-bottom: 24px;">
+	  <div style="display: flex; flex-direction: column; width: 100%;">
+	    <textarea id="inlineTextarea" placeholder="${not empty sessionScope.loginUser ? sessionScope.loginUser.nickname : '여행자'}님, 어떤 여행을 다녀오셨나요?" 
+	          style="width: 100%; min-height: 120px; border: 1px solid var(--border-color); border-radius: 16px; background: rgba(255, 255, 255, 0.8); padding: 18px; box-sizing: border-box; font-family: 'Pretendard', sans-serif; font-size: 16px; resize: none; outline: none; line-height: 1.6; transition: all 0.2s; box-shadow: inset 0 2px 6px rgba(0,0,0,0.02);"
+	          onfocus="this.style.borderColor='var(--sky-blue)'; this.style.background='#ffffff';"
+	          onblur="this.style.borderColor='var(--border-color)'; this.style.background='rgba(255, 255, 255, 0.8)';"></textarea>
+	    
+	    <input type="text" id="inlineTags" placeholder="#제주도 #해안도로 (스페이스바로 구분)" 
+	           style="width: 100%; border: none; background: transparent; color: var(--sky-blue); font-weight: 700; font-size: 15px; outline: none; margin-top: 12px; padding: 0 4px;">
+	
+	    <div id="inlinePhotoPreview" style="display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px;"></div>
+	    
+	    <div id="inlineSchedulePreview" style="display: none; flex-direction: column; gap: 8px; margin-top: 12px; padding: 16px 20px; background: #F0F8FF; border-radius: 12px; border: 1px dashed var(--sky-blue);">
+	      <div style="display: flex; justify-content: space-between; align-items: center;">
+	        <span style="font-size: 15px; font-weight: 800; color: var(--text-dark);">
+	          📍 <span id="displayScheduleName">선택된 일정 없음</span>
+	        </span>
+	        <button onclick="removeInlineSchedule()" style="background: none; border: none; color: #FF6B6B; cursor: pointer; font-weight: bold; font-size: 18px; padding: 0 8px;">✕</button>
+	      </div>
+	      <div style="font-size: 13px; color: var(--text-gray); font-weight: 600; background: rgba(255,255,255,0.7); padding: 8px 12px; border-radius: 8px;">
+	        <span id="displayScheduleMeta">일정 정보를 불러오는 중...</span>
+	      </div>
+	    </div>
+	  </div>
+	  
+	  <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid var(--border-color); padding-top: 16px; margin-top: 16px;">
+	    <div style="display: flex; gap: 12px;">
+	      <button type="button" onclick="document.getElementById('inlineFileInput').click()" style="background: #f1f5f9; border: none; padding: 10px 18px; border-radius: 20px; font-weight: 700; color: var(--text-dark); cursor: pointer; display: flex; align-items: center; gap: 6px; transition: 0.2s;">
+	        📷 사진 추가
+	      </button>
+	      <input type="file" id="inlineFileInput" accept="image/*" multiple style="display: none;" onchange="handleInlineFiles(this.files)">
+	      
+	      <button type="button" onclick="openScheduleModal()" style="background: #f1f5f9; border: none; padding: 10px 18px; border-radius: 20px; font-weight: 700; color: var(--text-dark); cursor: pointer; display: flex; align-items: center; gap: 6px; transition: 0.2s;">
+	        📅 일정 추가
+	      </button>
+	    </div>
+	    <button onclick="submitInlinePost()" style="background: var(--sky-blue); color: white; border: none; padding: 10px 28px; border-radius: 20px; font-weight: 800; font-size: 15px; cursor: pointer; transition: 0.2s; box-shadow: 0 4px 12px rgba(137, 207, 240, 0.3);">
+	      게시
+	    </button>
+	  </div>
+	</article>
+	
 <div id="feedListContainer" style="display: flex; flex-direction: column; gap: 24px;">
+
+ <c:forEach var="feed" items="${feedList}">
+  <article class="glass-card feed-card" data-post-id="${feed.postId}">
   
-  <article class="glass-card feed-card">
     <div class="feed-author">
-      <div class="author-left">
-        <img src="https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=100" alt="User">
+      <div class="author-left" onclick="location.href='${pageContext.request.contextPath}/community/myfeed?memberId=${feed.memberId}'">
+        <c:choose>
+          <c:when test="${not empty feed.profileImage}">
+            <img src="${pageContext.request.contextPath}/uploads/profile/${feed.profileImage}" alt="User">
+          </c:when>
+          <c:otherwise>
+            <img src="${pageContext.request.contextPath}/dist/images/default.png" alt="User">
+          </c:otherwise>
+        </c:choose>
         <div>
-          <div class="name">@jeju_vibe (제주 감성)</div>
-          <div class="time">2시간 전</div>
+          <div class="name">@${feed.nickname}</div>
+          <div class="time" onclick="event.stopPropagation();" style="cursor: default">${feed.createdAt}</div>
         </div>
       </div>
-      <button class="btn-follow" onclick="checkAuthAndRun(() => alert('팔로우 완료!'))">팔로잉</button>
+
+      <div class="author-right">
+        <c:if test="${sessionScope.loginUser.memberId != feed.memberId}">
+          <button class="btn-follow ${feed.isFollowing == 1 ? 'following' : ''}" 
+                  onclick="toggleFollow(this, ${feed.memberId})">
+            ${feed.isFollowing == 1 ? '팔로잉' : '팔로우'}
+          </button>
+        </c:if>
+
+        <div class="kebab-wrapper">
+          <div class="kebab-menu" onclick="toggleKebab(this, event)">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="1"></circle><circle cx="12" cy="5" r="1"></circle><circle cx="12" cy="19" r="1"></circle></svg>
+          </div>
+          <div class="dropdown-content">
+            <c:choose>
+              <c:when test="${sessionScope.loginUser.memberId == feed.memberId}">
+                <a href="javascript:void(0)" onclick="editPost(${feed.postId})">📝 수정하기</a>
+                <a href="javascript:void(0)" class="delete" onclick="deletePost(${feed.postId})">🗑️ 삭제하기</a>
+              </c:when>
+              <c:otherwise>
+                <a href="${pageContext.request.contextPath}/community/myfeed?memberId=${feed.memberId}">👤 프로필 보기</a>
+                <a href="javascript:void(0)" onclick="reportPost(${feed.postId})">🚨 게시글 신고</a>
+              </c:otherwise>
+            </c:choose>
+          </div>
+        </div>
+      </div>
     </div>
-    <div class="feed-img">
-      <img src="https://images.unsplash.com/photo-1493246507139-91e8fad9978e?auto=format&fit=crop&w=1200" alt="Feed Image">
-    </div>
+    
+    <c:if test="${not empty feed.imageUrl}">
+      <div class="feed-img">
+        <img src="${pageContext.request.contextPath}/uploads/feed/${feed.imageUrl}" alt="Feed Image">
+      </div>
+    </c:if>
+    
     <div class="feed-content">
-      <p class="feed-text">
-        이번 주말 다녀온 제주 동쪽 해안도로 드라이브 코스 완벽 정리! 🚗💨<br>
-        날씨까지 너무 완벽해서 사진 100장 찍고 옴. 제가 짠 일정 그대로 복사해서 가시면 절대 실패 안 합니다. 맛집 N빵 내역도 포함!
-      </p>
-      <div class="feed-tags">#제주도 #해안도로 #주말여행 #가계부공개</div>
-      
-      <div class="itinerary-snippet">
-        <div class="iti-info">
-          <h5>📍 제주 동쪽 2박 3일 힐링 코스</h5>
-          <p>장소 12곳 · 예상 경비 25만원/인</p>
+      <p class="feed-text" style="white-space: pre-wrap;">${feed.content}</p>
+      <br>
+      <c:if test="${not empty feed.tripId}">
+        <div class="itinerary-snippet">
+          <div class="iti-info">
+            <h5>📍 ${feed.tripName}</h5>
+            <p>예상 경비 ${feed.totalBudget}원</p>
+          </div>
+          <button class="btn-scrap" onclick="scrapTrip(${feed.tripId})">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M8 4H6a2 2 0 00-2 2v14a2 2 0 002 2h12a2 2 0 002-2v-2M16 4h2a2 2 0 012 2v4M21 14H11"></path><path d="M15 10l-4 4-4-4"></path></svg>
+            일정 담아오기
+          </button>
         </div>
-        <button class="btn-scrap" onclick="checkAuthAndRun(() => alert('✨ 일정을 내 보관함으로 담아왔습니다!'))">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M8 4H6a2 2 0 00-2 2v14a2 2 0 002 2h12a2 2 0 002-2v-2M16 4h2a2 2 0 012 2v4M21 14H11"></path><path d="M15 10l-4 4-4-4"></path></svg>
-          일정 담아오기
-        </button>
-      </div>
+      </c:if>
 
       <div class="feed-actions">
-        <div class="action-btn" onclick="checkAuthAndRun(() => alert('좋아요!'))">❤️ 좋아요 245</div>
-        <div class="action-btn" onclick="checkAuthAndRun(() => alert('댓글 창 열기'))">💬 댓글 32</div>
-        <div class="action-btn">🔗 공유</div>
+        <div class="action-btn" onclick="toggleLike(${feed.postId})">❤️ 좋아요 ${feed.likeCount}</div>
+        <div class="action-btn" onclick="openComment(${feed.postId})">💬 댓글</div>
+        <div class="action-btn" onclick="sharePost(${feed.postId})">🔗 공유</div>
       </div>
     </div>
+    
   </article>
-
-  <!-- 피드 카드 2 -->
-  <article class="glass-card feed-card">
-    <div class="feed-author">
-      <div class="author-left">
-        <img src="https://images.unsplash.com/photo-1524504388940-b1c1722653e1?w=100" alt="User">
-        <div>
-          <div class="name">@travel_holic</div>
-          <div class="time">5시간 전</div>
-        </div>
-      </div>
-      <button class="btn-follow" style="background:var(--sky-blue); color:white;" onclick="checkAuthAndRun(() => alert('팔로우 완료!'))">팔로우</button>
-    </div>
-    <div class="feed-content">
-      <h4 style="margin: 0 0 14px; font-size: 20px; font-weight: 800;">오사카 주유패스 진짜 본전 뽑는 루트 질문요 🙏</h4>
-      <p class="feed-text">
-        다음 달에 친구들 3명이서 오사카 가는데, 주유패스 2일권 끊으려고 합니다.<br>
-        유니버셜은 안 가고 시내 위주로 돌 건데, 효율 최강 동선 아시는 분 일정 좀 공유(담아오기) 허락해주세요!
-      </p>
-      <div class="feed-tags">#오사카 #질문 #일정공유좀</div>
-      <div class="feed-actions">
-        <div class="action-btn" onclick="checkAuthAndRun(() => alert('좋아요!'))">❤️ 좋아요 12</div>
-        <div class="action-btn" onclick="checkAuthAndRun(() => alert('댓글 창 열기'))">💬 댓글 8</div>
-      </div>
-    </div>
-  </article>
-
+ </c:forEach>
 </div>
 
-<!-- 무한 스크롤 타겟 -->
 <div id="infiniteScrollTarget" class="infinite-scroll-trigger">
   아래로 스크롤하여 더 보기...
 </div>
