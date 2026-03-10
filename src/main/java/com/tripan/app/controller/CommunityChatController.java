@@ -5,9 +5,11 @@ import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Map;
 
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.messaging.handler.annotation.MessageMapping;
 import org.springframework.messaging.simp.SimpMessageSendingOperations;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -17,6 +19,7 @@ import org.springframework.web.bind.annotation.ResponseBody;
 import com.tripan.app.domain.dto.CommunityChatMessageDto;
 import com.tripan.app.domain.dto.CommunityChatRoomDto;
 import com.tripan.app.domain.dto.MemberDto;
+import com.tripan.app.security.CustomUserDetails;
 import com.tripan.app.service.CommunityChatService;
 
 import jakarta.servlet.http.HttpSession;
@@ -71,5 +74,6 @@ public class CommunityChatController {
             return ResponseEntity.status(500).body(Map.of("message", "채팅방 생성 중 오류 발생"));
         }
     }
+    
     
 }

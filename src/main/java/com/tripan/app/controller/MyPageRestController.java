@@ -1,8 +1,10 @@
 package com.tripan.app.controller;
 
+import java.util.List;
 import java.util.Map;
 
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -13,7 +15,10 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.tripan.app.domain.dto.CommunityChatRoomDto;
 import com.tripan.app.domain.dto.MemberDto;
+import com.tripan.app.security.CustomUserDetails;
+import com.tripan.app.service.CommunityChatService;
 import com.tripan.app.service.MyPageService;
 
 import jakarta.servlet.http.HttpSession;
@@ -24,6 +29,7 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class MyPageRestController {
 	private final MyPageService myPageService;
+	private final CommunityChatService communityChatService;
 	
 	@GetMapping("summary")
 	public ResponseEntity<?> getSummary(HttpSession session){
@@ -103,30 +109,29 @@ public class MyPageRestController {
 	       }
 	}
 	
-	   @GetMapping("/following")
-	    public ResponseEntity<?> getFollowing(HttpSession session) {
-	        MemberDto loginUser = getLoginUser(session);
-	        if (loginUser == null) return unauthorized();
-	        return ResponseEntity.ok(myPageService.getFollowingList(loginUser.getMemberId()));
-	    }
+   @GetMapping("/following")
+    public ResponseEntity<?> getFollowing(HttpSession session) {
+        MemberDto loginUser = getLoginUser(session);
+        if (loginUser == null) return unauthorized();
+        return ResponseEntity.ok(myPageService.getFollowingList(loginUser.getMemberId()));
+    }
 
-	    @GetMapping("/followers")
-	    public ResponseEntity<?> getFollowers(HttpSession session) {
-	        MemberDto loginUser = getLoginUser(session);
-	        if (loginUser == null) return unauthorized();
-	        return ResponseEntity.ok(myPageService.getFollowerList(loginUser.getMemberId()));
-	    }
+    @GetMapping("/followers")
+    public ResponseEntity<?> getFollowers(HttpSession session) {
+        MemberDto loginUser = getLoginUser(session);
+        if (loginUser == null) return unauthorized();
+        return ResponseEntity.ok(myPageService.getFollowerList(loginUser.getMemberId()));
+    }
 
-	    @DeleteMapping("/following/{followingId}")
-	    public ResponseEntity<?> unfollow(@PathVariable Long followingId,
-	                                      HttpSession session) {
-	        MemberDto loginUser = getLoginUser(session);
-	        if (loginUser == null) return unauthorized();
-	        myPageService.unfollow(loginUser.getMemberId(), followingId);
-	        return ResponseEntity.ok(Map.of("message", "언팔로우 되었습니다."));
-	    }
+    @DeleteMapping("/following/{followingId}")
+    public ResponseEntity<?> unfollow(@PathVariable Long followingId,
+                                      HttpSession session) {
+        MemberDto loginUser = getLoginUser(session);
+        if (loginUser == null) return unauthorized();
+        myPageService.unfollow(loginUser.getMemberId(), followingId);
+        return ResponseEntity.ok(Map.of("message", "언팔로우 되었습니다."));
+    }
 
-	
 	private MemberDto getLoginUser(HttpSession session) {
 		return (MemberDto) session.getAttribute("loginUser");
 	}

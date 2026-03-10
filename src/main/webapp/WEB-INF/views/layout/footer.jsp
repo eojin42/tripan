@@ -67,85 +67,126 @@
   <jsp:include page="footerResources.jsp"/>
 
   <script>
-    document.addEventListener("DOMContentLoaded", () => {
-      // 네비게이션 스크롤 효과
-      const navbar = document.getElementById('navbar');
-      const logoText = document.getElementById('logoText');
-      
-      window.addEventListener('scroll', () => {
-        if (window.scrollY > 30) {
-          if (navbar) navbar.classList.add('scrolled');
-          if (logoText) logoText.querySelector('.trip').style.color = 'var(--text-black)';
-        } else {
-          if (navbar) navbar.classList.remove('scrolled');
-          if (logoText) logoText.querySelector('.trip').style.color = 'white';
-        }
-      });
+  window.loadRoomList = function(type) {
+	    // 모든 탭의 활성화 상태 해제
+	    document.querySelectorAll('.chat-tab').forEach(tab => tab.classList.remove('active'));
+	    
+	    let url = contextPath;
+	    
+	    // 누른 탭에 따라 주소와 버튼 색상 변경
+	    if (type === 'REGION') {
+	        const tab = document.getElementById('tabRegion');
+	        if(tab) tab.classList.add('active');
+	        url += '/api/chat/rooms/region'; 
+	    } else if (type === 'PRIVATE') {
+	        const tab = document.getElementById('tabPrivate');
+	        if(tab) tab.classList.add('active');
+	        url += '/api/chat/rooms/private'; 
+	    } else if (type === 'SUPPORT') {
+	        const tab = document.getElementById('tabSupport');
+	        if(tab) tab.classList.add('active');
+	        url += '/api/chat/rooms/support'; // 백엔드 고객센터 API
+	    }
 
-      // 히어로 이미지 패럴랙스 효과
-      const heroBg = document.getElementById('heroBg');
-      if (heroBg) {
-        window.addEventListener('scroll', () => {
-          heroBg.style.transform = `translateY(${window.scrollY * 0.25}px)`;
-        });
-      }
+	    fetch(url)
+	    .then(response => {
+	        if (!response.ok) throw new Error("목록 로딩 실패");
+	        return response.json();
+	    })
+	    .then(rooms => {
+	        const listEl = document.getElementById('dynamicChatRoomList');
+	        if (!listEl) return;
+	        
+	        listEl.innerHTML = ''; 
+	        
+	        // 방이 없을 때의 처리 (고객센터는 생성 버튼)
+	        if(!rooms || rooms.length === 0) {
+	            if (type === 'SUPPORT') {
+	                listEl.innerHTML = `
+	                    <div style="text-align:center; margin-top:40px;">
+	                        <span style="font-size:32px; opacity:0.5;">🎧</span>
+	                        <p style="font-size:13px; color:var(--text-gray); margin:10px 0;">진행 중인 문의 내역이 없습니다.</p>
+	                        <button onclick="createSupportRoom()" style="padding:10px 20px; border-radius:20px; background:var(--text-black); color:white; border:none; font-weight:800; cursor:pointer; transition:0.2s;">+ 1:1 문의 시작하기</button>
+	                    </div>
+	                `;
+	            } else {
+	                listEl.innerHTML = '<p style="text-align:center; font-size:12px; color:var(--text-gray); margin-top:20px;">참여 중인 대화방이 없습니다.</p>';
+	            }
+	            return;
+	        }
 
-      // 스크롤 페이드인 애니메이션
-      const reveals = document.querySelectorAll('.reveal');
-      const revealOptions = { threshold: 0.15, rootMargin: "0px 0px -50px 0px" };
-      const revealOnScroll = new IntersectionObserver((entries, observer) => {
-        entries.forEach(entry => {
-          if (entry.isIntersecting) {
-            entry.target.classList.add('active');
-            observer.unobserve(entry.target);
-          }
-        });
-      }, revealOptions);
-      reveals.forEach(reveal => revealOnScroll.observe(reveal));
-      
-      setTimeout(() => {
-        document.querySelectorAll('.hero-overlay .reveal').forEach(el => el.classList.add('active'));
-      }, 100);
+	        // 아이콘 동적 할당
+	        const icons = type === 'REGION' ? ['🌴', '🌊', '🏔️', '🌃', '🎎'] : 
+	                      type === 'SUPPORT' ? ['🎧'] : 
+	                      ['👤', '😎', '👨‍🚀', '👩‍🎤', '👽'];
 
-      // 가로형 캐러셀 슬라이드 기능
-      const carousels = document.querySelectorAll('.carousel-wrapper');
-      carousels.forEach(wrapper => {
-        const list = wrapper.querySelector('.horizontal-list');
-        const prevBtn = wrapper.querySelector('.nav-arrow.prev');
-        const nextBtn = wrapper.querySelector('.nav-arrow.next');
-        
-        if (prevBtn && nextBtn && list) {
-          prevBtn.addEventListener('click', () => list.scrollBy({ left: -320, behavior: 'smooth' }));
-          nextBtn.addEventListener('click', () => list.scrollBy({ left: 320, behavior: 'smooth' }));
-        }
-      });
-    });
-    
-    window.forceOpenChat = function(roomId, type = 'PRIVATE') {
-        // 모달 열기
-        const chatModal = document.getElementById("globalChatModal");
-        const floatingBtn = document.getElementById("chatFloatingBtn");
-        
-        chatModal.style.display = "flex";
-        floatingBtn.style.display = "none";
-        sessionStorage.setItem("tripanChatState", "opened");
+	        rooms.forEach((room, index) => {
+	            const icon = icons[index % icons.length];
+	            const roomTitle = room.chatRoomName || '이름 없음';
+	            const desc = type === 'REGION' ? '다같이 떠드는 라운지' : 
+	                         type === 'SUPPORT' ? 'Tripan 24시간 공식 고객센터' : '1:1 비밀 대화방';
 
-        // 탭 전환 및 방 목록 로드
-        window.loadRoomList(type);
+	            const html = `
+	              <div class="chat-room-item" data-room-id="${room.chatRoomId}" data-room-name="${roomTitle}" data-room-type="${type}">
+	                <div class="room-icon">${icon}</div>
+	                <div class="room-info">
+	                  <h4>${roomTitle}</h4>
+	                  <p>${desc}</p>
+	                </div>
+	              </div>
+	            `;
+	            listEl.insertAdjacentHTML('beforeend', html);
+	        });
 
-        // 시간차 두고 방 연결
-        setTimeout(() => {
-            window.connectChatRoom(roomId);
-            // UI에서 활성화 표시
-            const roomItem = document.querySelector(`.chat-room-item[data-room-id="${roomId}"]`);
-            if(roomItem) {
-                document.querySelectorAll('.chat-room-item').forEach(el => el.classList.remove('active'));
-                roomItem.classList.add('active');
-                document.getElementById('chatEmptyState').style.display = 'none';
-                document.getElementById('chatRoomView').style.display = 'flex';
-            }
-        }, 300);
-    };
+	        // 5. 방 클릭 이벤트
+	        document.querySelectorAll('.chat-room-item').forEach(item => {
+	            item.addEventListener('click', function() {
+	                document.querySelectorAll('.chat-room-item').forEach(el => el.classList.remove('active'));
+	                this.classList.add('active');
+	                emptyState.style.display = 'none';
+	                roomView.style.display = 'flex';
+
+	                const roomId = this.getAttribute('data-room-id'); 
+	                const roomName = this.getAttribute('data-room-name');
+	                const roomType = this.getAttribute('data-room-type');
+	                
+	                // 고객센터일 때는 방 제목 앞에 헤드셋 아이콘을 붙여줌!
+	                document.querySelector('.chat-title-info h2').innerText = 
+	                    (roomType === 'REGION' ? '🌴 #' : roomType === 'SUPPORT' ? '🎧 ' : '💬 @') + roomName;
+	                
+	                const countSpan = document.querySelector('.chat-title-info span');
+	                if (countSpan) {
+	                    if (roomType === 'REGION') {
+	                        countSpan.style.display = 'inline-block';
+	                        countSpan.innerText = '🔴 인원 확인 중...';
+	                    } else {
+	                        countSpan.style.display = 'none'; 
+	                    }
+	                }
+	                window.connectChatRoom(roomId);
+	            });
+	        });
+	    })
+	    .catch(error => console.error('방 목록을 불러오지 못했습니다:', error));
+	};
+
+	// 고객센터 방 생성 버튼 기능
+	window.createSupportRoom = function() {
+	    if (!confirm('새로운 1:1 고객센터 문의 방을 개설하시겠습니까?')) return;
+	    
+	    // 백엔드 방 생성 API (POST) 호출
+	    fetch(contextPath + '/api/chat/rooms/support/create', { method: 'POST' })
+	    .then(res => {
+	        if(!res.ok) throw new Error("방 생성 실패");
+	        return res.json();
+	    })
+	    .then(data => {
+	        // 생성 성공 시 고객센터 탭 다시 새로고침
+	        loadRoomList('SUPPORT');
+	    })
+	    .catch(err => {
+	        alert('백엔드 API가 아직 연결되지 않았습니다! (컨트롤러를 확인해주세요)');
+	    });
   </script>
   
   <jsp:include page="/WEB-INF/views/community/chat/openlounge.jsp"/>

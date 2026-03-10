@@ -5,11 +5,18 @@ import com.tripan.app.domain.dto.CommunityChatMessageDto;
 import com.tripan.app.domain.dto.CommunityChatRoomDto;
 import com.tripan.app.mapper.CommunityChatMapper;
 
+import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
+
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
 
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -82,5 +89,6 @@ public class CommunityChatServiceImpl implements CommunityChatService {
     public List<CommunityChatRoomDto> getMyPrivateRooms(Long memberId) {
         return chatMapper.selectMyPrivateRooms(memberId);
     }
-    
+
+	
 }

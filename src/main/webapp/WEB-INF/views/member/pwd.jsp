@@ -146,6 +146,27 @@
   
   <a href="javascript:history.back()" class="btn-cancel">취소하고 이전 화면으로</a>
 </div>
+<script type="text/javascript">
+function memberOk() {
+    const f = document.memberForm;
+    
+    // 아이디 칸이 있는 페이지(회원가입/정보수정)에서만 실행되도록 체크
+    if (f.loginId) {
+        if (f.mode.value !== 'update' && f.idChecked.value !== "true") {
+            showMsg('id-msg', '아이디 중복확인이 필요합니다.', true);
+            f.loginId.focus(); return;
+        }
+    }
 
+    // 비밀번호 체크는 공통 실행
+    const pwd = f.password.value;
+    if (!/^(?=.*[a-zA-Z])(?=.*[!@#$%^*+=-]|.*[0-9]).{5,10}$/i.test(pwd) || pwd !== f.passwordConfirm.value) {
+        showMsg('pwd-msg', '비밀번호를 다시 확인해주세요.', true);
+        f.password.focus(); return;
+    }
+
+    f.submit();
+}
+</script>
 </body>
 </html>
