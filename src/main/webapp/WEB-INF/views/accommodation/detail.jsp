@@ -239,7 +239,7 @@
                   <button class="btn-cart">
                     <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="21" r="1"></circle><circle cx="20" cy="21" r="1"></circle><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path></svg>
                   </button>
-                  <button class="btn-reserve" onclick="alert('${room.roomId}번 객실 예약 페이지로 이동합니다!')">예약하기</button>
+                  <button class="btn-reserve" onclick="goToReserve('${room.roomId}')">예약하기</button>
                 </div>
                 <div class="cancel-info">취소 및 환불 불가 ⓘ</div>
               </div>
@@ -252,5 +252,40 @@
 
   </div>
 </div>
+
+<script type="text/javascript">
+function goToReserve(roomId) {
+    const urlParams = new URLSearchParams(window.location.search);
+    const checkin = urlParams.get('checkin') || '';
+    const checkout = urlParams.get('checkout') || '';
+    const adult = urlParams.get('adult') || '2';
+    const child = urlParams.get('child') || '0';
+
+    if (!checkin || !checkout) {
+      alert("체크인 / 체크아웃 날짜를 먼저 선택해주세요!");
+      return;
+    }
+
+    // 🌟 서버에 "나 이 방 5분만 잠가도 돼?" 하고 물어봄
+    fetch('${pageContext.request.contextPath}/accommodation/check-lock', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ roomId: roomId, checkin: checkin })
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.success) {
+            // 허락 받으면 폼으로 이동
+            location.href = `${pageContext.request.contextPath}/accommodation/reservation?roomId=` + roomId 
+                          + `&checkin=` + checkin + `&checkout=` + checkout 
+                          + `&adult=` + adult + `&child=` + child;
+        } else {
+            // 거절 당하면 알림창
+            alert(data.message);
+        }
+    })
+    .catch(err => alert("서버 통신 오류가 발생했습니다."));
+ }
+</script>
 
 <jsp:include page="../layout/footer.jsp" />
