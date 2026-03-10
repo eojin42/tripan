@@ -90,4 +90,77 @@
         WHERE r.PLACE_ID = #{placeId}
         ORDER BY r.AMOUNT ASC
     </select>
+    
+    <select id="findRoomById" resultType="com.tripan.app.domain.dto.RoomDto">
+	    SELECT 
+	        ROOM_ID as roomId,
+	        ROOM_NAME as roomName,
+	        AMOUNT as amount
+	    FROM ROOM
+	    WHERE ROOM_ID = #{roomId}
+	</select>
+	
+	
+	<!-- 동시성 기능 -->
+	<delete id="deleteExpiredLocks">
+        DELETE FROM ROOM_LOCK WHERE EXPIRE_AT &lt; SYSDATE
+    </delete>
+
+    <select id="getRoomLockSession" resultType="string">
+        SELECT SESSION_ID FROM ROOM_LOCK
+        WHERE ROOM_ID = #{roomId} AND CHECKIN_DATE = #{checkin}
+    </select>
+
+    <insert id="insertRoomLock">
+        INSERT INTO ROOM_LOCK (ROOM_ID, CHECKIN_DATE, SESSION_ID)
+        VALUES (#{roomId}, #{checkin}, #{sessionId})
+    </insert>
+
+    <update id="updateLockTime">
+        UPDATE ROOM_LOCK 
+        SET EXPIRE_AT = SYSDATE + (5/(24*60))
+        WHERE ROOM_ID = #{roomId} AND CHECKIN_DATE = #{checkin}
+    </update>
+
+    <delete id="deleteRoomLock">
+        DELETE FROM ROOM_LOCK
+        WHERE ROOM_ID = #{roomId} AND CHECKIN_DATE = #{checkin} AND SESSION_ID = #{sessionId}
+    </delete>
+    
+    
+    <!-- 결제완료 기능 -->
+    <insert id="insertOrder">
+        INSERT INTO ORDERS (ORDER_ID, MEMBER_ID, ORDER_DATE, TOTAL_AMOUNT, COUPON_DISCOUNT, REAL_TOTAL_AMOUNT, STATUS)
+        VALUES (#{merchantUid}, #{memberId}, SYSDATE, #{amount}, 0, #{amount}, 'SUCCESS')
+    </insert>
+
+    <insert id="insertReservation">
+        <selectKey keyProperty="reservationId" resultType="long" order="BEFORE">
+            SELECT RESERVATION_SEQ.NEXTVAL FROM DUAL
+        </selectKey>
+        INSERT INTO RESERVATION (
+            RESERVATION_ID, ROOM_ID, MEMBER_ID, PARTNER_ID, 
+            CHECK_IN_DATE, CHECK_OUT_DATE, GUEST_COUNT, 
+            STATUS, REQUEST, AMOUNT, COMMISSION_RATE, PARTNER_COUPON_FEE
+        ) VALUES (
+            #{reservationId}, #{roomId}, #{memberId}, 1,  TO_DATE(#{checkin}, 'YYYY-MM-DD'), TO_DATE(#{checkout}, 'YYYY-MM-DD'), 
+            (#{adult} + #{child}), 'SUCCESS', '요청사항 없음', #{amount}, 10, 0
+        )
+    </insert>
+
+    <insert id="insertOrderDetail">
+        INSERT INTO ORDER_DETAIL (
+            DETAIL_ID, ORDER_ID, RESERVATION_ID, AMOUNT, STATUS
+        ) VALUES (
+            ORDER_DETAIL_SEQ.NEXTVAL, #{merchantUid}, #{reservationId}, #{amount}, 'SUCCESS'
+        )
+    </insert>
+
+    <insert id="insertPayment">
+        INSERT INTO PAYMENT (
+            PAYMENT_ID, ORDER_ID, PG_PROVIDER, PG_TID, AMOUNT, STATUS, PAID_AT
+        ) VALUES (
+            PAYMENT_SEQ.NEXTVAL, #{merchantUid}, #{payMethod}, #{impUid}, #{amount}, 'SUCCESS', SYSDATE
+        )
+    </insert>
 </mapper>

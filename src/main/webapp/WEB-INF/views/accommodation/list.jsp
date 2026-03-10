@@ -184,6 +184,8 @@
   window.renderAccommodations = function(list) {
     const container = document.getElementById('accommodation-list-container'); // id 변경 반영
     
+    const currentQueryString = window.location.search;
+    
     // 검색 결과가 없을 때
     if (!list || list.length === 0) {
       container.innerHTML = '<div style="grid-column:1/-1; text-align:center; padding:80px 0; font-size:16px; color:#718096;">조건에 맞는 숙소가 없습니다. 텅! 🗑️</div>';
@@ -204,7 +206,7 @@
 
       // 🌟 핵심 수정 포인트: pageContext 앞의 역슬래시(\) 제거, item.placeId 앞의 역슬래시는 유지!
       html += `
-        <div class="accommodation-item" onclick="location.href='${pageContext.request.contextPath}/accommodation/detail/\${item.placeId}'">
+        <div class="accommodation-item" onclick="location.href='${pageContext.request.contextPath}/accommodation/detail/\${item.placeId}\${currentQueryString}'">
           <div class="accommodation-thumb">
             <img src="\${imgPath}" alt="\${item.name}">
             <div class="wish-btn" style="position:absolute; top:12px; right:12px; color:white; font-size:20px; cursor:pointer;">♡</div>
