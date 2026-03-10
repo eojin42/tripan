@@ -200,7 +200,7 @@ window.submitMateComment = function(mateId, parentId = null) {
 };
 
 window.deleteMateComment = function(commentId, mateId) {
-    if (!confirm('정말 삭제하시겠습니까?\\n(원본 댓글인 경우 답글도 함께 삭제됩니다)')) return;
+    if (!confirm('정말 삭제하시겠습니까?\n(원본 댓글인 경우 답글도 함께 삭제됩니다)')) return;
     fetch('${pageContext.request.contextPath}/community/api/mate/comment/delete/' + commentId, {
         method: 'POST', headers: { 'X-Requested-With': 'Fetch' }
     }).then(res => res.json()).then(result => {

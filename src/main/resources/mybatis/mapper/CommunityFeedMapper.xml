@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.tripan.app.mapper.CommunityFeedMapper">
+
+	<insert id="insertFeedPost" parameterType="map">
+	        INSERT INTO feed_post (
+	            post_id,
+	            member_id,
+	            trip_id,
+	            content,
+	            image_url,
+	            view_count,
+	            like_count,
+	            repost_count,
+	            created_at
+	        ) VALUES (
+	            FEED_POST_SEQ.NEXTVAL, #{memberId},
+	            #{tripId, jdbcType=NUMERIC}, #{content},
+	            #{imageUrl, jdbcType=VARCHAR},
+	            0,
+	            0,
+	            0,
+	            SYSDATE
+	        )
+    </insert>
+	
+	<select id="checkFollow" resultType="int">
+    	SELECT COUNT(*) FROM follow WHERE follower_id = #{followerId} AND following_id = #{followingId}
+	</select>
+
+	<insert id="insertFollow">
+	    INSERT INTO follow (follow_id, follower_id, following_id)
+	    VALUES (FOLLOW_SEQ.NEXTVAL, #{followerId}, #{followingId})
+	</insert>
+	
+	<delete id="deleteFollow">
+	    DELETE FROM follow WHERE follower_id = #{followerId} AND following_id = #{followingId}
+	</delete>
+	
+	<select id="getFeedList" resultType="com.tripan.app.domain.dto.CommunityFeedListDto">
+	    SELECT 
+	        F.post_id, F.member_id,
+	        DBMS_LOB.SUBSTR(F.content, 4000, 1) as content,
+	        F.image_url, F.like_count,
+	        TO_CHAR(F.created_at, 'YYYY-MM-DD HH24:MI') as created_at,
+	        M.nickname, M.profile_image, 
+	        T.trip_id, T.trip_name, NVL(T.total_budget, 0) as total_budget,
+	        (SELECT COUNT(*) FROM follow WHERE follower_id = #{loginMemberId} AND following_id = F.member_id) as is_following
+	    FROM feed_post F
+	    LEFT JOIN member2 M ON F.member_id = M.member_id
+	    LEFT JOIN trip T ON F.trip_id = T.trip_id
+	    ORDER BY F.post_id DESC
+	</select>
+
+
+</mapper>

@@ -395,6 +395,46 @@
 	
 		select.lounge-input-style::-ms-expand { display: none !important; }
 		
+  .schedule-modal-overlay {
+    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(0, 0, 0, 0.4); backdrop-filter: blur(3px); z-index: 10001;
+    display: flex; align-items: center; justify-content: center;
+    opacity: 0; visibility: hidden; transition: all 0.3s ease;
+  }
+  .schedule-modal-overlay.active { opacity: 1; visibility: visible; }
+  .schedule-modal-content {
+    width: 90%; max-width: 750px; height: 550px; background: white;
+    border-radius: var(--radius-xl); display: flex; flex-direction: column; overflow: hidden;
+    box-shadow: 0 20px 40px rgba(0,0,0,0.15); transform: translateY(20px); transition: 0.3s var(--bounce);
+  }
+  .schedule-modal-overlay.active .schedule-modal-content { transform: translateY(0); }
+  
+  .sch-header { padding: 20px 24px; border-bottom: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center; }
+  .sch-header h3 { margin: 0; font-size: 20px; font-weight: 800; color: var(--text-black); }
+  
+  .sch-body { display: flex; flex: 1; overflow: hidden; }
+  .sch-list-area { flex: 1; border-right: 1px solid var(--border-color); overflow-y: auto; padding: 20px; background: #fafafa; }
+  .sch-preview-area { width: 280px; background: white; padding: 24px; display: flex; flex-direction: column; }
+  
+  .sch-item { 
+    padding: 16px; border: 2px solid transparent; border-radius: 16px; background: white; margin-bottom: 12px; 
+    cursor: pointer; transition: 0.2s; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+  }
+  .sch-item:hover { border-color: var(--ice-melt); transform: translateY(-2px); }
+  .sch-item.selected { border-color: var(--sky-blue); background: #F0F8FF; }
+  .sch-item .check-circle { width: 22px; height: 22px; border-radius: 50%; border: 2px solid var(--border-color); display: flex; align-items: center; justify-content: center; }
+  .sch-item.selected .check-circle { background: var(--sky-blue); border-color: var(--sky-blue); }
+  .sch-item.selected .check-circle::after { content: '✔'; color: white; font-size: 14px; font-weight: bold; }
+  
+  .sch-footer { padding: 16px 24px; border-top: 1px solid var(--border-color); display: flex; justify-content: flex-end; gap: 12px; background: #fafafa; }
+  .btn-sch-cancel { padding: 10px 24px; border-radius: 20px; border: 1px solid var(--border-color); background: white; font-weight: 700; color: var(--text-dark); cursor: pointer; transition: 0.2s; }
+  .btn-sch-cancel:hover { background: #f1f5f9; }
+  .btn-sch-confirm { padding: 10px 32px; border-radius: 20px; border: none; background: var(--sky-blue); color: white; font-weight: 800; cursor: pointer; transition: 0.2s; box-shadow: 0 4px 12px rgba(137, 207, 240, 0.3); }
+  .btn-sch-confirm:hover { background: #72bde0; transform: translateY(-2px); }
+  
+  .author-left { cursor: pointer; }
+  .author-left:hover .name { color: var(--sky-blue); }
+		
 	  </style>
 	  
 	</head>
@@ -404,27 +444,46 @@
 	
 	  <main class="community-container">
 	    <aside class="left-sidebar">
+	    
+		<%-- 로그인 상태일 때 --%>
 	      <div class="glass-card profile-widget">
-	        <div class="profile-avatar">
 			  <c:choose>
-			    <c:when test="${not empty sessionScope.member and not empty sessionScope.member.profileImage}">
-			      <img src="${pageContext.request.contextPath}/uploads/profile/${sessionScope.member.profileImage}" alt="My Profile">
+			    <c:when test="${not empty sessionScope.loginUser}">
+			      <a href="${pageContext.request.contextPath}/community/myfeed?memberId=${sessionScope.loginUser.memberId}" style="text-decoration: none; color: inherit;">
+			        <div class="profile-avatar">
+			          <c:choose>
+			            <c:when test="${not empty sessionScope.loginUser.profilePhoto}">
+			              <img src="${pageContext.request.contextPath}/uploads/profile/${sessionScope.loginUser.avatar}" alt="My Profile">
+			            </c:when>
+			            <c:otherwise>
+			              <img src="${pageContext.request.contextPath}/dist/images/default.png" alt="Default Profile">
+			            </c:otherwise>
+			          </c:choose>
+			        </div>
+			        <div class="profile-name">${sessionScope.loginUser.nickname} 님</div>
+			      </a>
+			      
+			      <div class="profile-stats">
+			        <div class="stat-box">게시물 <strong>0</strong></div>
+			        <div class="stat-box">팔로워 <strong>0</strong></div>
+			        <div class="stat-box">팔로잉 <strong>0</strong></div>
+			      </div>
 			    </c:when>
+			    
+			    <%-- 비로그인 상태일 때 --%>
 			    <c:otherwise>
-			      <svg class="profile-airplane-icon" viewBox="0 0 24 24" 
-			           style="width: 100%; height: 100%; fill: var(--sky-blue); padding: 18px; box-sizing: border-box; background: #F0F8FF;">
-			        <path d="M22,16v-2l-8.5-5V3.5C13.5,2.67 12.83,2 12,2s-1.5,0.67-1.5,1.5V9L2,14v2l8.5-2.5V19L8.5,20.5V22L12,21l3.5,1v-1.5L13.5,19v-5.5L22,16z"></path>
-			      </svg>
+			      <div class="profile-avatar">
+			         <img src="${pageContext.request.contextPath}/dist/images/default.png" alt="Default Profile">
+			      </div>
+			      <div class="profile-name">여행자 님</div>
+			      <div class="profile-stats">
+			        <div class="stat-box" style="width: 100%;">
+			          <button class="btn-follow" onclick="showLoginModal()" style="width: 100%; border-radius: 20px; background: var(--sky-blue); color: white; border: none; padding: 8px 0; font-weight: bold; cursor: pointer;">로그인하고 시작하기</button>
+			        </div>
+			      </div>
 			    </c:otherwise>
 			  </c:choose>
 			</div>
-	<div class="profile-name">${sessionScope.member.nickname != null ? sessionScope.member.nickname : '여행자'} 님</div>
-	        <div class="profile-stats">
-	          <div class="stat-box">게시물 <strong>0</strong></div>
-	          <div class="stat-box">팔로워 <strong>0</strong></div>
-	          <div class="stat-box">팔로잉 <strong>0</strong></div>
-	        </div>
-	      </div>
 	
 	      <div class="glass-card side-menu-widget">
 	        <ul class="side-nav">
@@ -536,6 +595,48 @@
 	    </div>
 	  </div>
 	  
+	  <div id="scheduleModal" class="schedule-modal-overlay">
+  <div class="schedule-modal-content">
+    <div class="sch-header">
+      <h3>📅 공유할 일정 선택</h3>
+      <button onclick="closeScheduleModal()" style="background:none; border:none; font-size:24px; color:var(--text-gray); cursor:pointer;">✕</button>
+    </div>
+    
+    <div class="sch-body">
+      <div class="sch-list-area">
+        <div class="sch-item" onclick="toggleScheduleSelect(this, '0000000000000000001', '제주도 3박 4일 힐링 여행')">
+          <div>
+            <h4 style="margin: 0 0 6px; font-size: 16px; font-weight: 800; color: var(--text-black);">제주도 3박 4일 힐링 여행</h4>
+            <p style="margin: 0; font-size: 13px; color: var(--text-gray);">2024.05.10 ~ 2024.05.13</p>
+          </div>
+          <div class="check-circle"></div>
+        </div>
+        
+        <div class="sch-item" onclick="toggleScheduleSelect(this, '0000000000000000002', '여수 밤바다 낭만 투어')">
+          <div>
+            <h4 style="margin: 0 0 6px; font-size: 16px; font-weight: 800; color: var(--text-black);">여수 밤바다 낭만 투어</h4>
+            <p style="margin: 0; font-size: 13px; color: var(--text-gray);">2024.06.01 ~ 2024.06.02</p>
+          </div>
+          <div class="check-circle"></div>
+        </div>
+      </div>
+      
+      <div class="sch-preview-area">
+        <h4 style="margin: 0 0 20px; font-size: 15px; font-weight: 800; color: var(--text-black); border-bottom: 2px solid var(--border-color); padding-bottom: 10px;">선택된 일정</h4>
+        <div id="schRightPreview" style="display: flex; flex-direction: column; align-items: center; justify-content: center; flex: 1; color: var(--text-gray); font-size: 14px; text-align: center; gap: 12px;">
+          <span style="font-size: 40px; opacity: 0.3;">🗺️</span>
+          왼쪽 목록에서 공유할<br>일정을 선택해주세요.
+        </div>
+      </div>
+    </div>
+    
+    <div class="sch-footer">
+      <button class="btn-sch-cancel" onclick="closeScheduleModal()">취소</button>
+      <button class="btn-sch-confirm" onclick="confirmScheduleSelection()">확인</button>
+    </div>
+  </div>
+</div>
+	  
 	  <jsp:include page="/WEB-INF/views/layout/footer.jsp"/>
 	  <jsp:include page="/WEB-INF/views/member/loginModal.jsp" />
 	  <jsp:include page="/WEB-INF/views/community/fragment/mate/mate_write_modal.jsp" />
@@ -581,15 +682,14 @@
 	      isFetching = true;
 	      trigger.innerHTML = '로딩 중... ⏳';
 	      setTimeout(() => {
-	        const container = document.getElementById('feedListContainer');
-	        if(container && container.children.length > 0) {
-	          const firstCardClone = container.children[0].cloneNode(true);
-	          container.appendChild(firstCardClone);
-	        }
-	        isFetching = false;
-	        trigger.innerHTML = '아래로 스크롤하여 더 보기...';
+	          
+	          isFetching = false;
+	          trigger.innerHTML = '모든 게시글을 불러왔습니다 ✨';
+	          trigger.style.opacity = '0.5'; 
+	          if(scrollObserver) scrollObserver.disconnect();
+	          
 	      }, 800);
-	    }
+	  }
 	
     function loadTabContent(tabType, event) {
         if(event) event.preventDefault();
@@ -624,13 +724,16 @@
                 behavior: 'smooth'
             });
             
-            // 🌟 수정된 동행 탭 로직 🌟
             if (tabType === 'mate') {
                 if(typeof populateRegionSelects === 'function') {
                     populateRegionSelects().then(() => searchMates());
                 } else {
                     searchMates();
                 }
+            } else if ( tabType === 'feed' || tabType === '') {
+            	if (typeof renderHashtags === 'function') {
+            		setTimeout(() => renderHashtags(), 50);
+            	}
             }
             
         })
@@ -729,7 +832,7 @@
 	
 		        festivals.forEach(fes => {
 		            const address = fes.address ? fes.address : '장소 미정';
-		            const imgSrc = fes.image ? fes.image : '${pageContext.request.contextPath}/images/default_festival.jpg';
+		            const imgSrc = fes.image ? fes.image : '${pageContext.request.contextPath}/dist/images/default_festival.jpg';
 		            const cardHtml = `
 		                <div class="festival-card" 
 		                     onclick="window.open('https://search.naver.com/search.naver?query=\${encodeURIComponent(fes.title)}', '_blank')"
@@ -1074,7 +1177,7 @@
 		    const locText = document.getElementById('locationText');
 		    
 		    locArea.style.display = 'inline-flex';
-		    locText.innerText = "위치 정보를 불러오는 중..."; // 재시도 시 텍스트 초기화
+		    locText.innerText = "위치 정보를 불러오는 중..."; 
 	
 		    if (navigator.geolocation) {
 		      navigator.geolocation.getCurrentPosition(
@@ -1161,6 +1264,226 @@
 		      })
 		      .catch(err => console.error("채팅방 연결 오류:", err));
 		  }
+		  
+		  let inlineFiles = []; 
+		  let tempSelectedTripId = null;
+		  let tempSelectedTripName = null;
+		  let confirmedTripId = null;
+		  let tempSelectedTripMeta = {}; 
+
+		  function handleInlineFiles(files) {
+		      const previewArea = document.getElementById('inlinePhotoPreview');
+		      if (inlineFiles.length + files.length > 4) {
+		          alert("사진은 최대 4장까지만 첨부할 수 있습니다.");
+		          return;
+		      }
+		      
+		      Array.from(files).forEach(file => {
+		          inlineFiles.push(file);
+		          const fileUrl = URL.createObjectURL(file);
+		          const thumbWrap = document.createElement('div');
+		          thumbWrap.style = "position: relative; width: 80px; height: 80px; border-radius: 12px; overflow: hidden; border: 1px solid var(--border-color);";
+		          thumbWrap.innerHTML = `
+		              <img src="\${fileUrl}" style="width: 100%; height: 100%; object-fit: cover;">
+		              <button type="button" onclick="removeInlineFile(this, '\${file.name}')" 
+		                      style="position: absolute; top: 4px; right: 4px; background: rgba(0,0,0,0.6); color: white; border: none; border-radius: 50%; width: 22px; height: 22px; font-size: 12px; cursor: pointer;">✕</button>
+		          `;
+		          previewArea.appendChild(thumbWrap);
+		      });
+		  }
+
+		  function removeInlineFile(btn, fileName) {
+		      inlineFiles = inlineFiles.filter(f => f.name !== fileName);
+		      btn.parentElement.remove();
+		  }
+
+		  function openScheduleModal() {
+		      document.getElementById('scheduleModal').classList.add('active');
+		      document.body.style.overflow = 'hidden';
+		  }
+
+		  function closeScheduleModal() {
+		      document.getElementById('scheduleModal').classList.remove('active');
+		      document.body.style.overflow = 'auto';
+		  }
+
+		  function toggleScheduleSelect(element, tripId, tripName, placeCount = 0, totalBudget = 0, memberCount = 1) {
+		      document.querySelectorAll('.sch-item').forEach(el => el.classList.remove('selected'));
+		      
+		      element.classList.add('selected');
+		      tempSelectedTripId = tripId;
+		      tempSelectedTripName = tripName;
+		      tempSelectedTripMeta = { placeCount, totalBudget, memberCount };
+		      
+		      const perPerson = Math.floor(totalBudget / memberCount).toLocaleString();
+		      
+		      const rightPreview = document.getElementById('schRightPreview');
+		      rightPreview.innerHTML = 
+		          '<div style="background: var(--grad-main); width: 60px; height: 60px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 24px; color: white; margin-bottom: 12px;">✈️</div>' +
+		          '<h5 style="margin: 0; font-size: 16px; color: var(--text-black);">' + tripName + '</h5>' +
+		          '<p style="margin: 8px 0 0; font-size: 13px; color: var(--sky-blue); font-weight: 700;">이 일정을 공유합니다</p>' +
+		          '<div style="margin-top: 16px; padding: 12px; background: #f8fafc; border-radius: 8px; font-size: 12px; color: var(--text-dark); width: 100%; box-sizing: border-box; text-align: left;">' +
+		          '    <li style="margin-bottom: 4px;">📍 장소: ' + placeCount + '곳 방문</li>' +
+		          '    <li style="margin-bottom: 4px;">👥 인원: ' + memberCount + '명</li>' +
+		          '    <li style="color:var(--sky-blue); font-weight: bold;">└ 1인당 약 ' + perPerson + '원</li>' +
+		          '</div>';
+		  }
+
+		  function confirmScheduleSelection() {
+		      if (!tempSelectedTripId) {
+		          alert("선택된 일정이 없습니다.");
+		          return;
+		      }
+		      
+		      confirmedTripId = tempSelectedTripId;
+		      
+		      const previewDiv = document.getElementById('inlineSchedulePreview');
+		      const nameSpan = document.getElementById('displayScheduleName');
+		      const metaSpan = document.getElementById('displayScheduleMeta');
+		      
+		      const perPerson = Math.floor(tempSelectedTripMeta.totalBudget / tempSelectedTripMeta.memberCount).toLocaleString();
+		      
+		      nameSpan.innerText = tempSelectedTripName;
+		      if(metaSpan) {
+		          metaSpan.innerText = '장소 ' + tempSelectedTripMeta.placeCount + '곳 · 총 ' + tempSelectedTripMeta.totalBudget.toLocaleString() + '원 (' + tempSelectedTripMeta.memberCount + '인 기준, 1인 약 ' + perPerson + '원)';
+		      }
+		      
+		      previewDiv.style.display = 'flex';
+		      closeScheduleModal();
+		  }
+
+		  function removeInlineSchedule() {
+		      confirmedTripId = null;
+		      document.getElementById('inlineSchedulePreview').style.display = 'none';
+		  }
+
+		  function submitInlinePost() {
+		      const content = document.getElementById('inlineTextarea').value;
+		      const tagsInput = document.getElementById('inlineTags');
+		      const tags = tagsInput ? tagsInput.value : '';
+		      
+		      if(!content.trim() && inlineFiles.length === 0 && !confirmedTripId) {
+		          alert("내용, 사진, 또는 일정 중 하나 이상을 입력해주세요!");
+		          return;
+		      }
+		      
+		      const formData = new FormData();
+		      formData.append('content', content);
+		      formData.append('tags', tags);
+		      
+		      if (confirmedTripId) {
+		          formData.append('tripId', confirmedTripId);
+		      }
+		      
+		      inlineFiles.forEach(file => {
+		          formData.append('files', file);
+		      });
+
+		      fetch('${pageContext.request.contextPath}/community/api/feed/write', {
+		          method: 'POST',
+		          body: formData 
+		      })
+		      .then(response => {
+		          if (!response.ok) throw new Error('서버 통신 에러');
+		          return response.json();
+		      })
+		      .then(data => {
+		          if(data.status === 'success') {
+		              alert("✨ 피드가 성공적으로 등록되었습니다!");
+		              location.reload(); 
+		          } else {
+		              alert("등록 실패: " + data.message);
+		          }
+		      })
+		      .catch(error => {
+		          console.error('Error:', error);
+		          alert("게시글 작성 중 오류가 발생했습니다. 🥲");
+		      });
+		  }
+		  
+		  function toggleKebab(btn, event) {
+			    event.stopPropagation();
+			    const dropdown = btn.nextElementSibling;
+			    const isShowing = dropdown.classList.contains('show');
+			    
+			    document.querySelectorAll('.dropdown-content').forEach(d => d.classList.remove('show'));
+			    if (!isShowing) dropdown.classList.add('show');
+			}
+
+		  function toggleFollow(btn, targetMemberId) {
+			    if (typeof IS_LOGGED_IN !== 'undefined' && !IS_LOGGED_IN) {
+			        showLoginModal();
+			        return;
+			    }
+
+			    fetch(`/community/api/follow/\${targetMemberId}`, { 
+			        method: 'POST',
+			        headers: { 'X-Requested-With': 'Fetch' }
+			    })
+			    .then(res => res.json())
+			    .then(data => {
+			        if(data.status === 'followed') {
+			            btn.classList.add('following');
+			            btn.innerText = '팔로잉';
+			        } else {
+			            btn.classList.remove('following');
+			            btn.innerText = '팔로우';
+			        }
+			    })
+			    .catch(err => console.error("팔로우 오류:", err));
+			}
+
+			function scrapTrip(tripId) {
+			    checkAuthAndRun(() => {
+			        if(confirm('이 일정을 내 보관함으로 담아오시겠습니까?')) {
+			            alert('✨ 일정이 내 보관함에 저장되었습니다!');
+			        }
+			    });
+			}
+
+			document.addEventListener('click', () => {
+			    document.querySelectorAll('.dropdown-content').forEach(d => d.classList.remove('show'));
+			});
+			
+			  function renderHashtags() {
+			    document.querySelectorAll('.feed-text:not(.tagged)').forEach(p => {
+			      p.classList.add('tagged'); 
+			      
+			      let originalText = p.innerHTML;
+			      
+			      const hashtagRegex = /(#[^\s#<]+)/g;
+			      const tags = originalText.match(hashtagRegex);
+			      
+			      if (tags && tags.length > 0) {
+			        let cleanText = originalText.replace(hashtagRegex, '').trim();
+			        p.innerHTML = cleanText; 
+			        
+			        const tagContainer = document.createElement('div');
+			        tagContainer.className = 'feed-tag-container';
+			        
+			        const iconDiv = document.createElement('div');
+			        iconDiv.className = 'feed-tag-icon';
+			        iconDiv.innerHTML = '🏷️';
+			        
+			        const tagList = document.createElement('div');
+			        tagList.className = 'feed-tag-list';
+			        
+			        tags.forEach(tag => {
+			          const badge = document.createElement('span');
+			          badge.className = 'feed-tag-badge';
+			          badge.innerText = tag;
+			          tagList.appendChild(badge);
+			        });
+			        
+			        tagContainer.appendChild(iconDiv);
+			        tagContainer.appendChild(tagList);
+			        
+			        p.parentNode.insertBefore(tagContainer, p.nextSibling);
+			      }
+			    });
+			  }
+
+			  document.addEventListener("DOMContentLoaded", renderHashtags);
 		  
 	  </script>
 	  

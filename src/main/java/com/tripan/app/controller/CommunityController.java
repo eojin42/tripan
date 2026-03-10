@@ -9,6 +9,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -18,6 +19,8 @@ import org.springframework.web.bind.annotation.ResponseBody;
 
 import com.tripan.app.config.WebSocketEventListener;
 import com.tripan.app.domain.dto.CommunityChatRoomDto;
+import com.tripan.app.domain.dto.CommunityFeedListDto;
+import com.tripan.app.domain.dto.CommunityFeedWriteRequestDto;
 import com.tripan.app.domain.dto.CommunityFreeBoardDto;
 import com.tripan.app.domain.dto.CommunityFreeboardCommentDto;
 import com.tripan.app.domain.dto.CommunityMateCommentDto;
@@ -26,6 +29,7 @@ import com.tripan.app.domain.dto.MemberDto;
 import com.tripan.app.domain.dto.SessionInfo;
 import com.tripan.app.mapper.CommunityMateCommentMapper;
 import com.tripan.app.service.CommunityChatService;
+import com.tripan.app.service.CommunityFeedService;
 import com.tripan.app.service.CommunityFreeboardService;
 import com.tripan.app.service.CommunityMateService;
 
@@ -44,12 +48,16 @@ public class CommunityController {
 	private final CommunityChatService chatService;
 	private final CommunityMateService mateService;
     private final CommunityMateCommentMapper mateCommentMapper;
+    private final CommunityFeedService feedService;
 
     @GetMapping({"", "/", "/feed"})
-    public String handleCommunityFeed(Model model) {
+    public String handleCommunityFeed(Model model, HttpSession session) {
+    	MemberDto loginUser = (MemberDto) session.getAttribute("loginUser");
+        Long loginId = (loginUser != null) ? loginUser.getMemberId() : -1L;
 
-    	return "community/feed";
-    	
+        List<CommunityFeedListDto> feedList = feedService.getFeedList(loginId); 
+        model.addAttribute("feedList", feedList);
+        return "community/feed";
     }
 
     @GetMapping("/freeboard")
@@ -61,7 +69,7 @@ public class CommunityController {
     }
 
     @GetMapping("/fragment/{tabType}")
-    public String handleFragment(@PathVariable("tabType") String tabType, HttpServletRequest request, Model model) {
+    public String handleFragment(@PathVariable("tabType") String tabType, HttpServletRequest request, Model model, HttpSession session) {
         String requestedWith = request.getHeader("X-Requested-With");
         
         if ("Fetch".equals(requestedWith) || "XMLHttpRequest".equals(requestedWith)) {
@@ -70,9 +78,16 @@ public class CommunityController {
                 List<CommunityFreeBoardDto> list = freeboardService.getBoardList();
                 model.addAttribute("boardList", list);
                 log.info("자유게시판 목록 조회 완료: {}건", list.size());
-            }
-            else if ("mate".equals(tabType)) {
+                
+            } else if ("mate".equals(tabType)) {
                 return "community/fragment/mate/mate_list"; 
+                
+            } else if ("feed".equals(tabType)) {
+            	MemberDto loginUser = (MemberDto) session.getAttribute("loginUser");
+                Long loginId = (loginUser != null) ? loginUser.getMemberId() : -1L;
+                
+                List<CommunityFeedListDto> feedList = feedService.getFeedList(loginId);
+                model.addAttribute("feedList", feedList);            	
             }
             
             return "community/fragment/" + tabType + "_list"; 
@@ -87,10 +102,35 @@ public class CommunityController {
         }
     }
     
-    /**
-     * 🌟 실시간 인기 지역 톡 상위 3개 API
-     * @ResponseBody를 붙여 JSON 데이터를 반환합니다.
-     */
+    @PostMapping("/api/feed/write")
+    @ResponseBody 
+    public ResponseEntity<Map<String, Object>> writeFeed(
+            @ModelAttribute CommunityFeedWriteRequestDto requestDTO, 
+            HttpSession session) {
+        
+        Map<String, Object> response = new HashMap<>();
+
+        MemberDto loginUser = (MemberDto) session.getAttribute("loginUser");
+        if (loginUser == null) {
+            response.put("status", "error");
+            response.put("message", "로그인이 필요합니다.");
+            return ResponseEntity.status(401).body(response);
+        }
+
+        try {
+            feedService.insertFeed(requestDTO, loginUser.getMemberId());
+            response.put("status", "success");
+            response.put("message", "피드가 성공적으로 등록되었습니다!");
+            return ResponseEntity.ok(response);
+            
+        } catch (Exception e) {
+            log.error("피드 등록 실패", e);
+            response.put("status", "error");
+            response.put("message", "서버 오류가 발생했습니다.");
+            return ResponseEntity.status(500).body(response);
+        }
+    }
+    
     @GetMapping("/api/chat/top-rooms")
     @ResponseBody
     public List<CommunityChatRoomDto> getTopChatRooms() {
@@ -280,4 +320,14 @@ public class CommunityController {
         }
     }
     
+    @PostMapping("/api/follow/{targetId}")
+    @ResponseBody
+    public ResponseEntity<?> followToggle(@PathVariable("targetId") Long targetId, HttpSession session) {
+        MemberDto loginUser = (MemberDto) session.getAttribute("loginUser");
+        if (loginUser == null) return ResponseEntity.status(401).build();
+
+        String result = feedService.toggleFollow(loginUser.getMemberId(), targetId);
+        return ResponseEntity.ok(Map.of("status", result));
+    }
+
 }
