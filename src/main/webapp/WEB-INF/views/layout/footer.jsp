@@ -120,6 +120,32 @@
         }
       });
     });
+    
+    window.forceOpenChat = function(roomId, type = 'PRIVATE') {
+        // 모달 열기
+        const chatModal = document.getElementById("globalChatModal");
+        const floatingBtn = document.getElementById("chatFloatingBtn");
+        
+        chatModal.style.display = "flex";
+        floatingBtn.style.display = "none";
+        sessionStorage.setItem("tripanChatState", "opened");
+
+        // 탭 전환 및 방 목록 로드
+        window.loadRoomList(type);
+
+        // 시간차 두고 방 연결
+        setTimeout(() => {
+            window.connectChatRoom(roomId);
+            // UI에서 활성화 표시
+            const roomItem = document.querySelector(`.chat-room-item[data-room-id="${roomId}"]`);
+            if(roomItem) {
+                document.querySelectorAll('.chat-room-item').forEach(el => el.classList.remove('active'));
+                roomItem.classList.add('active');
+                document.getElementById('chatEmptyState').style.display = 'none';
+                document.getElementById('chatRoomView').style.display = 'flex';
+            }
+        }, 300);
+    };
   </script>
   
   <jsp:include page="/WEB-INF/views/community/chat/openlounge.jsp"/>

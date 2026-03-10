@@ -122,12 +122,16 @@
     .summary-value { font-size:26px; font-weight:900; color:var(--text-black); margin-bottom:5px; line-height:1; }
     .summary-label { font-size:12px; color:var(--text-gray); font-weight:600; }
 
-    /* ── 다가오는 여행 - 그라디언트 배너 ── */
+    /* ── 중간 배너 영역 (다가오는 여행 + 채팅 위젯) ── */
+    .middle-banner-grid {
+      display:grid; grid-template-columns:2fr 1fr; gap:20px;
+    }
+
     .upcoming-banner {
       background:var(--grad-main); border-radius:20px; padding:22px 28px;
       display:flex; align-items:center; gap:20px; color:white;
       box-shadow:0 12px 28px rgba(137,207,240,.35);
-      cursor:pointer; transition:transform .3s var(--bounce);
+      cursor:pointer; transition:transform .3s var(--bounce); height: 100%;
     }
     .upcoming-banner:hover { transform:translateY(-3px); box-shadow:0 16px 36px rgba(137,207,240,.4); }
     .upcoming-banner > i  { font-size:34px; flex-shrink:0; }
@@ -140,7 +144,7 @@
     .upcoming-none {
       background:white; border-radius:20px; padding:22px 28px;
       display:flex; align-items:center; gap:20px;
-      border:1px solid var(--border-light); box-shadow:0 4px 16px rgba(0,0,0,.02);
+      border:1px solid var(--border-light); box-shadow:0 4px 16px rgba(0,0,0,.02); height: 100%;
     }
     .upcoming-none-icon {
       width:50px; height:50px; border-radius:14px;
@@ -150,6 +154,32 @@
     }
     .upcoming-none-text h4 { font-size:13px; font-weight:700; color:var(--text-gray); margin:0 0 5px; }
     .upcoming-none-text p  { font-size:17px; font-weight:800; color:var(--text-black); margin:0; }
+
+    /* 채팅 위젯 */
+    .chat-widget {
+      background: #fff; border: 1px solid var(--border-light);
+      border-radius: 20px; padding: 18px 20px;
+      box-shadow: 0 4px 16px rgba(0,0,0,.02);
+      display: flex; flex-direction: column; height: 100%;
+    }
+    .chat-widget-header {
+      display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;
+    }
+    .chat-widget-title { font-size: 14px; font-weight: 800; color: var(--text-black); }
+    .chat-widget-btn {
+      font-size: 11px; font-weight: 700; color: var(--sky-blue); cursor: pointer;
+      background: var(--sky-blue-light); padding: 4px 10px; border-radius: 12px; transition: .2s; text-decoration: none;
+    }
+    .chat-widget-btn:hover { background: var(--sky-blue); color: white; }
+    .mypage-chat-item {
+      display: flex; align-items: center; gap: 10px; padding: 10px;
+      border-radius: 12px; cursor: pointer; transition: 0.2s;
+    }
+    .mypage-chat-item:hover { background: #F8FAFC; transform: translateX(3px); }
+    .mypage-chat-icon {
+      width: 36px; height: 36px; background: var(--grad-main); border-radius: 50%;
+      display: flex; justify-content: center; align-items: center; color: white; font-size: 14px;
+    }
 
     /* ── 지도 ── */
     .map-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; }
@@ -254,6 +284,7 @@
     @media(max-width:480px){
       .summary-grid { grid-template-columns:repeat(2,1fr); }
     }
+   
   </style>
 </head>
 <body>
@@ -261,73 +292,14 @@
 <jsp:include page="/WEB-INF/views/layout/header.jsp"/>
 
 <main class="mypage-container">
+  <jsp:include page="/WEB-INF/views/layout/mypage_sidebar.jsp">
+    <jsp:param name="activeMenu" value="schedule"/>
+  </jsp:include>
 
-  <!-- ════ 사이드바 ════ -->
-  <aside class="sidebar">
-    <div class="glass-card profile-widget">
-      <div class="profile-avatar">
-        <c:choose>
-          <c:when test="${not empty sessionScope.loginUser.profilePhoto}">
-            <img src="${pageContext.request.contextPath}/uploads/member/${sessionScope.loginUser.profilePhoto}" alt="프로필">
-          </c:when>
-          <c:otherwise>
-            <div class="profile-avatar-default" id="avatar-initial">T</div>
-          </c:otherwise>
-        </c:choose>
-      </div>
-      <div class="profile-name">${sessionScope.loginUser.nickname} 님</div>
-      <div class="profile-bio">${not empty sessionScope.loginUser.bio ? sessionScope.loginUser.bio : '등록된 소개글이 없습니다.'}</div>
-      <button class="btn-edit-profile" onclick="location.href='${pageContext.request.contextPath}/mypage/edit'">프로필 수정</button>
-      <div class="profile-stats">
-        <div class="stat-box" onclick="openFollowModal('follower')">
-          <strong id="stat-follower">-</strong>팔로워
-        </div>
-        <div class="stat-box" onclick="openFollowModal('following')">
-          <strong id="stat-following">-</strong>팔로잉
-        </div>
-        <div class="stat-box" onclick="openBadgeModal()">
-          <strong id="stat-badge">-</strong>배지
-        </div>
-      </div>
-    </div>
-
-    <div class="glass-card">
-      <ul class="side-nav">
-        <li class="active">
-          <a href="${pageContext.request.contextPath}/mypage/main">
-            <i class="bi bi-bar-chart-line"></i> 여행 대시보드
-          </a>
-        </li>
-        <li>
-          <a href="${pageContext.request.contextPath}/mypage/schedule">
-            <i class="bi bi-suitcase-lg"></i> 내 일정 / 예약
-          </a>
-        </li>
-        <li>
-          <a href="${pageContext.request.contextPath}/mypage/wish">
-            <i class="bi bi-bookmark-heart"></i> 관심 및 저장(찜)
-          </a>
-        </li>
-        <li>
-          <a href="${pageContext.request.contextPath}/mypage/review">
-            <i class="bi bi-chat-square-text"></i> 나의 리뷰 기록
-          </a>
-        </li>
-        <li>
-          <a href="${pageContext.request.contextPath}/mypage/coupon">
-            <i class="bi bi-ticket-perforated"></i> 보유 쿠폰함
-          </a>
-        </li>
-      </ul>
-    </div>
-  </aside>
-
-  <!-- ════ 대시보드 ════ -->
   <div class="dashboard-content">
 
     <h2 class="welcome-title">반가워요, <span>${sessionScope.loginUser.nickname}</span>님!</h2>
 
-    <!-- 여행 요약 -->
     <div>
       <div class="section-header">
         <h3 class="section-title"><i class="bi bi-bar-chart-line"></i> 여행 요약</h3>
@@ -349,7 +321,6 @@
           <div class="summary-value" id="val-avgdays">-</div>
           <div class="summary-label">평균 여행 기간</div>
         </div>
-        <!-- ★ 리뷰 → 일정 히스토리로 변경 -->
         <div class="summary-card" style="cursor:pointer;" onclick="location.href='${pageContext.request.contextPath}/mypage/schedule'">
           <i class="bi bi-clock-history"></i>
           <div class="summary-value" id="val-history">-</div>
@@ -358,12 +329,21 @@
       </div>
     </div>
 
-    <!-- 다가오는 여행 배너 -->
-    <div id="upcoming-area">
-      <!-- JS로 렌더링 -->
+    <div class="middle-banner-grid">
+      <div id="upcoming-area">
+        </div>
+      
+      <div class="chat-widget">
+        <div class="chat-widget-header">
+          <div class="chat-widget-title">💬 1:1 대화 내역</div>
+          <a href="javascript:void(0);" onclick="if(window.forceOpenChat) forceOpenChat(null, 'PRIVATE');" class="chat-widget-btn">전체보기</a>
+        </div>
+        <div id="mypageChatList" style="flex:1; display:flex; flex-direction:column; justify-content:center;">
+          <p style="text-align:center; color:var(--text-gray); font-size:12px; margin:0;">대화 목록을 불러오는 중...</p>
+        </div>
+      </div>
     </div>
 
-    <!-- 여행 지도 -->
     <div class="clean-card">
       <div class="map-header">
         <h3><i class="bi bi-map"></i> 나의 여행 지도</h3>
@@ -371,7 +351,6 @@
           <i class="bi bi-arrow-right"></i> 전체 보기
         </a>
       </div>
-      <!-- 미니 지도 -->
       <div style="display:grid;grid-template-columns:1fr 160px;gap:16px;align-items:center;">
         <div id="mini-map-wrap" style="background:#F8FAFC;border-radius:16px;padding:12px;overflow:hidden;">
           <svg id="mini-map-svg" viewBox="0 0 500 600" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:auto;display:block;">
@@ -392,7 +371,6 @@
             <path class="mini-region" data-sido="울산광역시" d="M330,255 L352,250 L358,268 L348,282 L330,285 L320,272 Z"/>
             <path class="mini-region" data-sido="부산광역시" d="M318,342 L342,335 L352,352 L340,368 L318,368 L308,355 Z"/>
             <path class="mini-region" data-sido="제주특별자치도" d="M148,458 L192,452 L208,462 L205,475 L185,482 L158,478 L142,468 Z"/>
-            <!-- 라벨 -->
             <text x="185" y="152" text-anchor="middle" font-size="8" font-weight="700" fill="#4A5568" pointer-events="none">서울</text>
             <text x="268" y="138" text-anchor="middle" font-size="9" font-weight="700" fill="#4A5568" pointer-events="none">강원</text>
             <text x="182" y="148" text-anchor="middle" font-size="8" font-weight="700" fill="#4A5568" pointer-events="none">경기</text>
@@ -405,7 +383,6 @@
             <text x="178" y="468" text-anchor="middle" font-size="8" font-weight="700" fill="#4A5568" pointer-events="none">제주</text>
           </svg>
         </div>
-        <!-- 우측 통계 -->
         <div style="display:flex;flex-direction:column;gap:12px;">
           <div style="text-align:center;padding:16px;background:#F8FAFC;border-radius:14px;">
             <div style="font-size:32px;font-weight:900;color:var(--text-black);" id="mini-visited-cnt">-</div>
@@ -422,7 +399,6 @@
   </div>
 </main>
 
-<!-- ════ 팔로우 모달 ════ -->
 <div class="modal-overlay" id="followModal" onclick="closeModalByOverlay('followModal', event)">
   <div class="custom-modal">
     <div class="modal-header">
@@ -435,7 +411,6 @@
   </div>
 </div>
 
-<!-- ════ 배지 모달 ════ -->
 <div class="modal-overlay" id="badgeModal" onclick="closeModalByOverlay('badgeModal', event)">
   <div class="custom-modal" style="max-width:480px;">
     <div class="modal-header">
