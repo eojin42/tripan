@@ -187,6 +187,7 @@
 	    .catch(err => {
 	        alert('백엔드 API가 아직 연결되지 않았습니다! (컨트롤러를 확인해주세요)');
 	    });
+	};
   </script>
   
   <jsp:include page="/WEB-INF/views/community/chat/openlounge.jsp"/>

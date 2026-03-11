@@ -453,7 +453,7 @@
 			        <div class="profile-avatar">
 			          <c:choose>
 			            <c:when test="${not empty sessionScope.loginUser.profilePhoto}">
-			              <img src="${pageContext.request.contextPath}/uploads/profile/${sessionScope.loginUser.avatar}" alt="My Profile">
+			              <img src="${pageContext.request.contextPath}/uploads/profile/${sessionScope.loginUser.profilePhoto}" alt="My Profile">
 			            </c:when>
 			            <c:otherwise>
 			              <img src="${pageContext.request.contextPath}/dist/images/default.png" alt="Default Profile">
