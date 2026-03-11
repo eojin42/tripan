@@ -10,6 +10,8 @@ import lombok.ToString;
 @Setter
 @ToString
 public class AdSearchConditionDto {
+	private Long memberId;	// 현재 검색하는 회원의 번호 : 찜버튼 구현
+	
     private String region;
     private String checkin;
     private String checkout;
@@ -23,4 +25,8 @@ public class AdSearchConditionDto {
 
     private List<String> accFacilities; 
     private List<String> roomFacilities; 
+    
+    // 페이징 변수
+    private int offset; 
+    private int size; 
 }
