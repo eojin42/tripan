@@ -382,22 +382,9 @@
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js"></script>
 <script src="${pageContext.request.contextPath}/dist/js/mypage/main.js"></script>
-<script type="text/javascript">
-document.addEventListener("DOMContentLoaded", () => {
+<script src="${pageContext.request.contextPath}/dist/js/mypage/cs.js"></script>
 
-	  // 고객센터 탭 동적 추가
-	  const chatTabs = document.querySelector('.chat-tabs');
-	  if (chatTabs && !document.getElementById('tabSupport')) {
-	    const supportTab = document.createElement('button');
-	    supportTab.id = 'tabSupport';
-	    supportTab.className = 'chat-tab';
-	    supportTab.textContent = '🎧 고객센터';
-	    supportTab.onclick = () => window.loadRoomList('SUPPORT');
-	    chatTabs.appendChild(supportTab);
-	  }
 
-	});
-</script>
 
 </body>
 </html>

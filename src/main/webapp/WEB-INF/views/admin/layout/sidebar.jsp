@@ -61,13 +61,18 @@
   }
 
   function toggleSubMenu(element) {
-    if(document.querySelector('.admin-layout').classList.contains('collapsed')) return;
-    element.classList.toggle('open');
-    let subMenu = element.nextElementSibling;
-    if (subMenu && subMenu.classList.contains('sub-menu')) {
-      subMenu.classList.toggle('open');
-    }
-  }
+	  const layout = document.querySelector('.admin-layout');
+	  
+	  if(layout.classList.contains('collapsed')) {
+	    layout.classList.remove('collapsed');
+	  }
+
+	  element.classList.toggle('open');
+	  let subMenu = element.nextElementSibling;
+	  if (subMenu && subMenu.classList.contains('sub-menu')) {
+	    subMenu.classList.toggle('open');
+	  }
+	}
   
 // 화면 크기에 따라 사이드바 자동 조절하는 함수
   function autoToggleSidebar() {
