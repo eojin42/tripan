@@ -1533,7 +1533,7 @@
      const listContainer = document.getElementById('comment-list-' + postId);
      listContainer.innerHTML = '<div style="text-align:center; font-size:12px; color:#999; padding:10px;">불러오는 중...⏳</div>';
      
-     fetch(`${pageContext.request.contextPath}/community/api/feed/` + postId + `/comments`)
+     fetch(`/community/api/feed/` + postId + `/comments`)
      .then(res => res.json())
      .then(comments => {
          if (!comments || comments.length === 0) {
@@ -1543,14 +1543,14 @@
          
          let html = '';
          comments.forEach(c => {
-             let profileImg = c.profileImage ? `${pageContext.request.contextPath}/uploads/profile/` + c.profileImage : `${pageContext.request.contextPath}/dist/images/default.png`;
+             let profileImg = c.profileImage ? `/uploads/profile/\${c.profileImage}` : `/dist/images/default.png`;
              html += `
                  <div class="feed-comment-item">
-                     <img src="${profileImg}" alt="프로필">
+                     <img src="\${profileImg}" alt="프로필">
                      <div class="feed-comment-body">
-                         <div class="fc-name">@${c.nickname || '여행자'}</div>
-                         <div class="fc-text">${c.content}</div>
-                         <div class="fc-time">${c.createdAt}</div>
+                         <div class="fc-name">@\${c.nickname || '여행자'}</div>
+                         <div class="fc-text">\${c.content}</div>
+                         <div class="fc-time">\${c.createdAt}</div>
                      </div>
                  </div>
              `;
