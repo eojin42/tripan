@@ -11,12 +11,11 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
 
-@RestController // 🚨 중요: 화면(JSP)이 아니라 데이터(JSON)를 반환하는 컨트롤러입니다!
+@RestController
 @RequestMapping("/api/festivals") // 기본 URL 주소 설정
-@RequiredArgsConstructor // Lombok을 이용해 Service를 자동으로 주입(DI) 받습니다.
+@RequiredArgsConstructor 
 public class FestivalApiController {
 
-    // 우리가 만든 인터페이스를 의존성 주입 받습니다.
     private final FestivalService festivalService;
 
     /**
