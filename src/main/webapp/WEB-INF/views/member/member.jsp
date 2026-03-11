@@ -70,7 +70,7 @@
         <div class="form-row">
           <label class="form-label">이름 / 생년월일</label>
           <div class="input-group">
-            <input type="text" name="name" value="${dto.username}" class="form-input" placeholder="이름" ${mode=="update" ? "readonly":""}>
+            <input type="text" name="username" value="${dto.username}" class="form-input" placeholder="이름" ${mode=="update" ? "readonly":""}>
             <input type="date" name="birthday" value="${dto.birthday}" class="form-input" required="required" ${mode=="update" ? "readonly":""}>
           </div>
           <div class="help-block" id="info-msg"></div>
@@ -275,9 +275,9 @@
       f.nickname.focus(); return;
     }
 
-    if (!/^[가-힣]{2,5}$/.test(f.name.value)) {
+    if (!/^[가-힣]{2,5}$/.test(f.username.value)) {
       showMsg('info-msg', '올바른 이름을 입력해주세요.', true);
-      f.name.focus(); return;
+      f.username.focus(); return;
     }
 
     if (!f.birthday.value) {

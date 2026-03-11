@@ -63,26 +63,24 @@ public class MemberController {
     @PostMapping("account")
     public String memberSubmit(MemberDto dto,
             Model model,
-            final RedirectAttributes rAttr) {
+            final RedirectAttributes rAttr, HttpSession session) {
         
         try {
             service.insertMember(dto, uploadPath);
             
-            //StringBuilder sb = new StringBuilder();
-            //sb.append(dto.getName() + "님의 회원 가입이 정상적으로 처리되었습니다.<br>");
-            //sb.append("메인화면으로 이동하여 로그인 하시기 바랍니다.<br>");
-
-            //rAttr.addFlashAttribute("message", sb.toString());
-            rAttr.addFlashAttribute("title", "회원 가입");
-
+            session.invalidate();
+            
+            rAttr.addFlashAttribute("name",dto.getUsername());
+            rAttr.addFlashAttribute("title", "회원 가입 완료!");
+           
             return "redirect:/member/complete";
             
         } catch (Exception e) {
             model.addAttribute("mode", "account");
-            model.addAttribute("message", "회원가입이 실패했습니다.");
+            model.addAttribute("title", "회원가입 실패!");
         }
         
-        return "redirect:/member/complete";
+        return "member/member";
     }
     
     @ResponseBody
@@ -106,10 +104,11 @@ public class MemberController {
     }
     
     @GetMapping("complete")
-    public String complete(@ModelAttribute("message") String message) throws Exception {
-        if(message == null || message.isBlank()) {
+    public String complete(@ModelAttribute("title") String title ) throws Exception {
+        if(title == null || title.isBlank()) {
             return "redirect:/";
         }
+    	
         return "member/complete";
     }
     
