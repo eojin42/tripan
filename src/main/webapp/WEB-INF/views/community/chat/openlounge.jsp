@@ -228,6 +228,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/stomp.js/2.3.3/stomp.min.js"></script>
 
 <script>
+
   document.addEventListener("DOMContentLoaded", () => {
     
   	const memberId = "${sessionScope.loginUser.memberId}";
@@ -465,4 +466,13 @@
     }
     
   });
+  
+  window.createSupportRoom = function() {
+      if (!confirm('새로운 1:1 고객센터 문의 방을 개설하시겠습니까?')) return;
+      fetch(contextPath + '/admin/api/chat/rooms/support/create', { method: 'POST' })
+      .then(res => { if (!res.ok) throw new Error(); return res.json(); })
+      .then(() => window.loadRoomList('SUPPORT'))
+      .catch(() => alert('방 생성에 실패했습니다.'));
+  };
+  
 </script>
