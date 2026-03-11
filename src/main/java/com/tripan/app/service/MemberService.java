@@ -22,6 +22,7 @@ public interface MemberService {
 	public MemberDto findById(Long member_id);
 	public MemberDto findById(String login_id);
 	public Long getMemberId(String login_id);
+	public MemberDto findByNickname(String nickname);
 	
 	public int checkFailureCount(String login_id);
 	public void updateFailureCountReset(String login_id) throws Exception;
@@ -36,5 +37,7 @@ public interface MemberService {
 	
 	public String findByAuthority(String login_id);
 	
-	public boolean isPasswordCheck(String login_id, String password);		
+	public boolean isPasswordCheck(String login_id, String password);
+	
+	
 }

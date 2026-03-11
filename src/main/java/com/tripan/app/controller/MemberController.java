@@ -103,6 +103,26 @@ public class MemberController {
         return model;
     }
     
+    @ResponseBody
+    @PostMapping("nicknameCheck")
+    public Map<String, ?> checkNickname(@RequestParam(name = "nickname") String nickname) throws Exception {
+        Map<String, Object> model = new HashMap<>();
+        
+        String p = "false";
+        try {
+            MemberDto dto = service.findByNickname(nickname);
+            if (dto == null) {
+                p = "true";
+            }
+        } catch (Exception e) {
+            log.error("닉네임 중복 체크 중 에러 발생", e);
+        }
+        
+        model.put("passed", p);
+        
+        return model;
+    }
+    
     @GetMapping("complete")
     public String complete(@ModelAttribute("title") String title ) throws Exception {
         if(title == null || title.isBlank()) {

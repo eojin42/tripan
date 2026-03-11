@@ -46,4 +46,5 @@ public interface MemberMapper {
 	public void deleteAuthority(Map<String, Object> map) throws SQLException;
 	public String findByAuthority(String login_id);
 	
+	public MemberDto findByNickname(String nickname);
 }
