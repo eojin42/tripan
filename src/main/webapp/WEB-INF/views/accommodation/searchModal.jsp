@@ -261,7 +261,7 @@
     }
 
     // 3. 인원 상태 복원
-    const adult = parseInt(params.get('adult')) || 0;
+    const adult = parseInt(params.get('adult')) || 1;
     const child = parseInt(params.get('child')) || 0;
     guests.adult = adult;
     guests.child = child;
@@ -422,6 +422,13 @@
   function renderCalendar() {
     const container = document.getElementById('calendarContainer');
     const now = new Date();
+    
+    const today = new Date();
+    const tYear = today.getFullYear();
+    const tMonth = String(today.getMonth() + 1).padStart(2, '0');
+    const tDate = String(today.getDate()).padStart(2, '0');
+    const todayStr = `\${tYear}-\${tMonth}-\${tDate}`; 
+
     let html = '';
     
     for (let i = 0; i <= 12; i++) {
@@ -443,7 +450,12 @@
         let mStr = String(month+1).padStart(2,'0');
         let dStr = String(d).padStart(2,'0');
         let dateStr = `\${year}-\${mStr}-\${dStr}`;
-        html += `<div class="day-cell" data-date="\${dateStr}" onclick="selectDate(this)">\${d}</div>`;
+        
+        if (dateStr < todayStr) {
+            html += `<div class="day-cell disabled" style="color:#CBD5E0; cursor:not-allowed;">\${d}</div>`;
+        } else {
+            html += `<div class="day-cell" data-date="\${dateStr}" onclick="selectDate(this)">\${d}</div>`;
+        }
       }
       html += `</div></div>`;
     }
@@ -530,13 +542,15 @@
     }
   }
 
-  // --- 검색 제출 ---
+  //--- 검색 제출 ---
   function submitSearch() {
     let params = [];
+    let hasRegion = false; // 지역 변경 여부 체크
     
     if(selectedRegions.length > 0 && !selectedRegions.includes('전국')) {
       const optimizedRegions = selectedRegions.map(r => r.replace(' 전체', ''));
       params.push('regions=' + encodeURIComponent(optimizedRegions.join(',')));
+      hasRegion = true;
     }
     
     if(selectedDates.length === 2) {
@@ -548,7 +562,15 @@
         params.push(`adult=\${guests.adult}&child=\${guests.child}`);
     }
     
+    // 기본 이동 경로는 list 페이지!
     let url = '${pageContext.request.contextPath}/accommodation/list';
+    
+    // 🌟 [추가됨] 만약 현재 위치가 detail 페이지이고, '지역' 필터를 건드리지 않았다면?
+    // -> 리스트로 튕기지 않고 현재 상세 페이지를 유지하면서 날짜/인원만 재계산!
+    if (window.location.pathname.includes('/detail/') && !hasRegion) {
+        url = window.location.pathname; 
+    }
+
     if(params.length > 0) {
         url += '?' + params.join('&');
     }
@@ -560,7 +582,7 @@
      selectedDates = [];
      guests = { adult: 0, child: 0 };
      
-     document.getElementById('cnt-adult').innerText = 0;
+     document.getElementById('cnt-adult').innerText = 1;
      document.getElementById('cnt-child').innerText = 0;
      
      document.querySelectorAll('.btn-count').forEach(b => b.classList.remove('active'));

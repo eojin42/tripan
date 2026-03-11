@@ -2,6 +2,21 @@
 <%@ taglib prefix="c" uri="jakarta.tags.core" %>
 <%@ taglib prefix="fmt" uri="jakarta.tags.fmt" %>
 
+<c:set var="reqAdult" value="${empty param.adult ? 1 : param.adult}" />
+<c:set var="reqChild" value="${empty param.child ? 0 : param.child}" />
+<c:set var="totalReq" value="${reqAdult + reqChild}" />
+
+<c:if test="${not empty param.checkin and not empty param.checkout}">
+    <fmt:parseDate value="${param.checkin}" var="inDate" pattern="yyyy-MM-dd"/>
+    <fmt:parseDate value="${param.checkout}" var="outDate" pattern="yyyy-MM-dd"/>
+    <fmt:formatDate value="${inDate}" var="inStr" pattern="yyyy.MM.dd(E)"/>
+    <fmt:formatDate value="${outDate}" var="outStr" pattern="yyyy.MM.dd(E)"/>
+    
+    <c:set var="diffTime" value="${outDate.time - inDate.time}" />
+    <c:set var="nights" value="${diffTime / (1000 * 60 * 60 * 24)}" />
+    <fmt:parseNumber var="nightCnt" value="${nights}" integerOnly="true" />
+</c:if>
+
 <jsp:include page="../layout/header.jsp" />
 
 <style>
@@ -117,11 +132,20 @@
   <div class="detail-container">
 
     <div class="top-summary-bar">
-      <div class="summary-badge" onclick="history.back()">
-        📅 2026.03.08(일) <span class="nights">1박</span> 2026.03.09(월)
+      <div class="summary-badge" onclick="openModal('date')">
+        📅 
+        <c:choose>
+          <c:when test="${not empty param.checkin}">
+            ${inStr} <span class="nights">${nightCnt}박</span> ${outStr}
+          </c:when>
+          <c:otherwise>
+            일정을 선택해주세요
+          </c:otherwise>
+        </c:choose>
       </div>
-      <div class="summary-badge" onclick="history.back()">
-        👤 성인 2, 아동 0
+      
+      <div class="summary-badge" onclick="openModal('guest')">
+        👤 성인 ${reqAdult}, 아동 ${reqChild}
       </div>
     </div>
 
@@ -201,52 +225,65 @@
 
     <div>
       <c:forEach var="room" items="${detail.rooms}" varStatus="rStatus">
-        <div class="room-card">
-          <div class="room-img-box">
-            <c:choose>
-              <c:when test="${not empty room.roomImageUrl}">
-                <img src="${room.roomImageUrl}" alt="${room.roomName}" style="width:100%; height:100%; object-fit:cover;">
-              </c:when>
-              <c:otherwise>
-                <img src="https://images.unsplash.com/photo-1611892440504-42a792e24d32?w=600" alt="객실 기본이미지" style="width:100%; height:100%; object-fit:cover; filter: grayscale(80%);">
-              </c:otherwise>
-            </c:choose>
-       		</div>
+        
+        <c:if test="${totalReq <= room.maxCapacity}">
           
-          <div class="room-details">
-            <div>
-              <h3 class="room-name">${room.roomName}</h3>
-              <p class="room-desc">복층/스위밍&제트스파/개별바베큐/2베드</p>
-              <p class="room-capa">👤 기준 ${room.roomBaseCount}인 / 최대 ${room.maxCapacity}인</p>
+          <c:set var="extraGuest" value="${totalReq - room.roomBaseCount}" />
+          <c:if test="${extraGuest < 0}">
+              <c:set var="extraGuest" value="0" />
+          </c:if>
+          <c:set var="finalPrice" value="${room.amount + (extraGuest * 20000)}" />
+          
+          <c:set var="originPrice" value="${finalPrice + 51900}" />
+
+          <div class="room-card">
+            <div class="room-img-box">
+              <c:choose>
+                <c:when test="${not empty room.roomImageUrl}">
+                  <img src="${room.roomImageUrl}" alt="${room.roomName}" style="width:100%; height:100%; object-fit:cover;">
+                </c:when>
+                <c:otherwise>
+                  <img src="https://images.unsplash.com/photo-1611892440504-42a792e24d32?w=600" alt="객실 기본이미지" style="width:100%; height:100%; object-fit:cover; filter: grayscale(80%);">
+                </c:otherwise>
+              </c:choose>
             </div>
             
-            <div class="room-action-box">
-              <div class="ra-left">
-                <span class="ra-label">숙박 <span style="font-size:13px; font-weight:600; color:var(--text-gray); cursor:pointer; margin-left:8px;">상세보기 ></span></span>
-                <span class="ra-time">체크인 ${detail.checkinTime} ~ 체크아웃 ${detail.checkoutTime}</span>
-                <span class="badge-special">반짝특가</span>
+            <div class="room-details">
+              <div>
+                <h3 class="room-name">${room.roomName}</h3>
+                <p class="room-desc">복층/스위밍&제트스파/개별바베큐/2베드</p>
+                <p class="room-capa">👤 기준 ${room.roomBaseCount}인 / 최대 ${room.maxCapacity}인</p>
               </div>
               
-              <div class="ra-right">
-                <div class="price-origin">
-                  <span class="price-discount">32%</span>
-                  <fmt:formatNumber value="${room.amount + 51900}" pattern="#,###"/>원
+              <div class="room-action-box">
+                <div class="ra-left">
+                  <span class="ra-label">숙박 <span style="font-size:13px; font-weight:600; color:var(--text-gray); cursor:pointer; margin-left:8px;">상세보기 ></span></span>
+                  <span class="ra-time">체크인 ${detail.checkinTime} ~ 체크아웃 ${detail.checkoutTime}</span>
+                  <span class="badge-special">반짝특가</span>
                 </div>
-                <div class="price-final"><fmt:formatNumber value="${room.amount}" pattern="#,###"/>원 ⓘ</div>
-                <div class="reward-text">NOL 머니 결제 시 <span>최대 2,142P 적립</span></div>
                 
-                <div class="btn-group">
-                  <button class="btn-cart">
-                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="21" r="1"></circle><circle cx="20" cy="21" r="1"></circle><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path></svg>
-                  </button>
-                  <button class="btn-reserve" onclick="goToReserve('${room.roomId}')">예약하기</button>
+                <div class="ra-right">
+                  <div class="price-origin">
+                    <span class="price-discount">32%</span>
+                    <fmt:formatNumber value="${originPrice}" pattern="#,###"/>원
+                  </div>
+                  <div class="price-final"><fmt:formatNumber value="${finalPrice}" pattern="#,###"/>원 ⓘ</div>
+                  <div class="reward-text">NOL 머니 결제 시 <span>최대 2,142P 적립</span></div>
+                  
+                  <div class="btn-group">
+                    <button class="btn-cart">
+                      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="21" r="1"></circle><circle cx="20" cy="21" r="1"></circle><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path></svg>
+                    </button>
+                    <button class="btn-reserve" onclick="goToReserve('${room.roomId}')">예약하기</button>
+                  </div>
+                  <div class="cancel-info">취소 및 환불 불가 ⓘ</div>
                 </div>
-                <div class="cancel-info">취소 및 환불 불가 ⓘ</div>
               </div>
+              
             </div>
-            
           </div>
-        </div>
+
+        </c:if>
       </c:forEach>
     </div>
 
@@ -258,7 +295,7 @@ function goToReserve(roomId) {
     const urlParams = new URLSearchParams(window.location.search);
     const checkin = urlParams.get('checkin') || '';
     const checkout = urlParams.get('checkout') || '';
-    const adult = urlParams.get('adult') || '2';
+    const adult = urlParams.get('adult') || '1';
     const child = urlParams.get('child') || '0';
 
     if (!checkin || !checkout) {
@@ -287,5 +324,7 @@ function goToReserve(roomId) {
     .catch(err => alert("서버 통신 오류가 발생했습니다."));
  }
 </script>
+
+<jsp:include page="../accommodation/searchModal.jsp" />
 
 <jsp:include page="../layout/footer.jsp" />

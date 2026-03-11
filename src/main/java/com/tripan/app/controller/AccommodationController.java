@@ -71,7 +71,7 @@ public class AccommodationController {
             @RequestParam("roomId") String roomId,
             @RequestParam(value = "checkin", defaultValue = "") String checkin,
             @RequestParam(value = "checkout", defaultValue = "") String checkout,
-            @RequestParam(value = "adult", defaultValue = "2") int adult,
+            @RequestParam(value = "adult", defaultValue = "1") int adult,
             @RequestParam(value = "child", defaultValue = "0") int child,
             Model model) {
 
@@ -95,8 +95,12 @@ public class AccommodationController {
             if (nights <= 0) nights = 1; // 오류 방지용 최소 1박
         }
         
+        int totalGuest = adult + child;
+        int extraGuest = Math.max(0, totalGuest - room.getRoomBaseCount()); 
+        long extraFeePerNight = extraGuest * 20000;
+        
         // 4. 총 결제 금액 계산 = (1박 가격 * 숙박 일수)
-        long totalAmount = room.getAmount() * nights;
+        long totalAmount = (room.getAmount() + extraFeePerNight) * nights;
         
         model.addAttribute("nights", nights);
         model.addAttribute("amount", totalAmount); // 폼에서 보여줄 최종 금액

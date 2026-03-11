@@ -8,13 +8,24 @@
             p.PLACE_NAME as name,
             p.IMAGE_URL as imageUrl,
             p.ADDRESS as region, a.ACCOMMODATION_TYPE as accommodationType,
-            MIN(r.AMOUNT) as minPrice
+            MIN(r.AMOUNT + (GREATEST(0, (#{adult} + #{child}) - r.ROOMBASECOUNT) * 20000)) as minPrice
         FROM PLACE p
         JOIN ACCOMMODATION a ON p.PLACE_ID = a.PLACE_ID
         JOIN ROOM r ON a.PLACE_ID = r.PLACE_ID
         JOIN ACCOMMODATION_FACILITY af ON a.AF_ID = af.AF_ID
         JOIN ROOM_FACILITY rf ON r.RF_ID = rf.RF_ID
         WHERE 1=1
+        
+        <if test="checkin != null and checkin != '' and checkout != null and checkout != ''">
+            AND NOT EXISTS (
+                SELECT 1 
+                FROM RESERVATION res 
+                WHERE res.ROOM_ID = r.ROOM_ID 
+                  AND res.STATUS = 'SUCCESS' -- 취소된 예약은 무시하고 성공한 예약만 겹치는지 체크
+                  AND res.CHECK_IN_DATE &lt; TO_DATE(#{checkout}, 'YYYY-MM-DD')
+                  AND res.CHECK_OUT_DATE &gt; TO_DATE(#{checkin}, 'YYYY-MM-DD')
+            )
+        </if>
         
         <if test="region != null and region != ''">
             AND p.ADDRESS LIKE '%' || #{region} || '%'
@@ -95,7 +106,7 @@
 	    SELECT 
 	        ROOM_ID as roomId,
 	        ROOM_NAME as roomName,
-	        AMOUNT as amount
+	        ROOMBASECOUNT as roomBaseCount, AMOUNT as amount
 	    FROM ROOM
 	    WHERE ROOM_ID = #{roomId}
 	</select>
