@@ -9,6 +9,16 @@
             p.IMAGE_URL as imageUrl,
             p.ADDRESS as region, a.ACCOMMODATION_TYPE as accommodationType,
             MIN(r.AMOUNT + (GREATEST(0, (#{adult} + #{child}) - r.ROOMBASECOUNT) * 20000)) as minPrice
+            
+            <choose>
+                <when test="memberId != null">
+                    , (SELECT COUNT(*) FROM BOOKMARK bk WHERE bk.PLACE_ID = p.PLACE_ID AND bk.MEMBER_ID = #{memberId}) as isBookmarked
+                </when>
+                <otherwise>
+                    , 0 as isBookmarked
+                </otherwise>
+            </choose>
+            
         FROM PLACE p
         JOIN ACCOMMODATION a ON p.PLACE_ID = a.PLACE_ID
         JOIN ROOM r ON a.PLACE_ID = r.PLACE_ID
@@ -64,6 +74,9 @@
         </if>
 
         GROUP BY p.PLACE_ID, p.PLACE_NAME, p.IMAGE_URL, p.ADDRESS, a.ACCOMMODATION_TYPE
+        
+        ORDER BY p.PLACE_ID DESC
+        OFFSET #{offset} ROWS FETCH NEXT #{size} ROWS ONLY
     </select>
     
     <select id="selectAccommodationDetail" resultType="com.tripan.app.domain.dto.AccommodationDetailDto">
@@ -174,4 +187,18 @@
             PAYMENT_SEQ.NEXTVAL, #{merchantUid}, #{payMethod}, #{impUid}, #{amount}, 'SUCCESS', SYSDATE
         )
     </insert>
+    
+    <!-- 북마크(찜) 기능 -->
+    <select id="checkBookmark" resultType="int">
+        SELECT COUNT(*) FROM BOOKMARK WHERE PLACE_ID = #{placeId} AND MEMBER_ID = #{memberId}
+    </select>
+
+    <insert id="insertBookmark">
+        INSERT INTO BOOKMARK (BOOKMARK_ID, MEMBER_ID, CREATED_AT, PLACE_ID)
+        VALUES (BOOKMARK_SEQ.NEXTVAL, #{memberId}, SYSDATE, #{placeId})
+    </insert>
+
+    <delete id="deleteBookmark">
+        DELETE FROM BOOKMARK WHERE PLACE_ID = #{placeId} AND MEMBER_ID = #{memberId}
+    </delete>
 </mapper>

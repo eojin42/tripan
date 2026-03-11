@@ -51,8 +51,14 @@ public class AccommodationController {
     
     @PostMapping("/search")
     @ResponseBody 
-    public List<AccommodationDto> searchAccommodations(@RequestBody AdSearchConditionDto condition) {
-
+    public List<AccommodationDto> searchAccommodations(@RequestBody AdSearchConditionDto condition,
+    										HttpSession session) {
+    	
+    	MemberDto loginUser = (MemberDto) session.getAttribute("loginUser");
+        if (loginUser != null) {
+            condition.setMemberId(loginUser.getMemberId());
+        }
+        
         return accommodationService.searchAccommodations(condition);
     }
     
@@ -171,6 +177,31 @@ public class AccommodationController {
             // portoneService.cancelPayment(requestDto.getImpUid(), "서버 DB 저장 실패로 인한 자동 환불");
         }
         
+        return response;
+    }
+    
+    @PostMapping("/bookmark")
+    @ResponseBody
+    public Map<String, Object> toggleBookmark(@RequestBody Map<String, Long> payload, HttpSession session) {
+        Map<String, Object> response = new HashMap<>();
+        
+        MemberDto loginUser = (MemberDto) session.getAttribute("loginUser");
+        if (loginUser == null) {
+            response.put("success", false);
+            response.put("message", "로그인이 필요한 서비스입니다.");
+            return response;
+        }
+
+        Long placeId = payload.get("placeId");
+        try {
+            boolean isBookmarked = accommodationService.toggleBookmark(placeId, loginUser.getMemberId());
+            response.put("success", true);
+            response.put("isBookmarked", isBookmarked); // 뷰단에서 색깔 바꿀 때 사용
+        } catch (Exception e) {
+            e.printStackTrace();
+            response.put("success", false);
+            response.put("message", "오류가 발생했습니다.");
+        }
         return response;
     }
 }

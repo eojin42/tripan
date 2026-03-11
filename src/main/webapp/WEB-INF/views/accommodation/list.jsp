@@ -179,37 +179,43 @@
 </main>
 
 <script>
-  // 1️⃣ 서버에서 받은 리스트(JSON)를 화면에 HTML로 그려주는 함수
-  // 1️⃣ 서버에서 받은 리스트(JSON)를 화면에 HTML로 그려주는 함수
-  window.renderAccommodations = function(list) {
-    const container = document.getElementById('accommodation-list-container'); // id 변경 반영
-    
+  // 🌟 무한 스크롤 상태 관리 변수들
+  let currentOffset = 0;   // 현재까지 불러온 개수
+  const PAGE_SIZE = 9;         // 한 번에 불러올 개수 (3열 격자니까 9개가 깔끔해요!)
+  let isFetching = false;  // 현재 서버와 통신 중인지 (중복 요청 방지)
+  let hasMore = true;      // 더 불러올 데이터가 남아있는지
+
+  window.renderAccommodations = function(list, isAppend) {
+    const container = document.getElementById('accommodation-list-container');
     const currentQueryString = window.location.search;
     
-    // 검색 결과가 없을 때
-    if (!list || list.length === 0) {
+    // 1. 처음 검색했는데 아예 데이터가 없는 경우
+    if (!isAppend && (!list || list.length === 0)) {
       container.innerHTML = '<div style="grid-column:1/-1; text-align:center; padding:80px 0; font-size:16px; color:#718096;">조건에 맞는 숙소가 없습니다. 텅! 🗑️</div>';
       return;
     }
 
- 	// 검색 결과가 있을 때 HTML 조립
     let html = '';
     list.forEach(item => {
-      // 가격에 콤마(,) 찍기
       const formattedPrice = item.minPrice ? item.minPrice.toLocaleString() : '0';
-      
-      // 이미지 경로
       const imgPath = item.imageUrl ? item.imageUrl : 'https://images.unsplash.com/photo-1542314831-068cd1dbfeeb?w=600';
-
-      // DB에서 통째로 가져온 주소(ADDRESS)에서 첫 번째 띄어쓰기 앞부분만 추출
       const regionName = item.region ? item.region.split(' ')[0] : '숙소';
+      
+      const isZzim = item.isBookmarked > 0;
+      const svgFill = isZzim ? '#4A44F2' : 'none';
+      const svgStroke = isZzim ? '#4A44F2' : 'white';
 
-      // 🌟 핵심 수정 포인트: pageContext 앞의 역슬래시(\) 제거, item.placeId 앞의 역슬래시는 유지!
       html += `
         <div class="accommodation-item" onclick="location.href='${pageContext.request.contextPath}/accommodation/detail/\${item.placeId}\${currentQueryString}'">
           <div class="accommodation-thumb">
             <img src="\${imgPath}" alt="\${item.name}">
-            <div class="wish-btn" style="position:absolute; top:12px; right:12px; color:white; font-size:20px; cursor:pointer;">♡</div>
+            
+            <div class="wish-btn" onclick="toggleBookmark(event, \${item.placeId}, this)" 
+                 style="position:absolute; top:12px; right:12px; cursor:pointer; z-index:10;">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="\${svgFill}" stroke="\${svgStroke}" stroke-width="2">
+                    <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"></path>
+                </svg>
+            </div>
           </div>
           <div class="accommodation-meta">
             <h3>\${item.name}</h3>
@@ -220,50 +226,105 @@
       `;
     });
     
-    container.innerHTML = html;
+    // 2. 덮어씌울지(새로고침), 밑에 이어붙일지(스크롤) 결정!
+    if (isAppend) {
+        container.insertAdjacentHTML('beforeend', html);
+    } else {
+        container.innerHTML = html;
+    }
   };
 
+  // 🌟 기존 fetchInitialList를 대체하는 메인 요청 함수
+  async function fetchAccommodations(isReset = false) {
+    // 통신 중이거나 더 이상 데이터가 없으면 튕겨냄
+    if (isFetching || (!hasMore && !isReset)) return;
+    isFetching = true;
 
-  // 2️⃣ 리스트 페이지가 처음 열렸을 때 바로 서버에 데이터를 달라고 요청하는 함수
-  async function fetchInitialList() {
+    // 초기화 요청(첫 로드)일 경우 변수 리셋
+    if (isReset) {
+        currentOffset = 0;
+        hasMore = true;
+    }
+
     const urlParams = new URLSearchParams(window.location.search);
-    
-    // 주소창의 파라미터를 DTO 형식에 맞춰 객체로 조립
     const requestData = {
       region: urlParams.get('regions') || '',
       checkin: urlParams.get('checkin') || '',
       checkout: urlParams.get('checkout') || '',
       adult: parseInt(urlParams.get('adult')) || 0,
       child: parseInt(urlParams.get('child')) || 0,
+      accTypes: [], accFacilities: [], roomFacilities: [],
       
-      // 초기 로딩이므로 필터값은 기본값(빈 배열)으로 세팅
-      accTypes: [],
-      accFacilities: [],
-      roomFacilities: []
+      // 🌟 DTO에 추가한 페이징 데이터 전달!
+      offset: currentOffset,
+      size: PAGE_SIZE
     };
 
     try {
       const response = await fetch('${pageContext.request.contextPath}/accommodation/search', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(requestData)
       });
-
       if (!response.ok) throw new Error('데이터를 불러오지 못했습니다.');
       
-      const data = await response.json(); // 백엔드에서 준 데이터 받기
-      window.renderAccommodations(data);  // 1번 함수 호출해서 화면 그리기!
+      const data = await response.json();
+      
+      // 🌟 방금 받아온 데이터가 요청한 9개보다 적다면? -> 마지막 페이지라는 뜻!
+      if (data.length < PAGE_SIZE) {
+          hasMore = false; 
+      }
+
+      // 화면 그리기 (isReset이 true면 새로 그리기, false면 이어 붙이기)
+      window.renderAccommodations(data, !isReset);
+      
+      // 다음 번 요청을 위해 offset 증가
+      currentOffset += data.length;
 
     } catch (error) {
       console.error(error);
-      document.getElementById('accommodation-list-container').innerHTML = 
-        '<div style="grid-column:1/-1; text-align:center;">데이터를 불러오는 중 오류가 발생했습니다.</div>';
+      if (isReset) {
+        document.getElementById('accommodation-list-container').innerHTML = '<div style="grid-column:1/-1; text-align:center;">오류가 발생했습니다.</div>';
+      }
+    } finally {
+      isFetching = false; // 통신 끝! 락 해제
     }
   }
 
-  // 화면이 켜지자마자 데이터 요청 함수 실행
+  // 북마크 토글 함수 (기존 코드 그대로 유지)
+  window.toggleBookmark = function(event, placeId, btnElement) {
+    event.stopPropagation(); 
+    fetch('${pageContext.request.contextPath}/accommodation/bookmark', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ placeId: placeId })
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (!data.success) {
+            alert(data.message);
+            if (data.message.includes('로그인')) location.href = '${pageContext.request.contextPath}/member/login';
+            return;
+        }
+        const svg = btnElement.querySelector('svg');
+        if (data.isBookmarked) {
+            svg.setAttribute('fill', '#4A44F2'); svg.setAttribute('stroke', '#4A44F2');
+        } else {
+            svg.setAttribute('fill', 'none'); svg.setAttribute('stroke', 'white');
+        }
+    })
+    .catch(err => console.error(err));
+  };
+
+  // 1. 페이지 로드 시 최초 1회 데이터 요청
   document.addEventListener("DOMContentLoaded", () => {
-    fetchInitialList();
+    fetchAccommodations(true);
+  });
+
+  // 2. 🌟 무한 스크롤 마법의 코드! 스크롤 이벤트 감지
+  window.addEventListener('scroll', () => {
+      // 문서 전체 높이에서 (현재 스크롤 위치 + 창 높이)를 뺐을 때 300px 남으면 미리 다음 데이터 호출!
+      if (document.documentElement.scrollHeight - (window.scrollY + window.innerHeight) < 300) {
+          fetchAccommodations(false); // isReset = false (이어붙이기)
+      }
   });
 </script>
 

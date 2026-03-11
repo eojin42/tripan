@@ -21,4 +21,6 @@ public interface AccommodationService {
     
     
     public void processReservation(ReservationRequestDto dto);
+    
+    public boolean toggleBookmark(Long placeId, Long memberId);
 }

@@ -12,4 +12,6 @@ public class AccommodationDto {
     private String region;            // ADDRESS를 가공해서 쓸 지역명
     private String accommodationType; // ACCOMMODATION 테이블
     private Integer minPrice;         // ROOM 테이블에서 해당 숙소의 최저가
+    
+    private int isBookmarked;
 }

@@ -95,7 +95,7 @@ public class AccommodationServiceImpl implements AccommodationService{
 		// 1. 주문 마스터 생성
         mapper.insertOrder(dto);
         
-        // 2. 예약 정보 생성 (🌟 이 과정에서 dto 안에 reservationId가 세팅됨!)
+        // 2. 예약 정보 생성 
         mapper.insertReservation(dto);
         
         // 3. 주문 상세 생성 (위에서 만든 reservationId를 사용)
@@ -107,6 +107,19 @@ public class AccommodationServiceImpl implements AccommodationService{
         // (+ 추가 팁) 여기서 기존에 걸어뒀던 5분 선점 락(ROOM_LOCK) 데이터를 삭제하는 쿼리를 같이 호출해주면 더욱 완벽합니다!
         // mapper.deleteRoomLock(dto.getRoomId(), dto.getCheckin(), 특정세션ID);
     }
+
+
+	@Override
+	public boolean toggleBookmark(Long placeId, Long memberId) {
+		int count = mapper.checkBookmark(placeId, memberId);
+        if (count > 0) {
+            mapper.deleteBookmark(placeId, memberId); // 이미 있으면 삭제
+            return false; 
+        } else {
+            mapper.insertBookmark(placeId, memberId); // 없으면 추가
+            return true;  
+        }
+	}
 	
 	
 }
