@@ -5,6 +5,7 @@ import java.util.Map;
 
 import org.springframework.stereotype.Service;
 
+import com.tripan.app.domain.dto.CommunityFeedCommentDto;
 import com.tripan.app.domain.dto.CommunityFeedListDto;
 import com.tripan.app.domain.dto.CommunityFeedWriteRequestDto;
 
@@ -13,4 +14,9 @@ public interface CommunityFeedService {
 	void insertFeed(CommunityFeedWriteRequestDto dto, Long memberId) throws Exception;
 	public String toggleFollow(Long followerId, Long followingId);
 	List<CommunityFeedListDto> getFeedList(Long loginMemberId);
+	Map<String, Object> toggleFeedLike(Long postId, Long memberId);
+	
+    List<CommunityFeedCommentDto> getFeedComments(Long postId);
+    void insertFeedComment(CommunityFeedCommentDto dto) throws Exception;
+	
 }

@@ -11,6 +11,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
+import com.tripan.app.domain.dto.CommunityFeedCommentDto;
 import com.tripan.app.domain.dto.CommunityFeedListDto;
 import com.tripan.app.domain.dto.CommunityFeedWriteRequestDto;
 import com.tripan.app.mapper.CommunityFeedMapper;
@@ -86,5 +87,45 @@ public class CommunityFeedServiceImpl implements CommunityFeedService {
     public List<CommunityFeedListDto> getFeedList(Long loginMemberId) {
         return feedMapper.getFeedList(loginMemberId);
     }
+    
+    @Override
+    @Transactional
+    public Map<String, Object> toggleFeedLike(Long postId, Long memberId) {
+        Map<String, Object> params = new HashMap<>();
+        params.put("postId", postId);
+        params.put("memberId", memberId);
+        
+        int isLiked = feedMapper.checkFeedLike(params);
+        String status;
+        int amount;
+        
+        if (isLiked > 0) {
+            feedMapper.deleteFeedLike(params);
+            amount = -1; 
+            status = "unliked";
+        } else { 
+            feedMapper.insertFeedLike(params);
+            amount = 1; 
+            status = "liked";
+        }
+        
+        feedMapper.updateFeedLikeCount(postId, amount);
+        
+        int newCount = feedMapper.getFeedLikeCount(postId);
+        
+        return Map.of("status", status, "count", newCount);
+    }
+    
+    @Override
+    public List<CommunityFeedCommentDto> getFeedComments(Long postId) {
+        return feedMapper.getFeedComments(postId);
+    }
+
+    @Override
+    @Transactional
+    public void insertFeedComment(CommunityFeedCommentDto dto) throws Exception {
+        feedMapper.insertFeedComment(dto);
+    }
+    
     
 }

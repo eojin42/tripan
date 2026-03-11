@@ -56,7 +56,7 @@
           </li>
           
           <li class="nav-item">
-            <a href="#" class="nav-link">숙소 예약</a>
+            <a href="${pageContext.request.contextPath}/accommodation/home" class="nav-link">숙소 예약</a>
             <div class="dropdown-menu">
               <a href="#">지역별 숙소 검색</a>
               <a href="#">할인 및 쿠폰 혜택</a>

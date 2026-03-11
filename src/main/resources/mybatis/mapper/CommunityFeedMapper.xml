@@ -52,6 +52,61 @@
 	    LEFT JOIN trip T ON F.trip_id = T.trip_id
 	    ORDER BY F.post_id DESC
 	</select>
+	
+	<select id="checkFeedLike" resultType="int">
+    SELECT COUNT(*) FROM likes 
+    WHERE target_id = #{postId} AND member_id = #{memberId} AND target_type = 'FEED'
+	</select>
+	
+	<insert id="insertFeedLike">
+	    INSERT INTO likes (like_id, member_id, target_id, target_type, created_at)
+	    VALUES (SEQ_LIKES_ID.NEXTVAL, #{memberId}, #{postId}, 'FEED', SYSDATE)
+	</insert>
+	
+	<delete id="deleteFeedLike">
+	    DELETE FROM likes 
+	    WHERE target_id = #{postId} AND member_id = #{memberId} AND target_type = 'FEED'
+	</delete>
+	
+	<update id="updateFeedLikeCount">
+	    UPDATE feed_post 
+	    SET like_count = like_count + #{amount} 
+	    WHERE post_id = #{postId}
+	</update>
+	
+	<select id="getFeedLikeCount" resultType="int">
+	    SELECT like_count FROM feed_post WHERE post_id = #{postId}
+	</select>
+	
+	<select id="getFeedComments" resultType="com.tripan.app.domain.dto.CommunityFeedCommentDto">
+        SELECT 
+            c.comment_id as commentId,
+            c.post_id as postId,
+            c.member_id as memberId,
+            c.parent_comment_id as parentCommentId,
+            c.content,
+            c.del_yn as delYn,
+            TO_CHAR(c.created_at, 'YYYY-MM-DD HH24:MI') as createdAt,
+            m.nickname,
+            m.profile_image as profileImage
+        FROM post_comment c
+        LEFT JOIN member2 m ON c.member_id = m.member_id
+        WHERE c.post_id = #{postId} 
+          AND c.del_yn = 'N' ORDER BY c.comment_id ASC
+    </select>
+    
+    <insert id="insertFeedComment" parameterType="com.tripan.app.domain.dto.CommunityFeedCommentDto">
+        INSERT INTO post_comment (
+            comment_id, post_id, member_id, parent_comment_id, content, del_yn, created_at
+        ) VALUES (
+            POST_COMMENT_SEQ.NEXTVAL, 
+            #{postId}, 
+            #{memberId}, 
+            NVL(#{parentCommentId}, 0), #{content}, 
+            'N', 
+            CURRENT_TIMESTAMP
+        )
+    </insert>
 
 
 </mapper>
