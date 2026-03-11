@@ -1,13 +1,14 @@
 package com.tripan.app.trip.repository;
 
-import java.util.List;
-
+import com.tripan.app.trip.domain.entity.Expense;
 import org.springframework.data.jpa.repository.JpaRepository;
-
-import com.tripan.app.trip.domian.entity.Expense;
+import java.util.List;
 
 public interface ExpenseRepository extends JpaRepository<Expense, Long> {
 
-    // 내부 계산용: 특정 여행(tripId)에서 발생한 모든 지출 내역 조회
+    /** 가계부 목록 - 날짜 역순 */
+    List<Expense> findByTripIdOrderByExpenseDateDesc(Long tripId);
+
+    /** 정산 계산용 */
     List<Expense> findByTripId(Long tripId);
 }

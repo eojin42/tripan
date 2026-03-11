@@ -78,18 +78,11 @@
 .step-panel.active { display: block; animation: slideUp .3s var(--ease); }
 
 /* STEP 1 */
-.city-search-wrap { position: relative; margin-bottom: 24px; }
-.city-search-wrap svg { position: absolute; left: 16px; top: 50%; transform: translateY(-50%); color: var(--light); pointer-events: none; }
-.city-search {
-  width: 100%; padding: 14px 16px 14px 46px; border: 1.5px solid var(--border); border-radius: 12px;
-  font-family: 'Pretendard', sans-serif; font-size: 15px; color: var(--dark); outline: none;
-  transition: border-color .2s, box-shadow .2s; background: var(--bg);
-}
-.city-search:focus { border-color: var(--point-blue); box-shadow: 0 0 0 3px rgba(137,207,240,.18); background: var(--white); }
+
 
 .region-section { margin-bottom: 28px; }
 .region-label { font-size: 11px; font-weight: 800; letter-spacing: 2px; color: var(--light); text-transform: uppercase; margin-bottom: 12px; display: block; }
-.city-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); gap: 10px; }
+.city-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
 .city-chip {
   padding: 12px 8px; border: 1.5px solid var(--border); border-radius: 12px; background: var(--white);
   cursor: pointer; text-align: center; transition: all .2s var(--ease);
@@ -98,7 +91,7 @@
 .city-chip:hover { border-color: var(--point-blue); background: #EBF8FF; transform: translateY(-2px); box-shadow: 0 6px 16px rgba(137,207,240,.2); }
 .city-chip.selected { border-color: transparent; background: var(--grad2); box-shadow: 0 6px 16px rgba(137,207,240,.35); }
 .city-chip.selected .city-name, .city-chip.selected .city-emoji { color: white !important; filter: none; }
-.city-emoji { font-size: 22px; line-height: 1; }
+.city-emoji { font-size: 18px; line-height: 1; }
 .city-name  { font-size: 13px; font-weight: 700; color: var(--dark); }
 
 .selected-tags { display: flex; flex-wrap: wrap; gap: 8px; min-height: 0; margin-bottom: 0; transition: min-height .3s; }
@@ -132,6 +125,15 @@
 }
 .form-input:focus, .form-select:focus { border-color: var(--point-blue); box-shadow: 0 0 0 3px rgba(137,207,240,.18); background: var(--white); }
 .form-input::placeholder { color: var(--light); }
+.form-textarea {
+  padding: 13px 16px; border: 1.5px solid var(--border); border-radius: 12px;
+  font-family: 'Pretendard', sans-serif; font-size: 14px; color: var(--dark);
+  background: var(--bg); outline: none; resize: vertical; min-height: 88px; max-height: 180px;
+  transition: border-color .2s, box-shadow .2s; line-height: 1.6; width: 100%;
+}
+.form-textarea:focus { border-color: var(--point-blue); box-shadow: 0 0 0 3px rgba(137,207,240,.18); background: var(--white); }
+.form-textarea::placeholder { color: var(--light); }
+.desc-count { font-size: 12px; color: var(--light); text-align: right; margin-top: 6px; }
 
 .date-range-wrap { display: grid; grid-template-columns: 1fr auto 1fr; gap: 10px; align-items: center; }
 .date-range-sep { width: 24px; height: 1.5px; background: var(--border); border-radius: 2px; flex-shrink: 0; }
@@ -221,6 +223,107 @@
   .date-range-wrap { grid-template-columns: 1fr; }
   .date-range-sep { display: none; }
 }
+
+/* ── 여행유형 버튼 (button 태그) ── */
+.trip-type-grid { display: flex; gap: 8px; }
+.trip-type-btn {
+  flex: 1; display: flex; flex-direction: column; align-items: center; gap: 8px;
+  padding: 15px 6px 13px;
+  border: 2px solid var(--border); border-radius: 16px;
+  background: var(--white); cursor: pointer;
+  font-family: 'Pretendard', sans-serif;
+  transition: all .18s ease; user-select: none; outline: none;
+}
+.trip-type-btn:hover {
+  border-color: var(--point-blue); background: #EBF8FF;
+  transform: translateY(-3px); box-shadow: 0 8px 20px rgba(137,207,240,.22);
+}
+.trip-type-btn.selected {
+  border-color: transparent;
+  background: linear-gradient(135deg, #89CFF0, #FFB6C1);
+  box-shadow: 0 8px 24px rgba(137,207,240,.4);
+  transform: translateY(-3px);
+}
+.trip-type-btn.selected .type-label { color: white; }
+.type-emoji { font-size: 24px; line-height: 1; display: block; }
+.type-label { font-size: 12px; font-weight: 700; color: var(--dark); white-space: nowrap; }
+
+/* ── 썸네일: 원형 ── */
+.thumb-section-wrap { display: flex; gap: 22px; align-items: center; }
+.thumb-circle-wrap { position: relative; flex-shrink: 0; }
+.thumb-circle {
+  width: 96px; height: 96px; border-radius: 50%;
+  border: 3px solid var(--border); background: var(--bg);
+  overflow: hidden; cursor: pointer; transition: border-color .2s;
+  position: relative; display: flex; align-items: center; justify-content: center;
+}
+.thumb-circle:hover { border-color: var(--point-blue); }
+.thumb-circle img { width: 100%; height: 100%; object-fit: cover; border-radius: 50%; display: block; }
+.thumb-circle-overlay {
+  position: absolute; inset: 0; border-radius: 50%;
+  background: rgba(0,0,0,.36); opacity: 0;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 20px; color: white; transition: opacity .2s;
+}
+.thumb-circle:hover .thumb-circle-overlay { opacity: 1; }
+.thumb-x-btn {
+  position: absolute; top: 0; right: 0;
+  width: 26px; height: 26px; border-radius: 50%;
+  background: #FC8181; border: 2px solid white; color: white;
+  font-size: 13px; font-weight: 700; cursor: pointer;
+  display: none; align-items: center; justify-content: center;
+  outline: none; line-height: 1;
+}
+.thumb-x-btn.visible { display: flex; }
+.thumb-right { display: flex; flex-direction: column; gap: 8px; }
+.thumb-pick-btn {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 11px 22px; border-radius: 50px;
+  background: var(--grad2); color: white; border: none;
+  font-family: 'Pretendard', sans-serif; font-size: 13px; font-weight: 700;
+  cursor: pointer; transition: opacity .2s; white-space: nowrap;
+}
+.thumb-pick-btn:hover { opacity: .87; }
+.thumb-info-txt { font-size: 11px; color: var(--light); line-height: 1.7; }
+
+/* ── 예산 ── */
+.budget-row {
+  display: flex; align-items: center;
+  border: 1.5px solid var(--border); border-radius: 12px;
+  background: var(--bg); height: 52px; overflow: hidden;
+  transition: border-color .2s, box-shadow .2s;
+}
+.budget-row:focus-within {
+  border-color: var(--point-blue); box-shadow: 0 0 0 3px rgba(137,207,240,.18);
+  background: var(--white);
+}
+.budget-sym {
+  padding: 0 16px; font-size: 16px; font-weight: 800; color: #718096;
+  border-right: 1.5px solid var(--border); height: 100%;
+  display: flex; align-items: center; background: #F7FAFC; flex-shrink: 0;
+}
+.budget-num {
+  flex: 1; border: none; outline: none; background: transparent;
+  font-family: 'Pretendard', sans-serif; font-size: 15px; font-weight: 700;
+  color: var(--dark); padding: 0 16px; height: 100%;
+}
+.budget-num::placeholder { color: var(--light); font-weight: 400; font-size: 14px; }
+.budget-won {
+  padding: 0 14px; font-size: 13px; font-weight: 600; color: #A0AEC0;
+  height: 100%; display: flex; align-items: center; flex-shrink: 0;
+  border-left: 1.5px solid var(--border); background: #F7FAFC;
+}
+.budget-preview-txt {
+  font-size: 12px; color: var(--point-blue); font-weight: 700;
+  margin-top: 8px; min-height: 16px; padding-left: 2px;
+}
+
+/* ── STEP3 확인카드 썸네일 원형 ── */
+.confirm-thumb-circle {
+  width: 56px; height: 56px; border-radius: 50%;
+  border: 2px solid var(--border); object-fit: cover; display: block;
+  flex-shrink: 0;
+}
 </style>
 
 
@@ -271,44 +374,22 @@
       <%-- STEP 1 --%>
       <div class="step-panel active" id="panel0">
         <div id="selectedTagsWrap" class="selected-tags"></div>
-        <div class="city-search-wrap">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-          <input type="text" class="city-search" id="citySearch" placeholder="도시 이름으로 검색…" oninput="filterCities(this.value)">
-        </div>
-        <div id="cityListWrap">
-          <div class="region-section">
-            <span class="region-label">🌊 해안 &amp; 섬</span>
-            <div class="city-grid">
-              <div class="city-chip" onclick="toggleCity('제주',this)"><span class="city-emoji">🍊</span><span class="city-name">제주</span></div>
-              <div class="city-chip" onclick="toggleCity('부산',this)"><span class="city-emoji">🌊</span><span class="city-name">부산</span></div>
-              <div class="city-chip" onclick="toggleCity('여수',this)"><span class="city-emoji">🎆</span><span class="city-name">여수</span></div>
-              <div class="city-chip" onclick="toggleCity('속초',this)"><span class="city-emoji">🦀</span><span class="city-name">속초</span></div>
-              <div class="city-chip" onclick="toggleCity('강릉',this)"><span class="city-emoji">🌲</span><span class="city-name">강릉</span></div>
-              <div class="city-chip" onclick="toggleCity('통영',this)"><span class="city-emoji">⛵</span><span class="city-name">통영</span></div>
-            </div>
-          </div>
-          <div class="region-section">
-            <span class="region-label">🏙️ 도심 &amp; 도시</span>
-            <div class="city-grid">
-              <div class="city-chip" onclick="toggleCity('서울',this)"><span class="city-emoji">🗼</span><span class="city-name">서울</span></div>
-              <div class="city-chip" onclick="toggleCity('인천',this)"><span class="city-emoji">✈️</span><span class="city-name">인천</span></div>
-              <div class="city-chip" onclick="toggleCity('대구',this)"><span class="city-emoji">🍎</span><span class="city-name">대구</span></div>
-              <div class="city-chip" onclick="toggleCity('광주',this)"><span class="city-emoji">🎨</span><span class="city-name">광주</span></div>
-              <div class="city-chip" onclick="toggleCity('대전',this)"><span class="city-emoji">🔬</span><span class="city-name">대전</span></div>
-              <div class="city-chip" onclick="toggleCity('수원',this)"><span class="city-emoji">🏰</span><span class="city-name">수원</span></div>
-            </div>
-          </div>
-          <div class="region-section">
-            <span class="region-label">🌿 자연 &amp; 힐링</span>
-            <div class="city-grid">
-              <div class="city-chip" onclick="toggleCity('경주',this)"><span class="city-emoji">🏛️</span><span class="city-name">경주</span></div>
-              <div class="city-chip" onclick="toggleCity('전주',this)"><span class="city-emoji">🥢</span><span class="city-name">전주</span></div>
-              <div class="city-chip" onclick="toggleCity('춘천',this)"><span class="city-emoji">🦆</span><span class="city-name">춘천</span></div>
-              <div class="city-chip" onclick="toggleCity('안동',this)"><span class="city-emoji">🎎</span><span class="city-name">안동</span></div>
-              <div class="city-chip" onclick="toggleCity('남해',this)"><span class="city-emoji">🌻</span><span class="city-name">남해</span></div>
-              <div class="city-chip" onclick="toggleCity('가평',this)"><span class="city-emoji">🏔️</span><span class="city-name">가평</span></div>
-            </div>
-          </div>
+        <%-- 지역 선택 그리드 (14개 고정, 다중 선택 가능) --%>
+        <div class="city-grid" id="cityListWrap">
+          <div class="city-chip" onclick="toggleCity('서울',this)"><span class="city-emoji">🗼</span><span class="city-name">서울</span></div>
+          <div class="city-chip" onclick="toggleCity('부산',this)"><span class="city-emoji">🌊</span><span class="city-name">부산</span></div>
+          <div class="city-chip" onclick="toggleCity('제주',this)"><span class="city-emoji">🍊</span><span class="city-name">제주</span></div>
+          <div class="city-chip" onclick="toggleCity('강원',this)"><span class="city-emoji">🏔️</span><span class="city-name">강원</span></div>
+          <div class="city-chip" onclick="toggleCity('경상',this)"><span class="city-emoji">🏯</span><span class="city-name">경상</span></div>
+          <div class="city-chip" onclick="toggleCity('전라',this)"><span class="city-emoji">🥢</span><span class="city-name">전라</span></div>
+          <div class="city-chip" onclick="toggleCity('충청',this)"><span class="city-emoji">🌿</span><span class="city-name">충청</span></div>
+          <div class="city-chip" onclick="toggleCity('경기',this)"><span class="city-emoji">🏰</span><span class="city-name">경기</span></div>
+          <div class="city-chip" onclick="toggleCity('인천',this)"><span class="city-emoji">✈️</span><span class="city-name">인천</span></div>
+          <div class="city-chip" onclick="toggleCity('대전',this)"><span class="city-emoji">🔬</span><span class="city-name">대전</span></div>
+          <div class="city-chip" onclick="toggleCity('대구',this)"><span class="city-emoji">🍎</span><span class="city-name">대구</span></div>
+          <div class="city-chip" onclick="toggleCity('광주',this)"><span class="city-emoji">🎨</span><span class="city-name">광주</span></div>
+          <div class="city-chip" onclick="toggleCity('울산',this)"><span class="city-emoji">🏭</span><span class="city-name">울산</span></div>
+          <div class="city-chip" onclick="toggleCity('세종',this)"><span class="city-emoji">🏛️</span><span class="city-name">세종</span></div>
         </div>
       </div>
 
@@ -328,6 +409,18 @@
           </div>
         </div>
 
+        <%-- 여행 설명 --%>
+        <div class="form-section">
+          <p class="form-section-title"><span class="dot"></span> 여행 설명 <span style="font-weight:400;color:var(--light);font-size:11px;">(선택)</span></p>
+          <div class="form-group" style="position:relative;">
+            <textarea class="form-textarea" id="tripDescription"
+              placeholder="이 여행에 대해 자유롭게 소개해 주세요. 예: 친구들과 떠나는 설레는 제주 3박 4일! 🍊"
+              maxlength="200"
+              oninput="document.getElementById('descCount').textContent=this.value.length;"></textarea>
+            <p class="desc-count"><span id="descCount">0</span> / 200</p>
+          </div>
+        </div>
+
         <div class="form-section">
           <p class="form-section-title"><span class="dot"></span> 여행 날짜</p>
           <div class="date-range-wrap">
@@ -344,29 +437,70 @@
           <p id="nightsInfo" style="font-size:13px;color:var(--point-blue);font-weight:700;margin-top:10px;min-height:18px;"></p>
         </div>
 
+        <%-- ── 대표 이미지 ── --%>
         <div class="form-section">
-          <p class="form-section-title"><span class="dot"></span> 여행 인원 &amp; 유형</p>
-          <div class="form-row">
-            <div class="form-group">
-              <label class="form-label">총 인원</label>
-              <div class="stepper-wrap">
-                <button class="stepper-btn" onclick="stepChange(-1)">−</button>
-                <span class="stepper-val" id="memberCount">2</span>
-                <button class="stepper-btn" onclick="stepChange(1)">+</button>
+          <p class="form-section-title"><span class="dot"></span> 대표 이미지 <span style="font-weight:400;color:var(--light);font-size:11px;">(선택)</span></p>
+          <div class="thumb-section-wrap">
+            <%-- 원형 프리뷰 --%>
+            <div class="thumb-circle-wrap">
+              <div class="thumb-circle" onclick="document.getElementById('thumbFileInput').click()">
+                <img id="thumbPreviewImg"
+                  src="${pageContext.request.contextPath}/dist/images/logo.png"
+                  alt="대표 이미지"
+                  onerror="this.src='${pageContext.request.contextPath}/dist/images/logo.png'">
+                <div class="thumb-circle-overlay">📷</div>
               </div>
+              <button class="thumb-x-btn" id="thumbXBtn" onclick="resetThumb()" title="기본 이미지로">✕</button>
             </div>
-            <div class="form-group">
-              <label class="form-label">여행 유형</label>
-              <select class="form-select" id="tripType">
-                <option value="">선택하세요</option>
-                <option value="COUPLE">💑 커플</option>
-                <option value="FAMILY">👨‍👩‍👧 가족</option>
-                <option value="FRIENDS">👫 친구</option>
-                <option value="SOLO">🙋 혼자</option>
-                <option value="BUSINESS">💼 비즈니스</option>
-              </select>
+            <%-- 우측 버튼/안내 --%>
+            <div class="thumb-right">
+              <button class="thumb-pick-btn" onclick="document.getElementById('thumbFileInput').click()">
+                📷 이미지 선택
+              </button>
+              <input type="file" id="thumbFileInput" accept="image/*" style="display:none" onchange="onThumbChange(event)">
+              <p class="thumb-info-txt">JPG · PNG · WEBP · 최대 5MB</p>
             </div>
           </div>
+        </div>
+
+        <%-- ── 총 예산 ── --%>
+        <div class="form-section">
+          <p class="form-section-title"><span class="dot"></span> 총 예산 <span style="font-weight:400;color:var(--light);font-size:11px;">(선택)</span></p>
+          <div class="budget-row">
+            <span class="budget-sym">₩</span>
+            <input type="text" inputmode="numeric" class="budget-num" id="totalBudget"
+              placeholder="예상 예산을 입력하세요"
+              oninput="onBudgetInput(this)">
+            <span class="budget-won">원</span>
+          </div>
+          <p class="budget-preview-txt" id="budgetPreview"></p>
+        </div>
+
+        <div class="form-section">
+          <p class="form-section-title"><span class="dot"></span> 여행 유형 <span style="font-weight:400;color:var(--light);font-size:11px;">(선택)</span></p>
+          <div class="trip-type-grid" id="tripTypeGrid">
+            <button type="button" class="trip-type-btn" data-val="COUPLE" onclick="selectTripType('COUPLE', this)">
+              <span class="type-emoji">💑</span>
+              <span class="type-label">커플</span>
+            </button>
+            <button type="button" class="trip-type-btn" data-val="FAMILY" onclick="selectTripType('FAMILY', this)">
+              <span class="type-emoji">👨‍👩‍👧</span>
+              <span class="type-label">가족</span>
+            </button>
+            <button type="button" class="trip-type-btn" data-val="FRIENDS" onclick="selectTripType('FRIENDS', this)">
+              <span class="type-emoji">👫</span>
+              <span class="type-label">친구</span>
+            </button>
+            <button type="button" class="trip-type-btn" data-val="SOLO" onclick="selectTripType('SOLO', this)">
+              <span class="type-emoji">🙋</span>
+              <span class="type-label">혼자</span>
+            </button>
+            <button type="button" class="trip-type-btn" data-val="BUSINESS" onclick="selectTripType('BUSINESS', this)">
+              <span class="type-emoji">💼</span>
+              <span class="type-label">비즈니스</span>
+            </button>
+          </div>
+          <input type="hidden" id="tripType" value="">
         </div>
 
         <div class="form-section">
@@ -434,7 +568,7 @@
 var currentStep    = 0;
 var TOTAL_STEPS    = 3;
 var selectedCities = [];
-var memberCnt      = 2;
+var selectedRegionIds = [];
 var customTags     = [];
 
 var STEPS = [
@@ -539,22 +673,8 @@ function removeCity(name) {
   });
   renderCityTags(); validateStep(0);
 }
-function filterCities(q) {
-  document.querySelectorAll('.city-chip').forEach(function(el) {
-    el.style.display = el.querySelector('.city-name').textContent.includes(q) ? '' : 'none';
-  });
-  document.querySelectorAll('.region-section').forEach(function(sec) {
-    var visible = Array.from(sec.querySelectorAll('.city-chip')).some(function(c) { return c.style.display !== 'none'; });
-    sec.style.display = visible ? '' : 'none';
-  });
-}
 
 /* ── STEP 2 ── */
-function stepChange(delta) {
-  var el = document.getElementById('memberCount');
-  memberCnt = Math.max(1, Math.min(20, parseInt(el.textContent) + delta));
-  el.textContent = memberCnt;
-}
 function calcNights() {
   var s = document.getElementById('startDate').value;
   var e = document.getElementById('endDate').value;
@@ -611,16 +731,61 @@ function onVisibilityChange() {
 }
 
 /* ── STEP 3 ── */
+var selectedTripType = '';
+
+function selectTripType(val, el) {
+  selectedTripType = val;
+  document.getElementById('tripType').value = val;
+  document.querySelectorAll('.trip-type-btn').forEach(function(b) { b.classList.remove('selected'); });
+  el.classList.add('selected');
+}
+
+function onBudgetInput(input) {
+  // 숫자 외 문자 제거 후 쉼표 포맷
+  var raw = input.value.replace(/[^0-9]/g, '');
+  input.dataset.raw = raw;
+  if (raw === '') { input.value = ''; document.getElementById('budgetPreview').textContent = ''; return; }
+  var n = parseInt(raw, 10);
+  // input 표시값은 쉼표 없이 (number inputmode) - 미리보기로만 표시
+  document.getElementById('budgetPreview').textContent = raw ? '≈ ' + n.toLocaleString() + '원' : '';
+}
+
+function onThumbChange(event) {
+  var file = event.target.files[0];
+  if (!file) return;
+  if (file.size > 5 * 1024 * 1024) { alert('이미지 크기는 5MB 이하여야 해요'); return; }
+  var reader = new FileReader();
+  reader.onload = function(e) {
+    document.getElementById('thumbPreviewImg').src = e.target.result;
+    document.getElementById('thumbXBtn').classList.add('visible');
+  };
+  reader.readAsDataURL(file);
+}
+
+function resetThumb() {
+  var ctx = '${pageContext.request.contextPath}';
+  document.getElementById('thumbPreviewImg').src = ctx + '/dist/images/logo.png';
+  document.getElementById('thumbFileInput').value = '';
+  document.getElementById('thumbXBtn').classList.remove('visible');
+}
+
 function buildConfirmCard() {
-  var title   = document.getElementById('tripTitle').value;
-  var start   = document.getElementById('startDate').value;
-  var end     = document.getElementById('endDate').value;
-  var sel     = document.getElementById('tripType');
-  var typeText = sel.options[sel.selectedIndex] ? sel.options[sel.selectedIndex].text : '미선택';
-  var themes  = getThemes();
-  var nights  = Math.round((new Date(end) - new Date(start)) / 86400000);
+  var title    = document.getElementById('tripTitle').value;
+  var desc     = document.getElementById('tripDescription').value.trim();
+  var start    = document.getElementById('startDate').value;
+  var end      = document.getElementById('endDate').value;
+  var typeLabels = { COUPLE:'💑 커플', FAMILY:'👨‍👩‍👧 가족', FRIENDS:'👫 친구', SOLO:'🙋 혼자', BUSINESS:'💼 비즈니스' };
+  var typeText = selectedTripType ? (typeLabels[selectedTripType] || selectedTripType) : '미선택';
+  var themes   = getThemes();
+  var nights   = Math.round((new Date(end) - new Date(start)) / 86400000);
   var nightText = nights === 0 ? '당일치기' : (nights + '박 ' + (nights+1) + '일');
   var isPublic  = document.getElementById('isPublic').checked;
+  var budgetInput = document.getElementById('totalBudget');
+  var budget = budgetInput.dataset.raw || budgetInput.value.replace(/[^0-9]/g,'');
+
+  // 썸네일 원형 미리보기
+  var thumbSrc = document.getElementById('thumbPreviewImg').src;
+  var thumbHtml = '<img src="' + thumbSrc + '" class="confirm-thumb-circle" style="width:56px;height:56px;border-radius:50%;object-fit:cover;border:2px solid #E2E8F0;">';
 
   var tagsHtml = themes.length
     ? '<div class="tag-list">' + themes.map(function(t){ return '<span class="mini-tag">' + t + '</span>'; }).join('') + '</div>'
@@ -628,39 +793,41 @@ function buildConfirmCard() {
   var pubBadge = isPublic
     ? '<span class="badge-public">공개</span>'
     : '<span class="badge-private">비공개</span>';
+  var budgetHtml = (budget && parseInt(budget) > 0)
+    ? '<span style="font-weight:700;color:var(--point-blue);">₩ ' + parseInt(budget).toLocaleString() + '원</span>'
+    : '<span style="color:var(--light);">미설정</span>';
 
   function row(k, v) {
     return '<div class="confirm-row"><span class="confirm-key">' + k + '</span><span class="confirm-val">' + v + '</span></div>';
   }
-  document.getElementById('confirmCard').innerHTML =
+  var rows =
+    row('대표 이미지', thumbHtml) +
     row('여행 제목', title) +
-    row('여행지', selectedCities.join(', ')) +
-    row('일정', start + ' → ' + end + '<br><span style="color:var(--point-blue);font-size:13px;">' + nightText + '</span>') +
-    row('인원 / 유형', memberCnt + '명 / ' + typeText) +
-    row('테마', tagsHtml) +
+    row('여행지',    selectedCities.join(', ') || '미선택') +
+    row('일정',      start + ' → ' + end + '<br><span style="color:var(--point-blue);font-size:13px;">' + nightText + '</span>') +
+    row('여행 유형', typeText) +
+    row('예상 예산', budgetHtml) +
+    row('테마',      tagsHtml) +
     row('공개 여부', pubBadge);
+  if (desc) rows += row('여행 설명', '<span style="font-size:13px;font-weight:500;color:var(--mid);word-break:keep-all;">' + desc + '</span>');
+  document.getElementById('confirmCard').innerHTML = rows;
 }
 
 /* ── 여행 생성 ── */
 function createTrip() {
-  var payload = {
-    cities:      selectedCities,
-    title:       document.getElementById('tripTitle').value.trim(),
-    startDate:   document.getElementById('startDate').value,
-    endDate:     document.getElementById('endDate').value,
-    memberCount: memberCnt,
-    tripType:    document.getElementById('tripType').value,
-    tagNames:    getThemes(),
-    isPublic:    document.getElementById('isPublic').checked ? 1 : 0
-  };
+  var thumbFile   = document.getElementById('thumbFileInput').files[0];
+  var budgetInput = document.getElementById('totalBudget');
+  var budgetVal   = budgetInput.dataset.raw || budgetInput.value.replace(/[^0-9]/g,'');
+  var totalBudget = (budgetVal && parseInt(budgetVal) > 0) ? parseInt(budgetVal) : null;
 
+  // 로딩 UI 전환
   document.querySelectorAll('.step-panel').forEach(function(p) { p.classList.remove('active'); });
   document.getElementById('creatingView').classList.add('active');
   document.getElementById('modalFoot').style.display = 'none';
   document.getElementById('stepIndicator').style.display = 'none';
   document.getElementById('errorBox').classList.remove('active');
 
-  var icons = ['🏗️','👑','📅','🏷️'];
+  var icons = ['🖼️','🏗️','📅','🏷️'];
   [1,2,3,4].forEach(function(i, idx) {
     setTimeout(function() {
       document.getElementById('ci' + i).textContent = icons[idx];
@@ -668,33 +835,60 @@ function createTrip() {
     }, idx * 450);
   });
 
-  fetch('${pageContext.request.contextPath}/trip/create', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
-    body: JSON.stringify(payload)
-  })
-  .then(function(res) {
-    if (!res.ok) throw new Error('서버 오류 (' + res.status + ')');
-    return res.json();
-  })
-  .then(function(data) {
-    if (!data.success) throw new Error(data.message || '생성에 실패했습니다');
-    setTimeout(function() {
-      location.href = '${pageContext.request.contextPath}/trip/trip_workspace';
-    }, 1800);
-  })
-  .catch(function(err) {
-    document.getElementById('creatingView').classList.remove('active');
-    document.querySelectorAll('.step-panel').forEach(function(p, i) { p.classList.toggle('active', i === 2); });
-    document.getElementById('modalFoot').style.display = 'flex';
-    document.getElementById('stepIndicator').style.display = 'flex';
-    var eb = document.getElementById('errorBox');
-    eb.textContent = '⚠️ ' + err.message;
-    eb.classList.add('active');
-    [1,2,3,4].forEach(function(i) {
-      document.getElementById('ci' + i).textContent = '⏳';
-      document.getElementById('cs' + i).classList.remove('done');
+  function doCreate(thumbnailBase64) {
+    var payload = {
+      regionId:        selectedRegionIds,
+      cities:          selectedCities,
+      startDate:       document.getElementById('startDate').value,
+      title:           document.getElementById('tripTitle').value.trim(),
+      endDate:         document.getElementById('endDate').value,
+      tripType:        selectedTripType || null,
+      tags:            getThemes(),
+      isPublic:        document.getElementById('isPublic').checked ? 1 : 0,
+      description:     document.getElementById('tripDescription').value.trim(),
+      totalBudget:     totalBudget,
+      thumbnailBase64: thumbnailBase64   // null → 서버에서 기본 이미지 경로 적용
+    };
+
+    fetch('${pageContext.request.contextPath}/trip/create', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
+      body: JSON.stringify(payload)
+    })
+    .then(function(res) {
+      if (!res.ok) throw new Error('서버 오류 (' + res.status + ')');
+      return res.json();
+    })
+    .then(function(data) {
+      if (!data.success) throw new Error(data.message || '생성에 실패했습니다');
+      setTimeout(function() {
+        location.href = '${pageContext.request.contextPath}/trip/' + data.tripId + '/workspace';
+      }, 1800);
+    })
+    .catch(function(err) {
+      document.getElementById('creatingView').classList.remove('active');
+      document.querySelectorAll('.step-panel').forEach(function(p, i) { p.classList.toggle('active', i === 2); });
+      document.getElementById('modalFoot').style.display = 'flex';
+      document.getElementById('stepIndicator').style.display = 'flex';
+      var eb = document.getElementById('errorBox');
+      eb.textContent = '⚠️ ' + err.message;
+      eb.classList.add('active');
+      [1,2,3,4].forEach(function(i) {
+        document.getElementById('ci' + i).textContent = '⏳';
+        document.getElementById('cs' + i).classList.remove('done');
+      });
     });
-  });
+  }
+
+  // 썸네일 파일 있으면 base64로 변환 후 전송, 없으면 바로 전송
+  if (thumbFile) {
+    var reader = new FileReader();
+    reader.onload = function(e) {
+      doCreate(e.target.result); // data:image/...;base64,... 형태
+    };
+    reader.readAsDataURL(thumbFile);
+  } else {
+    doCreate(null); // 서버에서 기본 이미지 경로 사용
+  }
 }
 </script>

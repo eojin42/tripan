@@ -4,7 +4,7 @@ import java.util.List;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 
-import com.tripan.app.trip.domian.entity.TripDay;
+import com.tripan.app.trip.domain.entity.TripDay;
 
 // 일차 관리 (day1, day2...) 
 public interface TripDayRepository extends JpaRepository<TripDay, Long> {

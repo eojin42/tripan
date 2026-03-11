@@ -12,6 +12,8 @@ public class ExpenseDto {
     // 가계부 지출 등록
     @Getter @Setter
     public static class ExpenseCreate {
+    	private Long tripId;           // 여행 ID 
+        private Long payerId;		   // 결제자 ID
         private String category;       // 카테고리 (TOURISM, FOOD 등)
         private BigDecimal amount;     // 총 결제 금액
         private String description;    // 지출 내용
@@ -21,6 +23,14 @@ public class ExpenseDto {
         private String isPrivate;      // 나만보기 여부 (Y/N)
         private String receiptUrl;     // 영수증 이미지 경로
         private List<Long> participantMemberIds; // 분담할 멤버 리스트
+    }
+    
+    // 최종 정산 계산 결과 (누가 누구에게 송금할지)
+    @Getter @Setter
+    public static class SettlementResult {
+        private Long fromMemberId;  // 송금할 사람
+        private Long toMemberId;    // 받을 사람
+        private BigDecimal amount;  // 금액
     }
 
     // 지출 분담 내역

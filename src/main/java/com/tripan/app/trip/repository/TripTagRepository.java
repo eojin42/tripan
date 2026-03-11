@@ -6,7 +6,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.tripan.app.trip.domian.entity.TripTag;
+import com.tripan.app.trip.domain.entity.TripTag;
 
 import java.util.List;
 

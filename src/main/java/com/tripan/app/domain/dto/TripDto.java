@@ -2,35 +2,46 @@ package com.tripan.app.domain.dto;
 
 import lombok.Getter;
 import lombok.Setter;
+import java.util.ArrayList;
 import java.util.List;
 
 @Getter
 @Setter
 public class TripDto {
-    //  기본 여행 데이터 
+    // 기본 여행 데이터
     private Long tripId;
     private String tripName;
     private String startDate;
     private String endDate;
     private String status;
     private String thumbnailUrl;
+    private List<String> cities;          // JSP에서 사용 (List 형태)
+    private String citiesStr;              // DB에서 받는 raw 문자열 ("서울, 제주")
 
-    // 통계 및 단일 부가 데이터
-    private String leaderNickname;  
-    private String regionName;      
-    private double totalBudget;     // 설정한 총 예산
-    private double currentExpense;  // 현재까지 쓴 지출 총합
+    // 여행 생성 시 입력 필드
+    private String tripType;        // COUPLE / FAMILY / FRIENDS / SOLO / BUSINESS
+    private String description;     // 여행 설명
+    private List<String> tags;      // 테마 태그
+    private String inviteCode;      // 초대 링크 코드
+    private int isPublic;           // 0: 비공개, 1: 공개
 
-    // 동행자 목록 (trip_member + member 테이블)
+    // 통계
+    private String leaderNickname;
+    private String regionName;
+    private Long regionId;
+    private double totalBudget;
+    private double currentExpense;
+
+    // 동행자 목록
     private List<TripMemberDto> members;
 
-    // 여행 일정표 (일자별 방문 장소 계층 구조)
-    private List<TripDayDto> days; 
+    // 일정
+    private List<TripDayDto> days;
 
-    // 진행 중인 투표 현황 (vote + vote_candidate 테이블)
+    // 투표
     private List<VoteDto> votes;
 
-    // 준비물 공용 체크리스트 (trip_checklist 테이블)
+    // 체크리스트
     private List<ChecklistDto> checklists;
 
     @Getter @Setter
@@ -38,57 +49,78 @@ public class TripDto {
         private Long memberId;
         private String nickname;
         private String profileImage;
-        private String role; // OWNER(방장), EDITOR(편집자), VIEWER(뷰어)
+        private String role;               // OWNER / EDITOR / VIEWER
+        private String invitationStatus;   // ACCEPTED / PENDING
     }
 
     @Getter @Setter
     public static class TripDayDto {
         private Long dayId;
-        private int dayNumber; 
+        private int dayNumber;
         private String tripDate;
-        private String dayMemo; // 그날의 메모
-        private List<ItineraryItemDto> items; 
+        private String dayMemo;
+        private List<ItineraryItemDto> items;
     }
 
     @Getter @Setter
     public static class ItineraryItemDto {
         private Long itemId;
-        private String visitOrder; 
+        private String visitOrder;
         private String startTime;
         private String endTime;
-        private String memo; // 브레이크타임 등 장소별 개별 메모
-        
-        // 장소(Place) 요약 정보
+        private String memo;
         private Long placeId;
         private String placeName;
         private Double latitude;
         private Double longitude;
-        private String category; 
+        private String category;
         private String imageUrl;
+        
+        private List<ItineraryImageDto> images = new ArrayList<>();
+    }
+
+    @Getter @Setter
+    public static class ItineraryImageDto {
+        private Long imageId;
+        private String imageUrl;
+        private Long memberId;
     }
 
     @Getter @Setter
     public static class VoteDto {
         private Long voteId;
-        private String title; 
-        private int totalVotes; // 총 참여 투표 수
-        // 투표 후보지 목록 및 각각의 득표수
-        private List<VoteCandidateDto> candidates; 
+        private String title;
+        private int totalVotes;
+        private List<VoteCandidateDto> candidates;
     }
 
     @Getter @Setter
     public static class VoteCandidateDto {
         private Long candidateId;
         private Long placeId;
-        private String placeName; // 후보 장소명
-        private int voteCount;    // 이 후보가 받은 표 수
+        private String placeName;
+        private int voteCount;
     }
 
     @Getter @Setter
     public static class ChecklistDto {
         private Long checklistId;
-        private String itemName;  // 예: "여권", "상비약"
-        private boolean isChecked;// 체크 여부 (0/1)
-        private String checkManager; // 담당자 이름 (null이면 공용)
+        private String itemName;
+        private String category;        // 카테고리
+        private boolean isChecked;
+        private String checkManager;    // 담당자
+    }
+
+    @Getter @Setter
+    public static class PlaceAddDto {
+        private String apiPlaceId;
+        private String placeName;
+        private String address;
+        private Double latitude;
+        private Double longitude;
+        private String categoryName;
+        private String placeUrl;
+        private boolean customPlace;
+        private String created_at;
     }
 }

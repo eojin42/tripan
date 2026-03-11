@@ -1,265 +1,442 @@
 package com.tripan.app.service;
 
+import java.io.File;
+import java.io.FileOutputStream;
 import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
+import java.util.Base64;
+import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.tripan.app.domain.dto.TripCreateDto;
-import com.tripan.app.mapper.TripMemberMapper;
-import com.tripan.app.trip.domian.entity.Tag;
-import com.tripan.app.trip.domian.entity.Trip;
-import com.tripan.app.trip.domian.entity.TripDay;
-import com.tripan.app.trip.domian.entity.TripMember;
-import com.tripan.app.trip.domian.entity.TripTag;
+import com.tripan.app.domain.dto.TripDto;
+import com.tripan.app.mapper.TripMapper;
+import com.tripan.app.mapper.TripPlaceMapper;
+import com.tripan.app.trip.domain.entity.Tag;
+import com.tripan.app.trip.domain.entity.Trip;
+import com.tripan.app.trip.domain.entity.TripDay;
+import com.tripan.app.trip.domain.entity.TripMember;
+import com.tripan.app.trip.domain.entity.TripNotification;
+import com.tripan.app.trip.domain.entity.TripRegion;
+import com.tripan.app.trip.domain.entity.TripTag;
 import com.tripan.app.trip.repository.TagRepository;
 import com.tripan.app.trip.repository.TripDayRepository;
 import com.tripan.app.trip.repository.TripMemberRepository;
+import com.tripan.app.trip.repository.TripNotificationRepository;
+import com.tripan.app.trip.repository.TripRegionRepository;
 import com.tripan.app.trip.repository.TripRepository;
 import com.tripan.app.trip.repository.TripTagRepository;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 @Transactional
-public class TripServiceImpl implements TripService{
-	
-	private final TripRepository tripRepository;
+public class TripServiceImpl implements TripService {
+
+    private final TripRepository tripRepository;
     private final TripMemberRepository tripMemberRepository;
     private final TripDayRepository tripDayRepository;
     private final TagRepository tagRepository;
     private final TripTagRepository tripTagRepository;
-    private final TripMemberMapper tripMemberMapper;
-	
-    // 여행 생성
-	@Override
-	public Long createTrip(TripCreateDto dto, Long memberId) {
-		// 여행 기본 정보 저장 
-		Trip trip = new Trip();
-        trip.setTripName(dto.getTitle());
-        trip.setStartDate(LocalDate.parse(dto.getStartDate()).atStartOfDay());
-        trip.setEndDate(LocalDate.parse(dto.getEndDate()).atStartOfDay());
-        trip.setTripType(dto.getTripType());
-        trip.setTotalBudget(dto.getTotalBudget());
-        trip.setRegionId(dto.getRegionId()); 
-        trip.setMemberId(memberId);
-        
-        trip.setStatus("PLANNING"); // 초기 상태 (계획중)
-        trip.setIsPublic(0); // 비공개
-        trip.setScrapCount(0);
-        trip.setInviteCode(UUID.randomUUID().toString().substring(0, 8)); // 초대코드 예: a1b2c3d4
-		
-        Long newTripId = tripRepository.save(trip).getTripId();
-        
-        TripMember owner = new TripMember();
-        owner.setTripId(newTripId);
-        owner.setMemberId(memberId);
-        owner.setRole("OWNER"); // 방 만든 사람을 방장으로 등록
-        owner.setInvitationStatus("ACCEPTED"); // 자동 승인
-        tripMemberRepository.save(owner);
-        
-        // 여행 기간
-        long days = ChronoUnit.DAYS.between(LocalDate.parse(dto.getStartDate()), LocalDate.parse(dto.getEndDate())) + 1;
-        for (int i = 1; i <= days; i++) {
-            TripDay tripDay = new TripDay();
-            tripDay.setTripId(newTripId);
-            tripDay.setDayNumber(i); // 1, 2, 3... 번호 부여
-            tripDay.setTripDate(LocalDate.parse(dto.getStartDate()).plusDays(i - 1).atStartOfDay());
-            tripDayRepository.save(tripDay);
-        }
-        
-        
-        // 해시태그 저장 (DB에 없으면 새로 만들고, 방이랑 연결)
-        if (dto.getTags() != null) {
-            dto.getTags().forEach(tagName -> {
-                Tag tag = tagRepository.findByTagName(tagName).orElseGet(() -> {
-                    Tag newTag = new Tag();
-                    newTag.setTagName(tagName);
-                    return tagRepository.save(newTag);
-                });
-                TripTag tripTag = new TripTag();
-                tripTag.setTripId(newTripId);
-                tripTag.setTagId(tag.getTagId());
-                tripTagRepository.save(tripTag);
-            });
-        }
-        
-        
-        return newTripId;
-	}
-	
-	
-	@Override
-    public void updateTrip(Long tripId, TripCreateDto dto) {
-        // 수정할 여행 방 찾기
-        Trip trip = tripRepository.findById(tripId).orElseThrow(() -> new IllegalArgumentException("여행 정보 없음"));
-        
-        // 날짜가 바뀌었을 수 있으니 기존 며칠짜리 여행인지, 바뀐 건 며칠인지 계산
-        long oldDays = ChronoUnit.DAYS.between(trip.getStartDate().toLocalDate(), trip.getEndDate().toLocalDate()) + 1;
-        long newDays = ChronoUnit.DAYS.between(LocalDate.parse(dto.getStartDate()), LocalDate.parse(dto.getEndDate())) + 1;
+    private final TripRegionRepository tripRegionRepository;
+    private final TripNotificationRepository notificationRepository;
+    private final SimpMessagingTemplate messagingTemplate;
+    private final TripMapper tripMapper;
+    private final TripPlaceMapper tripPlaceMapper;
 
-        // 기본 정보 덮어쓰기
+    /** application.properties: tripan.upload.dir=/uploads/thumbnails */
+    @Value("${tripan.upload.dir:${user.home}/tripan-uploads/thumbnails}")
+    private String uploadDir;
+
+    /** 기본 썸네일 URL (DB에 저장되는 경로) */
+    private static final String DEFAULT_THUMB = "/dist/images/logo.png";
+
+    // ═══════════════════════════════════════════════════════
+    //  여행 생성
+    // ═══════════════════════════════════════════════════════
+    @Override
+    public Long createTrip(TripCreateDto dto, Long memberId) {
+
+        // ── 썸네일 처리 ──
+        String thumbnailUrl = saveThumbnail(dto.getThumbnailBase64());
+
+        Trip trip = new Trip();
         trip.setTripName(dto.getTitle());
         trip.setStartDate(LocalDate.parse(dto.getStartDate()).atStartOfDay());
         trip.setEndDate(LocalDate.parse(dto.getEndDate()).atStartOfDay());
-        trip.setTripType(dto.getTripType());
-        trip.setTotalBudget(dto.getTotalBudget());
-        trip.setRegionId(dto.getRegionId());
+        trip.setTripType(dto.getTripType());          // null 허용
+        trip.setTotalBudget(dto.getTotalBudget());    // null 허용
+        trip.setDescription(dto.getDescription());
+        trip.setMemberId(memberId);
+        trip.setStatus("PLANNING");
+        trip.setIsPublic(dto.getIsPublic());
+        trip.setScrapCount(0);
+        trip.setInviteCode(UUID.randomUUID().toString().substring(0, 8));
+        trip.setThumbnailUrl(thumbnailUrl);
+        // ── original_trip_id: 직접 생성 시 null ──
+        trip.setOriginalTripId(null);
+
+        trip.setCities(dto.getCities() != null && !dto.getCities().isEmpty()
+            ? String.join(", ", dto.getCities()) : "");
+
+        Trip saved = tripRepository.save(trip);
+        Long newTripId = saved.getTripId();
+
+        // OWNER 등록
+        TripMember owner = new TripMember();
+        owner.setTripId(newTripId); owner.setMemberId(memberId);
+        owner.setRole("OWNER"); owner.setInvitationStatus("ACCEPTED");
+        tripMemberRepository.save(owner);
+
+        // ── DAY 자동 생성 ──
+        long days = ChronoUnit.DAYS.between(
+            LocalDate.parse(dto.getStartDate()),
+            LocalDate.parse(dto.getEndDate())) + 1;
+        for (int i = 1; i <= days; i++) {
+            TripDay td = new TripDay();
+            td.setTripId(newTripId); td.setDayNumber(i);
+            td.setTripDate(LocalDate.parse(dto.getStartDate()).plusDays(i - 1).atStartOfDay());
+            tripDayRepository.save(td);
+        }
+
+        // 태그 저장
+        saveTags(newTripId, dto.getTags());
+
+        // 지역 저장
+        saveRegions(newTripId, dto.getRegionId());
+
+        // 여행 생성 알림
+        saveNotification(newTripId, memberId, null,
+            "새 여행 방이 생성됐어요! 동행자를 초대해보세요 ✈️", "SYSTEM");
+
+        return newTripId;
+    }
+
+    // ═══════════════════════════════════════════════════════
+    //  여행 수정
+    // ═══════════════════════════════════════════════════════
+    @Override
+    public void updateTrip(Long tripId, TripCreateDto dto) {
+        Trip trip = tripRepository.findById(tripId)
+            .orElseThrow(() -> new IllegalArgumentException("여행 정보 없음"));
+
+        long oldDays = ChronoUnit.DAYS.between(
+            trip.getStartDate().toLocalDate(), trip.getEndDate().toLocalDate()) + 1;
+        long newDays = ChronoUnit.DAYS.between(
+            LocalDate.parse(dto.getStartDate()), LocalDate.parse(dto.getEndDate())) + 1;
+
+        trip.setTripName(dto.getTitle());
+        trip.setStartDate(LocalDate.parse(dto.getStartDate()).atStartOfDay());
+        trip.setEndDate(LocalDate.parse(dto.getEndDate()).atStartOfDay());
+        if (dto.getTripType() != null) trip.setTripType(dto.getTripType());
+        if (dto.getTotalBudget() != null) trip.setTotalBudget(dto.getTotalBudget());
+        if (dto.getDescription() != null) trip.setDescription(dto.getDescription());
+        if (dto.getCities() != null && !dto.getCities().isEmpty())
+            trip.setCities(String.join(", ", dto.getCities()));
+
+        // 썸네일 변경 시만 업데이트
+        if (dto.getThumbnailBase64() != null && !dto.getThumbnailBase64().isBlank()) {
+            trip.setThumbnailUrl(saveThumbnail(dto.getThumbnailBase64()));
+        }
+
         tripRepository.save(trip);
 
-        
-        // 여행 기간이 늘어나면 4일차, 5일차 추가 생성 / 줄어들면 뒤에 일정 삭제
+        // 지역 재저장
+        tripRegionRepository.deleteByTripId(tripId);
+        saveRegions(tripId, dto.getRegionId());
+
+        // DAY 수 조정
         if (newDays > oldDays) {
             for (long i = oldDays + 1; i <= newDays; i++) {
-                TripDay tripDay = new TripDay();
-                tripDay.setTripId(tripId);
-                tripDay.setDayNumber((int) i); // 번호 부여
-                tripDay.setTripDate(LocalDate.parse(dto.getStartDate()).plusDays(i - 1).atStartOfDay());
-                tripDayRepository.save(tripDay);
+                TripDay td = new TripDay(); td.setTripId(tripId); td.setDayNumber((int) i);
+                td.setTripDate(LocalDate.parse(dto.getStartDate()).plusDays(i - 1).atStartOfDay());
+                tripDayRepository.save(td);
             }
         } else if (newDays < oldDays) {
             tripDayRepository.deleteByTripIdAndDayNumberGreaterThan(tripId, (int) newDays);
         }
 
-        
-        // 태그 수정 시 기존 태그 다 지우고 새로 들어온 걸로 교체
+        // 태그 재저장
         tripTagRepository.deleteByTripId(tripId);
-        if (dto.getTags() != null) {
-            dto.getTags().forEach(tagName -> {
-                Tag tag = tagRepository.findByTagName(tagName).orElseGet(() -> {
-                    Tag newTag = new Tag();
-                    newTag.setTagName(tagName);
-                    return tagRepository.save(newTag);
-                });
-                TripTag tripTag = new TripTag();
-                tripTag.setTripId(tripId);
-                tripTag.setTagId(tag.getTagId());
-                tripTagRepository.save(tripTag);
-            });
-        }
+        saveTags(tripId, dto.getTags());
     }
 
+    // ═══════════════════════════════════════════════════════
+    //  getTripDetails: trip + days + members + tags + expense
+    // ═══════════════════════════════════════════════════════
     @Override
-    public void deleteTrip(Long tripId) {
-        // 방 삭제 
-        tripRepository.deleteById(tripId);
+    @Transactional(readOnly = true)
+    public TripDto getTripDetails(Long tripId) {
+        TripDto dto = tripMapper.selectTripDetails(tripId);
+        if (dto == null) return null;
+
+        // ── cities: DB에서 "서울, 제주" (String) → List<String> 변환 ──
+        if (dto.getCitiesStr() != null && !dto.getCitiesStr().isBlank()) {
+            List<String> cityList = java.util.Arrays.stream(dto.getCitiesStr().split(","))
+                .map(String::trim)
+                .filter(s -> !s.isEmpty())
+                .collect(java.util.stream.Collectors.toList());
+            dto.setCities(cityList);
+        }
+
+        dto.setDays(tripPlaceMapper.findDayItemsByTripId(tripId));
+        dto.setMembers(tripMapper.selectMembersByTripId(tripId));
+        dto.setTags(tripMapper.selectTagsByTripId(tripId));
+        dto.setCurrentExpense(tripMapper.selectCurrentExpense(tripId));
+        return dto;
+    }
+
+    // ═══════════════════════════════════════════════════════
+    //  스케줄러: 매일 자정 status 자동 갱신
+    //
+    //  PLANNING  → 시작일 도달 → ONGOING
+    //  ONGOING   → 종료일 지남 → COMPLETED
+    // ═══════════════════════════════════════════════════════
+    @Scheduled(cron = "0 0 0 * * *")   // 매일 00:00:00
+    @Transactional
+    public void updateTripStatuses() {
+        LocalDate today = LocalDate.now();
+        log.info("[TripScheduler] status 자동 갱신 실행 - {}", today);
+
+        // PLANNING → ONGOING: 시작일이 오늘 이하이고 종료일이 오늘 이상
+        List<Trip> toOngoing = tripRepository
+            .findByStatusAndStartDateLessThanEqualAndEndDateGreaterThanEqual(
+                "PLANNING",
+                today.atStartOfDay(),
+                today.atStartOfDay()
+            );
+        toOngoing.forEach(t -> {
+            t.setStatus("ONGOING");
+            tripRepository.save(t);
+            log.info("[TripScheduler] PLANNING→ONGOING tripId={}", t.getTripId());
+        });
+
+        // ONGOING → COMPLETED: 종료일이 오늘 이전
+        List<Trip> toCompleted = tripRepository
+            .findByStatusAndEndDateBefore("ONGOING", today.atStartOfDay());
+        toCompleted.forEach(t -> {
+            t.setStatus("COMPLETED");
+            tripRepository.save(t);
+            log.info("[TripScheduler] ONGOING→COMPLETED tripId={}", t.getTripId());
+        });
     }
 
     @Override
     public void updateTripStatus(Long tripId, String status) {
-        // 여행 상태만 업데이트 (PLANNING -> COMPLETED)
         Trip trip = tripRepository.findById(tripId).orElseThrow();
         trip.setStatus(status);
         tripRepository.save(trip);
     }
 
-    // 담아오기 
+    @Override
+    public void deleteTrip(Long tripId) { tripRepository.deleteById(tripId); }
+
+    // ═══════════════════════════════════════════════════════
+    //  클론(담아오기)
+    //  original_trip_id: 원본 tripId 보존
+    //  → 원본 생성자(본인)가 클론해도 original_trip_id = 원본 tripId
+    //    (null로 두지 않음 - 스크랩 출처 추적 목적)
+    // ═══════════════════════════════════════════════════════
     @Override
     public Long cloneTrip(Long originalTripId, Long memberId) {
-        // 남의 여행 원본 데이터 가져오기
-        Trip originalTrip = tripRepository.findById(originalTripId).orElseThrow();
+        Trip orig = tripRepository.findById(originalTripId).orElseThrow();
 
-        // 내 걸로 복사해오기
-        Trip clonedTrip = new Trip();
-        clonedTrip.setTripName(originalTrip.getTripName() + " (복사본)");
-        clonedTrip.setStartDate(originalTrip.getStartDate());
-        clonedTrip.setEndDate(originalTrip.getEndDate());
-        clonedTrip.setTripType(originalTrip.getTripType());
-        clonedTrip.setTotalBudget(originalTrip.getTotalBudget());
-        clonedTrip.setRegionId(originalTrip.getRegionId());
-        clonedTrip.setMemberId(memberId);
-        clonedTrip.setStatus("PLANNING");
-        clonedTrip.setIsPublic(0);
-        clonedTrip.setScrapCount(0);
-        clonedTrip.setInviteCode(UUID.randomUUID().toString().substring(0, 8));
-        clonedTrip.setOriginalTripId(originalTripId); // 족보 남기기
-        
-        Long newTripId = tripRepository.save(clonedTrip).getTripId();
+        Trip clone = new Trip();
+        clone.setTripName(orig.getTripName() + " (복사본)");
+        clone.setStartDate(orig.getStartDate());
+        clone.setEndDate(orig.getEndDate());
+        clone.setTripType(orig.getTripType());
+        clone.setTotalBudget(orig.getTotalBudget());
+        clone.setMemberId(memberId);
+        clone.setStatus("PLANNING");
+        clone.setIsPublic(0);
+        clone.setScrapCount(0);
+        clone.setInviteCode(UUID.randomUUID().toString().substring(0, 8));
+        clone.setThumbnailUrl(orig.getThumbnailUrl()); // 썸네일 공유
+        // ── original_trip_id: 스크랩 출처 보존 (본인 스크랩도 포함) ──
+        clone.setOriginalTripId(originalTripId);
+        clone.setCities(orig.getCities());
 
-        // 담아온 사람을 방장으로 임명
-        TripMember owner = new TripMember();
-        owner.setTripId(newTripId);
-        owner.setMemberId(memberId);
-        owner.setRole("OWNER");
-        owner.setInvitationStatus("ACCEPTED");
-        tripMemberRepository.save(owner);
+        Long newTripId = tripRepository.save(clone).getTripId();
 
-        // 원본 태그 그대로 긁어오기
-        tripTagRepository.findByTripId(originalTripId).forEach(originalTag -> {
-            TripTag clonedTag = new TripTag();
-            clonedTag.setTripId(newTripId);
-            clonedTag.setTagId(originalTag.getTagId());
-            tripTagRepository.save(clonedTag);
+        tripRegionRepository.findByTripId(originalTripId).forEach(r -> {
+            TripRegion nr = new TripRegion(); nr.setTripId(newTripId); nr.setRegionId(r.getRegionId());
+            tripRegionRepository.save(nr);
         });
 
-        // 원본의 날짜 순서대로 가져와서 뼈대만 복사
-        tripDayRepository.findByTripIdOrderByDayNumberAsc(originalTripId).forEach(originalDay -> {
-            TripDay clonedDay = new TripDay();
-            clonedDay.setTripId(newTripId);
-            
-            // 순서는 그대로 유지 
-            clonedDay.setDayNumber(originalDay.getDayNumber()); 
-            
-            // 날짜와 메모는 리셋
-            clonedDay.setTripDate(null); 
-            clonedDay.setMemo(null);     
-            
-            tripDayRepository.save(clonedDay);
+        TripMember ow = new TripMember(); ow.setTripId(newTripId); ow.setMemberId(memberId);
+        ow.setRole("OWNER"); ow.setInvitationStatus("ACCEPTED");
+        tripMemberRepository.save(ow);
+
+        tripTagRepository.findByTripId(originalTripId).forEach(ot -> {
+            TripTag tt = new TripTag(); tt.setTripId(newTripId); tt.setTagId(ot.getTagId());
+            tripTagRepository.save(tt);
         });
 
-        // 스크랩(담아오기) 횟수 +1
-        originalTrip.setScrapCount(originalTrip.getScrapCount() + 1);
-        tripRepository.save(originalTrip);
+        tripDayRepository.findByTripIdOrderByDayNumberAsc(originalTripId).forEach(od -> {
+            TripDay cd = new TripDay(); cd.setTripId(newTripId); cd.setDayNumber(od.getDayNumber());
+            cd.setTripDate(null); // 날짜는 미설정 (직접 지정하도록)
+            tripDayRepository.save(cd);
+        });
 
+        orig.setScrapCount(orig.getScrapCount() + 1);
+        tripRepository.save(orig);
+
+        saveNotification(newTripId, memberId, null, "담아오기로 새 여행이 생성됐어요 📋", "SYSTEM");
         return newTripId;
     }
 
-    
     @Override
     public Long joinTripViaLink(String inviteCode, Long memberId) {
-        // 초대 코드로 무슨 방인지 찾기
         Trip trip = tripRepository.findByInviteCode(inviteCode)
-                .orElseThrow(() -> new IllegalArgumentException("유효하지 않은 링크"));
-        
-        // 이미 방에 들어온 사람이면 팅겨내지 말고 그냥 방 번호 돌려줌
-        if (tripMemberRepository.existsByTripIdAndMemberId(trip.getTripId(), memberId)) {
-            return trip.getTripId();
+            .orElseThrow(() -> new IllegalArgumentException("유효하지 않은 링크"));
+        if (!tripMemberRepository.existsByTripIdAndMemberId(trip.getTripId(), memberId)) {
+            TripMember nm = new TripMember(); nm.setTripId(trip.getTripId()); nm.setMemberId(memberId);
+            nm.setRole("EDITOR"); nm.setInvitationStatus("ACCEPTED");
+            tripMemberRepository.save(nm);
+            Long ownerId = tripMemberRepository.findByTripIdAndRole(trip.getTripId(), "OWNER")
+                .map(TripMember::getMemberId).orElse(null);
+            saveNotification(trip.getTripId(), ownerId, memberId, "새 동행자가 합류했어요 🎉", "ACCEPT");
+            messagingTemplate.convertAndSend("/sub/trip/" + trip.getTripId(),
+                Map.of("action", "NEW_MEMBER_JOINED", "memberId", memberId));
         }
-
-        TripMember newMember = new TripMember();
-        newMember.setTripId(trip.getTripId());
-        newMember.setMemberId(memberId);
-        newMember.setRole("EDITOR");  // 새로 온 사람 EDITOR(편집자)로 가입 완료 처리
-        newMember.setInvitationStatus("ACCEPTED");
-        tripMemberRepository.save(newMember);
-
         return trip.getTripId();
     }
 
     @Override
     public void inviteMemberToTrip(Long tripId, Long inviteeId) {
-        // 아이디로 초대장 보내기 
-        TripMember pendingMember = new TripMember();
-        pendingMember.setTripId(tripId);
-        pendingMember.setMemberId(inviteeId);
-        pendingMember.setRole("EDITOR"); 
-        pendingMember.setInvitationStatus("PENDING"); // 수락 대기 상태인 PENDING
-        tripMemberRepository.save(pendingMember);
+        TripMember pm = new TripMember(); pm.setTripId(tripId); pm.setMemberId(inviteeId);
+        pm.setRole("EDITOR"); pm.setInvitationStatus("PENDING");
+        tripMemberRepository.save(pm);
+        saveNotification(tripId, inviteeId, null, "여행에 초대됐어요! 수락해주세요 ✉️", "INVITE");
     }
 
     @Override
     public void acceptTripInvitation(Long tripId, Long memberId) {
-        // PENDING으로 멈춰있던 초대장 ACCEPTED로 수락 처리
-    	TripMember member = tripMemberMapper.findByTripIdAndMemberId(tripId, memberId);
-        
-        if (member == null) {
-            throw new IllegalArgumentException("초대 내역이 없습니다.");
-        }
+        TripMember member = tripMemberRepository.findByTripIdAndMemberId(tripId, memberId)
+            .orElseThrow(() -> new IllegalArgumentException("초대 내역이 없습니다."));
         member.setInvitationStatus("ACCEPTED");
-        
         tripMemberRepository.save(member);
+        Long ownerId = tripMemberRepository.findByTripIdAndRole(tripId, "OWNER")
+            .map(TripMember::getMemberId).orElse(null);
+        saveNotification(tripId, ownerId, memberId, "동행자가 초대를 수락했어요 ✅", "ACCEPT");
+        messagingTemplate.convertAndSend("/sub/trip/" + tripId,
+            Map.of("action", "NEW_MEMBER_JOINED", "memberId", memberId));
+    }
+
+    @Override
+    public void leaveTrip(Long tripId, Long memberId) {
+        tripMemberRepository.deleteByTripIdAndMemberId(tripId, memberId);
+        messagingTemplate.convertAndSend("/sub/trip/" + tripId,
+            Map.of("action", "MEMBER_LEFT", "memberId", memberId));
+    }
+
+    @Override
+    public void kickMember(Long tripId, Long targetMemberId) {
+        tripMemberRepository.deleteByTripIdAndMemberId(tripId, targetMemberId);
+        saveNotification(tripId, targetMemberId, null, "여행에서 강퇴됐어요.", "SYSTEM");
+        messagingTemplate.convertAndSend("/sub/trip/" + tripId,
+            Map.of("action", "MEMBER_KICKED", "memberId", targetMemberId));
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<String> searchTags(String keyword) {
+        if (keyword == null || keyword.trim().isEmpty()) return List.of();
+        return tripMapper.selectTagNamesByKeyword(keyword);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<TripDto> searchPublicTrips(String keyword) {
+        return tripMapper.selectPublicTrips(keyword);
+    }
+
+    // ═══════════════════════════════════════════════════════
+    //  내부 유틸
+    // ═══════════════════════════════════════════════════════
+
+    /**
+     * base64 썸네일을 서버 디스크에 저장하고 URL 반환
+     * - null이면 기본 이미지 경로 반환
+     * - 저장 실패 시 기본 이미지 경로 폴백
+     */
+    private String saveThumbnail(String base64Data) {
+        if (base64Data == null || base64Data.isBlank()) return DEFAULT_THUMB;
+
+        try {
+            // "data:image/jpeg;base64,/9j/..." 형태에서 헤더 분리
+            String[] parts = base64Data.split(",", 2);
+            if (parts.length < 2) return DEFAULT_THUMB;
+
+            String header   = parts[0];  // e.g. "data:image/png;base64"
+            String encoded  = parts[1];
+
+            // 확장자 추출
+            String ext = "jpg";
+            if (header.contains("png"))  ext = "png";
+            else if (header.contains("webp")) ext = "webp";
+            else if (header.contains("gif"))  ext = "gif";
+
+            byte[] decoded = Base64.getDecoder().decode(encoded);
+
+            // 업로드 디렉토리 생성
+            File dir = new File(uploadDir);
+            if (!dir.exists()) dir.mkdirs();
+
+            String fileName = UUID.randomUUID().toString().replace("-", "") + "." + ext;
+            File outFile = new File(dir, fileName);
+            try (FileOutputStream fos = new FileOutputStream(outFile)) {
+                fos.write(decoded);
+            }
+
+            return "/dist/images/thumbnails/" + fileName;
+
+        } catch (Exception e) {
+            log.warn("[TripService] 썸네일 저장 실패, 기본 이미지 사용: {}", e.getMessage());
+            return DEFAULT_THUMB;
+        }
+    }
+
+    private void saveTags(Long tripId, List<String> tags) {
+        if (tags == null) return;
+        tags.forEach(tagName -> {
+            if (tagName == null || tagName.isBlank()) return;
+            Tag tag = tagRepository.findByTagName(tagName).orElseGet(() -> {
+                Tag t = new Tag(); t.setTagName(tagName); return tagRepository.save(t);
+            });
+            TripTag tt = new TripTag(); tt.setTripId(tripId); tt.setTagId(tag.getTagId());
+            tripTagRepository.save(tt);
+        });
+    }
+
+    private void saveRegions(Long tripId, List<Long> regionIds) {
+        if (regionIds == null) return;
+        regionIds.forEach(rid -> {
+            TripRegion tr = new TripRegion(); tr.setTripId(tripId); tr.setRegionId(rid);
+            tripRegionRepository.save(tr);
+        });
+    }
+
+    private void saveNotification(Long tripId, Long receiverId, Long senderId, String message, String type) {
+        if (receiverId == null) return;
+        try {
+            TripNotification n = new TripNotification();
+            n.setTripId(tripId); n.setReceiverId(receiverId); n.setSenderId(senderId);
+            n.setMessage(message); n.setType(type); n.setIsRead(0);
+            notificationRepository.save(n);
+        } catch (Exception e) {
+            log.warn("[TripService] 알림 저장 실패: {}", e.getMessage());
+        }
     }
 }

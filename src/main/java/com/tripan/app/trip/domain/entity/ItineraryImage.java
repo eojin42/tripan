@@ -1,4 +1,4 @@
-package com.tripan.app.trip.domian.entity;
+package com.tripan.app.trip.domain.entity;
 
 import java.time.LocalDateTime;
 

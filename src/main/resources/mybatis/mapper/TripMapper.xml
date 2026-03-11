@@ -1,0 +1,141 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.tripan.app.mapper.TripMapper">
+
+    <!-- 기본 여행 정보 - TO_CHAR로 날짜 "00:00:00" 제거 -->
+    <select id="selectTripDetails" resultType="com.tripan.app.domain.dto.TripDto">
+        SELECT 
+            trip_id AS tripId,
+            member_id AS memberId,
+            trip_name AS tripName,
+            TO_CHAR(start_date, 'YYYY-MM-DD') AS startDate,
+            TO_CHAR(end_date, 'YYYY-MM-DD') AS endDate,
+            description,
+            thumbnail_url AS thumbnailUrl,
+            is_public AS isPublic,
+            total_budget AS totalBudget,
+            CASE
+                WHEN TRUNC(SYSDATE) &gt; TRUNC(end_date)   THEN 'COMPLETED'
+                WHEN TRUNC(SYSDATE) &gt;= TRUNC(start_date)
+                 AND TRUNC(SYSDATE) &lt;= TRUNC(end_date)  THEN 'ONGOING'
+                ELSE 'PLANNING'
+            END                                         AS status,
+            scrap_count AS scrapCount,
+            invite_code AS inviteCode,
+            trip_type AS tripType,
+            cities                                AS citiesStr
+        FROM trip
+        WHERE trip_id = #{tripId}
+    </select>
+
+    <!-- 동행자 목록 (OWNER 포함 전체, invitationStatus 포함) -->
+    <select id="selectMembersByTripId" resultType="com.tripan.app.domain.dto.TripDto$TripMemberDto">
+        SELECT
+            tm.member_id                       AS memberId,
+            COALESCE(m.nickname, '알 수 없음')  AS nickname,
+            m.profile_image                    AS profileImage,
+            tm.role,
+            tm.invitation_status               AS invitationStatus
+        FROM trip_member tm
+        LEFT JOIN member2 m ON m.member_id = tm.member_id
+        WHERE tm.trip_id = #{tripId}
+        ORDER BY
+            CASE tm.role WHEN 'OWNER' THEN 0 WHEN 'EDITOR' THEN 1 ELSE 2 END,
+            tm.joined_at ASC
+    </select>
+
+    <!-- 태그 목록 -->
+    <select id="selectTagsByTripId" resultType="string">
+        SELECT t.tag_name
+        FROM trip_tag tt
+        JOIN tag t ON t.tag_id = tt.tag_id
+        WHERE tt.trip_id = #{tripId}
+        ORDER BY tt.trip_tag_id ASC
+    </select>
+
+    <!-- 현재 총 지출액 -->
+    <select id="selectCurrentExpense" resultType="double">
+        SELECT COALESCE(SUM(amount), 0)
+        FROM expense
+        WHERE trip_id = #{tripId}
+    </select>
+
+    <!-- 태그 자동완성 -->
+    <select id="selectTagNamesByKeyword" resultType="string">
+        SELECT tag_name
+        FROM tag
+        WHERE tag_name LIKE '%' || #{keyword} || '%'
+        FETCH FIRST 10 ROWS ONLY
+    </select>
+
+    <!-- 공개 여행 검색 -->
+    <select id="selectPublicTrips" resultType="com.tripan.app.domain.dto.TripDto">
+        SELECT
+            trip_id                               AS tripId,
+            trip_name                             AS tripName,
+            TO_CHAR(start_date, 'YYYY-MM-DD')     AS startDate,
+            TO_CHAR(end_date,   'YYYY-MM-DD')     AS endDate,
+            CASE
+                WHEN TRUNC(SYSDATE) &gt; TRUNC(end_date)   THEN 'COMPLETED'
+                WHEN TRUNC(SYSDATE) &gt;= TRUNC(start_date)
+                 AND TRUNC(SYSDATE) &lt;= TRUNC(end_date)  THEN 'ONGOING'
+                ELSE 'PLANNING'
+            END                                         AS status,
+            thumbnail_url AS thumbnailUrl, cities AS citiesStr,
+            trip_type AS tripType, scrap_count AS scrapCount
+        FROM trip
+        WHERE is_public = 1
+          AND (trip_name LIKE '%' || #{keyword} || '%' OR cities LIKE '%' || #{keyword} || '%')
+        ORDER BY scrap_count DESC, created_at DESC
+        FETCH FIRST 20 ROWS ONLY
+    </select>
+
+    <!-- ══════════════════════════════════════════════════
+         나의 여행 목록 조회
+         - 방장이거나 invitation_status = ACCEPTED/PENDING
+         - leaderNickname 컬럼에 해당 멤버의 role 임시 매핑
+         - regionId 컬럼에 memberCount 임시 매핑
+    ══════════════════════════════════════════════════ -->
+    <select id="selectMyTrips" resultType="com.tripan.app.domain.dto.TripDto">
+        SELECT
+            t.trip_id                                  AS tripId,
+            t.member_id                                AS memberId,
+            t.trip_name                                AS tripName,
+            TO_CHAR(t.start_date, 'YYYY-MM-DD')        AS startDate,
+            TO_CHAR(t.end_date,   'YYYY-MM-DD')        AS endDate,
+            CASE
+                WHEN TRUNC(SYSDATE) &gt; TRUNC(t.end_date)   THEN 'COMPLETED'
+                WHEN TRUNC(SYSDATE) &gt;= TRUNC(t.start_date)
+                 AND TRUNC(SYSDATE) &lt;= TRUNC(t.end_date)  THEN 'ONGOING'
+                ELSE 'PLANNING'
+            END                                            AS status,
+            t.thumbnail_url                            AS thumbnailUrl,
+            t.cities                                    AS citiesStr,
+            t.trip_type                                AS tripType,
+            t.total_budget                             AS totalBudget,
+            t.is_public                                AS isPublic,
+            t.invite_code                              AS inviteCode,
+            t.scrap_count                              AS scrapCount,
+            tm.role                                    AS leaderNickname,
+            (
+                SELECT COUNT(*)
+                FROM trip_member tm2
+                WHERE tm2.trip_id = t.trip_id
+                  AND tm2.invitation_status = 'ACCEPTED'
+            )                                          AS regionId
+        FROM trip t
+        JOIN trip_member tm
+          ON tm.trip_id    = t.trip_id
+         AND tm.member_id  = #{memberId}
+        WHERE tm.invitation_status IN ('ACCEPTED', 'PENDING')
+        ORDER BY
+            CASE
+                WHEN TRUNC(SYSDATE) &gt;= TRUNC(t.start_date)
+                 AND TRUNC(SYSDATE) &lt;= TRUNC(t.end_date)  THEN 0
+                WHEN TRUNC(SYSDATE) &lt; TRUNC(t.start_date) THEN 1
+                ELSE                                            2
+            END,
+            t.start_date DESC
+    </select>
+
+</mapper>

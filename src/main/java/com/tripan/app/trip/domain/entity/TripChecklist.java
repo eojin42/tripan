@@ -1,4 +1,4 @@
-package com.tripan.app.trip.domian.entity;
+package com.tripan.app.trip.domain.entity;
 
 import jakarta.persistence.*;
 import lombok.Getter;
@@ -19,6 +19,9 @@ public class TripChecklist {
 
     @Column(name = "item_name", nullable = false, length = 100)
     private String itemName; // 준비물 이름
+
+    @Column(name = "category", length = 50)
+    private String category; // 카테고리 (서류 & 결제 / 의류 & 용품 / 의약품 / 전자기기 / 기타)
 
     @Column(name = "is_checked", nullable = false)
     private Integer isChecked = 0; // 체크 여부 (0: 미완료, 1: 완료)

@@ -1,12 +1,13 @@
 package com.tripan.app.mapper;
 
-import com.tripan.app.domain.dto.TripDto.TripDayDto;
-import com.tripan.app.trip.domian.entity.TripPlace;
+import java.util.List;
+
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 
-import java.util.List;
-import java.util.Map;
+import com.tripan.app.domain.dto.TripDto;
+import com.tripan.app.domain.dto.TripDto.TripDayDto;
+import com.tripan.app.trip.domain.entity.TripPlace;
 
 @Mapper
 public interface TripPlaceMapper {
@@ -22,9 +23,18 @@ public interface TripPlaceMapper {
     // 공개 여행 장소 조회 (다른 사람이 볼 때)
     List<TripPlace> findPublicTripPlaces(@Param("tripId") Long tripId);
 
-    // 가계부 통계
-    Map<String, Object> getExpenseSummary(@Param("tripId") Long tripId);
-    List<Map<String, Object>> getExpenseByCategory(@Param("tripId") Long tripId);
-    List<Map<String, Object>> getExpenseList(@Param("tripId") Long tripId,
-                                             @Param("memberId") Long memberId);
+    
+    // 카테고리 및 태그 기반 장소 추천 목록 조회
+    List<TripDto> selectRecommendedPlaces(
+        @Param("categoryName") String categoryName, 
+        @Param("tagNames") List<String> tagNames, 
+        @Param("currentMemberId") Long currentMemberId
+    );
+
+    // 지도 내 장소 키워드 검색 
+    List<TripDto> selectPlacesByKeyword(
+        @Param("keyword") String keyword, 
+        @Param("currentMemberId") Long currentMemberId
+    );
+    
 }

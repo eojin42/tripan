@@ -1,4 +1,4 @@
-package com.tripan.app.trip.domian.entity;
+package com.tripan.app.trip.domain.entity;
 
 import jakarta.persistence.*;
 import lombok.Getter;
@@ -38,8 +38,9 @@ public class ItineraryItem {
     private Double distanceKm; // 이전 장소로부터 거리(km) (소수점 2자리까지)
     
     @Lob
-    private String memo; // 장소별 세부 메모 그러고보니까 메모는 컬럼네임이 안필요한지?
-
+    @Column(name = "memo") 
+    private String memo;
+    
     @Column(name = "transportation", length = 50)
     private String transportation; // 이동수단 (도보/차/교통)
     
