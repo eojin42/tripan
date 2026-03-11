@@ -352,15 +352,16 @@
 
   <div class="main-wrapper">
     <jsp:include page="../layout/header.jsp" />
+
     <main class="main-content">
 
-    <!-- 페이지 헤더 -->
-    <div class="page-header">
-      <div class="page-header-left">
-        <h1><i class="bi bi-headset"></i> 고객센터 관리</h1>
-        <p>문의 게시판 및 1:1 채팅 상담을 관리합니다</p>
+      <!-- 페이지 헤더 -->
+      <div class="page-header">
+        <div class="page-header-left">
+          <h1><i class="bi bi-headset"></i> 고객센터 관리</h1>
+          <p>문의 게시판 및 1:1 채팅 상담을 관리합니다</p>
+        </div>
       </div>
-    </div>
 
     <!-- 탭 -->
     <div class="cs-tabs">
