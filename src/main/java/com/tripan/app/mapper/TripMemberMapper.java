@@ -3,7 +3,7 @@ package com.tripan.app.mapper;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 
-import com.tripan.app.trip.domian.entity.TripMember;
+import com.tripan.app.trip.domain.entity.TripMember;
 
 @Mapper
 public interface TripMemberMapper {

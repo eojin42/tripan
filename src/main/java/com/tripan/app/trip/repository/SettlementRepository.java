@@ -9,7 +9,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.tripan.app.trip.domian.entity.Settlement;
+import com.tripan.app.trip.domain.entity.Settlement;
 
 public interface SettlementRepository extends JpaRepository<Settlement, Long> {
 

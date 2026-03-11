@@ -59,7 +59,20 @@ html, body {
   text-decoration: none;
 }
 .ws-topbar__back:hover { background: var(--bg); border-color: var(--blue); color: var(--blue); }
-.ws-topbar__info { flex: 1; min-width: 0; }
+.ws-topbar__info {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+/* 탑바 텍스트 영역 (썸네일 오른쪽) */
+.ws-topbar__text-area {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  flex: 1;
+}
 .ws-topbar__title {
   font-size: 18px; font-weight: 900; color: var(--dark);
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
@@ -1357,21 +1370,15 @@ textarea.form-textarea:focus { border-color: var(--blue); background: var(--whit
 
 /* Day 섹션: 흰 카드, 여백 넉넉 */
 .ws-layout.mode-edit .day-section {
-  margin-bottom: 20px;
-  padding: 28px 32px 24px;
-  border-bottom: none;
+  margin-bottom: 16px;
+  padding: 24px 28px 20px;
   background: var(--white);
-  border-radius: 22px;
-  box-shadow: 0 2px 20px rgba(0,0,0,.055);
-  border: 1.5px solid rgba(226,232,240,.8);
-  border-top: 4px solid transparent;
+  border-radius: 18px;
+  box-shadow: 0 1px 12px rgba(0,0,0,.06);
+  border: 1.5px solid rgba(226,232,240,.7);
   transition: box-shadow .2s;
 }
-.ws-layout.mode-edit .day-section:nth-child(1) { border-top-color: #89CFF0; }
-.ws-layout.mode-edit .day-section:nth-child(2) { border-top-color: #C2B8D9; }
-.ws-layout.mode-edit .day-section:nth-child(3) { border-top-color: #A8C8E1; }
-.ws-layout.mode-edit .day-section:nth-child(4) { border-top-color: #FFB6C1; }
-.ws-layout.mode-edit .day-section:hover { box-shadow: 0 4px 28px rgba(0,0,0,.09); }
+.ws-layout.mode-edit .day-section:hover { box-shadow: 0 3px 20px rgba(0,0,0,.09); }
 .ws-layout.mode-edit .day-section:first-child { margin-top: 0; }
 .ws-layout.mode-edit .day-section:last-child { margin-bottom: 0; }
 
@@ -1385,7 +1392,7 @@ textarea.form-textarea:focus { border-color: var(--blue); background: var(--whit
 }
 .ws-layout.mode-edit .day-badge { gap: 10px; padding: 8px 20px 8px 14px; }
 .ws-layout.mode-edit .day-badge .day-num { font-size: 24px; }
-.ws-layout.mode-edit .day-date { font-size: 14px; font-weight: 700; color: var(--mid); }
+.ws-layout.mode-edit .day-date { font-size: 14px; font-weight: 700; color: var(--mid); margin-left: 0; flex: 0 0 auto; }
 .ws-layout.mode-edit .btn-add-place { margin-left: auto; }
 
 /* place-card: 흰 배경, 넉넉한 패딩 */
@@ -1839,6 +1846,7 @@ textarea.form-textarea:focus { border-color: var(--blue); background: var(--whit
   animation: slideup .25s var(--ease);
 }
 .notif-dropdown.open { display: block; }
+.notif-dropdown.active { display: block; } /* JS에서 active 클래스 사용 */
 .notif-dd-head {
   padding: 18px 20px 14px;
   border-bottom: 1px solid var(--border);
@@ -2001,4 +2009,592 @@ textarea.form-textarea:focus { border-color: var(--blue); background: var(--whit
   .place-name { font-size: 13px; }
   .notif-dropdown { border-radius: 16px 16px 0 0; }
   .trip-status-badge { display: none; }
+}
+
+
+/* ═══════════════════════════════════════════
+   워크스페이스 전용 추가 스타일
+   (workspace.jsp inline 스타일 통합)
+═══════════════════════════════════════════ */
+
+/* ── 전역 폰트 통일 ── */
+*, *::before, *::after { font-family: 'Pretendard Variable', 'Pretendard', -apple-system, BlinkMacSystemFont, 'Noto Sans KR', sans-serif !important; }
+body { font-family: 'Pretendard Variable', 'Pretendard', -apple-system, BlinkMacSystemFont, 'Noto Sans KR', sans-serif !important; }
+
+/* ── 여행 유형 배지 (topbar) ── */
+.ws-type-badge {
+  display: inline-flex; align-items: center;
+  margin-left: 10px; padding: 2px 10px;
+  background: rgba(137,207,240,.15); border: 1px solid rgba(137,207,240,.4);
+  border-radius: 50px; font-size: 11px; font-weight: 700; color: #2B6CB0;
+  vertical-align: middle; white-space: nowrap;
+}
+/* ── 알림 드롭다운 active 표시 ── */
+.notif-dd-dim.active { display:block; }
+.ws-detail-btn {
+  display: inline-flex; align-items: center; gap: 4px;
+  margin-left: 8px; padding: 2px 8px;
+  background: rgba(160,174,192,.12); border: 1px solid rgba(160,174,192,.3);
+  border-radius: 50px; font-size: 11px; font-weight: 700; color: #718096;
+  cursor: pointer; vertical-align: middle; white-space: nowrap;
+  transition: background .15s;
+}
+.ws-detail-btn:hover { background: rgba(137,207,240,.2); color: #2B6CB0; border-color: rgba(137,207,240,.4); }
+/* ── 여행 정보 모달 ── */
+.trip-info-section { margin-bottom: 18px; }
+.trip-info-label { font-size: 11px; font-weight: 800; letter-spacing: 1px; color: #A0AEC0; text-transform: uppercase; margin-bottom: 6px; }
+.trip-info-value { font-size: 14px; font-weight: 600; color: #1A202C; line-height: 1.6; }
+.trip-info-desc  { font-size: 13px; color: #4A5568; line-height: 1.7; white-space: pre-wrap; font-family: 'Pretendard Variable', 'Pretendard', -apple-system, sans-serif !important; }
+.trip-info-tags  { display: flex; flex-wrap: wrap; gap: 6px; }
+.trip-info-tag   { padding: 3px 10px; background: linear-gradient(135deg,rgba(137,207,240,.2),rgba(255,182,193,.2)); border: 1px solid rgba(137,207,240,.4); border-radius: 50px; font-size: 12px; font-weight: 700; color: #2B6CB0; }
+
+
+/* ws-city-chip-topbar / trip-city-chip → 하단 재정의 */
+
+/* ── 탑바 썸네일 ── */
+.ws-thumb-circle {
+  width: 36px; height: 36px; border-radius: 50%;
+  object-fit: cover; border: 2px solid rgba(255,255,255,.6);
+  flex-shrink: 0; margin-right: 6px;
+  box-shadow: 0 2px 8px rgba(0,0,0,.15);
+}
+
+/* ── DAY 섹션 통일 ── */
+.day-section {
+  background: white;
+  border-radius: 16px;
+  border: 1.5px solid #EDF2F7;
+  margin: 12px 12px 0;
+  overflow: visible;
+  box-shadow: 0 2px 12px rgba(0,0,0,.05);
+  padding-bottom: 8px;
+}
+.day-header {
+  display: flex; align-items: center; gap: 12px;
+  padding: 14px 16px;
+  background: linear-gradient(120deg, #F8FAFF 0%, #FDF0F5 100%);
+  border-bottom: 1.5px solid #EDF2F7;
+  position: sticky; top: 0; z-index: 1;
+}
+.day-badge {
+  display: inline-flex; align-items: center; gap: 3px;
+  background: linear-gradient(135deg, #89CFF0, #FFB6C1);
+  color: white; border-radius: 50px;
+  padding: 5px 12px; font-size: 13px; font-weight: 800;
+  letter-spacing: .5px; flex-shrink: 0;
+  box-shadow: 0 4px 10px rgba(137,207,240,.35);
+}
+.day-num { font-size: 16px; font-weight: 900; }
+.day-date {
+  font-size: 12px; font-weight: 700; color: #718096;
+  display: inline-flex; align-items: center; gap: 5px;
+  background: #F7FAFC; padding: 4px 10px; border-radius: 8px;
+  border: 1px solid #E2E8F0; letter-spacing: .2px;
+  flex: 0 0 auto; /* 날짜 크기 고정 */
+  margin-left: auto; /* 오른쪽 정렬 */
+  margin-right: 0;
+}
+.day-date::before {
+  content: '📅';
+  font-size: 11px;
+}
+.btn-add-place {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 6px 14px; border-radius: 50px;
+  background: linear-gradient(135deg, #89CFF0, #FFB6C1);
+  color: white; border: none; font-size: 12px; font-weight: 700;
+  cursor: pointer; white-space: nowrap;
+  transition: opacity .2s; flex-shrink: 0;
+}
+.btn-add-place:hover { opacity: .85; }
+
+/* ── 장소 카드 통일 ── */
+.place-list { padding: 10px 12px 4px; }
+.place-card {
+  display: flex; align-items: flex-start; gap: 12px;
+  padding: 12px 14px;
+  background: #FAFBFF; border: 1.5px solid #EDF2F7;
+  border-radius: 12px; margin-bottom: 8px;
+  cursor: grab; transition: box-shadow .15s, transform .1s;
+}
+.place-card:hover {
+  box-shadow: 0 4px 16px rgba(137,207,240,.2);
+  transform: translateY(-1px);
+}
+.place-card:active { cursor: grabbing; }
+.place-num {
+  width: 26px; height: 26px; border-radius: 50%;
+  background: linear-gradient(135deg, #89CFF0, #FFB6C1);
+  color: white; font-size: 12px; font-weight: 800;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0; margin-top: 1px;
+}
+.place-info { flex: 1; min-width: 0; }
+.place-name { font-size: 14px; font-weight: 700; color: #1A202C; margin-bottom: 2px; }
+.place-addr { font-size: 12px; color: #718096; margin-bottom: 5px; }
+.place-chips { display: flex; flex-wrap: wrap; gap: 5px; }
+.place-chip { padding: 2px 8px; border-radius: 50px; font-size: 11px; font-weight: 600; }
+.place-chip.time { background: rgba(137,207,240,.15); color: #2B6CB0; border: 1px solid rgba(137,207,240,.3); }
+.place-chip.memo { background: rgba(255,182,193,.15); color: #9B2C2C; border: 1px solid rgba(255,182,193,.3); }
+.place-chip.img  { background: rgba(104,211,145,.15); color: #276749; border: 1px solid rgba(104,211,145,.3); }
+.place-actions { display: flex; gap: 4px; flex-shrink: 0; }
+.place-action-btn {
+  width: 30px; height: 30px; border: none; border-radius: 8px;
+  background: transparent; cursor: pointer; font-size: 14px;
+  display: flex; align-items: center; justify-content: center;
+  transition: background .15s;
+}
+.place-action-btn:hover { background: #EDF2F7; }
+
+/* ── drop-zone ── */
+.drop-zone {
+  margin: 0 12px 12px;
+  border: 1.5px dashed #CBD5E0; border-radius: 10px;
+  padding: 12px; text-align: center;
+  font-size: 13px; color: #A0AEC0; cursor: pointer;
+  transition: border-color .2s, color .2s, background .2s;
+}
+.drop-zone:hover { border-color: #89CFF0; color: #2B6CB0; background: #EBF8FF; }
+
+/* ── 사이드바 상단 태그 제거 후 여백 ── */
+.schedule-scroll { padding-top: 4px; }
+
+/* ── 체크리스트 직접입력/투표 버튼 개선 ── */
+.btn-toggle-cat {
+  padding: 10px 14px; border-radius: 10px;
+  background: #EDF2F7; color: #4A5568;
+  border: 1.5px solid #E2E8F0; font-size: 12px; font-weight: 700;
+  cursor: pointer; white-space: nowrap; transition: all .15s;
+  flex-shrink: 0;
+}
+.btn-toggle-cat:hover { background: linear-gradient(135deg,#89CFF0,#FFB6C1); color: white; border-color: transparent; }
+.btn-toggle-cat.active { background: linear-gradient(135deg,#89CFF0,#FFB6C1); color: white; border-color: transparent; }
+.btn-add-vote-opt {
+  width: 100%; padding: 11px; border-radius: 10px;
+  border: 1.5px dashed #CBD5E0; background: #F8FAFC;
+  color: #718096; font-size: 13px; font-weight: 700;
+  cursor: pointer; transition: all .15s; margin-bottom: 12px;
+}
+.btn-add-vote-opt:hover { border-color: #89CFF0; color: #2B6CB0; background: #EBF8FF; }
+
+/* ── 메모 모달 이미지 업로드 ── */
+.memo-img-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 8px; }
+.memo-img-thumb {
+  aspect-ratio: 1; border-radius: 8px; object-fit: cover;
+  border: 1.5px solid #E2E8F0; cursor: pointer; transition: opacity .2s;
+}
+.memo-img-thumb:hover { opacity: .85; }
+.memo-img-add {
+  aspect-ratio: 1; border-radius: 8px;
+  border: 1.5px dashed #CBD5E0; background: #F8FAFC;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 4px; cursor: pointer; font-size: 11px; color: #A0AEC0;
+  transition: border-color .2s, color .2s;
+}
+.memo-img-add:hover { border-color: #89CFF0; color: #2B6CB0; }
+
+/* ── 여행 정보 모달: 썸네일 추가 ── */
+.trip-info-thumb-wrap { display: flex; align-items: center; gap: 16px; margin-bottom: 20px; }
+.trip-info-thumb-circle {
+  width: 64px; height: 64px; border-radius: 50%;
+  object-fit: cover; border: 3px solid #EDF2F7;
+  flex-shrink: 0;
+}
+.trip-info-thumb-name { font-size: 18px; font-weight: 800; color: #1A202C; }
+.trip-info-thumb-dates { font-size: 12px; color: #718096; margin-top: 3px; }
+
+/* ══════════════════════════════════════════════
+   탑바 sub 개선
+══════════════════════════════════════════════ */
+.ws-topbar__date { font-size: 12px; color: #4A5568; font-weight: 600; margin: 0 4px; }
+.ws-topbar__sep  { font-size: 12px; color: #CBD5E0; margin: 0 4px; }
+.ws-topbar__nights { font-size: 12px; color: #718096; font-weight: 500; margin-right: 4px; }
+
+/* 탑바 도시칩 (이모지 없이) */
+.ws-city-chip-topbar {
+  display: inline-flex; align-items: center;
+  padding: 2px 8px; margin-right: 4px;
+  background: rgba(137,207,240,.13);
+  border: 1px solid rgba(137,207,240,.3);
+  border-radius: 6px;
+  font-size: 11px; font-weight: 700; color: #2B6CB0;
+  white-space: nowrap;
+}
+
+/* 탑바 수정 버튼 */
+.ws-edit-btn {
+  display: inline-flex; align-items: center; gap: 4px;
+  margin-left: 6px; padding: 2px 8px;
+  background: rgba(255,182,193,.15); border: 1px solid rgba(255,182,193,.4);
+  border-radius: 50px; font-size: 11px; font-weight: 700; color: #9B2C2C;
+  cursor: pointer; vertical-align: middle; white-space: nowrap;
+  transition: background .15s;
+}
+.ws-edit-btn:hover { background: rgba(255,182,193,.3); }
+
+/* ══════════════════════════════════════════════
+   여행 정보 모달 개편 CSS
+══════════════════════════════════════════════ */
+.trip-info-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.trip-info-empty { font-size: 13px; color: #A0AEC0; }
+
+/* 도시 칩 */
+.trip-city-chip {
+  display: inline-flex; align-items: center;
+  padding: 4px 12px;
+  background: rgba(137,207,240,.12);
+  border: 1px solid rgba(137,207,240,.3);
+  border-radius: 8px;
+  font-size: 13px; font-weight: 700; color: #2B6CB0;
+  font-family: 'Pretendard Variable', 'Pretendard', -apple-system, sans-serif;
+}
+
+/* 여행 유형 칩 */
+.trip-type-chip {
+  display: inline-flex; align-items: center;
+  padding: 4px 14px;
+  background: rgba(137,207,240,.13);
+  border: 1px solid rgba(137,207,240,.35);
+  border-radius: 8px;
+  font-size: 13px; font-weight: 700; color: #2B6CB0;
+  font-family: 'Pretendard Variable', 'Pretendard', -apple-system, sans-serif;
+}
+
+/* 태그 칩 */
+.trip-tag-chip {
+  display: inline-flex; align-items: center;
+  padding: 4px 12px;
+  background: rgba(137,207,240,.1);
+  border: 1px solid rgba(137,207,240,.3);
+  border-radius: 8px;
+  font-size: 12px; font-weight: 700; color: #2B6CB0;
+  font-family: 'Pretendard Variable', 'Pretendard', -apple-system, sans-serif;
+}
+
+/* 초대코드 */
+.trip-info-invite-code {
+  font-size: 15px; font-weight: 800; letter-spacing: 3px; color: #1A202C;
+  font-family: 'SF Mono', 'Fira Code', 'Consolas', monospace;
+  background: #F7FAFC; border: 1px solid #E2E8F0;
+  border-radius: 8px; padding: 8px 14px; display: inline-block;
+}
+
+/* 수정 버튼 (모달 내) */
+.btn-trip-edit-open {
+  width: 100%; padding: 11px;
+  display: flex; align-items: center; justify-content: center; gap: 6px;
+  background: linear-gradient(135deg, #89CFF0, #FFB6C1);
+  color: white; border: none; border-radius: 10px;
+  font-size: 14px; font-weight: 800;
+  cursor: pointer; margin-top: 8px;
+  font-family: 'Pretendard Variable', 'Pretendard', -apple-system, sans-serif;
+  transition: opacity .2s;
+}
+.btn-trip-edit-open:hover { opacity: .88; }
+
+/* ── 여행 설명 폰트 강제 통일 ── */
+.trip-info-desc {
+  font-size: 13px; color: #4A5568; line-height: 1.8;
+  white-space: pre-wrap;
+  font-family: 'Pretendard Variable', 'Pretendard', -apple-system, sans-serif !important;
+}
+
+/* ══════════════════════════════════════════════
+   여행 수정 모달 CSS
+══════════════════════════════════════════════ */
+.edit-form-group { margin-bottom: 18px; }
+.edit-form-row   { display: flex; gap: 12px; margin-bottom: 18px; }
+.edit-form-label {
+  display: block; font-size: 11px; font-weight: 800;
+  letter-spacing: 1px; color: #A0AEC0; text-transform: uppercase; margin-bottom: 7px;
+  font-family: 'Pretendard Variable', 'Pretendard', -apple-system, sans-serif;
+}
+.edit-form-opt { font-size: 10px; color: #CBD5E0; font-weight: 400; text-transform: none; letter-spacing: 0; }
+.edit-form-input {
+  width: 100%; padding: 10px 14px;
+  border: 1.5px solid #E2E8F0; border-radius: 10px;
+  font-size: 14px; font-weight: 500; color: #1A202C;
+  font-family: 'Pretendard Variable', 'Pretendard', -apple-system, sans-serif;
+  transition: border-color .15s, box-shadow .15s;
+  outline: none;
+}
+.edit-form-input:focus { border-color: #89CFF0; box-shadow: 0 0 0 3px rgba(137,207,240,.15); }
+.edit-form-textarea {
+  width: 100%; padding: 10px 14px; height: 90px; resize: none;
+  border: 1.5px solid #E2E8F0; border-radius: 10px;
+  font-size: 13px; font-weight: 500; color: #1A202C; line-height: 1.7;
+  font-family: 'Pretendard Variable', 'Pretendard', -apple-system, sans-serif;
+  transition: border-color .15s; outline: none;
+}
+.edit-form-textarea:focus { border-color: #89CFF0; box-shadow: 0 0 0 3px rgba(137,207,240,.15); }
+.edit-form-count { font-size: 11px; color: #A0AEC0; text-align: right; margin-top: 4px; }
+
+/* 유형 버튼 그리드 */
+.edit-type-grid { display: flex; flex-wrap: wrap; gap: 8px; }
+.edit-type-btn {
+  padding: 6px 16px;
+  border: 1.5px solid #E2E8F0; border-radius: 8px;
+  background: white; font-size: 13px; font-weight: 700;
+  color: #718096; cursor: pointer; transition: all .15s;
+  font-family: 'Pretendard Variable', 'Pretendard', -apple-system, sans-serif;
+}
+.edit-type-btn:hover { border-color: #89CFF0; color: #2B6CB0; background: rgba(137,207,240,.08); }
+.edit-type-btn.active {
+  background: linear-gradient(135deg, #89CFF0, #FFB6C1);
+  border-color: transparent; color: white;
+}
+
+/* 공개여부 토글 */
+.edit-toggle-wrap { display: flex; align-items: center; cursor: pointer; gap: 0; }
+.edit-toggle-wrap input { display: none; }
+.edit-toggle-slider {
+  width: 40px; height: 22px; background: #E2E8F0; border-radius: 50px;
+  position: relative; transition: background .2s; flex-shrink: 0;
+}
+.edit-toggle-slider::after {
+  content: ''; position: absolute; width: 16px; height: 16px;
+  background: white; border-radius: 50%; top: 3px; left: 3px;
+  transition: transform .2s; box-shadow: 0 1px 4px rgba(0,0,0,.2);
+}
+.edit-toggle-wrap input:checked + .edit-toggle-slider { background: #89CFF0; }
+.edit-toggle-wrap input:checked + .edit-toggle-slider::after { transform: translateX(18px); }
+
+/* 날짜 경고 */
+.edit-date-warning {
+  padding: 9px 14px; border-radius: 8px;
+  font-size: 12px; font-weight: 600; line-height: 1.6; margin-bottom: 16px;
+  font-family: 'Pretendard Variable', 'Pretendard', -apple-system, sans-serif;
+}
+.warn-error   { background: #FFF5F5; border: 1px solid #FEB2B2; color: #C53030; }
+.warn-danger  { background: #FFF5F5; border: 1px solid #FC8181; color: #9B2C2C; }
+.warn-caution { background: #FFFAF0; border: 1px solid #F6AD55; color: #744210; }
+
+/* 저장 버튼 */
+.btn-edit-save {
+  width: 100%; padding: 12px;
+  display: flex; align-items: center; justify-content: center; gap: 6px;
+  background: linear-gradient(135deg, #89CFF0, #FFB6C1);
+  color: white; border: none; border-radius: 10px;
+  font-size: 14px; font-weight: 800; cursor: pointer;
+  font-family: 'Pretendard Variable', 'Pretendard', -apple-system, sans-serif;
+  transition: opacity .2s;
+}
+.btn-edit-save:hover { opacity: .88; }
+.btn-edit-save:disabled { opacity: .5; cursor: not-allowed; }
+
+
+/* ══════════════════════════════════════════════
+   탑바 통일 칩 (도시 + 유형 동일 스타일)
+══════════════════════════════════════════════ */
+.ws-topbar-chip {
+  display: inline-flex; align-items: center;
+  padding: 2px 9px; margin-right: 4px;
+  background: rgba(160,174,192,.12);
+  border: 1px solid rgba(160,174,192,.25);
+  border-radius: 6px;
+  font-size: 11px; font-weight: 700; color: #4A5568;
+  white-space: nowrap; vertical-align: middle;
+}
+
+/* ── 날짜/박수 텍스트 ── */
+.ws-topbar__date   { font-size: 12px; color: #4A5568; font-weight: 600; }
+.ws-topbar__sep    { font-size: 12px; color: #CBD5E0; margin: 0 5px; }
+.ws-topbar__nights { font-size: 12px; color: #718096; font-weight: 500; margin-right: 4px; }
+
+/* ── 상세 버튼 강조 버전 ── */
+.ws-detail-btn-v2 {
+  display: inline-flex; align-items: center; gap: 5px;
+  margin-left: 6px; padding: 4px 11px;
+  background: linear-gradient(135deg, rgba(137,207,240,.25), rgba(255,182,193,.2));
+  border: 1.5px solid rgba(137,207,240,.5);
+  border-radius: 20px;
+  font-size: 11px; font-weight: 800; color: #2B6CB0;
+  cursor: pointer; white-space: nowrap; vertical-align: middle;
+  transition: all .18s;
+  box-shadow: 0 1px 4px rgba(137,207,240,.25);
+}
+.ws-detail-btn-v2:hover {
+  background: linear-gradient(135deg, rgba(137,207,240,.4), rgba(255,182,193,.3));
+  box-shadow: 0 2px 8px rgba(137,207,240,.4);
+  transform: translateY(-1px);
+}
+
+/* ══════════════════════════════════════════════
+   여행 정보 모달 - 설명 굵게
+══════════════════════════════════════════════ */
+.trip-info-desc-bold {
+  font-size: 14px;
+  font-weight: 700;
+  color: #2D3748;
+  line-height: 1.75;
+  white-space: pre-wrap;
+  font-family: 'Pretendard Variable', 'Pretendard', -apple-system, sans-serif !important;
+  letter-spacing: -0.01em;
+}
+
+/* ══════════════════════════════════════════════
+   드래그앤드롭 상태 CSS
+══════════════════════════════════════════════ */
+.place-card {
+  cursor: grab;
+}
+.place-card:active {
+  cursor: grabbing;
+}
+.place-card.dragging {
+  opacity: .45;
+  border: 1.5px dashed var(--blue, #89CFF0) !important;
+  background: rgba(137,207,240,.08) !important;
+  box-shadow: 0 4px 16px rgba(137,207,240,.3) !important;
+}
+
+/* 리스트가 드래그 대상일 때 */
+.place-list.list-drag-over {
+  background: rgba(137,207,240,.04);
+  border-radius: 12px;
+  outline: 1.5px dashed rgba(137,207,240,.4);
+  outline-offset: 4px;
+}
+
+/* drop-zone 활성화 (빈 DAY에 드래그했을 때) */
+.drop-zone.dz-active {
+  border-color: #89CFF0 !important;
+  background: rgba(137,207,240,.1) !important;
+  color: #2B6CB0 !important;
+  transform: scale(1.01);
+  box-shadow: 0 0 0 3px rgba(137,207,240,.2);
+}
+
+/* ══════════════════════════════════════════════
+   탑바 날짜 새 디자인
+══════════════════════════════════════════════ */
+.ws-date-pill {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 3px 10px;
+  background: rgba(137,207,240,.12);
+  border: 1px solid rgba(137,207,240,.25);
+  border-radius: 20px;
+  font-size: 11.5px; font-weight: 700; color: #2B6CB0;
+  white-space: nowrap; margin-right: 6px;
+  font-family: 'Pretendard Variable', 'Pretendard', monospace;
+}
+.ws-date-icon { color: #89CFF0; flex-shrink: 0; }
+.ws-nights-pill {
+  display: inline-flex; align-items: center;
+  padding: 3px 9px;
+  background: rgba(160,174,192,.1);
+  border: 1px solid rgba(160,174,192,.2);
+  border-radius: 20px;
+  font-size: 11px; font-weight: 600; color: #718096;
+  white-space: nowrap; margin-right: 6px;
+}
+
+/* ══════════════════════════════════════════════
+   여행 정보 모달 배지 완전 통일
+══════════════════════════════════════════════ */
+.info-chip {
+  display: inline-flex; align-items: center;
+  padding: 5px 13px;
+  border-radius: 8px;
+  font-size: 13px; font-weight: 700;
+  font-family: 'Pretendard Variable', 'Pretendard', -apple-system, sans-serif;
+  margin: 2px 4px 2px 0;
+}
+/* 여행지: 파스텔 블루 */
+.info-chip.city-chip {
+  background: rgba(137,207,240,.15);
+  border: 1.5px solid rgba(137,207,240,.3);
+  color: #2B6CB0;
+}
+/* 여행 유형: 하늘색 통일 */
+.info-chip.type-chip {
+  background: rgba(137,207,240,.13);
+  border: 1.5px solid rgba(137,207,240,.35);
+  color: #2B6CB0;
+}
+/* 태그: 하늘색 통일 */
+.info-chip.tag-chip {
+  background: rgba(137,207,240,.1);
+  border: 1.5px solid rgba(137,207,240,.28);
+  color: #2B6CB0;
+}
+
+/* ══════════════════════════════════════════════
+   여행 설명 텍스트박스
+══════════════════════════════════════════════ */
+.trip-info-desc-box {
+  background: #F8FAFC;
+  border: 1.5px solid #E2E8F0;
+  border-radius: 10px;
+  padding: 12px 14px;
+  border-left: 3px solid rgba(137,207,240,.6);
+}
+.trip-info-desc-text {
+  font-size: 14px;
+  font-weight: 600;
+  color: #2D3748;
+  line-height: 1.75;
+  white-space: pre-wrap;
+  font-family: 'Pretendard Variable', 'Pretendard', -apple-system, sans-serif !important;
+  letter-spacing: -0.01em;
+}
+
+/* ══════════════════════════════════════════════
+   드래그앤드롭 상태 (강화)
+══════════════════════════════════════════════ */
+.place-card { cursor: grab; transition: box-shadow .15s, transform .1s; }
+.place-card:active { cursor: grabbing; }
+.place-card.dragging {
+  opacity: .4;
+  transform: scale(1.02);
+  border: 2px dashed #89CFF0 !important;
+  background: rgba(137,207,240,.06) !important;
+  box-shadow: 0 8px 24px rgba(137,207,240,.3) !important;
+  pointer-events: none;
+}
+
+/* 리스트 드래그 오버 */
+.place-list.list-drag-over {
+  background: rgba(137,207,240,.04);
+  border-radius: 12px;
+  outline: 2px dashed rgba(137,207,240,.4);
+  outline-offset: 3px;
+  min-height: 60px;
+}
+
+/* 빈 DAY drop-zone 활성화 */
+.drop-zone.dz-active {
+  border-color: #89CFF0 !important;
+  background: rgba(137,207,240,.12) !important;
+  color: #2B6CB0 !important;
+  box-shadow: inset 0 0 0 2px rgba(137,207,240,.3);
+  transform: scale(1.01);
+}
+
+/* 드래그 중 커서 */
+.ws-sidebar.dragging-active { cursor: grabbing !important; }
+
+/* ══════════════════════════════════════════════
+   탑바 도시 강조 칩 (파랑 계열)
+══════════════════════════════════════════════ */
+.ws-city-chip-em {
+  display: inline-flex; align-items: center;
+  padding: 3px 10px; margin-right: 4px;
+  background: rgba(137,207,240,.2);
+  border: 1.5px solid rgba(137,207,240,.45);
+  border-radius: 7px;
+  font-size: 11.5px; font-weight: 800; color: #2B6CB0;
+  white-space: nowrap; vertical-align: middle;
+  letter-spacing: -0.01em;
+}
+
+/* 날짜+박수 합친 pill */
+.ws-date-nights-pill {
+  display: inline-flex; align-items: center;
+  padding: 3px 11px; margin-right: 6px;
+  background: rgba(160,174,192,.08);
+  border: 1px solid rgba(160,174,192,.2);
+  border-radius: 20px;
+  font-size: 11.5px; font-weight: 600; color: #4A5568;
+  white-space: nowrap; vertical-align: middle;
 }

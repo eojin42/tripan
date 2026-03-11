@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.tripan.app.mapper.ChecklistMapper">
+
+    <!-- 전체 목록 -->
+    <select id="selectByTripId" parameterType="long" resultType="map">
+        SELECT
+            checklist_id   AS checklistId,
+            trip_id        AS tripId,
+            item_name      AS itemName,
+            category,
+            is_checked     AS isChecked,
+            check_manager  AS checkManager
+        FROM trip_checklist
+        WHERE trip_id = #{tripId}
+        ORDER BY category, checklist_id ASC
+    </select>
+
+    <!-- 항목 추가 (IDENTITY PK) -->
+    <insert id="insertItem" useGeneratedKeys="true" keyProperty="checklistId" parameterType="com.tripan.app.trip.domain.entity.TripChecklist">
+    INSERT INTO trip_checklist (trip_id, item_name, category, is_checked, check_manager)
+    VALUES (#{tripId}, #{itemName}, #{category}, 0, #{checkManager})
+	</insert>
+
+    <!-- 체크 토글 (0↔1) -->
+    <update id="toggleItem">
+        UPDATE trip_checklist
+        SET is_checked = CASE WHEN is_checked = 0 THEN 1 ELSE 0 END
+        WHERE checklist_id = #{checklistId}
+    </update>
+
+    <!-- 항목 삭제 -->
+    <delete id="deleteItem">
+        DELETE FROM trip_checklist
+        WHERE checklist_id = #{checklistId} AND trip_id = #{tripId}
+    </delete>
+
+    <!-- 카테고리 목록 -->
+    <select id="selectCategories" parameterType="long" resultType="string">
+        SELECT DISTINCT category
+        FROM trip_checklist
+        WHERE trip_id = #{tripId}
+          AND category IS NOT NULL
+        ORDER BY category
+    </select>
+
+</mapper>

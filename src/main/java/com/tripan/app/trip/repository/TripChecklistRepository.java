@@ -8,7 +8,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.tripan.app.trip.domian.entity.TripChecklist;
+import com.tripan.app.trip.domain.entity.TripChecklist;
 
 public interface TripChecklistRepository extends JpaRepository<TripChecklist, Long> {
 	// 원본 여행 체크리스트 긁어오기 

@@ -2,7 +2,7 @@ package com.tripan.app.trip.repository;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 
-import com.tripan.app.trip.domian.entity.VoteRecord;
+import com.tripan.app.trip.domain.entity.VoteRecord;
 
 // 투표 기록(완료/결과)
 public interface VoteRecordRepository extends JpaRepository<VoteRecord, Long> {

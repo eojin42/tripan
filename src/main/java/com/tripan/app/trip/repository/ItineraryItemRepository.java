@@ -6,7 +6,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.tripan.app.trip.domian.entity.ItineraryItem;
+import com.tripan.app.trip.domain.entity.ItineraryItem;
 
 import java.util.List;
 import java.time.LocalTime;
@@ -21,14 +21,13 @@ public interface ItineraryItemRepository extends JpaRepository<ItineraryItem, Lo
     @Modifying
     @Transactional
     @Query("UPDATE ItineraryItem i SET i.visitOrder = :visitOrder WHERE i.itemId = :itemId")
-    void updateVisitOrder(@Param("itemId") Long itemId, @Param("visitOrder") Integer visitOrder);
+    void updateVisitOrder(@Param("itemId") Long itemId, @Param("visitOrder") String visitOrder);
 
     // [상세 수정] 특정 장소의 방문 시간이나 메모만 딱 찝어서 바꿀 때
     @Modifying
     @Transactional
     @Query("UPDATE ItineraryItem i SET i.startTime = :startTime, i.memo = :memo WHERE i.itemId = :itemId")
     void updateItemDetails(@Param("itemId") Long itemId, @Param("startTime") LocalTime startTime, @Param("memo") String memo);
-
 /*
 일정 편집 로직 정리 (나중에 삭제할거)
 

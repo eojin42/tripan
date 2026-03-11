@@ -1,4 +1,4 @@
-package com.tripan.app.trip.domian.entity;
+package com.tripan.app.trip.domain.entity;
 
 // 지출 카테고리 정의
 public enum ExpenseCategory {

@@ -2,7 +2,7 @@ package com.tripan.app.trip.repository;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 
-import com.tripan.app.trip.domian.entity.Tag;
+import com.tripan.app.trip.domain.entity.Tag;
 
 import java.util.Optional;
 

@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" 
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.tripan.app.mapper.ItineraryMapper">
+
+    <resultMap id="ItineraryItemResultMap" type="com.tripan.app.domain.dto.TripDto$ItineraryItemDto">
+    <id property="itemId" column="ITEM_ID"/>
+    <collection property="images" ofType="com.tripan.app.domain.dto.TripDto$ItineraryImageDto">
+        <id property="imageId" column="IMAGE_ID"/>
+        <result property="imageUrl" column="IMAGE_URL"/>
+        <result property="memberId" column="MEMBER_ID"/>
+    </collection>
+	</resultMap>
+
+    <select id="selectItemsWithImagesByDayId" resultMap="ItineraryItemResultMap">
+        SELECT 
+            i.item_id, 
+            i.day_id, 
+            i.memo, 
+            i.visit_order,
+            img.image_id, 
+            img.image_url, 
+            img.member_id
+        FROM itinerary_item i
+        LEFT OUTER JOIN itinerary_image img ON i.item_id = img.item_id
+        WHERE i.day_id = #{dayId}
+        ORDER BY i.visit_order ASC
+    </select>
+
+</mapper>

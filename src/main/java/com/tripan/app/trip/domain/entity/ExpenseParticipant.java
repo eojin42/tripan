@@ -1,4 +1,4 @@
-package com.tripan.app.trip.domian.entity;
+package com.tripan.app.trip.domain.entity;
 
 import jakarta.persistence.*;
 import lombok.Getter;
@@ -24,7 +24,7 @@ public class ExpenseParticipant { // 지출 분담
     @Column(name = "share_amount", nullable = false)
     private Integer shareAmount; // 이 멤버가 내야 할 몫 (예: 18500)
 
-    @Column(name = "is_settled", length = 10)
-    private String isSettled; // 정산 완료 여부 (Y / N)
+    @Column(name = "is_settled", nullable = false)
+    private Integer isSettled; // (0: 미정산, 1: 완료)
 
 }
