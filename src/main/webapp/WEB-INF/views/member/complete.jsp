@@ -29,13 +29,25 @@
         <span class="tri" style="font-size: 32px;">Trip</span><span class="pan" style="font-size: 32px;">an</span><span class="dot" style="color: var(--light-pink); font-size: 34px;">.</span>
       </div>
       
-      <h2 class="complete-title">${message}</h2>
+      <h2 class="complete-title">${title}</h2>
       
-      <p class="complete-desc">
-        성공적으로 가입이 완료되었습니다.<br>
-        지금 바로 Tripan과 함께 특별한 여행을 계획해 보세요!
-      </p>
 
+   	<c:choose>
+	  <c:when test="${title == '회원 가입 완료!'}">
+	    <p class="complete-desc">
+	      ${name}님의 성공적으로 가입이 완료되었습니다.<br>
+	      지금 바로 Tripan과 함께 특별한 여행을 계획해 보세요!
+	    </p>
+	  </c:when>
+	
+	  <c:otherwise>
+	    <p class="complete-desc">
+	      ${name}님의 회원가입이 실패했습니다.<br>
+	      회원가입을 다시 시도해주시기 바랍니다.
+	    </p>
+	  </c:otherwise>
+	</c:choose>
+	
       <div class="action-buttons">
         <button type="button" class="btn-outline" onclick="location.href='${pageContext.request.contextPath}/';">홈으로 이동</button>
         <button type="button" class="btn-primary" onclick="location.href='${pageContext.request.contextPath}/member/login';">로그인하기</button>

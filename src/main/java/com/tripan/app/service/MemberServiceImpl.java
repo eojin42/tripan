@@ -74,7 +74,6 @@ public class MemberServiceImpl implements MemberService {
             memberRepository.save(member1);
 
             Member2 member2 = new Member2();
-            member2.setMemberId(member1.getId());
             member2.setMember1(member1);
             member2.setNickname(dto.getNickname());
             member2.setProfileImage(dto.getProfilePhoto());
@@ -96,7 +95,7 @@ public class MemberServiceImpl implements MemberService {
             member1.setLoginId(dto.getLoginId() != null ? dto.getLoginId() : dto.getEmail());
             member1.setEmail(dto.getEmail());
             member1.setPassword("");
-            member1.setUsername(dto.getUsername());
+            member1.setUsername(dto.getName());
             member1.setStatus(1);
             member1.setRole("ROLE_USER");
             member1.setProvider(dto.getSnsProvider());
@@ -105,9 +104,10 @@ public class MemberServiceImpl implements MemberService {
             memberRepository.save(member1);
 
             Member2 member2 = new Member2();
-            member2.setMemberId(member1.getId());
             member2.setMember1(member1);
             member2.setNickname(dto.getNickname());
+            member2.setProfileImage(dto.getProfilePhoto());
+            member2.setPhoneNumber(dto.getPhoneNumber());
             member2Repository.save(member2);
 
             dto.setMemberId(member1.getId());
