@@ -2,7 +2,7 @@
 <%@ taglib prefix="c" uri="jakarta.tags.core"%>
 
 <style>
-  /* 피드 카드 전용 스타일 */
+/* 피드 카드 전용 스타일 */
   .feed-card { padding: 0; overflow: hidden; margin-bottom: 0; }
   .feed-author { display: flex; align-items: center; justify-content: space-between; padding: 24px 28px; }
   .author-left { display: flex; align-items: center; gap: 14px; }
@@ -26,10 +26,32 @@
   .btn-scrap { background: var(--grad-main); color: white; border: none; padding: 12px 24px; border-radius: 50px; font-weight: 800; font-size: 15px; cursor: pointer; box-shadow: 0 4px 16px rgba(137, 207, 240, 0.4); transition: transform 0.3s var(--bounce); display: flex; align-items: center; gap: 8px; }
   .btn-scrap:hover { transform: translateY(-3px) scale(1.05); }
 
+  /* 👇 실수로 지워졌던 기존 버튼 정렬 스타일 (복구!) */
   .feed-actions { display: flex; gap: 20px; padding-top: 20px; border-top: 1px solid rgba(0,0,0,0.05); }
   .action-btn { display: flex; align-items: center; gap: 6px; font-size: 15px; font-weight: 700; color: var(--text-gray); cursor: pointer; transition: 0.3s; }
   .action-btn:hover { color: var(--light-pink); }
 
+  /* 👇 새롭게 추가된 좋아요 핑크 하트 스타일 */
+  .like-btn-area {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    cursor: pointer;
+    color: #E8849A; /* 프리보드 핑크색 */
+    font-size: 15px;
+    font-weight: 700;
+    user-select: none;
+    transition: opacity 0.2s;
+  }
+  .like-btn-area:hover {
+    opacity: 0.7;
+  }
+  .heart-icon {
+    font-size: 16px; 
+    line-height: 1;
+  }
+
+  /* 무한스크롤 및 모달 등 기타 CSS */
   .infinite-scroll-trigger {
     padding: 30px; text-align: center; color: var(--sky-blue);
     font-size: 15px; font-weight: 800; margin-bottom: 20px;
@@ -100,6 +122,35 @@
     color: white;
     transform: translateY(-2px);
   }
+  
+  /* 👇 피드 댓글 영역 스타일 */
+  .feed-comment-area {
+    display: none;
+    margin-top: 16px; 
+    padding-top: 16px; 
+    border-top: 1px dashed rgba(0,0,0,0.05);
+  }
+  .feed-comment-list {
+    display: flex; flex-direction: column; gap: 12px; 
+    margin-bottom: 16px; max-height: 250px; overflow-y: auto;
+  }
+  .feed-comment-item {
+    display: flex; gap: 10px; align-items: flex-start;
+  }
+  .feed-comment-item img {
+    width: 32px; height: 32px; border-radius: 50%; object-fit: cover; border: 1px solid var(--border-color);
+  }
+  .feed-comment-body {
+    background: #F8FAFC; padding: 10px 14px; border-radius: 0 16px 16px 16px; flex: 1;
+  }
+  .fc-name { font-size: 13px; font-weight: 800; color: var(--text-dark); margin-bottom: 4px; }
+  .fc-text { font-size: 13px; color: var(--text-black); line-height: 1.4; word-break: break-all; }
+  .fc-time { font-size: 11px; color: var(--text-gray); margin-top: 4px; }
+  .comment-input-wrap { display: flex; gap: 8px; }
+  .comment-input-wrap input {
+    flex: 1; border: 1px solid var(--border-color); border-radius: 20px; padding: 10px 16px; font-family: 'Pretendard', sans-serif; font-size: 13px; outline: none; transition: 0.3s;
+  }
+  .comment-input-wrap input:focus { border-color: var(--sky-blue); }
   
 </style>
 
@@ -216,12 +267,24 @@
           </button>
         </div>
       </c:if>
-
+      
       <div class="feed-actions">
-        <div class="action-btn" onclick="toggleLike(${feed.postId})">❤️ 좋아요 ${feed.likeCount}</div>
+        <div class="like-btn-area" onclick="toggleFeedLike(this, ${feed.postId})">
+          <span class="heart-icon">♡</span> 좋아요 <span class="like-cnt">${feed.likeCount}</span>
+        </div>
         <div class="action-btn" onclick="openComment(${feed.postId})">💬 댓글</div>
         <div class="action-btn" onclick="sharePost(${feed.postId})">🔗 공유</div>
       </div>
+
+      <div class="feed-comment-area" id="feed-comment-area-${feed.postId}">
+        <div class="feed-comment-list" id="comment-list-${feed.postId}">
+           </div>
+        <div class="comment-input-wrap">
+           <input type="text" id="comment-input-${feed.postId}" placeholder="따뜻한 댓글을 남겨주세요...">
+           <button class="btn-submit-lounge" style="padding: 8px 20px; border-radius: 20px; font-size: 13px;" onclick="submitFeedComment(${feed.postId})">등록</button>
+        </div>
+      </div>
+      
     </div>
     
   </article>

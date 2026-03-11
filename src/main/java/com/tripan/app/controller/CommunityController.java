@@ -19,6 +19,7 @@ import org.springframework.web.bind.annotation.ResponseBody;
 
 import com.tripan.app.config.WebSocketEventListener;
 import com.tripan.app.domain.dto.CommunityChatRoomDto;
+import com.tripan.app.domain.dto.CommunityFeedCommentDto;
 import com.tripan.app.domain.dto.CommunityFeedListDto;
 import com.tripan.app.domain.dto.CommunityFeedWriteRequestDto;
 import com.tripan.app.domain.dto.CommunityFreeBoardDto;
@@ -188,9 +189,28 @@ public class CommunityController {
         }
     }
     
+    @PostMapping("/api/feed/like/{postId}")
+    @ResponseBody
+    public ResponseEntity<?> handleFeedLike(@PathVariable("postId") Long postId, HttpSession session) {
+        MemberDto loginUser = (MemberDto) session.getAttribute("loginUser");
+        
+        if (loginUser == null) {
+            return ResponseEntity.status(401).build(); 
+        }
+
+        try {
+            Map<String, Object> result = feedService.toggleFeedLike(postId, loginUser.getMemberId());
+            
+            return ResponseEntity.ok(result);
+        } catch (Exception e) {
+            log.error("피드 좋아요 처리 에러", e);
+            return ResponseEntity.status(500).build();
+        }
+    }
+    
     @PostMapping("/freeboard/like/{boardId}")
     @ResponseBody
-    public ResponseEntity<?> handleLike(@PathVariable("boardId") Long boardId, HttpSession session) {
+    public ResponseEntity<?> handlefreeboardLike(@PathVariable("boardId") Long boardId, HttpSession session) {
         MemberDto loginUser = (MemberDto) session.getAttribute("loginUser");
         
         if (loginUser == null) {
@@ -201,7 +221,7 @@ public class CommunityController {
             Map<String, Object> result = freeboardService.toggleLike(boardId, loginUser.getMemberId());
             return ResponseEntity.ok(result);
         } catch (Exception e) {
-            log.error("좋아요 처리 에러", e);
+            log.error("자유게시판 좋아요 처리 에러", e);
             return ResponseEntity.status(500).build();
         }
     }
@@ -328,6 +348,49 @@ public class CommunityController {
 
         String result = feedService.toggleFollow(loginUser.getMemberId(), targetId);
         return ResponseEntity.ok(Map.of("status", result));
+    }
+    
+    /**
+     * 💬 특정 피드의 댓글 목록 조회 API (비동기)
+     */
+    @GetMapping("/api/feed/{postId}/comments")
+    @ResponseBody
+    public ResponseEntity<List<CommunityFeedCommentDto>> getFeedComments(@PathVariable("postId") Long postId) {
+        try {
+            // Service를 통해 해당 피드의 댓글 목록을 가져옵니다.
+            List<CommunityFeedCommentDto> comments = feedService.getFeedComments(postId);
+            return ResponseEntity.ok(comments);
+        } catch (Exception e) {
+            log.error("피드 댓글 조회 실패", e);
+            return ResponseEntity.status(500).build();
+        }
+    }
+
+    /**
+     * 💬 피드 댓글 등록 API (비동기)
+     */
+    @PostMapping("/api/feed/comment/add")
+    @ResponseBody
+    public ResponseEntity<Map<String, Object>> addFeedComment(
+            @RequestBody CommunityFeedCommentDto dto, 
+            HttpSession session) {
+        
+        MemberDto loginUser = (MemberDto) session.getAttribute("loginUser");
+        if (loginUser == null) {
+            return ResponseEntity.status(401).body(Map.of("status", "error", "message", "로그인이 필요합니다."));
+        }
+        
+        try {
+            dto.setMemberId(loginUser.getMemberId()); 
+            
+            feedService.insertFeedComment(dto);
+            
+            return ResponseEntity.ok(Map.of("status", "success", "message", "댓글이 등록되었습니다."));
+            
+        } catch (Exception e) {
+            log.error("피드 댓글 등록 실패", e);
+            return ResponseEntity.status(500).body(Map.of("status", "error", "message", "댓글 등록 중 서버 오류가 발생했습니다."));
+        }
     }
 
 }
