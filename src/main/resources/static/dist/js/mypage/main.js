@@ -70,15 +70,3 @@ async function loadMiniMap() {
   }
 }
 
-// 초기화
-document.addEventListener('DOMContentLoaded', () => {
-  // 고객센터 탭 켜기
-  const tabSupport = document.getElementById('tabSupport');
-  if (tabSupport) {
-      tabSupport.style.display = 'inline-block';
-  }
-
-  // 데이터 로드 실행
-  loadSummary();
-  loadMiniMap();
-});

@@ -29,7 +29,7 @@ public class CsController {
 	@GetMapping("/admin/cs")
 	public String csmain() {
 		
-		return "admin/cs/cs";
+		return "admin/cs/main";
 	}
 	
 	@GetMapping("/admin/inquiry") // 실제 주소: /api/admin/inquiry
