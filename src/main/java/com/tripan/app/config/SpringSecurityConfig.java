@@ -29,7 +29,7 @@ public class SpringSecurityConfig {
 				"/guest/main", "/guest/list", "/uploads/photo/**", "/favicon.ico", "/WEB-INF/views/**",
 				"/oauth/kakao/callback", "/accommodation/home", "/accommodation/list", "/accommodation/search", "/accommodation/detail/*", 
 				"/community/feed", "/community/fragment/feed", "/api/festivals/**", "/api/chat/rooms/region",
-				"/ws-tripan/**"};
+				"/ws-tripan/**","/member/nicknameCheck"};
 		
 		http.cors(Customizer.withDefaults())
 			.csrf(AbstractHttpConfigurer::disable)

@@ -235,20 +235,60 @@
     const idStr = document.memberForm.loginId.value;
     if (!/^[a-z][a-z0-9_]{4,9}$/i.test(idStr)) {
       showMsg('id-msg', '아이디는 영문자로 시작하는 5~10자 영문/숫자여야 합니다.', true);
-      document.memberForm.loginId.focus(); return;
+      document.memberForm.loginId.focus(); 
+      return;
     }
-    showMsg('id-msg', '사용 가능한 아이디입니다!', false);
-    document.memberForm.idChecked.value = "true";
+    const ctx = '${pageContext.request.contextPath}';
+    
+    fetch(ctx + '/member/userIdCheck',{
+    	method: 'POST',
+    	headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+    	body: 'loginId=' + encodeURIComponent(idStr)
+    })
+    .then(res => res.json())
+    .then(data => {
+      if (data.passed === 'true' || data.passed === true) {
+        showMsg('id-msg', '사용 가능한 아이디입니다!', false);
+        document.memberForm.idChecked.value = "true";
+      } else {
+        showMsg('id-msg', '이미 사용 중인 아이디입니다. 다른 아이디를 입력해주세요.', true);
+        document.memberForm.idChecked.value = "false";
+        document.memberForm.loginId.focus();
+      }
+    })
+    .catch(err => {
+      console.error('중복확인 에러:', err);
+      showMsg('id-msg', '서버 통신 중 오류가 발생했습니다.', true);
+    });
   }
 
   function checkNickname() {
     const nick = document.memberForm.nickname.value;
+    
     if (!/^[가-힣a-zA-Z0-9]{2,10}$/.test(nick)) {
       showMsg('nick-msg', '닉네임은 특수문자를 제외한 2~10자여야 합니다.', true);
-      document.memberForm.nickname.focus(); return;
+      document.memberForm.nickname.focus(); 
+      return;
     }
-    showMsg('nick-msg', '사용 가능한 닉네임입니다!', false);
-    document.memberForm.nickChecked.value = "true";
+    const ctx = '${pageContext.request.contextPath}';
+    
+    fetch(ctx + '/member/nicknameCheck', { 
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: 'nickname=' + encodeURIComponent(nick)
+    })
+    .then(res => res.json())
+    .then(data => {
+      if (data.passed === 'true' || data.passed === true) {
+        showMsg('nick-msg', '사용 가능한 닉네임입니다!', false);
+        document.memberForm.nickChecked.value = "true";
+      } else {
+        showMsg('nick-msg', '이미 누군가 사용 중인 닉네임입니다.', true);
+        document.memberForm.nickChecked.value = "false";
+        document.memberForm.nickname.focus();
+      }
+    })
+    .catch(err => console.error('닉네임 확인 에러:', err));
   }
 
   function memberOk() {

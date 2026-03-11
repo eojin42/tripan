@@ -412,4 +412,13 @@ public class MemberServiceImpl implements MemberService {
         }
         return false;
     }
+    
+
+	@Override
+	public MemberDto findByNickname(String nickname) {
+		return mapper.findByNickname(nickname);
+	}
+
+	
+    
 }
