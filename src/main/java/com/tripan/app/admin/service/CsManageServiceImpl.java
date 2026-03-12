@@ -7,6 +7,7 @@ import java.util.Map;
 import org.springframework.stereotype.Service;
 
 import com.tripan.app.admin.mapper.CsManageMapper;
+import com.tripan.app.domain.dto.AdminChatRoomDto;
 import com.tripan.app.domain.dto.CommunityChatRoomDto;
 
 import lombok.RequiredArgsConstructor;
@@ -43,12 +44,17 @@ public class CsManageServiceImpl implements CsManageService {
     }
 
     @Override
-    public List<CommunityChatRoomDto> getAllSupportRooms() {
+    public List<AdminChatRoomDto> getAllSupportRooms() {
         return csMapper.selectAllSupportRooms();
     }
 
     @Override
     public void closeRoom(Long roomId) {
         csMapper.updateRoomStatus(Map.of("roomId", roomId, "status", "CLOSED"));
+    }
+
+    @Override
+    public void markRoomAsRead(Long roomId, Long adminId) {
+        csMapper.updateAdminLastConnected(Map.of("roomId", roomId, "adminId", adminId));
     }
 }

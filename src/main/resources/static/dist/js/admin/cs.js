@@ -131,7 +131,7 @@ async function loadChatRooms() {
     const rooms = await res.json();
     allChatRooms = rooms || [];
     renderChatRooms(allChatRooms);
-    const unread = allChatRooms.filter(r => r.hasUnread).length;
+    const unread = allChatRooms.filter(r => r.unreadCount > 0).length;
     document.getElementById('chatBadge').textContent = unread;
   } catch (e) {
     document.getElementById('chatRoomItems').innerHTML = `
@@ -149,7 +149,7 @@ function renderChatRooms(rooms) {
     return;
   }
   el.innerHTML = rooms.map(r => `
-    <div class="chat-room-item ${r.hasUnread ? 'unread' : ''}" data-room-id="${r.chatRoomId}" onclick='enterRoom(${JSON.stringify(r)})'>
+    <div class="chat-room-item ${r.unreadCount > 0 ? 'unread' : ''}" data-room-id="${r.chatRoomId}" onclick='enterRoom(${JSON.stringify(r)})'>
       <div class="room-avatar">👤</div>
       <div class="room-info">
         <div class="room-info-top">
@@ -158,7 +158,7 @@ function renderChatRooms(rooms) {
         </div>
         <div class="room-preview">${escHtml(r.lastMessage || '대화를 시작해보세요')}</div>
       </div>
-      ${r.hasUnread ? '<span class="unread-badge">N</span>' : ''}
+      ${r.unreadCount > 0 ? `<span class="unread-badge">${r.unreadCount}</span>` : ''}
     </div>`).join('');
 }
 
@@ -350,5 +350,6 @@ function handleBackdropClick(event) {
 
 // ── 초기화 ──
 loadInquiries();
+loadChatRooms();                   // 페이지 로드 시 즉시 호출
 connectNotification();             // 관리자 알림 WebSocket 상시 연결
 setInterval(loadChatRooms, 30000); // 30초마다 채팅 목록 새로고침

@@ -62,17 +62,25 @@
           }
 
           rooms.forEach(room => {
-            const roomTitle = room.chatRoomName || '문의방';
+            const isAdmin = room.userName !== undefined && room.userName !== null;
+            const roomTitle = isAdmin ? (room.userName || '사용자') + ' 님의 문의' : (room.chatRoomName || '문의방');
+            const unreadBadge = (room.unreadCount > 0)
+              ? `<span style="background:#e53e3e;color:white;border-radius:50%;padding:2px 7px;font-size:11px;font-weight:800;">${room.unreadCount}</span>`
+              : '';
             listEl.insertAdjacentHTML('beforeend', `
               <div class="chat-room-item"
                    data-room-id="${room.chatRoomId}"
                    data-room-name="${roomTitle}"
-                   data-room-type="SUPPORT">
-                <div class="room-icon">🎧</div>
-                <div class="room-info">
-                  <h4>${roomTitle}</h4>
-                  <p>1:1 고객센터 문의 · ${room.status === 'CLOSED' ? '종료' : '상담 중'}</p>
+                   data-room-type="SUPPORT"
+                   style="display:flex;align-items:center;justify-content:space-between;">
+                <div style="display:flex;align-items:center;gap:10px;">
+                  <div class="room-icon">🎧</div>
+                  <div class="room-info">
+                    <h4>${roomTitle}</h4>
+                    <p>1:1 고객센터 문의 · ${room.status === 'CLOSED' ? '종료' : '상담 중'}</p>
+                  </div>
                 </div>
+                ${unreadBadge}
               </div>`);
           });
 
