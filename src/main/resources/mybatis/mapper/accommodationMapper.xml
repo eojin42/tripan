@@ -23,8 +23,9 @@
         FROM PLACE p
         JOIN ACCOMMODATION a ON p.PLACE_ID = a.PLACE_ID
         JOIN ROOM r ON a.PLACE_ID = r.PLACE_ID
-        JOIN ACCOMMODATION_FACILITY af ON a.AF_ID = af.AF_ID
-        JOIN ROOM_FACILITY rf ON r.RF_ID = rf.RF_ID
+        
+        LEFT JOIN ACCOMMODATION_FACILITY af ON a.AF_ID = af.AF_ID
+        LEFT JOIN ROOM_FACILITY rf ON r.RF_ID = rf.RF_ID
         WHERE 1=1
         
         <if test="checkin != null and checkin != '' and checkout != null and checkout != ''">
@@ -32,7 +33,7 @@
                 SELECT 1 
                 FROM RESERVATION res 
                 WHERE res.ROOM_ID = r.ROOM_ID 
-                  AND res.STATUS = 'SUCCESS' -- 취소된 예약은 무시하고 성공한 예약만 겹치는지 체크
+                  AND res.STATUS = 'SUCCESS'
                   AND res.CHECK_IN_DATE &lt; TO_DATE(#{checkout}, 'YYYY-MM-DD')
                   AND res.CHECK_OUT_DATE &gt; TO_DATE(#{checkin}, 'YYYY-MM-DD')
             )
@@ -70,6 +71,25 @@
                     <when test="fac == 'KARAOKE'"> AND af.KARAOKE = 1 </when>
                     <when test="fac == 'PUBLICPC'"> AND af.PUBLICPC = 1 </when>
                     <when test="fac == 'SAUNA'"> AND af.SAUNA = 1 </when>
+                </choose>
+            </foreach>
+        </if>
+
+        <if test="roomFacilities != null and roomFacilities.size() > 0">
+            <foreach item="fac" collection="roomFacilities">
+                <choose>
+                    <when test="fac == 'ROOMBATHFACILITY'"> AND rf.ROOMBATHFACILITY = 1 </when>
+                    <when test="fac == 'ROOMBATH'"> AND rf.ROOMBATH = 1 </when>
+                    <when test="fac == 'ROOMHOMETHEATER'"> AND rf.ROOMHOMETHEATER = 1 </when>
+                    <when test="fac == 'ROOMAIRCONDITION'"> AND rf.ROOMAIRCONDITION = 1 </when>
+                    <when test="fac == 'ROOMTV'"> AND rf.ROOMTV = 1 </when>
+                    <when test="fac == 'ROOMPC'"> AND rf.ROOMPC = 1 </when>
+                    <when test="fac == 'ROOMINTERNET'"> AND rf.ROOMINTERNET = 1 </when>
+                    <when test="fac == 'ROOMREFRIGERATOR'"> AND rf.ROOMREFRIGERATOR = 1 </when>
+                    <when test="fac == 'ROOMTOILETRIES'"> AND rf.ROOMTOILETRIES = 1 </when>
+                    <when test="fac == 'ROOMSOFA'"> AND rf.ROOMSOFA = 1 </when>
+                    <when test="fac == 'ROOMTABLE'"> AND rf.ROOMTABLE = 1 </when>
+                    <when test="fac == 'ROOMHAIRDRYER'"> AND rf.ROOMHAIRDRYER = 1 </when>
                 </choose>
             </foreach>
         </if>

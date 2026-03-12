@@ -93,54 +93,41 @@
 </style>
 
 <script>
-  // --- 상태 변수 ---
-  let filterState = {
+  // 🌟 [수정] 전역(window) 변수로 만들어 list.jsp와 상태를 공유합니다!
+  window.filterState = {
     minPrice: 0,
     maxPrice: 500000,
-    accTypes: [],        // 숙소 타입
-    accFacilities: [],   // 숙소 편의 시설
-    roomFacilities: []   // 객실 편의 시설
+    accTypes: [],        
+    accFacilities: [],   
+    roomFacilities: []   
   };
 
-  // ✅ 페이지 로드 시 URL 파라미터 읽어서 상태 복원
   document.addEventListener("DOMContentLoaded", () => {
     const params = new URLSearchParams(window.location.search);
 
-    if (params.has('minPrice')) filterState.minPrice = parseInt(params.get('minPrice'));
-    if (params.has('maxPrice')) filterState.maxPrice = parseInt(params.get('maxPrice'));
+    if (params.has('minPrice')) window.filterState.minPrice = parseInt(params.get('minPrice'));
+    if (params.has('maxPrice')) window.filterState.maxPrice = parseInt(params.get('maxPrice'));
     
-    // 숙소 타입 파라미터 복원
-    if (params.has('accTypes')) {
-      filterState.accTypes = params.get('accTypes').split(',');
-    }
-
-    if (params.has('accFacilities')) {
-      filterState.accFacilities = params.get('accFacilities').split(',');
-    }
-    if (params.has('roomFacilities')) {
-      filterState.roomFacilities = params.get('roomFacilities').split(',');
-    }
+    if (params.has('accTypes')) window.filterState.accTypes = params.get('accTypes').split(',');
+    if (params.has('accFacilities')) window.filterState.accFacilities = params.get('accFacilities').split(',');
+    if (params.has('roomFacilities')) window.filterState.roomFacilities = params.get('roomFacilities').split(',');
 
     syncFilterUI();
   });
 
-  // UI 동기화
   function syncFilterUI() {
-    document.getElementById('input-min-price').value = filterState.minPrice;
-    document.getElementById('input-max-price').value = filterState.maxPrice;
-    updatePriceUI(); 
+    document.getElementById('input-min-price').value = window.filterState.minPrice;
+    document.getElementById('input-max-price').value = window.filterState.maxPrice;
+    updatePriceUI();
 
-    // 숙소 타입 체크박스 갱신
     document.querySelectorAll('#accTypeGrid input[type="checkbox"]').forEach(cb => {
-      cb.checked = filterState.accTypes.includes(cb.value);
+      cb.checked = window.filterState.accTypes.includes(cb.value);
     });
-
     document.querySelectorAll('#accAmenityGrid input[type="checkbox"]').forEach(cb => {
-      cb.checked = filterState.accFacilities.includes(cb.value);
+      cb.checked = window.filterState.accFacilities.includes(cb.value);
     });
-
     document.querySelectorAll('#roomAmenityGrid input[type="checkbox"]').forEach(cb => {
-      cb.checked = filterState.roomFacilities.includes(cb.value);
+      cb.checked = window.filterState.roomFacilities.includes(cb.value);
     });
   }
 
@@ -159,64 +146,30 @@
   function updatePriceUI() {
     const minVal = document.getElementById('input-min-price').value;
     const maxVal = document.getElementById('input-max-price').value;
-    
+
     document.getElementById('disp-min-price').innerText = Math.floor(minVal / 10000);
     document.getElementById('disp-max-price').innerText = Math.floor(maxVal / 10000);
     
-    filterState.minPrice = minVal;
-    filterState.maxPrice = maxVal;
+    window.filterState.minPrice = minVal;
+    window.filterState.maxPrice = maxVal;
   }
 
   function resetFilters() {
-    filterState = { minPrice: 0, maxPrice: 500000, accTypes: [], accFacilities: [], roomFacilities: [] };
+    window.filterState = { minPrice: 0, maxPrice: 500000, accTypes: [], accFacilities: [], roomFacilities: [] };
     syncFilterUI();
   }
 
-  // ✅ AJAX로 필터 검색 요청
-  async function applyFilters() {
-    const urlParams = new URLSearchParams(window.location.search);
-    
-    // 선택된 값들 배열화
-    const checkedTypes = Array.from(document.querySelectorAll('#accTypeGrid input:checked')).map(cb => cb.value);
-    const checkedAcc = Array.from(document.querySelectorAll('#accAmenityGrid input:checked')).map(cb => cb.value);
-    const checkedRoom = Array.from(document.querySelectorAll('#roomAmenityGrid input:checked')).map(cb => cb.value);
+  // 🌟 [핵심 수정] 여기서 직접 서버로 요청하지 않고, 값만 저장 후 list.jsp의 함수를 호출!
+  function applyFilters() {
+    window.filterState.accTypes = Array.from(document.querySelectorAll('#accTypeGrid input:checked')).map(cb => cb.value);
+    window.filterState.accFacilities = Array.from(document.querySelectorAll('#accAmenityGrid input:checked')).map(cb => cb.value);
+    window.filterState.roomFacilities = Array.from(document.querySelectorAll('#roomAmenityGrid input:checked')).map(cb => cb.value);
 
-    // 백엔드로 보낼 완전한 JSON 데이터
-    const requestData = {
-      region: urlParams.get('regions') || '',
-      checkin: urlParams.get('checkin') || '',
-      checkout: urlParams.get('checkout') || '',
-      adult: parseInt(urlParams.get('adult')) || 0,
-      child: parseInt(urlParams.get('child')) || 0,
+    closeFilterModal();
 
-      minPrice: filterState.minPrice,
-      maxPrice: filterState.maxPrice,
-      
-      accTypes: checkedTypes,       
-      accFacilities: checkedAcc,
-      roomFacilities: checkedRoom
-    };
-
-    try {
-      const response = await fetch('${pageContext.request.contextPath}/accommodation/search', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(requestData)
-      });
-
-      if (!response.ok) throw new Error('서버 통신 오류');
-      const list = await response.json(); 
-      
-      // list.jsp에 있는 화면 렌더링 함수 호출
-      if (typeof window.renderAccommodations === 'function') {
-        window.renderAccommodations(list);
-      }
-
-      closeFilterModal();
-
-    } catch (error) {
-      console.error('필터 적용 실패:', error);
-      alert('검색 중 오류가 발생했습니다.');
+    // 🌟 list.jsp에 있는 메인 검색 함수를 "초기화 모드(true)"로 강력하게 호출!
+    if (typeof fetchAccommodations === 'function') {
+        fetchAccommodations(true);
     }
   }
 </script>
