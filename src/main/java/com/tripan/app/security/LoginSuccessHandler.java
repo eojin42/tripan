@@ -29,6 +29,13 @@ public class LoginSuccessHandler implements AuthenticationSuccessHandler {
     @Autowired
     private MemberService memberService;
     
+    private static final String[] IGNORE_REDIRECT_PATHS = {
+            "/fragment/", 
+            "/api/", 
+            "/uploads/",
+            "/ws-tripan/" 
+        };
+    
     @Override
     public void onAuthenticationSuccess(HttpServletRequest request, HttpServletResponse response,
             Authentication authentication) throws IOException, ServletException {
@@ -67,35 +74,43 @@ public class LoginSuccessHandler implements AuthenticationSuccessHandler {
         if (savedRequest != null) {
             String targetUrl = savedRequest.getRedirectUrl();
             
-            if (targetUrl.contains("/fragment/")) {
-            	String referer = request.getHeader("Referer");
-            	if (referer != null && !referer.contains("/member/login")) {
-            		redirectStrategy.sendRedirect(request, response, referer);            		
-            	} else {
-            		redirectStrategy.sendRedirect(request, response, defaultUrl);
-            	}
+            boolean isIgnorePath = false;
+            for (String path : IGNORE_REDIRECT_PATHS) {
+                if (targetUrl.contains(path)) {
+                    isIgnorePath = true;
+                    break; 
+                }
+            }
+            
+            if (isIgnorePath) {
+                String referer = request.getHeader("Referer");
+                if (referer != null && !referer.contains("/member/login")) {
+                    redirectStrategy.sendRedirect(request, response, referer);            		
+                } else {
+                    redirectStrategy.sendRedirect(request, response, defaultUrl);
+                }
             } else {
-            	redirectStrategy.sendRedirect(request, response, targetUrl);
+                redirectStrategy.sendRedirect(request, response, targetUrl);
             }
             
         } else {
-        	String prevPage = (String) request.getSession().getAttribute("prevPage");
+            String prevPage = (String) request.getSession().getAttribute("prevPage");
             
             if (prevPage != null) {
                 request.getSession().removeAttribute("prevPage"); 
                 redirectStrategy.sendRedirect(request, response, prevPage);
             } else {
-            	
-            	String referer = request.getHeader("Referer");
-            	
-            	if (referer != null && !referer.contains("/member/login")) {
-            		redirectStrategy.sendRedirect(request, response, referer);            		
-            	} else {
-            		redirectStrategy.sendRedirect(request, response, defaultUrl);
-            	}
+                String referer = request.getHeader("Referer");
+                
+                if (referer != null && !referer.contains("/member/login")) {
+                    redirectStrategy.sendRedirect(request, response, referer);            		
+                } else {
+                    redirectStrategy.sendRedirect(request, response, defaultUrl);
+                }
             }
         }
     }
+    
     public void setDefaultUrl(String defaultUrl) {
         this.defaultUrl = defaultUrl;
     }
