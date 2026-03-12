@@ -5,6 +5,7 @@ import java.util.Map;
 
 import org.apache.ibatis.annotations.Mapper;
 
+import com.tripan.app.admin.domain.dto.AdminChatRoomDto;
 import com.tripan.app.domain.dto.CommunityChatRoomDto;
 
 @Mapper
@@ -17,6 +18,7 @@ public interface CsManageMapper {
     CommunityChatRoomDto selectRoomById(Long chatRoomId);
 
     Long selectLastRoomId();                              
-    List<CommunityChatRoomDto> selectAllSupportRooms(); 
+    List<AdminChatRoomDto> selectAllSupportRooms(); 
     void updateRoomStatus(Map<String, Object> params);
+    void updateAdminLastConnected(Map<String, Object> params);
 }

@@ -1,6 +1,7 @@
 package com.tripan.app.mapper;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import org.apache.ibatis.annotations.Mapper;
@@ -47,4 +48,10 @@ public interface MyPageMapper {
 
     // 활동 요약 (bookmark + follow + review + trip UNION)
     List<ActivityItem> selectActivitySummary(Long memberId);
+    
+ // 방문 시도 이름 목록(완료여행+수동등록)
+    List<String> selectVisitedSidoNames(Long memberId);
+    List<String> selectManualVisitedSidos(Long memberId);
+    void insertUserVisitedRegion(Map<String, Object> params);
+    void deleteUserVisitedRegion(Map<String, Object> params);
 }

@@ -62,7 +62,7 @@
     </select>
 
     <!-- 관리자용: 전체 SUPPORT 방 목록 (유저 닉네임 포함) -->
-    <select id="selectAllSupportRooms" resultType="com.tripan.app.domain.dto.CommunityChatRoomDto">
+    <select id="selectAllSupportRooms" resultType="com.tripan.app.admin.domain.dto.AdminChatRoomDto">
         SELECT cr.chat_room_id   AS chatRoomId,
                cr.chat_room_name AS chatRoomName,
                cr.chat_room_type AS chatRoomType,

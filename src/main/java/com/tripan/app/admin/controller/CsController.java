@@ -10,10 +10,11 @@ import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseBody;
 
+import com.tripan.app.admin.domain.dto.AdminChatRoomDto;
 import com.tripan.app.admin.service.CsManageService;
 import com.tripan.app.domain.dto.CommunityChatRoomDto;
 import com.tripan.app.domain.dto.MemberDto;
@@ -86,7 +87,7 @@ public class CsController {
         if (loginUser == null) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
-        List<CommunityChatRoomDto> rooms = csService.getAllSupportRooms();
+        List<AdminChatRoomDto> rooms = csService.getAllSupportRooms();
         return ResponseEntity.ok(rooms);
     }
 
@@ -112,9 +113,22 @@ public class CsController {
         }
     }
 
+    @PutMapping("/admin/cs/api/chat/rooms/{roomId}/read")
+    @ResponseBody
+    public ResponseEntity<?> resetNotification(@PathVariable Long roomId, HttpSession session) {
+    	MemberDto loginUser = (MemberDto) session.getAttribute("loginUser");
+    	if(loginUser == null) {
+    		return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+    	}
+    	csService.resetNotification(roomId, loginUser.getMemberId());
+    	return ResponseEntity.ok().build();
+    }
+    
     @PostMapping("/admin/inquiry/{id}/reply")
     @ResponseBody
     public ResponseEntity<?> replyInquiry(@PathVariable Long id, @RequestBody Map<String, String> body) {
         return ResponseEntity.ok().build();
     }
+    
+   
 }

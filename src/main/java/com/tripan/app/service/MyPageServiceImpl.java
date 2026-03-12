@@ -2,6 +2,7 @@ package com.tripan.app.service;
 
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import org.springframework.stereotype.Service;
@@ -232,4 +233,34 @@ public class MyPageServiceImpl implements MyPageService {
             return null;
         }
     }
+
+	@Override
+	public List<String> getVisitedSidoNames(Long memberId) {
+		try {
+			return mapper.selectVisitedSidoNames(memberId);
+		} catch (Exception e) {
+			log.info("getVisitedSidoNames : ",e);
+			return List.of();
+		}
+	}
+
+	@Override
+	public List<String> getManualVisitedSidos(Long memberId) {
+		try {
+			return mapper.selectManualVisitedSidos(memberId);
+		} catch (Exception e) {
+			log.info("getManualVisitedSidos : ",e);
+			return List.of();
+		}
+	}
+
+	@Override
+	public void addVisitedRegion(Long memberId, String sidoName) {
+		mapper.insertUserVisitedRegion(Map.of("memberId",memberId,"sidoName",sidoName));
+	}
+
+	@Override
+	public void removeVisitedRegion(Long memberId, String sidoName) {
+		mapper.deleteUserVisitedRegion(Map.of("memberId",memberId,"sidoName",sidoName));
+	}
 }

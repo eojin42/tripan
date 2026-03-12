@@ -131,8 +131,12 @@ async function loadChatRooms() {
     const rooms = await res.json();
     allChatRooms = rooms || [];
     renderChatRooms(allChatRooms);
-    const unread = allChatRooms.filter(r => r.hasUnread).length;
-    document.getElementById('chatBadge').textContent = unread;
+
+    // unreadCount 없으면 0으로
+    const totalUnread = allChatRooms.reduce((sum, r) => sum + (r.unreadCount || 0), 0);
+    const tabBadge = document.getElementById('chatBadge');
+    tabBadge.textContent = totalUnread;
+    tabBadge.style.display = totalUnread > 0 ? 'inline-flex' : 'none';
   } catch (e) {
     document.getElementById('chatRoomItems').innerHTML = `
       <div class="chat-empty-list">
@@ -148,18 +152,43 @@ function renderChatRooms(rooms) {
     el.innerHTML = `<div class="chat-empty-list"><i class="bi bi-chat-dots"></i><p>상담 내역이 없습니다</p></div>`;
     return;
   }
-  el.innerHTML = rooms.map(r => `
-    <div class="chat-room-item ${r.hasUnread ? 'unread' : ''}" data-room-id="${r.chatRoomId}" onclick='enterRoom(${JSON.stringify(r)})'>
-      <div class="room-avatar">👤</div>
-      <div class="room-info">
-        <div class="room-info-top">
-          <span class="room-user">${escHtml(r.userName || '사용자')}</span>
-          <span class="room-time">${formatDate(r.createdAt)}</span>
+
+  const statusMeta = {
+    WAITING: { label: '신규문의', cls: 'waiting', order: 0 },
+    ACTIVE:  { label: '상담 중',  cls: 'active',  order: 1 },
+    CLOSED:  { label: '종료됨',   cls: 'closed',  order: 2 },
+  };
+
+  // 신규 → 상담중 → 종료 순 정렬
+  rooms.sort((a, b) => ((statusMeta[a.status]?.order ?? 9) - (statusMeta[b.status]?.order ?? 9)));
+
+  let lastStatus = null;
+  el.innerHTML = rooms.map(r => {
+    const meta = statusMeta[r.status] || { label: r.status, cls: 'closed' };
+    const groupHtml = r.status !== lastStatus
+      ? `<div class="chat-group-label">${meta.label} · ${rooms.filter(x => x.status === r.status).length}건</div>`
+      : '';
+    lastStatus = r.status;
+
+    const unread = r.unreadCount || (r.hasUnread ? 1 : 0);
+
+    return `
+      ${groupHtml}
+      <div class="chat-room-item ${unreadCount > 0 ? 'unread' : ''}"
+           data-room-id="${r.chatRoomId}"
+           onclick='enterRoom(${JSON.stringify(r)})'>
+        <div class="room-avatar">👤</div>
+        <div class="room-info">
+          <div class="room-info-top">
+            <span class="room-user">${escHtml(r.userName || '사용자')}</span>
+            <span class="room-time">${formatDate(r.createdAt)}</span>
+          </div>
+          <div class="room-preview">${escHtml(r.lastMessage || '대화를 시작해보세요')}</div>
+          <span class="room-status-pill ${meta.cls}">${meta.label}</span>
         </div>
-        <div class="room-preview">${escHtml(r.lastMessage || '대화를 시작해보세요')}</div>
-      </div>
-      ${r.hasUnread ? '<span class="unread-badge">N</span>' : ''}
-    </div>`).join('');
+        ${unreadCount > 0 ? `<span class="unread-badge">${unreadCount}</span>` : ''}
+      </div>`;
+  }).join('');
 }
 
 function filterChatRooms(q) {
@@ -169,23 +198,41 @@ function filterChatRooms(q) {
 
 // ── 채팅방 입장 ──
 function enterRoom(room) {
+  // 목록 활성화
   document.querySelectorAll('.chat-room-item').forEach(el => el.classList.remove('active'));
-  document.querySelector(`[data-room-id="${room.chatRoomId}"]`)?.classList.add('active');
+  const roomItem = document.querySelector(`[data-room-id="${room.chatRoomId}"]`);
+  roomItem?.classList.add('active');
+
+  // 읽음 처리 (뱃지 제거)
+  const unreadBadge = roomItem?.querySelector('.unread-badge');
+  if (unreadBadge) {
+    const cnt = parseInt(unreadBadge.textContent) || 0;
+    unreadBadge.remove();
+    roomItem?.classList.remove('unread');
+    const tabBadge = document.getElementById('chatBadge');
+    const next = Math.max(0, (parseInt(tabBadge.textContent) || 0) - cnt);
+    tabBadge.textContent = next;
+    tabBadge.style.display = next > 0 ? 'inline-flex' : 'none';
+  }
+
   currentRoomId = room.chatRoomId;
 
+  // 채팅 뷰 전환
   document.getElementById('chatViewEmpty').style.display = 'none';
-  const view = document.getElementById('chatViewMain');
-  view.style.display = 'flex';
-
+  document.getElementById('chatViewMain').style.display = 'flex';
   document.getElementById('chatViewTitle').textContent = `🎧 ${room.userName || '사용자'} 님의 상담`;
-  document.getElementById('chatViewSub').textContent   = `문의 시작: ${formatDate(room.createdAt)}`;
+  document.getElementById('chatViewSub').textContent = `문의 시작: ${formatDate(room.createdAt)}`;
 
-  const badge = document.getElementById('chatStatusBadge');
-  if (room.status === 'CLOSED') {
-    badge.className = 'chat-status-closed'; badge.textContent = '상담 종료';
-  } else {
-    badge.className = 'chat-status-open';   badge.textContent = '상담 중';
-  }
+  // 상태 뱃지
+  const isClosed = room.status === 'CLOSED';
+  const statusBadge = document.getElementById('chatStatusBadge');
+  statusBadge.className = isClosed ? 'chat-status-closed' : 'chat-status-open';
+  statusBadge.textContent = isClosed ? '상담 종료' : '상담 중';
+
+  // 입력창 활성 여부
+  const input = document.getElementById('adminMsgInput');
+  input.disabled = isClosed;
+  input.placeholder = isClosed ? '종료된 상담입니다.' : '답변을 입력하세요... (Enter: 전송, Shift+Enter: 줄바꿈)';
 
   connectRoom(room.chatRoomId);
 }
@@ -216,21 +263,41 @@ function connectRoom(roomId) {
 
 function subscribeRoom(roomId) {
   roomSubscription = stompClient.subscribe(`/sub/chat/room/${roomId}`, frame => {
-    renderMsg(JSON.parse(frame.body));
-  });
-  stompClient.subscribe(`/sub/chat/room/${roomId}/closed`, () => {
-    const badge = document.getElementById('chatStatusBadge');
-    if (badge) { badge.className = 'chat-status-closed'; badge.textContent = '상담 종료'; }
+    const msg = JSON.parse(frame.body);
+
+    // 종료 메시지 처리
+    if (msg.messageType === 'CLOSED' || msg.messageType === 'END') {
+      renderMsg(msg);
+      const badge = document.getElementById('chatStatusBadge');
+      if (badge) { badge.className = 'chat-status-closed'; badge.textContent = '상담 종료'; }
+      const input = document.getElementById('adminMsgInput');
+      input.disabled = true; input.placeholder = '종료된 상담입니다.';
+      return;
+    }
+
+    renderMsg(msg);
+
+    // 유저 메시지 && 내가 보낸 게 아닐 때 → 알림음
+    if (String(msg.memberId) !== String(adminId)) {
+      playBeep();
+    }
   });
 }
 
 // ── 채팅 히스토리 로드 ──
 async function loadChatHistory(roomId) {
   try {
+    // 본인 서버 API 경로로 맞게 수정
     const res  = await fetch(`${ctxPath}/api/chat/history/${roomId}`);
+    if (!res.ok) throw new Error(res.status);
     const msgs = await res.json();
-    if (!msgs || msgs.length === 0) return;
+    if (!Array.isArray(msgs) || msgs.length === 0) return;
+    
+    document.getElementById('chatMessagesArea').innerHTML = ''; // 중복 방지
     msgs.forEach(m => renderMsg(m));
+    
+    const area = document.getElementById('chatMessagesArea');
+    area.scrollTop = area.scrollHeight;
   } catch(e) {
     console.warn('채팅 히스토리 로드 실패:', e);
   }
@@ -239,8 +306,23 @@ async function loadChatHistory(roomId) {
 // ── 메시지 렌더링 ──
 function renderMsg(data) {
   const area = document.getElementById('chatMessagesArea');
-  const isMe = String(data.memberId) === String(adminId);
-  const row  = document.createElement('div');
+
+  // 시스템/종료 메시지
+  if (data.messageType === 'CLOSED' || data.messageType === 'END' || data.messageType === 'SYSTEM') {
+    area.insertAdjacentHTML('beforeend', `
+      <div style="text-align:center;margin:8px 0;">
+        <span style="background:rgba(0,0,0,0.07);color:#6B7280;font-size:12px;
+                     padding:5px 16px;border-radius:16px;font-weight:700;display:inline-block;">
+          🔒 ${escHtml(data.content || '상담이 종료되었습니다.')}
+        </span>
+      </div>`);
+    area.scrollTop = area.scrollHeight;
+    return;
+  }
+
+  const isMe = String(data.memberId) === String(adminId)
+             || data.messageType === 'ADMIN';  // ← messageType으로도 판별
+  const row = document.createElement('div');
   row.className = `msg-row ${isMe ? 'admin-msg' : 'user-msg'}`;
   row.innerHTML = isMe
     ? `<span class="msg-time">${data.createdAt || ''}</span>
@@ -273,32 +355,117 @@ async function endChat() {
   if (!currentRoomId || !confirm('상담을 종료하시겠습니까?')) return;
   try {
     await fetch(`${ctxPath}/api/chat/rooms/${currentRoomId}/close`, { method: 'POST' });
+
+    // ← WebSocket으로 종료 메시지 발행 (유저 화면에도 전달됨)
+    if (stompClient?.connected) {
+      stompClient.send('/pub/chat/message', {}, JSON.stringify({
+        roomId: currentRoomId,
+        memberId: adminId,
+        senderNickname: adminNick,
+        content: '상담이 종료되었습니다.',
+        messageType: 'CLOSED'
+      }));
+    }
+
+    // 관리자 UI 업데이트
     const badge = document.getElementById('chatStatusBadge');
     badge.className = 'chat-status-closed'; badge.textContent = '상담 종료';
+    const input = document.getElementById('adminMsgInput');
+    input.disabled = true; input.placeholder = '종료된 상담입니다.';
+
     loadChatRooms();
   } catch (e) {
     alert('상담 종료에 실패했습니다.');
   }
 }
 
-// ── 관리자 알림용 WebSocket (페이지 로드 시 상시 유지) ──
+function playBeep() {
+  try {
+    const ac = new (window.AudioContext || window.webkitAudioContext)();
+    const o = ac.createOscillator(), g = ac.createGain();
+    o.connect(g); g.connect(ac.destination);
+    o.frequency.value = 820; o.type = 'sine';
+    g.gain.setValueAtTime(0.25, ac.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.001, ac.currentTime + 0.35);
+    o.start(); o.stop(ac.currentTime + 0.35);
+  } catch(e) {}
+}
+
+function incrementRoomBadge(roomId, lastMsg) {
+  const item = document.querySelector(`.chat-room-item[data-room-id="${roomId}"]`);
+  if (!item) { loadChatRooms(); return; } // 목록에 없으면 새로고침
+
+  item.classList.add('unread');
+  let badge = item.querySelector('.unread-badge');
+  if (!badge) {
+    badge = document.createElement('span');
+    badge.className = 'unread-badge';
+    badge.textContent = '0';
+    item.appendChild(badge);
+  }
+  badge.textContent = parseInt(badge.textContent || 0) + 1;
+
+  // 탭 뱃지도 +1
+  const tabBadge = document.getElementById('chatBadge');
+  tabBadge.textContent = parseInt(tabBadge.textContent || 0) + 1;
+
+  // 마지막 메시지 preview 갱신
+  const preview = item.querySelector('.room-preview');
+  if (preview && lastMsg) preview.textContent = lastMsg;
+}
+
+// 관리자 알림용 WebSocket (페이지 로드 시 상시 유지)
 function connectNotification() {
   if (!adminId) return;
   const socket = new SockJS(`${ctxPath}/ws-tripan`);
   notifClient  = Stomp.over(socket);
   notifClient.debug = null;
   notifClient.connect({}, () => {
+
     notifClient.subscribe('/sub/admin/chat/new', frame => {
       const data = JSON.parse(frame.body);
-      const name = data.userName || '사용자';
-      showToast('새 상담 문의', `${name}님이 1:1 상담을 요청했습니다.`);
-      loadChatRooms();
+      showToast('새 상담 문의', `${data.userName || '사용자'}님이 1:1 상담을 요청했습니다.`);
+      playBeep();
+      loadChatRooms(); // 목록 갱신
     });
+
+    // 유저 메시지 실시간 알림 (현재 보고 있는 방 제외)
+    notifClient.subscribe('/sub/admin/chat/message', frame => {
+      const data = JSON.parse(frame.body);
+      if (String(data.roomId) === String(currentRoomId)) return; // 보고 있는 방은 스킵
+
+      playBeep();
+
+      // 탭 뱃지 +1
+      const tabBadge = document.getElementById('chatBadge');
+      const next = (parseInt(tabBadge.textContent) || 0) + 1;
+      tabBadge.textContent = next;
+      tabBadge.style.display = 'inline-flex';
+
+      // 목록 아이템 뱃지 +1
+      const roomItem = document.querySelector(`.chat-room-item[data-room-id="${data.roomId}"]`);
+      if (!roomItem) { loadChatRooms(); return; }
+
+      roomItem.classList.add('unread');
+      let badge = roomItem.querySelector('.unread-badge');
+      if (!badge) {
+        badge = document.createElement('span');
+        badge.className = 'unread-badge';
+        badge.style.cssText = 'background:#FC8181;color:white;font-size:11px;font-weight:900;padding:2px 7px;border-radius:10px;min-width:18px;text-align:center;flex-shrink:0;align-self:center;';
+        badge.textContent = '0';
+        roomItem.appendChild(badge);
+      }
+      badge.textContent = (parseInt(badge.textContent) || 0) + 1;
+
+      // preview 최신 메시지로 갱신
+      const preview = roomItem.querySelector('.room-preview');
+      if (preview && data.content) preview.textContent = data.content;
+    });
+
   }, () => {
-    setTimeout(connectNotification, 5000); // 연결 실패 시 5초 후 재시도
+    setTimeout(connectNotification, 5000);
   });
 }
-
 // ── 토스트 알림 ──
 function showToast(title, body) {
   if (!document.getElementById('cs-toast-style')) {
@@ -350,5 +517,6 @@ function handleBackdropClick(event) {
 
 // ── 초기화 ──
 loadInquiries();
+loadChatRooms();
 connectNotification();             // 관리자 알림 WebSocket 상시 연결
 setInterval(loadChatRooms, 30000); // 30초마다 채팅 목록 새로고침
