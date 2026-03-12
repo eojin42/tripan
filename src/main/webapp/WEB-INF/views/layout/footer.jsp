@@ -124,29 +124,21 @@
     });
     
     window.forceOpenChat = function(roomId, type = 'PRIVATE') {
-        // 모달 열기
-        const chatModal = document.getElementById("globalChatModal");
+        const chatModal   = document.getElementById("globalChatModal");
         const floatingBtn = document.getElementById("chatFloatingBtn");
-        
-        chatModal.style.display = "flex";
+        const backdrop    = document.getElementById("chatBackdrop");
+
+        chatModal.style.display   = "flex";
         floatingBtn.style.display = "none";
+        if (backdrop) backdrop.style.display = "block";
         sessionStorage.setItem("tripanChatState", "opened");
 
-        // 탭 전환 및 방 목록 로드
+        // 방 목록 로드 후, 해당 방 아이템 자동 클릭
         window.loadRoomList(type);
-
-        // 시간차 두고 방 연결
         setTimeout(() => {
-            window.connectChatRoom(roomId);
-            // UI에서 활성화 표시
             const roomItem = document.querySelector(`.chat-room-item[data-room-id="${roomId}"]`);
-            if(roomItem) {
-                document.querySelectorAll('.chat-room-item').forEach(el => el.classList.remove('active'));
-                roomItem.classList.add('active');
-                document.getElementById('chatEmptyState').style.display = 'none';
-                document.getElementById('chatRoomView').style.display = 'flex';
-            }
-        }, 300);
+            if (roomItem) roomItem.click(); // ✅ 클릭 이벤트로 connectChatRoom 1번만 호출
+        }, 400);
     };
   </script>
   

@@ -363,26 +363,10 @@
     </div>
   </div>
 </div>
-<div class="mypage-chat-fab-container">
-    <button class="mypage-chat-fab" onclick="
-        var modal = document.getElementById('globalChatModal');
-        var btn = document.getElementById('chatFloatingBtn');
-        if(modal) modal.style.display = 'flex';
-        if(btn) btn.style.display = 'none';
-        sessionStorage.setItem('tripanChatState', 'opened');
-        
-        if(typeof window.loadRoomList === 'function') {
-            window.loadRoomList('SUPPORT');
-        }">
-        <i class="bi bi-headset"></i> 
-    </button>
-</div>
 <jsp:include page="/WEB-INF/views/layout/footer.jsp"/>
-
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js"></script>
 <script src="${pageContext.request.contextPath}/dist/js/mypage/main.js"></script>
-<script src="${pageContext.request.contextPath}/dist/js/mypage/cs.js"></script>
 
 
 

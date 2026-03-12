@@ -12,7 +12,6 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.tripan.app.domain.dto.MemberDto;
-import com.tripan.app.service.CommunityChatService;
 import com.tripan.app.service.MyPageService;
 
 import jakarta.servlet.http.HttpSession;
@@ -23,7 +22,6 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class MyPageRestController {
 	private final MyPageService myPageService;
-	private final CommunityChatService communityChatService;
 	
 	@GetMapping("summary")
 	public ResponseEntity<?> getSummary(HttpSession session){
