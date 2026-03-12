@@ -70,8 +70,20 @@ public class ExpenseServiceImpl implements ExpenseService {
         Expense saved = expenseRepository.save(expense);
         Long expenseId = saved.getExpenseId();
 
-        // N빵 계산 로직 
+        // N빵 계산 로직 - participantMemberIds가 없으면 결제자 단독으로 처리
         List<Long> memberIds = dto.getParticipantMemberIds();
+        if (memberIds == null || memberIds.isEmpty()) {
+            // 결제자만 있을 경우 단독 저장 (정산 불필요)
+            if (dto.getPayerId() != null) {
+                ExpenseParticipant ep = new ExpenseParticipant();
+                ep.setExpenseId(expenseId);
+                ep.setMemberId(dto.getPayerId());
+                ep.setShareAmount(expense.getAmount());
+                ep.setIsSettled(0);
+                participantRepository.save(ep);
+            }
+            return expenseId;
+        }
         int count = memberIds.size();
         int total = expense.getAmount();
         int base = total / count;          
@@ -129,6 +141,8 @@ public class ExpenseServiceImpl implements ExpenseService {
             result.setFromMemberId(taker[0]);
             result.setToMemberId(giver[0]);
             result.setAmount(BigDecimal.valueOf(transfer));
+            result.setFromNickname("멤버" + taker[0]);
+            result.setToNickname("멤버" + giver[0]);
             results.add(result);
 
             // DB에 정산 영수증 생성

@@ -19,14 +19,17 @@
         ORDER BY v.vote_id DESC, vc.candidate_id ASC
     </select>
 
-    <!-- 투표 생성 -->
-    <insert id="insertVote" useGeneratedKeys="true" keyProperty="voteId" parameterType="com.tripan.app.trip.domain.entity.Vote">
-	    INSERT INTO vote (trip_id, title) VALUES (#{tripId}, #{title})
-	</insert>
-    <!-- 후보지 추가 -->
-    <insert id="insertCandidate" useGeneratedKeys="true" keyProperty="candidateId" parameterType="com.tripan.app.trip.domain.entity.VoteCandidate">
-	    INSERT INTO vote_candidate (vote_id, candidate_name) VALUES (#{voteId}, #{candidateName})
-	</insert>	
+    <!--
+      투표 생성: Vote 엔티티 파라미터
+      keyProperty="voteId" → INSERT 후 vote.voteId 에 PK 세팅
+    -->
+    <insert id="insertVote" useGeneratedKeys="true" keyProperty="voteId" keyColumn="VOTE_ID">
+        INSERT INTO vote (trip_id, title) VALUES (#{tripId}, #{title})
+    </insert>
+
+    <insert id="insertCandidate" useGeneratedKeys="true" keyProperty="candidateId" keyColumn="CANDIDATE_ID">
+        INSERT INTO vote_candidate (vote_id, candidate_name) VALUES (#{voteId}, #{candidateName})
+    </insert>
 
     <!-- 투표 기록 존재 여부 -->
     <select id="existsVoteRecord" resultType="int">

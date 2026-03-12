@@ -4,7 +4,6 @@
 
     <!-- 알림 목록 (최신순, timeAgo 포함) -->
     <select id="selectByTripIdAndReceiver" resultType="map">
-        <![CDATA[
         SELECT
             n.notification_id  AS notificationId,
             n.trip_id          AS tripId,
@@ -15,17 +14,19 @@
             n.is_read          AS isRead,
             TO_CHAR(n.created_at, 'YYYY-MM-DD HH24:MI') AS createdAt,
             CASE
-                WHEN (SYSDATE - n.created_at) * 24 * 60 < 1    THEN '방금 전'
-                WHEN (SYSDATE - n.created_at) * 24 * 60 < 60   THEN FLOOR((SYSDATE - n.created_at)*24*60) || '분 전'
-                WHEN (SYSDATE - n.created_at) * 24      < 24   THEN FLOOR((SYSDATE - n.created_at)*24)   || '시간 전'
-                ELSE FLOOR(SYSDATE - n.created_at) || '일 전'
+                WHEN (SYSDATE - CAST(n.created_at AS DATE)) * 24 * 60 &lt; 1
+                    THEN '방금 전'
+                WHEN (SYSDATE - CAST(n.created_at AS DATE)) * 24 * 60 &lt; 60
+                    THEN FLOOR((SYSDATE - CAST(n.created_at AS DATE)) * 24 * 60) || '분 전'
+                WHEN (SYSDATE - CAST(n.created_at AS DATE)) * 24 &lt; 24
+                    THEN FLOOR((SYSDATE - CAST(n.created_at AS DATE)) * 24) || '시간 전'
+                ELSE FLOOR(SYSDATE - CAST(n.created_at AS DATE)) || '일 전'
             END AS timeAgo
         FROM trip_notification n
         WHERE n.trip_id     = #{tripId}
           AND n.receiver_id = #{memberId}
         ORDER BY n.created_at DESC
         FETCH FIRST 30 ROWS ONLY
-        ]]>
     </select>
 
     <!-- 읽음 처리 -->

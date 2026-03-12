@@ -28,9 +28,11 @@ public class ExpenseDto {
     // 최종 정산 계산 결과 (누가 누구에게 송금할지)
     @Getter @Setter
     public static class SettlementResult {
-        private Long fromMemberId;  // 송금할 사람
-        private Long toMemberId;    // 받을 사람
-        private BigDecimal amount;  // 금액
+        private Long fromMemberId;    // 송금할 사람 ID
+        private Long toMemberId;      // 받을 사람 ID
+        private BigDecimal amount;    // 금액
+        private String fromNickname;  // 송금할 사람 닉네임 (화면 표시용)
+        private String toNickname;    // 받을 사람 닉네임 (화면 표시용)
     }
 
     // 지출 분담 내역
