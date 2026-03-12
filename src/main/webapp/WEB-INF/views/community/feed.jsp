@@ -1445,43 +1445,48 @@
 		    document.querySelectorAll('.dropdown-content').forEach(d => d.classList.remove('show'));
 		});
 		
-		  function renderHashtags() {
+		function renderHashtags() {
 		    document.querySelectorAll('.feed-text:not(.tagged)').forEach(p => {
-		      p.classList.add('tagged'); 
-		      
-		      let originalText = p.innerHTML;
-		      
-		      const hashtagRegex = /(#[^\s#<]+)/g;
-		      const tags = originalText.match(hashtagRegex);
-		      
-		      if (tags && tags.length > 0) {
-		        let cleanText = originalText.replace(hashtagRegex, '').trim();
-		        p.innerHTML = cleanText; 
+		        p.classList.add('tagged'); 
 		        
-		        const tagContainer = document.createElement('div');
-		        tagContainer.className = 'feed-tag-container';
+		        let originalText = p.innerHTML;
+		        const hashtagRegex = /(#[^\s#<]+)/g;
+		        const tags = originalText.match(hashtagRegex);
 		        
-		        const iconDiv = document.createElement('div');
-		        iconDiv.className = 'feed-tag-icon';
-		        iconDiv.innerHTML = '🏷️';
-		        
-		        const tagList = document.createElement('div');
-		        tagList.className = 'feed-tag-list';
-		        
-		        tags.forEach(tag => {
-		          const badge = document.createElement('span');
-		          badge.className = 'feed-tag-badge';
-		          badge.innerText = tag;
-		          tagList.appendChild(badge);
-		        });
-		        
-		        tagContainer.appendChild(iconDiv);
-		        tagContainer.appendChild(tagList);
-		        
-		        p.parentNode.insertBefore(tagContainer, p.nextSibling);
-		      }
+		        if (tags && tags.length > 0) {
+		            let cleanText = originalText.replace(hashtagRegex, '').trim();
+		            p.innerHTML = cleanText; 
+		            
+		            const tagContainer = document.createElement('div');
+		            tagContainer.className = 'feed-tag-container';
+		            const iconDiv = document.createElement('div');
+		            iconDiv.className = 'feed-tag-icon';
+		            iconDiv.innerHTML = '🏷️';
+		            const tagList = document.createElement('div');
+		            tagList.className = 'feed-tag-list';
+		            
+		            tags.forEach(tag => {
+		                const badge = document.createElement('span');
+		                badge.className = 'feed-tag-badge';
+		                badge.innerText = tag;
+		                tagList.appendChild(badge);
+		            });
+		            
+		            tagContainer.appendChild(iconDiv);
+		            tagContainer.appendChild(tagList);
+		            p.parentNode.insertBefore(tagContainer, p.nextSibling);
+		        }
+
+		        const feedCard = p.closest('.feed-card');
+		        if(feedCard) {
+		            const postId = feedCard.getAttribute('data-post-id');
+		            if(postId) {
+		                loadFeedComments(postId, true); 
+		            }
+		        }
 		    });
-		  }
+		}
+		document.addEventListener("DOMContentLoaded", renderHashtags);
 
 		  document.addEventListener("DOMContentLoaded", renderHashtags);
 	  
@@ -1519,70 +1524,145 @@
  
  function openComment(postId) {
      const commentArea = document.getElementById('feed-comment-area-' + postId);
-     
      if (commentArea.style.display === 'block') {
-         commentArea.style.display = 'none';
+         commentArea.style.display = 'none'; // 열려있으면 닫기
          return;
      }
-     
      commentArea.style.display = 'block';
-     loadFeedComments(postId);
+     loadFeedComments(postId, false); // 수동으로 열 때는 isInit = false
  }
 
- function loadFeedComments(postId) {
+ function loadFeedComments(postId, isInit = false) {
      const listContainer = document.getElementById('comment-list-' + postId);
-     listContainer.innerHTML = '<div style="text-align:center; font-size:12px; color:#999; padding:10px;">불러오는 중...⏳</div>';
+     const commentArea = document.getElementById('feed-comment-area-' + postId);
      
-     fetch(`/community/api/feed/` + postId + `/comments`)
-     .then(res => res.json())
-     .then(comments => {
+     if (!isInit) {
+         listContainer.innerHTML = '<div style="text-align:center; font-size:12px; color:#999; padding:10px;">불러오는 중...⏳</div>';
+     }
+     
+     const currentUserId = '${sessionScope.loginUser != null ? sessionScope.loginUser.memberId : ""}';
+
+     fetch(`${pageContext.request.contextPath}/community/api/feed/` + postId + `/comments`)
+     .then(res => {
+         if (res.redirected || !res.ok) throw new Error("로그인 풀림");
+         return res.text(); 
+     })
+     .then(text => {
+         if(text.trim().startsWith("<!DOCTYPE") || text.trim().startsWith("<html")) {
+             if(!isInit) showLoginModal(); // 자동 로딩 중엔 로그인 모달을 띄우지 않음
+             throw new Error("HTML 응답됨");
+         }
+         
+         const comments = JSON.parse(text);
+         
          if (!comments || comments.length === 0) {
+             if (isInit) return; 
+             
              listContainer.innerHTML = '<div style="text-align:center; font-size:12px; color:#999; padding:10px;">첫 번째 댓글을 남겨보세요! ✨</div>';
              return;
          }
          
+         if (commentArea) {
+             commentArea.style.display = 'block';
+         }
+         
          let html = '';
-         comments.forEach(c => {
-             let profileImg = c.profileImage ? `/uploads/profile/\${c.profileImage}` : `/dist/images/default.png`;
+         const parentComments = comments.filter(c => c.parentCommentId === 0 || c.parentCommentId === null);
+         const childComments = comments.filter(c => c.parentCommentId !== 0 && c.parentCommentId !== null);
+
+         parentComments.forEach(comment => {
+             let profileImg = comment.profileImage ? `${pageContext.request.contextPath}/uploads/profile/\${comment.profileImage}` : `${pageContext.request.contextPath}/dist/images/default.png`;
+             let isMyComment = (currentUserId !== '' && currentUserId == comment.memberId);
+             
+             // ❌ "대화하기" 버튼 제거됨
+             let kebabMenu = isMyComment 
+                 ? `<button class="kebab-item danger" onclick="deleteFeedComment(\${comment.commentId}, \${postId})">🗑️ 삭제하기</button>`
+                 : `<button class="kebab-item danger" onclick="alert('해당 댓글을 신고합니다.')">🚨 신고하기</button>`;
+
              html += `
-                 <div class="feed-comment-item">
-                     <img src="\${profileImg}" alt="프로필">
-                     <div class="feed-comment-body">
-                         <div class="fc-name">@\${c.nickname || '여행자'}</div>
-                         <div class="fc-text">\${c.content}</div>
-                         <div class="fc-time">\${c.createdAt}</div>
+             <div style="display: flex; flex-direction: column; gap: 10px; border-bottom: 1px dashed var(--border-color); padding-bottom: 12px; margin-bottom: 12px;">
+                 <div style="display: flex; gap: 10px;">
+                     <img src="\${profileImg}" style="width: 32px; height: 32px; border-radius: 50%; object-fit: cover; border: 1px solid var(--border-color);">
+                     <div style="flex: 1;">
+                         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+                             <span style="font-size: 13px; font-weight: 800; color: var(--text-dark);">@\${comment.nickname || '여행자'}</span>
+                             <div style="display: flex; align-items: center; gap: 8px;">
+                                 <span style="font-size: 11px; color: var(--text-gray);">\${comment.createdAt}</span>
+                                 <span style="font-size: 11px; color: var(--sky-blue); font-weight: 900; cursor: pointer;" onclick="toggleFeedReplyForm(\${comment.commentId})">↳ 답글</span>
+                                 
+                                 <div class="comment-options" style="position: relative;">
+                                     <button class="btn-kebab" onclick="toggleDropdown(this, event)"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="pointer-events: none;"><circle cx="12" cy="5" r="1.5"></circle><circle cx="12" cy="12" r="1.5"></circle><circle cx="12" cy="19" r="1.5"></circle></svg></button>
+                                     <div class="kebab-menu-list" style="display: none; position: absolute; right: 0; top: 100%; background: white; border: 1px solid var(--border-color); border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); min-width: 110px; z-index: 99999; margin-top: 4px;">
+                                         \${kebabMenu}
+                                     </div>
+                                 </div>
+                             </div>
+                         </div>
+                         <div style="font-size: 13px; color: var(--text-black); line-height: 1.4; white-space: pre-wrap;">\${comment.content}</div>
                      </div>
+                 </div>`;
+
+             childComments.filter(child => child.parentCommentId === comment.commentId).forEach(child => {
+                 let cProfileImg = child.profileImage ? `${pageContext.request.contextPath}/uploads/profile/\${child.profileImage}` : `${pageContext.request.contextPath}/dist/images/default.png`;
+                 let isMyChild = (currentUserId !== '' && currentUserId == child.memberId);
+                 
+                 // ❌ "대화하기" 버튼 제거됨
+                 let childKebab = isMyChild 
+                     ? `<button class="kebab-item danger" onclick="deleteFeedComment(\${child.commentId}, \${postId})">🗑️ 삭제하기</button>`
+                     : `<button class="kebab-item danger" onclick="alert('해당 댓글을 신고합니다.')">🚨 신고하기</button>`;
+
+                 html += `
+                 <div style="display: flex; gap: 8px; margin-left: 36px; margin-top: 4px; padding: 10px 14px; background: rgba(137, 207, 240, 0.05); border-radius: 12px;">
+                     <span style="color: var(--sky-blue); font-weight: 900; font-size: 14px;">↳</span>
+                     <img src="\${cProfileImg}" style="width: 28px; height: 28px; border-radius: 50%; object-fit: cover; border: 1px solid white;">
+                     <div style="flex: 1;">
+                         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2px;">
+                             <span style="font-size: 12px; font-weight: 800; color: var(--text-dark);">@\${child.nickname || '여행자'}</span>
+                             <div style="display: flex; align-items: center; gap: 4px;">
+                                 <span style="font-size: 10px; color: var(--text-gray);">\${child.createdAt}</span>
+                                 <div class="comment-options" style="position: relative;">
+                                     <button class="btn-kebab" onclick="toggleDropdown(this, event)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="pointer-events: none;"><circle cx="12" cy="5" r="1.5"></circle><circle cx="12" cy="12" r="1.5"></circle><circle cx="12" cy="19" r="1.5"></circle></svg></button>
+                                     <div class="kebab-menu-list" style="display: none; position: absolute; right: 0; top: 100%; background: white; border: 1px solid var(--border-color); border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); min-width: 100px; z-index: 99999; margin-top: 4px;">
+                                         \${childKebab}
+                                     </div>
+                                 </div>
+                             </div>
+                         </div>
+                         <div style="font-size: 12px; color: var(--text-black); line-height: 1.4; white-space: pre-wrap;">\${child.content}</div>
+                     </div>
+                 </div>`;
+             });
+
+             html += `
+                 <div id="feed-reply-form-\${comment.commentId}" style="display: none; gap: 8px; margin-left: 36px; margin-top: 8px;">
+                     <input type="text" id="feed-reply-input-\${comment.commentId}" placeholder="@\${comment.nickname || '여행자'}님에게 답글 남기기..." style="flex: 1; border: 1px solid var(--border-color); border-radius: 20px; padding: 8px 14px; font-family: 'Pretendard', sans-serif; font-size: 12px; outline: none;">
+                     <button class="btn-submit-lounge" style="padding: 8px 16px; border-radius: 20px; font-size: 12px;" onclick="submitFeedComment(\${postId}, \${comment.commentId})">등록</button>
                  </div>
-             `;
+             </div>`;
          });
+         
          listContainer.innerHTML = html;
-         listContainer.scrollTop = listContainer.scrollHeight;
+         if(!isInit) listContainer.scrollTop = listContainer.scrollHeight;
      })
      .catch(err => {
-         console.error('댓글 로딩 실패:', err);
-         listContainer.innerHTML = '<div style="text-align:center; font-size:12px; color:red; padding:10px;">댓글을 불러오지 못했습니다.</div>';
+         if(!isInit) listContainer.innerHTML = '<div style="text-align:center; font-size:13px; color:#FF6B6B; padding:10px; cursor:pointer;" onclick="showLoginModal()">세션이 만료되었습니다. 다시 로그인해주세요! 🔒</div>';
      });
  }
 
- function submitFeedComment(postId) {
+ function submitFeedComment(postId, parentId = 0) {
      if (typeof IS_LOGGED_IN !== 'undefined' && !IS_LOGGED_IN) {
-         showLoginModal();
-         return;
+         showLoginModal(); return;
      }
 
-     const inputEl = document.getElementById('comment-input-' + postId);
+     const inputId = parentId === 0 ? 'comment-input-' + postId : 'feed-reply-input-' + parentId;
+     const inputEl = document.getElementById(inputId);
      const content = inputEl.value.trim();
      
      if(content === '') {
-         alert("댓글 내용을 입력해주세요!");
-         inputEl.focus();
-         return;
+         alert("내용을 입력해주세요!"); inputEl.focus(); return;
      }
 
-     const data = {
-         postId: postId,
-         content: content
-     };
+     const data = { postId: postId, content: content, parentCommentId: parentId };
 
      fetch(`${pageContext.request.contextPath}/community/api/feed/comment/add`, {
          method: 'POST',
@@ -1596,14 +1676,73 @@
      .then(result => {
          if(result.status === 'success') {
              inputEl.value = ''; 
-             loadFeedComments(postId); 
+             loadFeedComments(postId, false); 
          } else {
              alert(result.message);
          }
      })
      .catch(err => console.error("댓글 등록 에러:", err));
  }
+
+ function toggleFeedReplyForm(commentId) {
+     const form = document.getElementById('feed-reply-form-' + commentId);
+     if (form.style.display === 'none') {
+         form.style.display = 'flex';
+         document.getElementById('feed-reply-input-' + commentId).focus();
+     } else {
+         form.style.display = 'none';
+     }
+ }
+
+ function deleteFeedComment(commentId, postId) {
+     if (!confirm('정말 삭제하시겠습니까?\n(원본 댓글인 경우 답글도 함께 화면에서 사라집니다)')) return;
+     
+     fetch(`${pageContext.request.contextPath}/community/api/feed/comment/delete/` + commentId, {
+         method: 'POST', 
+         headers: { 'X-Requested-With': 'Fetch' }
+     })
+     .then(res => res.json())
+     .then(result => {
+         if(result.status === 'success') {
+             loadFeedComments(postId, false); 
+         } else {
+             alert(result.message);
+         }
+     })
+     .catch(err => alert('삭제 중 오류가 발생했습니다.'));
+ }
  
+ const feedSliderState = {};
+
+ function moveSlide(postId, step) {
+     if (feedSliderState[postId] === undefined) feedSliderState[postId] = 0;
+     
+     const slider = document.getElementById('slider-' + postId);
+     const track = slider.querySelector('.slider-track');
+     const dots = slider.querySelectorAll('.s-dot');
+     const total = dots.length;
+
+     let newIdx = feedSliderState[postId] + step;
+     if (newIdx < 0) return; 
+     if (newIdx >= total) return; 
+
+     updateSliderUI(postId, newIdx, track, dots);
+ }
+
+ function goSlide(postId, idx) {
+     const slider = document.getElementById('slider-' + postId);
+     updateSliderUI(postId, idx, slider.querySelector('.slider-track'), slider.querySelectorAll('.s-dot'));
+ }
+
+ function updateSliderUI(postId, idx, track, dots) {
+     feedSliderState[postId] = idx;
+     track.style.transform = `translateX(-\${idx * 100}%)`;
+     
+     dots.forEach((dot, i) => {
+         if (i === idx) dot.classList.add('active');
+         else dot.classList.remove('active');
+     });
+ }
  
   </script>
   

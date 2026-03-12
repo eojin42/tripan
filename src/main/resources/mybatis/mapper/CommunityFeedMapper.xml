@@ -107,6 +107,12 @@
             CURRENT_TIMESTAMP
         )
     </insert>
+    
+    <update id="deleteFeedComment">
+        UPDATE post_comment 
+        SET del_yn = 'Y' 
+        WHERE comment_id = #{commentId} AND member_id = #{memberId}
+    </update>
 
 
 </mapper>

@@ -392,5 +392,26 @@ public class CommunityController {
             return ResponseEntity.status(500).body(Map.of("status", "error", "message", "댓글 등록 중 서버 오류가 발생했습니다."));
         }
     }
+    
+    @PostMapping("/api/feed/comment/delete/{commentId}")
+    @ResponseBody
+    public ResponseEntity<Map<String, Object>> deleteFeedComment(@PathVariable("commentId") Long commentId, HttpSession session) {
+        MemberDto loginUser = (MemberDto) session.getAttribute("loginUser");
+        if (loginUser == null) {
+            return ResponseEntity.status(401).body(Map.of("status", "error", "message", "로그인이 필요합니다."));
+        }
+        
+        try {
+            boolean isDeleted = feedService.deleteFeedComment(commentId, loginUser.getMemberId());
+            if (isDeleted) {
+                return ResponseEntity.ok(Map.of("status", "success", "message", "댓글이 삭제되었습니다."));
+            } else {
+                return ResponseEntity.status(403).body(Map.of("status", "error", "message", "삭제 권한이 없습니다."));
+            }
+        } catch (Exception e) {
+            log.error("댓글 삭제 에러", e);
+            return ResponseEntity.status(500).body(Map.of("status", "error", "message", "서버 오류가 발생했습니다."));
+        }
+    }
 
 }
