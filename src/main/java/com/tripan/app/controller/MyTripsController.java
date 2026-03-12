@@ -4,10 +4,13 @@ import com.tripan.app.domain.dto.TripDto;
 import com.tripan.app.service.MyTripsService;
 import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
+
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.ResponseBody;
 
 import java.util.List;
 
@@ -53,5 +56,20 @@ public class MyTripsController {
         } catch (Exception e) {
             return null;
         }
+    }
+    
+    /**
+     * AJAX/Fetch용: 나의 여행 목록을 JSON으로 반환
+     */
+    @GetMapping("/api/my-trips")
+    @ResponseBody
+    public ResponseEntity<List<TripDto>> getMyTripsJson(HttpSession session) {
+        Long loginMemberId = getLoginMemberId(session);
+        if (loginMemberId == null) {
+            return ResponseEntity.status(401).build();
+        }
+
+        List<TripDto> trips = myTripsService.getMyTrips(loginMemberId);
+        return ResponseEntity.ok(trips);
     }
 }
