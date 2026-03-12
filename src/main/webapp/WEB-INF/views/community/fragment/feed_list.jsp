@@ -153,8 +153,6 @@
     flex: 1; border: 1px solid var(--border-color); border-radius: 20px; padding: 10px 16px; font-family: 'Pretendard', sans-serif; font-size: 13px; outline: none; transition: 0.3s;
   }
   .comment-input-wrap input:focus { border-color: var(--sky-blue); }
-  
-/* 1. 슬라이더 뼈대 */
   .custom-feed-slider {
     position: relative;
     width: 100%;
@@ -162,32 +160,28 @@
     background-color: #F8FAFC; 
   }
 
-  /* 2. 슬라이더 트랙 */
   .slider-track {
     display: flex;
     align-items: center; 
     transition: transform 0.4s ease-in-out;
   }
 
-  /* 3. 개별 이미지 영역 (여기가 범인이었습니다!) */
   .slider-item {
     flex: 0 0 100%; 
-    min-width: 0; /* 🔑 진짜 핵심 마법 코드! 사진 원본 크기 때문에 화면이 터지는 걸 완벽하게 막아줍니다! */
+    min-width: 0; 
     width: 100%;
     display: flex;
     justify-content: center;
   }
 
-  /* 4. 실제 이미지 스타일 */
   .slider-item img {
-    width: 100%; /* 부모(slider-item)를 넘어가지 않게 100% 꽉 채움 */
+    width: 100%; 
     height: auto; 
     max-height: 600px; 
     object-fit: contain; 
     display: block;
   }
 
-  /* --- 아래 버튼 및 페이지네이션 코드는 기존과 동일 --- */
   .s-btn {
     position: absolute;
     top: 50%; transform: translateY(-50%);
@@ -254,10 +248,9 @@
 	</article>
 	
 <div id="feedListContainer" style="display: flex; flex-direction: column; gap: 24px;">
-
- <c:forEach var="feed" items="${feedList}">
-  <article class="glass-card feed-card" data-post-id="${feed.postId}">
-  
+ <c:forEach var="feed" items="${feedList}" varStatus="status">
+  <article class="glass-card feed-card" data-post-id="${feed.postId}" style="${status.index >= 5 ? 'display: none;' : ''}">
+ 
     <div class="feed-author">
       <div class="author-left" onclick="location.href='${pageContext.request.contextPath}/community/myfeed?memberId=${feed.memberId}'">
         <c:choose>

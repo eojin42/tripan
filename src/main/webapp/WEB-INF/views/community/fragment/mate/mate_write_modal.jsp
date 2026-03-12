@@ -27,7 +27,7 @@
 
       <input type="text" id="mateTitle" class="lounge-input-style" placeholder="동행 모집 제목을 입력하세요 (예: 제주도 렌트카 쉐어하실 분!)">
       <textarea id="mateTextarea" class="lounge-input-style" placeholder="어떤 여행을 계획 중이신가요? 원하는 동행의 조건(성별/연령대 등)이나 여행 스타일을 자세히 적어주세요!" style="min-height: 150px;"></textarea>
-      <input type="text" id="mateTags" class="lounge-input-style" placeholder="🏷️ 해시태그 입력 (쉼표로 구분. 예: #20대, #맛집탐방)">
+      <input type="text" id="mateTags" class="lounge-input-style" placeholder="🏷️ 해시태그 입력 (스페이스바로 구분. 예: #20대 #맛집탐방)">
     </div>
 
     <div class="lounge-toolbar" style="justify-content: flex-end;">
@@ -70,6 +70,9 @@ window.closeMateModal = function() {
 window.submitMatePost = function() {
     if (typeof IS_LOGGED_IN !== 'undefined' && !IS_LOGGED_IN) { showLoginModal(); return; }
 
+    const rawTags = document.getElementById('mateTags').value;
+    const formattedTags = rawTags.split(/[\s,]+/).filter(t => t.trim() !== '').join(',');
+
     const requestData = {
         regionId: document.getElementById('mateRegion').value,
         targetCount: document.getElementById('mateCount').value,
@@ -77,7 +80,7 @@ window.submitMatePost = function() {
         endDate: document.getElementById('mateEndDate').value,
         title: document.getElementById('mateTitle').value,
         content: document.getElementById('mateTextarea').value,
-        tags: document.getElementById('mateTags').value
+        tags: formattedTags 
     };
 
     if(!requestData.regionId || !requestData.targetCount || !requestData.startDate || !requestData.endDate || !requestData.title.trim() || !requestData.content.trim()) {
@@ -124,8 +127,9 @@ window.searchMates = function() {
             let profileImg = mate.profilePhoto ? '${pageContext.request.contextPath}/uploads/profile/' + mate.profilePhoto : '${pageContext.request.contextPath}/dist/images/default.png';
             let statusBadge = mate.status === 'OPEN' ? '<span class="badge-status status-on">🟢 모집중</span>' : '<span class="badge-status status-off">⚪ 모집마감</span>';
             let tagsHtml = '';
-            if (mate.tags) mate.tags.split(',').forEach(t => { if (t.trim() !== '') tagsHtml += `<span class="m-tag">\${t.trim()}</span>`; });
-
+            if (mate.tags) mate.tags.split(/[\s,]+/).forEach(t => { 
+               if (t.trim() !== '') tagsHtml += `<span class="m-tag">\${t.trim()}</span>`; 
+            });
             let isMyPost = (CURRENT_USER_ID !== '' && CURRENT_USER_ID == mate.memberId);
             let statusToggleButton = isMyPost ? (mate.status === 'OPEN' 
                 ? `<button class="btn-status-toggle" onclick="event.stopPropagation(); window.toggleMateStatus(\${mate.mateId}, 'CLOSED')">마감하기</button>`

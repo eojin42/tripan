@@ -653,6 +653,7 @@
     let isFetching = false;     
     let scrollObserver = null; 
     let scrollCount = 0;
+    const LOAD_COUNT = 5;
 
     function setupInfiniteScroll() {
       if(scrollObserver) scrollObserver.disconnect();
@@ -668,28 +669,55 @@
     }
 
     function handleInfiniteScroll(trigger) {
-      if (isFetching) return;
-      if (!IS_LOGGED_IN) {
-    	  scrollCount++;
-    	  
-    	  if (scrollCount > 2) {
-    	  showLoginModal(); 
-    	  return; 
-    	  }
-    		  
-    	}
+        if (isFetching) return;
+        
+        if (!IS_LOGGED_IN) {
+            scrollCount++;
+            
+            if (scrollCount > 2) {
+                showLoginModal(); 
+                return; 
+            }
+        }
 
-      isFetching = true;
-      trigger.innerHTML = '로딩 중... ⏳';
-      setTimeout(() => {
-          
-          isFetching = false;
-          trigger.innerHTML = '모든 게시글을 불러왔습니다 ✨';
-          trigger.style.opacity = '0.5'; 
-          if(scrollObserver) scrollObserver.disconnect();
-          
-      }, 800);
-  }
+        isFetching = true;
+        trigger.innerHTML = '로딩 중... ⏳';
+
+        setTimeout(() => {
+            const hiddenCards = document.querySelectorAll('.feed-card[style*="display: none"]');
+            
+            if (hiddenCards.length > 0) {
+                for (let i = 0; i < LOAD_COUNT && i < hiddenCards.length; i++) {
+                    hiddenCards[i].style.display = 'block';
+                }
+                
+                isFetching = false;
+                trigger.innerHTML = '아래로 스크롤하여 더 보기...';
+
+                if (hiddenCards.length <= LOAD_COUNT && IS_LOGGED_IN) {
+                    trigger.innerHTML = '모든 게시글을 불러왔습니다 ✨';
+                    trigger.style.opacity = '0.5'; 
+                    if(scrollObserver) scrollObserver.disconnect();
+                }
+                
+            } else {
+                if (!IS_LOGGED_IN) {
+                    const spacer = document.createElement('div');
+                    spacer.style.height = '400px'; 
+                    trigger.parentNode.insertBefore(spacer, trigger);
+                    
+                    isFetching = false;
+                    trigger.innerHTML = '아래로 스크롤하여 더 보기...';
+                } else {
+                    isFetching = false;
+                    trigger.innerHTML = '모든 게시글을 불러왔습니다 ✨';
+                    trigger.style.opacity = '0.5'; 
+                    if(scrollObserver) scrollObserver.disconnect();
+                }
+            }
+            
+        }, 800);
+    }
 
    function loadTabContent(tabType, event) {
        if(event) event.preventDefault();
@@ -1297,10 +1325,60 @@
 	      btn.parentElement.remove();
 	  }
 
-	  function openScheduleModal() {
-	      document.getElementById('scheduleModal').classList.add('active');
-	      document.body.style.overflow = 'hidden';
-	  }
+	  async function openScheduleModal() {
+		    if (typeof IS_LOGGED_IN !== 'undefined' && !IS_LOGGED_IN) {
+		        showLoginModal();
+		        return;
+		    }
+
+		    document.getElementById('scheduleModal').classList.add('active');
+		    document.body.style.overflow = 'hidden';
+		    
+		    const listArea = document.querySelector('.sch-list-area');
+		    listArea.innerHTML = '<div style="text-align:center; padding: 40px 20px; color:var(--text-gray); font-weight: bold;">일정을 불러오는 중... ✈️</div>';
+
+		    try {
+		        const url = '${pageContext.request.contextPath}/trip/api/my-trips'; 
+		        const response = await fetch(url, { headers: { 'X-Requested-With': 'Fetch' } });
+		        
+		        if (!response.ok) throw new Error('데이터 로드 실패');
+		        
+		        const trips = await response.json(); 
+		        
+		        if (!trips || trips.length === 0) {
+		            listArea.innerHTML = '<div style="text-align:center; padding: 40px 20px; color:var(--text-gray);">공유할 내 일정이 없습니다. 🥲</div>';
+		            return;
+		        }
+
+		        let html = '';
+		        trips.forEach(trip => {
+		            const tripId = trip.tripId;
+		            const tripName = trip.tripName;
+		            const budget = trip.totalBudget || 0;
+		            const members = trip.regionId || 1; 
+		            const placeCount = trip.cities ? trip.cities.length : 0; 
+		            
+		            const startDate = trip.startDate ? trip.startDate.substring(0, 10) : '';
+		            const endDate = trip.endDate ? trip.endDate.substring(0, 10) : '';
+
+		            html += `
+		                <div class="sch-item" onclick="toggleScheduleSelect(this, '\${tripId}', '\${tripName}', \${placeCount}, \${budget}, \${members})">
+		                    <div>
+		                        <h4 style="margin: 0 0 6px; font-size: 16px; font-weight: 800; color: var(--text-black);">\${tripName}</h4>
+		                        <p style="margin: 0; font-size: 13px; color: var(--text-gray);">\${startDate} ~ \${endDate}</p>
+		                    </div>
+		                    <div class="check-circle"></div>
+		                </div>
+		            `;
+		        });
+		        
+		        listArea.innerHTML = html;
+
+		    } catch (error) {
+		        console.error("일정 목록 로딩 실패:", error);
+		        listArea.innerHTML = '<div style="text-align:center; padding: 40px 20px; color:#FF6B6B;">일정을 불러오지 못했습니다. 😢</div>';
+		    }
+		}
 
 	  function closeScheduleModal() {
 	      document.getElementById('scheduleModal').classList.remove('active');
@@ -1319,13 +1397,13 @@
 	      
 	      const rightPreview = document.getElementById('schRightPreview');
 	      rightPreview.innerHTML = 
-	          '<div style="background: var(--grad-main); width: 60px; height: 60px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 24px; color: white; margin-bottom: 12px;">✈️</div>' +
+	    	  '<div style="background: var(--grad-main); width: 60px; height: 60px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 24px; color: white; margin-bottom: 12px;">✈️</div>' +
 	          '<h5 style="margin: 0; font-size: 16px; color: var(--text-black);">' + tripName + '</h5>' +
 	          '<p style="margin: 8px 0 0; font-size: 13px; color: var(--sky-blue); font-weight: 700;">이 일정을 공유합니다</p>' +
 	          '<div style="margin-top: 16px; padding: 12px; background: #f8fafc; border-radius: 8px; font-size: 12px; color: var(--text-dark); width: 100%; box-sizing: border-box; text-align: left;">' +
-	          '    <li style="margin-bottom: 4px;">📍 장소: ' + placeCount + '곳 방문</li>' +
-	          '    <li style="margin-bottom: 4px;">👥 인원: ' + memberCount + '명</li>' +
-	          '    <li style="color:var(--sky-blue); font-weight: bold;">└ 1인당 약 ' + perPerson + '원</li>' +
+	          '    <div style="margin-bottom: 4px;">📍 장소: ' + placeCount + '곳 방문</div>' +
+	          '    <div style="margin-bottom: 4px;">👥 인원: ' + memberCount + '명</div>' +
+	          '    <div style="color:var(--sky-blue); font-weight: bold;">└ 1인당 약 ' + perPerson + '원</div>' +
 	          '</div>';
 	  }
 
@@ -1465,10 +1543,45 @@
 		    .catch(err => console.error("팔로우 오류:", err));
 		}
 
-		function scrapTrip(tripId) {
-		    checkAuthAndRun(() => {
-		        if(confirm('이 일정을 내 보관함으로 담아오시겠습니까?')) {
-		            alert('✨ 일정이 내 보관함에 저장되었습니다!');
+	  function scrapTrip(tripId) {
+		    if (typeof IS_LOGGED_IN !== 'undefined' && !IS_LOGGED_IN) {
+		        showLoginModal();
+		        return;
+		    }
+
+		    if (!confirm('이 여행 일정을 내 보관함으로 담아오시겠습니까?\n담아온 일정은 나의 여행 목록에서 자유롭게 수정할 수 있습니다.')) {
+		        return;
+		    }
+
+		    const url = '/trip/' + tripId + '/scrap';
+
+		    fetch(url, {
+		        method: 'POST',
+		        headers: {
+		            'X-Requested-With': 'Fetch'
+		        }
+		    })
+		    .then(res => {
+		        if (res.status === 401) {
+		            showLoginModal();
+		            throw new Error('Unauthorized');
+		        }
+		        if (!res.ok) throw new Error('서버 응답 오류');
+		        return res.json();
+		    })
+		    .then(data => {
+		        if (data.success) {
+		            if (confirm('✨ 일정이 내 보관함에 성공적으로 저장되었습니다!\n지금 바로 새 일정을 확인하러 가시겠습니까?')) {
+		                location.href = '/trip/' + data.newTripId + '/workspace';
+		            }
+		        } else {
+		            alert('일정 담아오기에 실패했습니다: ' + (data.message || '알 수 없는 오류'));
+		        }
+		    })
+		    .catch(err => {
+		        if (err.message !== 'Unauthorized') {
+		            console.error('Scrap Error:', err);
+		            alert('일정을 담아오는 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요. 🥲');
 		        }
 		    });
 		}
