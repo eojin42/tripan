@@ -344,10 +344,11 @@
       <div class="rp-pane active" id="rpPane-suggest">
         <div class="rp-filter">
           <button class="rp-filter-btn active" onclick="filterRec(this,'all')">전체</button>
-          <button class="rp-filter-btn" onclick="filterRec(this,'stay')">🏨 숙소</button>
-          <button class="rp-filter-btn" onclick="filterRec(this,'tour')">🏔 관광</button>
-          <button class="rp-filter-btn" onclick="filterRec(this,'eat')">🍽 맛집</button>
-          <button class="rp-filter-btn" onclick="filterRec(this,'cafe')">☕ 카페</button>
+          <button class="rp-filter-btn" onclick="filterRec(this,'STAY')">🏨 숙소</button>
+          <button class="rp-filter-btn" onclick="filterRec(this,'TOUR')">🏔 관광</button>
+          <button class="rp-filter-btn" onclick="filterRec(this,'RESTAURANT')">🍽 맛집</button>
+          <button class="rp-filter-btn" onclick="filterRec(this,'CULTURE')">🎭 문화</button>
+          <button class="rp-filter-btn" onclick="filterRec(this,'LEISURE')">🏄 레포츠</button>
         </div>
 
         <%-- ✅ 카드는 workspace.recommend.js가 동적 렌더 --%>
@@ -456,12 +457,14 @@
   <div class="ws-map-area">
 
     <%-- 지도 검색바 --%>
-    <div class="map-search-bar">
+   <div class="map-search-bar">
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-      <input type="text" placeholder="장소, 주소 검색…" id="mapSearchInput">
+      <input type="text" placeholder="장소, 주소 검색…" id="mapSearchInput" onkeypress="if(event.key==='Enter') mapSearch()">
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="color:var(--light);cursor:pointer" onclick="mapSearch()"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
     </div>
 
+    <ul id="mapSearchResults"></ul>
+    
 	<div id="kakaoMap" style="width:100%; height:100%; min-height:600px; position:relative; z-index:1;"></div>
 
     <%-- 지도 컨트롤 버튼 --%>
@@ -491,9 +494,9 @@
     <div class="modal-box__body">
       <div class="place-type-tabs">
         <button class="place-type-tab active" onclick="selectPlaceType(this,'all')">🔍 전체</button>
-        <button class="place-type-tab" onclick="selectPlaceType(this,'eat')">🍽️ 맛집</button>
-        <button class="place-type-tab" onclick="selectPlaceType(this,'tour')">🏔️ 관광</button>
-        <button class="place-type-tab" onclick="selectPlaceType(this,'stay')">🏨 숙소</button>
+        <button class="place-type-tab" onclick="selectPlaceType(this,'RESTAURANT')">🍽️ 맛집</button>
+        <button class="place-type-tab" onclick="selectPlaceType(this,'TOUR')">🏔️ 관광</button>
+        <button class="place-type-tab" onclick="selectPlaceType(this,'STAY')">🏨 숙소</button>
         <button class="place-type-tab" onclick="selectPlaceType(this,'my')">⭐ 나만의</button>
       </div>
       <div class="search-input-wrap">

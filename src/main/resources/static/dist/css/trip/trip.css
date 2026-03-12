@@ -961,6 +961,97 @@ body.resizing .ws-resizer { pointer-events: all !important; }
 }
 .map-search-bar input::placeholder { color: var(--light); }
 
+/* ---------------------------------------------------
+   장소 검색 결과 드롭다운 (map-search-bar 바로 아래 위치)
+--------------------------------------------------- */
+#mapSearchResults {
+  /* 1. 위치 동기화: 기존 검색창과 완벽히 동일한 너비 및 X축 중앙 정렬 유지 */
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  width: min(460px, 80%);
+  
+  /* 2. Y축 정밀 배치: 기존 top(16px) + 검색창 높이(48px) + 여백(8px) = 72px */
+  top: 72px; 
+  z-index: 10;
+  
+  /* 3. Tripan 디자인 시스템 (글래스모피즘) */
+  background: rgba(255, 255, 255, 0.85); /* 반투명 배경 */
+  backdrop-filter: blur(12px); /* 배경 흐림 효과 */
+  -webkit-backdrop-filter: blur(12px); /* Safari 크로스브라우징 */
+  border-radius: 12px;
+  box-shadow: var(--shadow-lg, 0 8px 24px rgba(0, 0, 0, 0.12));
+  
+  /* 4. 내부 스크롤 및 레이아웃 제어 */
+  max-height: 280px;
+  overflow-y: auto;
+  list-style: none;
+  padding: 8px 0;
+  margin: 0;
+  
+  /* 기본적으로 숨겨둠 (JS에서 active 클래스를 붙여서 표시) */
+  display: none; 
+}
+
+/* JS에서 이 클래스를 토글하여 드롭다운을 열고 닫습니다 */
+#mapSearchResults.active {
+  display: block;
+}
+
+/* ---------------------------------------------------
+   개별 검색 결과 항목 (li) 디자인
+--------------------------------------------------- */
+#mapSearchResults li {
+  padding: 12px 16px;
+  cursor: pointer;
+  font-size: 14px;
+  color: var(--dark, #333);
+  font-family: 'Pretendard', sans-serif;
+  transition: background 0.2s ease, color 0.2s ease;
+  line-height: 1.4;
+}
+
+/* 장소 이름 강조용 */
+#mapSearchResults li strong {
+  display: block;
+  font-size: 15px;
+  font-weight: 600;
+  margin-bottom: 2px;
+}
+
+/* 주소 텍스트용 */
+#mapSearchResults li span {
+  font-size: 12px;
+  color: var(--light, #888);
+}
+
+/* 마우스 호버 시 Tripan 메인 스카이 블루 컬러 적용 */
+#mapSearchResults li:hover {
+  background-color: #0099CC; 
+  color: #ffffff;
+}
+#mapSearchResults li:hover span {
+  color: rgba(255, 255, 255, 0.8); /* 호버 시 주소 색상도 자연스럽게 변경 */
+}
+
+/* ---------------------------------------------------
+   스크롤바 커스텀 (청량한 느낌의 에메랄드 민트 적용)
+--------------------------------------------------- */
+#mapSearchResults::-webkit-scrollbar {
+  width: 5px; /* 기존보다 훨씬 얇게 축소 */
+}
+#mapSearchResults::-webkit-scrollbar-track {
+  background: transparent; /* 트랙은 완전히 투명하게 처리 */
+  margin: 4px 0; /* 위아래 약간의 여백을 주어 답답하지 않게 */
+}
+#mapSearchResults::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.15); /* 튀는 색상 대신 은은한 반투명 그레이 */
+  border-radius: 10px;
+}
+#mapSearchResults::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 0, 0, 0.3); /* 마우스 오버 시에만 살짝 진해짐 */
+}
+
 /* 지도 범례 (Day 색상) */
 .map-legend {
   position: absolute; bottom: 24px; left: 50%;

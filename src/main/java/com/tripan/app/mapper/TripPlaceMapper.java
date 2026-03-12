@@ -1,6 +1,7 @@
 package com.tripan.app.mapper;
 
 import com.tripan.app.domain.dto.TripDto;
+import com.tripan.app.domain.dto.TripPlaceDto;
 import com.tripan.app.trip.domain.entity.TripPlace;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
@@ -8,46 +9,71 @@ import org.apache.ibatis.annotations.Param;
 import java.util.List;
 import java.util.Map;
 
-/**
- * TripPlaceMapper
- *
- * MyBatis XML: TripPlaceMapper.xml
- * 사용처: TripServiceImpl, PlaceApiController, ItineraryController
- */
 @Mapper
 public interface TripPlaceMapper {
 
-    /** 여행의 DAY별 장소 목록 (trip_day + itinerary_item + trip_place JOIN) */
-    List<TripDto.TripDayDto> findDayItemsByTripId(@Param("tripId") Long tripId);
+    // ════════════════════════════════════════════════════
+    // 기존 메서드 - 워크스페이스 일정/경비/추천
+    // ════════════════════════════════════════════════════
 
-    /** 장소 검색 (키워드 + 카테고리 필터, 나만의 장소 포함) */
-    List<TripPlace> searchPlaces(
-        @Param("currentMemberId") Long currentMemberId,
-        @Param("keyword") String keyword,
-        @Param("category") String category);
+    /** 여행 전체 일정 + 장소 조회 (DayPlaceMap resultMap 사용) */
+    List<TripDto.TripDayDto> findDayItemsByTripId(Long tripId);
 
-    /** 공개 여행의 장소 목록 */
-    List<TripPlace> findPublicTripPlaces(@Param("tripId") Long tripId);
+    /** 키워드/카테고리 장소 검색 (기존 - TripPlace 엔티티 반환) */
+    List<TripPlace> searchPlaces(@Param("keyword")          String keyword,
+                                  @Param("category")         String category,
+                                  @Param("currentMemberId") Long   currentMemberId);
 
-    /** 추천 장소 (태그/카테고리 기반) */
-    List<Map<String, Object>> selectRecommendedPlaces(
-        @Param("currentMemberId") Long currentMemberId,
-        @Param("categoryName") String categoryName,
-        @Param("tagNames") List<String> tagNames);
+    /** 공개된 여행의 장소 목록 조회 */
+    List<TripPlace> findPublicTripPlaces(Long tripId);
 
-    /** 키워드로 장소 검색 */
-    List<Map<String, Object>> selectPlacesByKeyword(
-        @Param("currentMemberId") Long currentMemberId,
-        @Param("keyword") String keyword);
+    /** 경비 요약 (합계, 1인당 평균) */
+    Map<String, Object> getExpenseSummary(Long tripId);
 
-    /** 가계부 요약 */
-    Map<String, Object> getExpenseSummary(@Param("tripId") Long tripId);
+    /** 카테고리별 경비 */
+    List<Map<String, Object>> getExpenseByCategory(Long tripId);
 
-    /** 카테고리별 지출 */
-    List<Map<String, Object>> getExpenseByCategory(@Param("tripId") Long tripId);
+    /** 경비 목록 */
+    List<Map<String, Object>> getExpenseList(Map<String, Object> params);
 
-    /** 지출 목록 (멤버별) */
-    List<Map<String, Object>> getExpenseList(
-        @Param("tripId") Long tripId,
-        @Param("memberId") Long memberId);
+    /** 태그 기반 추천 장소 */
+    List<TripDto> selectRecommendedPlaces(@Param("categoryName")    String       categoryName,
+                                           @Param("tagNames")        List<String> tagNames,
+                                           @Param("currentMemberId") Long         currentMemberId);
+
+    /** 키워드 장소 검색 (TripDto 반환) */
+    List<TripDto> selectPlacesByKeyword(@Param("keyword")          String keyword,
+                                         @Param("currentMemberId") Long   currentMemberId);
+
+    // ════════════════════════════════════════════════════
+    // 신규 메서드 - 한국관광공사 API 연동 장소 관리
+    // (TripPlaceDto 기반)
+    // ════════════════════════════════════════════════════
+
+    /** 장소 저장 (API 동기화 or 나만의 장소 등록) */
+    int insertPlace(TripPlaceDto dto);
+
+    /** API contentId 중복 체크 */
+    Long findPlaceIdByApiContentId(String apiContentId);
+
+    /** 이름+주소 중복 체크 (나만의 장소 등록 시) */
+    Long findPlaceIdByNameAndAddress(@Param("placeName") String placeName,
+                                     @Param("address")   String address);
+
+    /** 카테고리별 추천 장소 (랜덤) - TripPlaceDto */
+    List<TripPlaceDto> selectRecommendPlaces(@Param("category")        String category,
+                                              @Param("cityList")        List<String> cityList, // 🟢 List 타입으로 변경!
+                                              @Param("currentMemberId") Long   currentMemberId,
+                                              @Param("limit")           int    limit);
+
+    /** 키워드 검색 - TripPlaceDto (공용 + 내 것만) */
+    List<TripPlaceDto> searchPlacesByKeyword(@Param("keyword")          String keyword,
+                                              @Param("currentMemberId") Long   currentMemberId);
+
+    /** 나만의 장소 목록 (본인 전용) */
+    List<TripPlaceDto> selectMyPlaces(@Param("memberId") Long memberId);
+
+    /** 단건 조회 */
+    TripPlaceDto selectPlaceById(@Param("placeId")          Long placeId,
+                                  @Param("currentMemberId") Long currentMemberId);
 }
