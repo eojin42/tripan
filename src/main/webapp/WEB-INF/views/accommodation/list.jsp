@@ -418,7 +418,7 @@
       if (!mapInstance) {
           const options = {
               center: new kakao.maps.LatLng(37.566826, 126.978656), 
-              level: 5 
+              level: 4 
           };
           mapInstance = new kakao.maps.Map(mapContainer, options);
       }
