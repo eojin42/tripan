@@ -24,12 +24,20 @@ public class SpringSecurityConfig {
 		HttpSessionRequestCache requestCache = new HttpSessionRequestCache();
 		requestCache.setMatchingRequestParameterName(null);
 		
-		String[] excludeUri = {"/", "/index.jsp", "/member/login", "/member/account", "/member/logout",
-				"/member/userIdCheck", "/member/complete", "/member/pwdFind", "/member/expired", "/dist/**",
-				"/guest/main", "/guest/list", "/uploads/photo/**", "/favicon.ico", "/WEB-INF/views/**",
-				"/oauth/kakao/callback", "/accommodation/home", "/accommodation/list", "/accommodation/search", "/accommodation/detail/*", 
-				"/community/feed", "/community/fragment/feed", "/api/festivals/**", "/api/chat/rooms/region",
-				"/ws-tripan/**","/member/nicknameCheck"};
+		String[] excludeUri = {
+				"/", "/index.jsp", 
+				"/member/login", "/member/account", "/member/logout", "/member/nicknameCheck", 
+				"/member/userIdCheck", "/member/complete", "/member/pwdFind", "/member/expired", 
+				"/dist/**",
+				"/guest/main", "/guest/list", 
+				"/uploads/photo/**", "/uploads/feed/**", 
+				"/favicon.ico", "/WEB-INF/views/**",
+				"/oauth/kakao/callback", 
+				"/accommodation/home", "/accommodation/list", "/accommodation/search", "/accommodation/detail/*", 
+				"/community/feed", "/community/fragment/feed", 
+				"/api/festivals/**", "/api/chat/rooms/region",
+				"/ws-tripan/**"
+			    };
 		
 		http.cors(Customizer.withDefaults())
 			.csrf(AbstractHttpConfigurer::disable)
