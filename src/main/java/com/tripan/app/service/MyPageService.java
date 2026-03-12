@@ -9,6 +9,7 @@ import com.tripan.app.domain.dto.MemberDto;
 
 
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -51,4 +52,10 @@ public interface MyPageService {
 
     // 활동 요약
     List<MyPageSummaryDto.ActivityItem> getActivitySummary(Long memberId);
+    
+    // 방문 시도 (여행지도)
+    List<String> getVisitedSidoNames(Long memberId);
+    List<String> getManualVisitedSidos(Long memberId);
+    void addVisitedRegion(Long memberId, String sidoName);
+    void removeVisitedRegion(Long memberId, String sidoName);
 }

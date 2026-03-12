@@ -217,7 +217,7 @@
       background: linear-gradient(135deg, #89CFF0, #FFB6C1);
     }
     .msg-bubble {
-      max-width: 60%; padding: 9px 14px; border-radius: 14px;
+       min-width: 60px; max-width: 60%; padding: 9px 14px; border-radius: 14px;
       font-size: 13px; line-height: 1.5; font-weight: 600; word-break: break-word;
     }
     .msg-row.user-msg .msg-bubble  { background: #fff; border-top-left-radius: 4px; box-shadow: 0 2px 6px rgba(0,0,0,.05); }
@@ -250,6 +250,20 @@
       cursor: pointer; transition: all .2s; font-family: 'Pretendard', sans-serif; flex-shrink: 0;
     }
     .btn-end-chat:hover { background: #FFF5F5; }
+    
+    .room-status-pill {
+	  font-size: 10px; font-weight: 800;
+	  padding: 2px 8px; border-radius: 10px;
+	  display: inline-block; margin-top: 3px;
+	}
+	.room-status-pill.waiting { background: #FFF3CD; color: #856404; }
+	.room-status-pill.active  { background: #D1FAE5; color: #065F46; }
+	.room-status-pill.closed  { background: #F3F4F6; color: #6B7280; }
+	.chat-group-label {
+	  padding: 8px 18px 4px;
+	  font-size: 10px; font-weight: 900; color: var(--muted);
+	  letter-spacing: 0.5px; text-transform: uppercase;
+}
   </style>
 </head>
 <body>

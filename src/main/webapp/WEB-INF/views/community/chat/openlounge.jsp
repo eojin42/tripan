@@ -450,6 +450,23 @@
   };
 
   function renderMessage(m) {
+	  if (m.messageType === 'CLOSED' || m.messageType === 'END') {
+		  const area = document.getElementById('chatMessagesArea');
+		  area.insertAdjacentHTML('beforeend', `
+		    <div style="text-align:center;margin:12px 0;">
+		      <span style="background:rgba(0,0,0,0.08);color:#6B7280;font-size:13px;
+		                   padding:6px 18px;border-radius:16px;font-weight:700;display:inline-block;">
+		        🔒 상담이 종료되었습니다.
+		      </span>
+		    </div>`);
+		  area.scrollTop = area.scrollHeight;
+		  const input = document.getElementById('chatInputField');
+		  const btn   = document.getElementById('chatSendBtn');
+		  if (input) { input.disabled = true; input.placeholder = '상담이 종료되었습니다.'; }
+		  if (btn)   { btn.disabled = true; btn.style.opacity = '0.4'; }
+		  return; // 기존 렌더 로직 실행 안 함
+		} 
+	  
     var isMe = (String(m.memberId) === String(memberId));
     var row  = document.createElement('div');
     row.className = 'msg-row ' + (isMe ? 'me' : 'other');

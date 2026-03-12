@@ -24,6 +24,7 @@ public class MyPageSummaryDto {
     private long totalTripCount;       // 참여한 여행 총 횟수
     private long ownedTripCount;       // 내가 만든 여행 수 (OWNER)
     private long visitedRegionCount;   // 방문 지역 수 (regionId distinct)
+    private long completedTripCount;   // 완료한 여행 수
     private double avgTripDays;        // 평균 여행 기간 (일)
     private long reviewCount;          // 작성한 리뷰 수
 
