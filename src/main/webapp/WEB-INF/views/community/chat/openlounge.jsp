@@ -330,20 +330,15 @@
 
         rooms.forEach(function(room, idx) {
           var icon  = isCS ? '🎧' : (type === 'REGION' ? rIcons[idx%5] : pIcons[idx%5]);
-          var title = (isCS && room.userName) ? (room.userName + ' 님의 문의') : (room.chatRoomName || '이름 없음');
+          var title = room.chatRoomName || '이름 없음';
           var desc  = isCS ? ('1:1 고객센터 · ' + (room.status === 'CLOSED' ? '종료' : '상담 중'))
                     : (type === 'REGION' ? '다같이 떠드는 라운지' : '1:1 비밀 대화방');
-          var unreadBadge = (isCS && room.unreadCount > 0)
-            ? '<span style="background:#e53e3e;color:white;border-radius:50%;padding:2px 7px;font-size:11px;font-weight:800;margin-left:auto;">' + room.unreadCount + '</span>'
-            : '';
           listEl.insertAdjacentHTML('beforeend',
             '<div class="chat-room-item" onclick="window._onRoomClick(this)"' +
             ' data-room-id="' + room.chatRoomId +
-            '" data-room-name="' + title + '" data-room-type="' + type + '"' +
-            ' style="display:flex;align-items:center;">' +
+            '" data-room-name="' + title + '" data-room-type="' + type + '">' +
             '<div class="room-icon">' + icon + '</div>' +
-            '<div class="room-info"><h4>' + title + '</h4><p>' + desc + '</p></div>' +
-            unreadBadge + '</div>');
+            '<div class="room-info"><h4>' + title + '</h4><p>' + desc + '</p></div></div>');
         });
 
       })
