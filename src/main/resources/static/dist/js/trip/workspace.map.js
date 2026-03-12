@@ -228,6 +228,8 @@ function mapMoveToMyLocation() {
 /* ══════════════════════════════
    지도 내 장소 검색
 ══════════════════════════════ */
+var _tempMarkers = []; // 검색용 임시 마커
+
 function mapSearch() {
   var input = document.getElementById('mapSearchInput');
   var q     = input ? input.value.trim() : '';
@@ -236,15 +238,69 @@ function mapSearch() {
 
   var ps = new kakao.maps.services.Places();
   ps.keywordSearch(q, function (data, status) {
+    var resultBox = document.getElementById('mapSearchResults');
     if (status === kakao.maps.services.Status.OK && data.length > 0) {
-      _map.setCenter(new kakao.maps.LatLng(data[0].y, data[0].x));
-      _map.setLevel(5);
-      if (typeof showToast === 'function') showToast('🔍 ' + data[0].place_name + ' 으로 이동');
+      // 🟢 검색 결과를 리스트로 쫙 뿌려줍니다!
+      var html = '';
+      data.forEach(function(p) {
+        // 이스케이프 처리 (이름, 주소)
+        var safeName = p.place_name.replace(/'/g, "\\'");
+        var safeAddr = p.address_name.replace(/'/g, "\\'");
+        html += '<div style="padding:12px 16px; border-bottom:1px solid #f1f5f9; cursor:pointer;" ' +
+                'onclick="selectMapSearchResult(' + p.y + ', ' + p.x + ', \'' + safeName + '\', \'' + safeAddr + '\')" ' +
+                'onmouseover="this.style.background=\'#f8fafc\'" onmouseout="this.style.background=\'none\'">';
+        html += '  <div style="font-size:14px; font-weight:700; color:#1a202c;">' + p.place_name + '</div>';
+        html += '  <div style="font-size:12px; color:#a0aec0; margin-top:4px;">' + p.address_name + '</div>';
+        html += '</div>';
+      });
+      resultBox.innerHTML = html;
+      resultBox.style.display = 'block';
     } else {
+      resultBox.style.display = 'none';
       if (typeof showToast === 'function') showToast('😥 검색 결과가 없어요');
     }
   });
 }
+
+// 리스트에서 장소를 클릭했을 때 (마커 찍기 + 말풍선)
+function selectMapSearchResult(lat, lng, name, address) {
+  var latlng = new kakao.maps.LatLng(lat, lng);
+  _map.setCenter(latlng);
+  _map.setLevel(4);
+
+  // 기존 임시 마커 지우기
+  _tempMarkers.forEach(function(m) { m.setMap(null); });
+  _tempMarkers = [];
+
+  var marker = new kakao.maps.Marker({ position: latlng, map: _map });
+  _tempMarkers.push(marker);
+
+  // 말풍선 안에 일정에 추가 버튼 생성
+  var iwContent = '<div style="padding:12px; width:220px; font-family:Pretendard;">' +
+                  '<div style="font-weight:800; font-size:14px; color:#2d3748; margin-bottom:4px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">' + name + '</div>' +
+                  '<div style="font-size:12px; color:#718096; margin-bottom:12px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">' + address + '</div>' +
+                  '<button onclick="openDayPickerForMap(\'' + name + '\', \'' + address + '\', ' + lat + ', ' + lng + ')" ' +
+                  'style="width:100%; padding:8px 0; background:#89CFF0; color:#fff; border:none; border-radius:6px; font-weight:700; cursor:pointer;">+ 일정에 추가</button>' +
+                  '</div>';
+
+  if (_infowindow) _infowindow.close();
+  _infowindow = new kakao.maps.InfoWindow({ content: iwContent });
+  _infowindow.open(_map, marker);
+
+  // 검색 리스트 닫기
+  document.getElementById('mapSearchResults').style.display = 'none';
+}
+
+window.openDayPickerForMap = function(name, addr, lat, lng) {
+  // workspace.recommend.js 에 선언된 변수에 장소를 임시 저장
+  if (typeof _selectedRecPlace !== 'undefined') {
+    _selectedRecPlace = { name: name, address: addr, lat: lat, lng: lng, placeId: null };
+    document.getElementById('dayPickerPopup').style.display = 'block';
+  } else {
+    alert('추천 장소 스크립트가 로드되지 않았습니다.');
+  }
+  if (_infowindow) _infowindow.close();
+};
 
 /* ══════════════════════════════
    범례 렌더

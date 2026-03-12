@@ -4,6 +4,16 @@
 
 <mapper namespace="com.tripan.app.mapper.TripPlaceMapper">
 
+    <!--
+        ▶ trip_place 실제 컬럼
+          trip_place_id, member_id, api_place_id,
+          place_name, address, latitude, longitude,
+          category_name, place_url, created_at
+    -->
+
+    <!-- ════════════════════════════════════════════════════
+         ResultMap (기존 - 워크스페이스 일정 조회용)
+    ════════════════════════════════════════════════════ -->
     <resultMap id="DayPlaceMap" type="com.tripan.app.domain.dto.TripDto$TripDayDto">
         <id     property="dayId"     column="day_id"/>
         <result property="dayNumber" column="day_number"/>
@@ -23,6 +33,9 @@
         </collection>
     </resultMap>
 
+    <!-- ════════════════════════════════════════════════════
+         기존 쿼리 - 워크스페이스 일정/경비/추천
+    ════════════════════════════════════════════════════ -->
     <select id="findDayItemsByTripId" parameterType="long" resultMap="DayPlaceMap">
         SELECT
             d.day_id,
@@ -91,7 +104,7 @@
 
     <select id="getExpenseSummary" parameterType="long" resultType="map">
         SELECT
-            COALESCE(SUM(e.amount), 0)                                       AS totalAmount,
+            COALESCE(SUM(e.amount), 0)                                          AS totalAmount,
             COALESCE(SUM(e.amount) / NULLIF(COUNT(DISTINCT m.member_id), 0), 0) AS avgPerPerson
         FROM expense e
         JOIN trip_member m ON m.trip_id = e.trip_id
@@ -118,18 +131,18 @@
             e.category,
             TO_CHAR(e.expense_date, 'YYYY-MM-DD') AS expenseDate,
             e.payment_type,
-            m.nickname                               AS payerNickname,
+            m.nickname                             AS payerNickname,
             ep.share_amount,
             ep.is_settled
         FROM expense e
-        JOIN member             m  ON m.member_id    = e.payer_id
-        JOIN expense_participant ep ON ep.expense_id = e.expense_id
-        WHERE e.trip_id        = #{tripId}
-          AND ep.member_id     = #{memberId}
+        JOIN member             m   ON m.member_id    = e.payer_id
+        JOIN expense_participant ep  ON ep.expense_id  = e.expense_id
+        WHERE e.trip_id    = #{tripId}
+          AND ep.member_id = #{memberId}
         ORDER BY e.expense_date DESC
     </select>
-	
-	<select id="selectRecommendedPlaces" resultType="com.tripan.app.domain.dto.TripDto">
+
+    <select id="selectRecommendedPlaces" resultType="com.tripan.app.domain.dto.TripDto">
         SELECT DISTINCT
             p.trip_place_id AS placeId,
             p.place_name    AS placeName,
@@ -154,10 +167,11 @@
             </foreach>
         </if>
         ORDER BY p.place_name
-        FETCH FIRST 30 ROWS ONLY </select>
+        FETCH FIRST 30 ROWS ONLY
+    </select>
 
     <select id="selectPlacesByKeyword" resultType="com.tripan.app.domain.dto.TripDto">
-        SELECT 
+        SELECT
             trip_place_id AS placeId,
             place_name    AS placeName,
             category_name AS category,
@@ -171,4 +185,128 @@
         ORDER BY place_name
         FETCH FIRST 30 ROWS ONLY
     </select>
+
+    <!-- ════════════════════════════════════════════════════
+         신규 쿼리 - 장소 추천/검색/나만의장소
+         (TripPlaceDto 기반, trip_place 실제 컬럼 사용)
+    ════════════════════════════════════════════════════ -->
+
+    <!-- 장소 저장 -->
+    <insert id="insertPlace" parameterType="com.tripan.app.domain.dto.TripPlaceDto">
+        <selectKey keyProperty="placeId" resultType="long" order="BEFORE">
+            SELECT SEQ_TRIP_PLACE.NEXTVAL FROM DUAL
+        </selectKey>
+        INSERT INTO trip_place (
+            trip_place_id, member_id, api_place_id,
+            place_name, address, latitude, longitude,
+            category_name, place_url, created_at
+        ) VALUES (
+            #{placeId}, #{memberId}, #{apiContentId},
+            #{placeName}, #{address}, #{latitude}, #{longitude},
+            #{category}, #{imageUrl}, SYSDATE
+        )
+    </insert>
+
+    <!-- api_place_id 중복 체크 -->
+    <select id="findPlaceIdByApiContentId" resultType="java.lang.Long">
+        SELECT trip_place_id
+        FROM trip_place
+        WHERE api_place_id = #{apiContentId}
+        AND ROWNUM = 1
+    </select>
+
+    <!-- 이름+주소 중복 체크 (나만의 장소 등록 시) -->
+    <select id="findPlaceIdByNameAndAddress" resultType="java.lang.Long">
+        SELECT trip_place_id
+        FROM trip_place
+        WHERE place_name = #{placeName}
+          AND address    = #{address}
+          AND ROWNUM = 1
+    </select>
+
+    <!-- 카테고리별 추천 장소 (랜덤) -->
+    <select id="selectRecommendPlaces" resultType="com.tripan.app.domain.dto.TripPlaceDto">
+        SELECT * FROM (
+            SELECT 
+                trip_place_id AS placeId, member_id AS memberId, api_place_id AS apiContentId,
+                place_name AS placeName, address, latitude, longitude,
+                category_name AS category, place_url AS imageUrl, 0 AS isCustom
+            FROM trip_place
+            WHERE member_id IS NULL
+            <if test="cityList != null and cityList.size() > 0">
+                AND (
+                    <foreach collection="cityList" item="city" separator=" OR ">
+                        address LIKE '%' || #{city} || '%'
+                    </foreach>
+                )
+            </if>
+            <if test="category != null and category != 'all'">
+                AND category_name = #{category}
+            </if>
+            ORDER BY DBMS_RANDOM.VALUE
+        )
+        WHERE ROWNUM &lt;= #{limit}
+    </select>
+
+    <!-- 키워드 검색 -->
+    <select id="searchPlacesByKeyword" resultType="com.tripan.app.domain.dto.TripPlaceDto">
+        SELECT
+            trip_place_id AS placeId,
+            member_id     AS memberId,
+            place_name    AS placeName,
+            address,
+            latitude,
+            longitude,
+            category_name AS category,
+            place_url     AS imageUrl,
+            api_place_id  AS apiContentId,
+            CASE WHEN member_id IS NOT NULL THEN 1 ELSE 0 END AS isCustom
+        FROM trip_place
+        WHERE
+            (member_id IS NULL OR member_id = #{currentMemberId})
+            AND (
+                UPPER(place_name) LIKE '%' || UPPER(#{keyword}) || '%'
+                OR UPPER(address) LIKE '%' || UPPER(#{keyword}) || '%'
+            )
+        ORDER BY
+            CASE WHEN member_id = #{currentMemberId} THEN 0 ELSE 1 END,
+            place_name
+        FETCH FIRST 30 ROWS ONLY
+    </select>
+
+    <!-- 나만의 장소 목록 -->
+    <select id="selectMyPlaces" resultType="com.tripan.app.domain.dto.TripPlaceDto">
+        SELECT
+            trip_place_id AS placeId,
+            member_id     AS memberId,
+            place_name    AS placeName,
+            address,
+            latitude,
+            longitude,
+            category_name AS category,
+            place_url     AS imageUrl,
+            1             AS isCustom
+        FROM trip_place
+        WHERE member_id = #{memberId}
+        ORDER BY created_at DESC
+    </select>
+
+    <!-- 단건 조회 -->
+    <select id="selectPlaceById" resultType="com.tripan.app.domain.dto.TripPlaceDto">
+        SELECT
+            trip_place_id AS placeId,
+            member_id     AS memberId,
+            place_name    AS placeName,
+            address,
+            latitude,
+            longitude,
+            category_name AS category,
+            place_url     AS imageUrl,
+            api_place_id  AS apiContentId,
+            CASE WHEN member_id IS NOT NULL THEN 1 ELSE 0 END AS isCustom
+        FROM trip_place
+        WHERE trip_place_id = #{placeId}
+          AND (member_id IS NULL OR member_id = #{currentMemberId})
+    </select>
+
 </mapper>
