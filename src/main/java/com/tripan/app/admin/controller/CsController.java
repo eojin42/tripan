@@ -2,6 +2,7 @@ package com.tripan.app.admin.controller;
 
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -49,6 +50,13 @@ public class CsController {
         if (loginUser == null) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
+        if ("ROLE_ADMIN".equals(loginUser.getRole())) {
+            List<AdminChatRoomDto> unread = csService.getAllSupportRooms()
+                    .stream()
+                    .filter(r -> r.getUnreadCount() > 0)
+                    .collect(Collectors.toList());
+            return ResponseEntity.ok(unread);
+    }
         List<CommunityChatRoomDto> rooms = csService.getSupportRoomsByMemberId(loginUser.getMemberId());
         return ResponseEntity.ok(rooms);
     }
