@@ -5,6 +5,8 @@ import java.util.List;
 import com.tripan.app.domain.dto.CommunityChatRoomDto;
 
 public interface CsManageService {
-	List<CommunityChatRoomDto> getSupportRoomsByMemberId(Long memberId);
+    List<CommunityChatRoomDto> getSupportRoomsByMemberId(Long memberId);
     CommunityChatRoomDto createSupportRoom(Long memberId);
+    List<CommunityChatRoomDto> getAllSupportRooms();
+    void closeRoom(Long roomId);
 }
