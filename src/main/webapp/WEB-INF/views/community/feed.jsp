@@ -81,7 +81,7 @@
     .live-dot { width: 8px; height: 8px; background: #FF6B6B; border-radius: 50%; box-shadow: 0 0 8px #FF6B6B;
       animation: pulse 1.5s infinite; }
 
-    .feed-main { display: flex; flex-direction: column; gap: 24px; margin: 0px auto; width: 100%; min-height: 50vh; } 
+    .feed-main { display: flex; flex-direction: column; gap: 24px; margin: 0px auto; width: 100%; min-height: 50vh; min-width: 0;} 
 
     .widget-header { font-size: 16px; font-weight: 800; margin-bottom: 16px; }
     .festival-list { display: flex; flex-direction: column; gap: 12px; margin-bottom: 8px; }
@@ -1409,6 +1409,38 @@
 		    document.querySelectorAll('.dropdown-content').forEach(d => d.classList.remove('show'));
 		    if (!isShowing) dropdown.classList.add('show');
 		}
+	  
+	  function deletePost(postId) {
+	      if (!confirm('정말 이 게시글을 삭제하시겠습니까? 삭제 후에는 복구할 수 없습니다.')) {
+	          return; 
+	      }
+
+	      fetch(`${pageContext.request.contextPath}/community/api/feed/delete/` + postId, {
+	          method: 'POST',
+	          headers: { 'X-Requested-With': 'Fetch' } 
+	      })
+	      .then(res => {
+	          if (res.status === 401) {
+	              showLoginModal();
+	              throw new Error('Unauthorized');
+	          }
+	          return res.json();
+	      })
+	      .then(data => {
+	          if(data.status === 'success') {
+	              alert("✨ 게시글이 삭제되었습니다.");
+	              location.reload(); 
+	          } else {
+	              alert("삭제 실패: " + data.message);
+	          }
+	      })
+	      .catch(err => {
+	          if(err.message !== 'Unauthorized') {
+	              console.error('게시글 삭제 에러:', err);
+	              alert("게시글 삭제 중 오류가 발생했습니다. 🥲");
+	          }
+	      });
+	  }
 
 	  function toggleFollow(btn, targetMemberId) {
 		    if (typeof IS_LOGGED_IN !== 'undefined' && !IS_LOGGED_IN) {

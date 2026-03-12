@@ -5,7 +5,7 @@
 <style>
 /* 피드 카드 전용 스타일 */
   .feed-card { padding: 0; overflow: hidden; margin-bottom: 0; }
-  .feed-author { display: flex; align-items: center; justify-content: space-between; padding: 24px 28px; }
+  .feed-author { display: flex; align-items: center; justify-content: space-between; padding: 24px 28px; border-bottom: 1px solid rgba(0,0,0,0.05); }
   .author-left { display: flex; align-items: center; gap: 14px; }
   .author-left img { width: 44px; height: 44px; border-radius: 50%; }
   .author-left .name { font-weight: 800; font-size: 16px; }
@@ -18,7 +18,7 @@
   .feed-img img { width: 100%; height: 100%; object-fit: cover; }
   
   .feed-content { padding: 24px 28px 28px; }
-  .feed-text { font-size: 16px; line-height: 1.7; color: var(--text-dark); margin-bottom: 20px; word-break: keep-all; }
+  .feed-text { font-size: 16px; line-height: 1.7; color: var(--text-dark); margin-bottom: 20px; word-break: break-word;overflow-wrap: break-word; }
   .feed-tags { color: var(--sky-blue); font-weight: 700; font-size: 15px; margin-bottom: 24px; }
 
   .itinerary-snippet { background: rgba(240, 248, 255, 0.5); border: 1px solid rgba(137, 207, 240, 0.3); border-radius: 16px; padding: 20px; display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; }
@@ -27,18 +27,21 @@
   .btn-scrap { background: var(--grad-main); color: white; border: none; padding: 12px 24px; border-radius: 50px; font-weight: 800; font-size: 15px; cursor: pointer; box-shadow: 0 4px 16px rgba(137, 207, 240, 0.4); transition: transform 0.3s var(--bounce); display: flex; align-items: center; gap: 8px; }
   .btn-scrap:hover { transform: translateY(-3px) scale(1.05); }
 
-  /* 👇 실수로 지워졌던 기존 버튼 정렬 스타일 (복구!) */
-  .feed-actions { display: flex; gap: 20px; padding-top: 20px; border-top: 1px solid rgba(0,0,0,0.05); }
+  .feed-actions { 
+    display: flex; gap: 20px; 
+    padding-top: 20px; 
+    border-top: 1px solid var(--border-color);
+    margin-top: 20px; 
+  }
   .action-btn { display: flex; align-items: center; gap: 6px; font-size: 15px; font-weight: 700; color: var(--text-gray); cursor: pointer; transition: 0.3s; }
   .action-btn:hover { color: var(--light-pink); }
 
-  /* 👇 새롭게 추가된 좋아요 핑크 하트 스타일 */
   .like-btn-area {
     display: inline-flex;
     align-items: center;
     gap: 4px;
     cursor: pointer;
-    color: #E8849A; /* 프리보드 핑크색 */
+    color: #E8849A; 
     font-size: 15px;
     font-weight: 700;
     user-select: none;
@@ -52,7 +55,6 @@
     line-height: 1;
   }
 
-  /* 무한스크롤 및 모달 등 기타 CSS */
   .infinite-scroll-trigger {
     padding: 30px; text-align: center; color: var(--sky-blue);
     font-size: 15px; font-weight: 800; margin-bottom: 20px;
@@ -124,12 +126,11 @@
     transform: translateY(-2px);
   }
   
-  /* 👇 피드 댓글 영역 스타일 */
   .feed-comment-area {
     display: none;
-    margin-top: 16px; 
-    padding-top: 16px; 
-    border-top: 1px dashed rgba(0,0,0,0.05);
+    margin-top: 20px; 
+    padding-top: 20px; 
+    border-top: 1px solid var(--border-color); 
   }
   .feed-comment-list {
     display: flex; flex-direction: column; gap: 12px; 
@@ -153,27 +154,40 @@
   }
   .comment-input-wrap input:focus { border-color: var(--sky-blue); }
   
+/* 1. 슬라이더 뼈대 */
   .custom-feed-slider {
     position: relative;
     width: 100%;
-    aspect-ratio: 1 / 1; 
     overflow: hidden;
-    background-color: #000;
+    background-color: #F8FAFC; 
   }
+
+  /* 2. 슬라이더 트랙 */
   .slider-track {
     display: flex;
-    height: 100%;
+    align-items: center; 
     transition: transform 0.4s ease-in-out;
   }
+
+  /* 3. 개별 이미지 영역 (여기가 범인이었습니다!) */
   .slider-item {
-    min-width: 100%;
-    height: 100%;
-  }
-  .slider-item img {
+    flex: 0 0 100%; 
+    min-width: 0; /* 🔑 진짜 핵심 마법 코드! 사진 원본 크기 때문에 화면이 터지는 걸 완벽하게 막아줍니다! */
     width: 100%;
-    height: 100%;
-    object-fit: cover;
+    display: flex;
+    justify-content: center;
   }
+
+  /* 4. 실제 이미지 스타일 */
+  .slider-item img {
+    width: 100%; /* 부모(slider-item)를 넘어가지 않게 100% 꽉 채움 */
+    height: auto; 
+    max-height: 600px; 
+    object-fit: contain; 
+    display: block;
+  }
+
+  /* --- 아래 버튼 및 페이지네이션 코드는 기존과 동일 --- */
   .s-btn {
     position: absolute;
     top: 50%; transform: translateY(-50%);
@@ -189,10 +203,10 @@
     display: flex; gap: 6px; z-index: 10;
   }
   .s-dot {
-    width: 6px; height: 6px; background: rgba(255,255,255,0.4);
+    width: 6px; height: 6px; background: rgba(0,0,0,0.3);
     border-radius: 50%; cursor: pointer;
   }
-  .s-dot.active { background: #fff; width: 12px; border-radius: 4px; }
+  .s-dot.active { background: #89CFF0; width: 12px; border-radius: 4px; }
   
 </style>
 

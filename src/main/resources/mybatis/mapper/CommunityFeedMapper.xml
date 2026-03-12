@@ -50,7 +50,7 @@
 	    FROM feed_post F
 	    LEFT JOIN member2 M ON F.member_id = M.member_id
 	    LEFT JOIN trip T ON F.trip_id = T.trip_id
-	    ORDER BY F.post_id DESC
+	    WHERE F.del_yn = 'N'  ORDER BY F.post_id DESC
 	</select>
 	
 	<select id="checkFeedLike" resultType="int">
@@ -112,6 +112,19 @@
         UPDATE post_comment 
         SET del_yn = 'Y' 
         WHERE comment_id = #{commentId} AND member_id = #{memberId}
+    </update>
+    
+    <select id="getFeedWriterId" resultType="long">
+        SELECT member_id 
+        FROM feed_post 
+        WHERE post_id = #{postId}
+    </select>
+
+    <update id="deleteFeedPost">
+        UPDATE feed_post 
+        SET del_yn = 'Y',
+            updated_at = CURRENT_TIMESTAMP -- 언제 삭제(수정)되었는지 기록
+        WHERE post_id = #{postId}
     </update>
 
 
