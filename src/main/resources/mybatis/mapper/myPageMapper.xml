@@ -16,27 +16,35 @@
         FROM dual
     </select>
     
-    <select id="selectVisitedSidoNames" parameterType="long" resultType="java.lang.String">
+    <select id="selectVisitedSidoNames" parameterType="long" resultType="String">
         SELECT DISTINCT r.sido_name
         FROM conquest_map cm
         JOIN region r ON cm.region_id = r.region_id
         WHERE cm.member_id = #{memberId}
+        ORDER BY r.sido_name
     </select>
     
-     <select id="selectManualVisitedSidos" parameterType="long" resultType="java.lang.String">
+     <select id="selectManualVisitedSidos" parameterType="long" resultType="String">
         SELECT DISTINCT r.sido_name
         FROM conquest_map cm
         JOIN region r ON cm.region_id = r.region_id
         WHERE cm.member_id     = #{memberId}
           AND cm.trip_place_id IS NULL
+        ORDER BY r.sido_name
     </select>
     
     <insert id="insertUserVisitedRegion" parameterType="map">
-        INSERT INTO conquest_map (member_id, region_id, conquest_date)
-        SELECT #{memberId}, r.region_id, SYSDATE
+        INSERT INTO conquest_map (conquest_map_id, member_id, region_id, conquest_date)
+        SELECT SEQ_CONQUEST_MAP_ID.NEXTVAL, #{memberId}, r.region_id, SYSDATE
         FROM region r
-        WHERE r.sido_name        = #{sidoName}
+        WHERE r.sido_name = #{sidoName}
           AND r.api_sigungu_code IS NULL
+          AND NOT EXISTS (
+              SELECT 1 FROM conquest_map cm
+              WHERE cm.member_id = #{memberId}
+                AND cm.region_id = r.region_id
+                AND cm.trip_place_id IS NULL
+          )
           AND ROWNUM = 1
     </insert>
     
