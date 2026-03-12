@@ -2,20 +2,36 @@
 <%@ taglib prefix="sec" uri="http://www.springframework.org/security/tags" %>
 
 <style>
-  .login-modal-overlay {
-    position: fixed; inset: 0; background: rgba(0, 0, 0, 0.4); 
+.login-modal-overlay {
+    position: fixed; 
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(0, 0, 0, 0.4); 
     backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
-    display: none; justify-content: center; align-items: center; z-index: 9999;
-    opacity: 0; transition: opacity 0.3s ease;
+    display: flex; justify-content: center; align-items: center; 
+    z-index: 10005;
+    opacity: 0; 
+    visibility: hidden; 
+    transition: opacity 0.3s ease, visibility 0.3s ease; 
   }
-  .login-modal-overlay.show { display: flex; opacity: 1; }
+  
+  .login-modal-overlay.show { 
+    opacity: 1; 
+    visibility: visible;
+    display: flex !important; 
+  }
+  
   .login-modal-card {
     position: relative; background: #FFFFFF; border-radius: 32px; padding: 60px 40px 40px; 
     width: 90%; max-width: 440px; text-align: center;
     box-shadow: 0 20px 40px rgba(0,0,0,0.15); 
-    transform: translateY(20px); transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+    transform: translateY(20px); 
+    transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
   }
-  .login-modal-overlay.show .login-modal-card { transform: translateY(0); }
+  
+  .login-modal-overlay.show .login-modal-card { 
+    transform: translateY(0); 
+  }
+  
   .modal-close-icon {
     position: absolute; top: 24px; right: 24px; background: none; border: none;
     font-size: 20px; color: #A0AEC0; cursor: pointer; transition: color 0.2s;
