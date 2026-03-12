@@ -32,7 +32,7 @@ public class CsController {
 		return "admin/cs/main";
 	}
 	
-	@GetMapping("/admin/inquiry") // 실제 주소: /api/admin/inquiry
+	@GetMapping("/admin/inquiry") 
     @ResponseBody
     public ResponseEntity<?> getInquiryList() {
         // List<InquiryDto> list = csService.getAllInquiries();

@@ -425,6 +425,6 @@
     adminNick: '${sessionScope.loginUser.nickname}' || '관리자'
   };
 </script>
-<script src="${pageContext.request.contextPath}/dist/js/mypage/cs.js"></script>
+<script src="${pageContext.request.contextPath}/dist/js/admin/cs.js"></script>
 </body>
 </html>

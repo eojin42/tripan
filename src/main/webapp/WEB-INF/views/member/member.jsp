@@ -18,7 +18,7 @@
     <div class="signup-card">
       <div style="text-align: center; margin-bottom: 32px;">
         <div class="brand-logo">
-          <span class="tri">Trip</span><span class="pan">pan</span><span style="color: var(--light-pink);">.</span>
+          <span class="tri">Trip</span><span class="pan">an</span><span style="color: var(--light-pink);">.</span>
         </div>
         <p style="color: var(--text-dark); font-size: 15px; font-weight: 600;">${mode=="update" ? "회원정보를 안전하게 수정하세요" : "새로운 여행의 시작, Tripan"}</p>
       </div>
