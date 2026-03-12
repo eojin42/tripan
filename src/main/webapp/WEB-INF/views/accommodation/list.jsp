@@ -302,62 +302,69 @@
     }
   };
 
-  async function fetchAccommodations(isReset = false) {
-    if (isFetching || (!hasMore && !isReset)) return;
-    isFetching = true;
+ 	 async function fetchAccommodations(isReset = false) {
+	    if (isFetching || (!hasMore && !isReset)) return;
+	    isFetching = true;
 
-    if (isReset) {
-        currentOffset = 0;
-        hasMore = true;
-    }
+	    if (isReset) {
+	        currentOffset = 0;
+	        hasMore = true;
+	    }
 
-    const urlParams = new URLSearchParams(window.location.search);
-    const requestData = {
-      region: urlParams.get('regions') || '',
-      checkin: urlParams.get('checkin') || '',
-      checkout: urlParams.get('checkout') || '',
-      adult: parseInt(urlParams.get('adult')) || 0,
-      child: parseInt(urlParams.get('child')) || 0,
-      accTypes: [], accFacilities: [], roomFacilities: [],
-      offset: currentOffset,
-      size: PAGE_SIZE
-    };
+	    const urlParams = new URLSearchParams(window.location.search);
+	    const requestData = {
+	      region: urlParams.get('regions') || '',
+	      checkin: urlParams.get('checkin') || '',
+	      checkout: urlParams.get('checkout') || '',
+	      adult: parseInt(urlParams.get('adult')) || 0,
+	      child: parseInt(urlParams.get('child')) || 0,
+	      
+	      // 🌟 [추가됨] 필터 모달의 값들을 안전하게 가져오기 (없으면 기본값)
+	      minPrice: window.filterState ? window.filterState.minPrice : 0,
+	      maxPrice: window.filterState ? window.filterState.maxPrice : 500000,
+	      accTypes: window.filterState ? window.filterState.accTypes : [],
+	      accFacilities: window.filterState ? window.filterState.accFacilities : [],
+	      roomFacilities: window.filterState ? window.filterState.roomFacilities : [],
+	      
+	      offset: currentOffset,
+	      size: PAGE_SIZE // 🚨 이제 정상적으로 페이징 개수(9개)가 날아갑니다!
+	    };
 
-    try {
-      const response = await fetch('${pageContext.request.contextPath}/accommodation/search', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(requestData)
-      });
-      if (!response.ok) throw new Error('데이터를 불러오지 못했습니다.');
-      
-      const data = await response.json();
-      
-      if (isReset) {
-          currentList = data;
-      } else {
-          currentList = currentList.concat(data);
-      }
-      
-      if (data.length < PAGE_SIZE) {
-          hasMore = false; 
-      }
+	    try {
+	      const response = await fetch('${pageContext.request.contextPath}/accommodation/search', {
+	        method: 'POST', headers: { 'Content-Type': 'application/json' },
+	        body: JSON.stringify(requestData)
+	      });
+	      if (!response.ok) throw new Error('데이터를 불러오지 못했습니다.');
+	      
+	      const data = await response.json();
+	      
+	      if (isReset) {
+	          currentList = data;
+	      } else {
+	          currentList = currentList.concat(data);
+	      }
+	      
+	      if (data.length < PAGE_SIZE) {
+	          hasMore = false; 
+	      }
 
-      window.renderAccommodations(data, !isReset);
-      
-      if (isMapMode) {
-    	  initOrUpdateMap(isReset);
-      }
-      
-      currentOffset += data.length;
-    } catch (error) {
-      console.error(error);
-      if (isReset) {
-        document.getElementById('accommodation-list-container').innerHTML = '<div style="grid-column:1/-1; text-align:center;">오류가 발생했습니다.</div>';
-      }
-    } finally {
-      isFetching = false;
-    }
-  }
+	      window.renderAccommodations(data, !isReset);
+	      
+	      if (isMapMode) {
+	          initOrUpdateMap(isReset);
+	      }
+	      
+	      currentOffset += data.length;
+	    } catch (error) {
+	      console.error(error);
+	      if (isReset) {
+	        document.getElementById('accommodation-list-container').innerHTML = '<div style="grid-column:1/-1; text-align:center;">오류가 발생했습니다.</div>';
+	      }
+	    } finally {
+	      isFetching = false;
+	    }
+	  }
 
   window.toggleBookmark = function(event, placeId, btnElement) {
     event.stopPropagation(); 
