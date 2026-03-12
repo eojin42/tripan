@@ -13,5 +13,8 @@ public class AccommodationDto {
     private String accommodationType; // ACCOMMODATION 테이블
     private Integer minPrice;         // ROOM 테이블에서 해당 숙소의 최저가
     
+    private Double latitude;
+    private Double longitude;
+    
     private int isBookmarked;
 }
