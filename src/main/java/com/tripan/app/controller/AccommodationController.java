@@ -7,6 +7,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -34,6 +35,9 @@ import lombok.RequiredArgsConstructor;
 public class AccommodationController {
 	private final AccommodationService accommodationService;
 	
+	@Value("${tripan.api.kakao-map-api-key}")
+	private String kakaoApiKey;
+	
 	@GetMapping("home")
 	public String main() {
 		
@@ -43,8 +47,11 @@ public class AccommodationController {
     @GetMapping("/list")
     public String list(@RequestParam(value = "region", defaultValue = "서울 전체") String region,
     		Model model) {
-        
+        System.out.println(kakaoApiKey);
+    	
         model.addAttribute("region", region);
+        
+        model.addAttribute("kakaoApiKey", kakaoApiKey);
         
         return "accommodation/list";
     }
