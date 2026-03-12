@@ -1636,6 +1636,10 @@
 		  document.addEventListener("DOMContentLoaded", renderHashtags);
 	  
  function toggleFeedLike(btnElement, postId) {
+	 if (typeof IS_LOGGED_IN !== 'undefined' && !IS_LOGGED_IN) {
+	        showLoginModal();
+	        return;
+	    }
     const url = `${pageContext.request.contextPath}/community/api/feed/like/` + postId;
     
     fetch(url, { 
@@ -1668,13 +1672,17 @@
 }
  
  function openComment(postId) {
+	 if (typeof IS_LOGGED_IN !== 'undefined' && !IS_LOGGED_IN) {
+	        showLoginModal();
+	        return;
+	    }
      const commentArea = document.getElementById('feed-comment-area-' + postId);
      if (commentArea.style.display === 'block') {
-         commentArea.style.display = 'none'; // 열려있으면 닫기
+         commentArea.style.display = 'none'; 
          return;
      }
      commentArea.style.display = 'block';
-     loadFeedComments(postId, false); // 수동으로 열 때는 isInit = false
+     loadFeedComments(postId, false); 
  }
 
  function loadFeedComments(postId, isInit = false) {
@@ -1719,7 +1727,6 @@
              let profileImg = comment.profileImage ? `${pageContext.request.contextPath}/uploads/profile/\${comment.profileImage}` : `${pageContext.request.contextPath}/dist/images/default.png`;
              let isMyComment = (currentUserId !== '' && currentUserId == comment.memberId);
              
-             // ❌ "대화하기" 버튼 제거됨
              let kebabMenu = isMyComment 
                  ? `<button class="kebab-item danger" onclick="deleteFeedComment(\${comment.commentId}, \${postId})">🗑️ 삭제하기</button>`
                  : `<button class="kebab-item danger" onclick="alert('해당 댓글을 신고합니다.')">🚨 신고하기</button>`;
@@ -1751,7 +1758,6 @@
                  let cProfileImg = child.profileImage ? `${pageContext.request.contextPath}/uploads/profile/\${child.profileImage}` : `${pageContext.request.contextPath}/dist/images/default.png`;
                  let isMyChild = (currentUserId !== '' && currentUserId == child.memberId);
                  
-                 // ❌ "대화하기" 버튼 제거됨
                  let childKebab = isMyChild 
                      ? `<button class="kebab-item danger" onclick="deleteFeedComment(\${child.commentId}, \${postId})">🗑️ 삭제하기</button>`
                      : `<button class="kebab-item danger" onclick="alert('해당 댓글을 신고합니다.')">🚨 신고하기</button>`;
@@ -1888,6 +1894,52 @@
          else dot.classList.remove('active');
      });
  }
+ 
+ function showToast(message) {
+     let toast = document.getElementById("toastMsg");
+     
+     if (!toast) {
+         toast = document.createElement("div");
+         toast.id = "toastMsg";
+         toast.style.cssText = `
+             visibility: hidden; min-width: 250px; background-color: rgba(45, 55, 72, 0.9); 
+             color: #fff; text-align: center; border-radius: 20px; padding: 14px 20px; 
+             position: fixed; z-index: 10000; left: 50%; bottom: 30px; 
+             transform: translateX(-50%); font-size: 14px; font-weight: 600; 
+             opacity: 0; transition: opacity 0.3s, bottom 0.3s, visibility 0.3s;
+             box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+         `;
+         document.body.appendChild(toast);
+     }
+     
+     toast.innerText = message;
+     toast.style.visibility = "visible";
+     toast.style.opacity = "1";
+     toast.style.bottom = "50px";
+     
+     setTimeout(function(){ 
+         toast.style.opacity = "0";
+         toast.style.bottom = "30px";
+         setTimeout(() => { toast.style.visibility = "hidden"; }, 300);
+     }, 3000);
+ }
+
+ document.addEventListener('click', function(e) {
+     const composerElement = e.target.closest('.composer-card textarea, .composer-card input, .composer-card button');
+     
+     if (composerElement) {
+         if (typeof IS_LOGGED_IN !== 'undefined' && !IS_LOGGED_IN) {
+             e.preventDefault();   
+             e.stopPropagation(); 
+             
+             showToast("로그인이 필요한 서비스입니다. ✈️");
+             
+             if(typeof composerElement.blur === 'function') {
+                 composerElement.blur();
+             }
+         }
+     }
+ }, true); 
  
   </script>
   
