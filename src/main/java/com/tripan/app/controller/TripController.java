@@ -5,6 +5,7 @@ import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Map;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -20,7 +21,9 @@ import org.springframework.web.bind.annotation.ResponseBody;
 
 import com.tripan.app.domain.dto.TripCreateDto;
 import com.tripan.app.domain.dto.TripDto;
+import com.tripan.app.service.NotificationService;
 import com.tripan.app.service.TripService;
+import com.tripan.app.websocket.WorkspaceEventPublisher;
 
 import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
@@ -31,85 +34,90 @@ import lombok.RequiredArgsConstructor;
 public class TripController {
 
     private final TripService tripService;
+    private final WorkspaceEventPublisher wsPublisher;
+    private final NotificationService notificationService;
+    
+    @Value("${tripan.api.kakao-map-api-key}")
+    private String kakaoMapKey; // yml에서 읽어옴 
 
-
-    // 여행 생성 폼 화면
     @GetMapping("/trip_create")
     public String create(Model model) {
         return "trip/trip_create";
     }
 
-    // 워크스페이스 화면 진입
     @GetMapping("/{tripId}/workspace")
-    public String workspace(@PathVariable("tripId") Long tripId, HttpSession session, Model model) {
+    public String workspace(
+            @PathVariable("tripId") Long tripId,
+            HttpSession session, Model model) {
+
         if (getLoginMemberId(session) == null) return "redirect:/member/login";
 
         TripDto tripDto = tripService.getTripDetails(tripId);
-
-        // 박수 계산
         long nights = ChronoUnit.DAYS.between(
-        	    LocalDate.parse(tripDto.getStartDate().substring(0, 10)),
-        	    LocalDate.parse(tripDto.getEndDate().substring(0, 10))
-        	);
+                LocalDate.parse(tripDto.getStartDate().substring(0, 10)),
+                LocalDate.parse(tripDto.getEndDate().substring(0, 10)));
         String tripNights = nights == 0 ? "당일치기" : (nights + "박 " + (nights + 1) + "일");
 
-        model.addAttribute("tripId",    tripId);
-        model.addAttribute("tripDto",   tripDto);
-        model.addAttribute("tripNights", tripNights);
+        model.addAttribute("tripId",       tripId);
+        model.addAttribute("tripDto",      tripDto);
+        model.addAttribute("tripNights",   tripNights);
+        model.addAttribute("kakaoMapKey",  kakaoMapKey); // jsp 로 전달시킴 
+        
+        String nick = getLoginNickname(session);
+        model.addAttribute("loginNickname", nick != null ? nick : "");
         return "trip/workspace";
     }
 
-    // 여행 생성
     @PostMapping("/create")
     @ResponseBody
-    public ResponseEntity<Map<String, Object>> createTrip(@RequestBody TripCreateDto dto, HttpSession session) {
+    public ResponseEntity<Map<String, Object>> createTrip(
+            @RequestBody TripCreateDto dto, HttpSession session) {
         Long loginMemberId = getLoginMemberId(session);
-        
-        // 디버깅용 
-        System.out.println("====> [DEBUG] DTO Data: " + dto.getTitle() + ", Tags: " + dto.getTags());
-        
-        if (loginMemberId == null) return ResponseEntity.status(401).body(Map.of("success", false, "message", "로그인이 필요합니다"));
-        
+        if (loginMemberId == null)
+            return ResponseEntity.status(401).body(Map.of("success", false, "message", "로그인이 필요합니다"));
         try {
             Long tripId = tripService.createTrip(dto, loginMemberId);
             return ResponseEntity.ok(Map.of("success", true, "tripId", tripId));
         } catch (Exception e) {
-            // 디버깅용 
-        	e.printStackTrace(); 
-            
-            System.err.println("====> [ERROR] createTrip 실패: " + e.getMessage());
-            
+            e.printStackTrace();
             return ResponseEntity.status(500).body(Map.of("success", false, "message", e.getMessage()));
         }
     }
 
-    // 여행 수정 
     @PatchMapping("/{tripId}")
     @ResponseBody
-    public ResponseEntity<Map<String, Object>> updateTrip(@PathVariable Long tripId, @RequestBody TripCreateDto dto, HttpSession session) {
-        if (getLoginMemberId(session) == null) return ResponseEntity.status(401).body(Map.of("success", false));
-
+    public ResponseEntity<Map<String, Object>> updateTrip(
+    		@PathVariable("tripId") Long tripId, @RequestBody TripCreateDto dto, HttpSession session) {
+        if (getLoginMemberId(session) == null)
+            return ResponseEntity.status(401).body(Map.of("success", false));
         try {
             tripService.updateTrip(tripId, dto);
+            String nick = getLoginNickname(session);
+            wsPublisher.publish(tripId, "TRIP_UPDATED", tripId,
+                    nick != null ? nick : "멤버",
+                    WorkspaceEventPublisher.payload(
+                        "tripName",  dto.getTitle(),
+                        "startDate", dto.getStartDate(),
+                        "endDate",   dto.getEndDate()
+                    ));
             return ResponseEntity.ok(Map.of("success", true));
         } catch (Exception e) {
             return ResponseEntity.status(500).body(Map.of("success", false, "message", e.getMessage()));
         }
     }
-    
-    // 여행 삭제 
+
     @DeleteMapping("/{tripId}")
     @ResponseBody
-    public ResponseEntity<Map<String, Object>> deleteTrip(@PathVariable Long tripId, HttpSession session) {
-        if (getLoginMemberId(session) == null) return ResponseEntity.status(401).body(Map.of("success", false));
+    public ResponseEntity<Map<String, Object>> deleteTrip(
+    		@PathVariable("tripId") Long tripId, HttpSession session) {
+        if (getLoginMemberId(session) == null)
+            return ResponseEntity.status(401).body(Map.of("success", false));
         tripService.deleteTrip(tripId);
         return ResponseEntity.ok(Map.of("success", true));
     }
-
-
-    // 링크 공유 초대 수락 (/trip/invite/{inviteCode})
+    
     @GetMapping("/invite/{inviteCode}")
-    public String acceptInviteLink(@PathVariable String inviteCode, HttpSession session) {
+    public String acceptInviteLink(@PathVariable("inviteCode") String inviteCode, HttpSession session) {
         Long loginMemberId = getLoginMemberId(session);
         if (loginMemberId == null) {
             session.setAttribute("redirectAfterLogin", "/trip/invite/" + inviteCode);
@@ -117,18 +125,32 @@ public class TripController {
         }
         try {
             Long tripId = tripService.joinTripViaLink(inviteCode, loginMemberId);
+            String nick = getLoginNickname(session);
+            
+            wsPublisher.publish(tripId, "MEMBER_JOINED", loginMemberId,
+                    nick != null ? nick : "새 멤버",
+                    WorkspaceEventPublisher.payload("nickname", nick != null ? nick : "새 멤버"));
+            
+            // 기존에 있던 동행자들에게 보내는 알림
+            notificationService.notifyAll(tripId, loginMemberId, nick + "님이 여행에 합류했어요 🎉", "ACCEPT");
+            
+            // 방금 합류한 본인에게 보내는 알림 
+            notificationService.notifyOne(tripId, loginMemberId, loginMemberId, "여행 워크스페이스에 합류하셨네요! 환영합니다 ✈️", "SYSTEM");
+            
             return "redirect:/trip/" + tripId + "/workspace";
         } catch (Exception e) {
+            // 에러 원인을 파악하기 위해 로그 추가 (디버깅용)
+            e.printStackTrace(); 
             return "redirect:/?error=invalid_invite";
         }
     }
 
-    // 아이디 검색 초대 (PENDING)
     @PostMapping("/{tripId}/invite/search")
     @ResponseBody
-    public ResponseEntity<Map<String, Object>> inviteBySearch(@PathVariable Long tripId, @RequestBody Map<String, Long> body, HttpSession session) {
-        if (getLoginMemberId(session) == null) return ResponseEntity.status(401).body(Map.of("success", false));
-
+    public ResponseEntity<Map<String, Object>> inviteBySearch(
+    		@PathVariable("tripId") Long tripId, @RequestBody Map<String, Long> body, HttpSession session) {
+        if (getLoginMemberId(session) == null)
+            return ResponseEntity.status(401).body(Map.of("success", false));
         try {
             tripService.inviteMemberToTrip(tripId, body.get("targetMemberId"));
             return ResponseEntity.ok(Map.of("success", true));
@@ -137,40 +159,87 @@ public class TripController {
         }
     }
 
-    // 초대 수락 (알림 클릭 → ACCEPTED)
     @PatchMapping("/{tripId}/member/{memberId}/accept")
     @ResponseBody
-    public ResponseEntity<Map<String, Object>> acceptInvite(@PathVariable Long tripId, @PathVariable Long memberId) {
+    public ResponseEntity<Map<String, Object>> acceptInvite(
+    		@PathVariable("tripId") Long tripId, @PathVariable Long memberId) {
         tripService.acceptTripInvitation(tripId, memberId);
         return ResponseEntity.ok(Map.of("success", true));
     }
 
-    // 담아오기 (딥 카피)
+    // ═══════════════════════════════════════════════════════
+    //  ★ 신규: 초대 거절 (PENDING → 레코드 삭제)
+    // ═══════════════════════════════════════════════════════
+    @DeleteMapping("/{tripId}/member/{memberId}/decline")
+    @ResponseBody
+    public ResponseEntity<Map<String, Object>> declineInvite(
+    		@PathVariable("tripId") Long tripId, @PathVariable Long memberId) {
+        try {
+            tripService.leaveTrip(tripId, memberId); // 내부적으로 trip_member 레코드 삭제
+            return ResponseEntity.ok(Map.of("success", true));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(Map.of("success", false, "message", e.getMessage()));
+        }
+    }
+
+    // ═══════════════════════════════════════════════════════
+    //  ★ 신규: 동행자 강퇴 (방장 전용)
+    // ═══════════════════════════════════════════════════════
+    @DeleteMapping("/{tripId}/member/{memberId}/kick")
+    @ResponseBody
+    public ResponseEntity<Map<String, Object>> kickMember(
+    		@PathVariable("tripId") Long tripId, @PathVariable Long memberId, HttpSession session) {
+        if (getLoginMemberId(session) == null)
+            return ResponseEntity.status(401).body(Map.of("success", false));
+        try {
+            tripService.kickMember(tripId, memberId);
+            return ResponseEntity.ok(Map.of("success", true));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(Map.of("success", false, "message", e.getMessage()));
+        }
+    }
+
+    // ═══════════════════════════════════════════════════════
+    //  ★ 신규: 스스로 나가기
+    // ═══════════════════════════════════════════════════════
+    @DeleteMapping("/{tripId}/leave")
+    @ResponseBody
+    public ResponseEntity<Map<String, Object>> leaveTrip(
+    		@PathVariable("tripId") Long tripId, HttpSession session) {
+        Long loginId = getLoginMemberId(session);
+        if (loginId == null)
+            return ResponseEntity.status(401).body(Map.of("success", false));
+        tripService.leaveTrip(tripId, loginId);
+        return ResponseEntity.ok(Map.of("success", true));
+    }
+
     @PostMapping("/{tripId}/scrap")
     @ResponseBody
-    public ResponseEntity<Map<String, Object>> scrapTrip(@PathVariable Long tripId, HttpSession session) {
+    public ResponseEntity<Map<String, Object>> scrapTrip(
+    		@PathVariable("tripId") Long tripId, HttpSession session) {
         Long loginMemberId = getLoginMemberId(session);
         if (loginMemberId == null) return ResponseEntity.status(401).body(Map.of("success", false));
-
         Long newTripId = tripService.cloneTrip(tripId, loginMemberId);
         return ResponseEntity.ok(Map.of("success", true, "newTripId", newTripId));
     }
 
-    // 태그 자동완성
     @GetMapping("/tag/search")
     @ResponseBody
-    public List<String> searchTags(@RequestParam String keyword) {
+    public List<String> searchTags(@RequestParam("keyword") String keyword) {
         return tripService.searchTags(keyword);
     }
-
 
     private Long getLoginMemberId(HttpSession session) {
         Object user = session.getAttribute("loginUser");
         if (user == null) return null;
-        try {
-            return (Long) user.getClass().getMethod("getMemberId").invoke(user);
-        } catch (Exception e) {
-            return null;
-        }
+        try { return (Long) user.getClass().getMethod("getMemberId").invoke(user); }
+        catch (Exception e) { return null; }
+    }
+
+    private String getLoginNickname(HttpSession session) {
+        Object user = session.getAttribute("loginUser");
+        if (user == null) return null;
+        try { return (String) user.getClass().getMethod("getNickname").invoke(user); }
+        catch (Exception e) { return null; }
     }
 }

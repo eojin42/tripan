@@ -1,5 +1,7 @@
 package com.tripan.app.mapper;
 
+import com.tripan.app.trip.domain.entity.Vote;
+import com.tripan.app.trip.domain.entity.VoteCandidate;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 import java.util.List;
@@ -10,10 +12,12 @@ public interface VoteMapper {
 
     List<Map<String, Object>> selectVotesByTripId(@Param("tripId") Long tripId);
 
-    int insertVote(com.tripan.app.trip.domain.entity.Vote vote);
+    /** Controller에서 Vote 엔티티로 호출 → INSERT 후 voteId PK 세팅 */
+    void insertVote(Vote vote);
 
-    int insertCandidate(com.tripan.app.trip.domain.entity.VoteCandidate candidate);
-    
+    /** Controller에서 VoteCandidate 엔티티로 호출 → INSERT 후 candidateId PK 세팅 */
+    void insertCandidate(VoteCandidate vc);
+
     int existsVoteRecord(
         @Param("voteId")   Long voteId,
         @Param("memberId") Long memberId

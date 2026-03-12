@@ -1,9 +1,10 @@
 package com.tripan.app.controller;
 
 import com.tripan.app.mapper.VoteMapper;
-import com.tripan.app.security.CustomUserDetails; // 💡 조장님 경로 확인!
+import com.tripan.app.security.CustomUserDetails;
 import com.tripan.app.trip.domain.entity.Vote;
 import com.tripan.app.trip.domain.entity.VoteCandidate;
+import com.tripan.app.websocket.WorkspaceEventPublisher;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -16,7 +17,8 @@ import java.util.Map;
 @RequiredArgsConstructor
 public class VoteController {
 
-    private final VoteMapper voteMapper;
+    private final VoteMapper             voteMapper;
+    private final WorkspaceEventPublisher wsPublisher;
 
     @GetMapping
     public List<Map<String, Object>> getVotes(@PathVariable("tripId") Long tripId) {
@@ -26,59 +28,66 @@ public class VoteController {
     @PostMapping
     public ResponseEntity<Map<String, Object>> createVote(
             @PathVariable("tripId") Long tripId,
-            @RequestBody Map<String, Object> body) {
+            @RequestBody Map<String, Object> body,
+            @AuthenticationPrincipal CustomUserDetails userDetails) {
         String title = (String) body.get("title");
         @SuppressWarnings("unchecked")
         List<String> candidates = (List<String>) body.get("candidates");
         
-        if (title == null || title.isBlank()) return ResponseEntity.badRequest().body(Map.of("success", false, "message", "투표 제목이 필요합니다"));
-        if (candidates == null || candidates.size() < 2) return ResponseEntity.badRequest().body(Map.of("success", false, "message", "후보지가 2개 이상 필요합니다"));
+        if (title == null || title.isBlank())
+            return ResponseEntity.ok(Map.of("success", false, "message", "투표 제목이 필요합니다"));
+        if (candidates == null || candidates.size() < 2)
+            return ResponseEntity.ok(Map.of("success", false, "message", "후보지가 2개 이상 필요합니다"));
 
-        // ✨ 투표 마스터 생성
         Vote vote = new Vote();
-        vote.setTripId(tripId);
-        vote.setTitle(title);
+        vote.setTripId(tripId); vote.setTitle(title);
         voteMapper.insertVote(vote);
-        Long realVoteId = vote.getVoteId(); // 정상적인 PK 획득!
-
-        // ✨ 후보지 생성
-        for (String candidate : candidates) {
-            if (candidate != null && !candidate.isBlank()) {
+        Long voteId = vote.getVoteId();
+        
+        for (String c : candidates) {
+            if (c != null && !c.isBlank()) {
                 VoteCandidate vc = new VoteCandidate();
-                vc.setVoteId(realVoteId);
-                vc.setCandidateName(candidate);
+                vc.setVoteId(voteId); vc.setCandidateName(c);
                 voteMapper.insertCandidate(vc);
             }
         }
-        return ResponseEntity.ok(Map.of("success", true, "voteId", realVoteId));
+        String nick = userDetails != null ? userDetails.getMember().getNickname() : "멤버";
+        wsPublisher.publish(tripId, "VOTE_CREATED", voteId, nick,
+                WorkspaceEventPublisher.payload("title", title));
+        return ResponseEntity.ok(Map.of("success", true, "voteId", voteId));
     }
 
-    // ✨ 핵심 수정: 세션 대신 Spring Security 적용!
     @PostMapping("/{voteId}/cast")
     public ResponseEntity<Map<String, Object>> castVote(
             @PathVariable("tripId") Long tripId,
             @PathVariable("voteId") Long voteId,
             @RequestBody Map<String, Object> body,
             @AuthenticationPrincipal CustomUserDetails userDetails) {
-        
         if (userDetails == null)
             return ResponseEntity.status(401).body(Map.of("success", false, "message", "로그인이 필요합니다"));
-
+        
         Long memberId = userDetails.getMember().getMemberId();
-
+        
         if (voteMapper.existsVoteRecord(voteId, memberId) > 0)
-            return ResponseEntity.badRequest().body(Map.of("success", false, "message", "이미 투표했어요"));
+            return ResponseEntity.ok(Map.of("success", false, "message", "이미 투표했어요"));
 
-        Long candidateId = Long.valueOf(body.get("candidateId").toString());
+        Long candidateId = ((Number) body.get("candidateId")).longValue();
         voteMapper.insertVoteRecord(voteId, candidateId, memberId);
+
+        wsPublisher.publish(tripId, "VOTE_CASTED", voteId,
+                userDetails.getMember().getNickname(),
+                WorkspaceEventPublisher.payload("candidateId", candidateId));
         return ResponseEntity.ok(Map.of("success", true));
     }
 
     @DeleteMapping("/{voteId}")
     public ResponseEntity<Map<String, Object>> deleteVote(
             @PathVariable("tripId") Long tripId,
-            @PathVariable("voteId") Long voteId) {
+            @PathVariable("voteId") Long voteId,
+            @AuthenticationPrincipal CustomUserDetails userDetails) {
         voteMapper.deleteVote(voteId, tripId);
+        String nick = userDetails != null ? userDetails.getMember().getNickname() : "멤버";
+        wsPublisher.publish(tripId, "VOTE_DELETED", voteId, nick);
         return ResponseEntity.ok(Map.of("success", true));
     }
 }

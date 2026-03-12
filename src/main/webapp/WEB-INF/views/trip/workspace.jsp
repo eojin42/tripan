@@ -12,6 +12,13 @@
   <link rel="stylesheet" href="${pageContext.request.contextPath}/dist/css/trip/trip.css">
   <link rel="preconnect" href="https://cdn.jsdelivr.net">
   <link href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/variable/pretendardvariable.css" rel="stylesheet">
+  <%-- WebSocket: SockJS + STOMP --%>
+  <script src="https://cdn.jsdelivr.net/npm/sockjs-client@1/dist/sockjs.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/stompjs@2.3.3/lib/stomp.min.js"></script>
+  <%-- 카카오맵 SDK: appkey는 JSP EL로 주입, services·clusterer 함께 로드 --%>
+  <script src="//dapi.kakao.com/v2/maps/sdk.js?appkey=${kakaoMapKey}&libraries=services,clusterer&autoload=false"></script>
+</head>
+<body>
 
 <%-- ══════════ HTML ══════════ --%>
 
@@ -75,6 +82,8 @@
         <span class="live-dot"></span>
         실시간 동기화
       </div>
+      <%-- 저장 상태 표시 --%>
+      <div id="wsSaveStatus" class="ws-save-status" data-state="connected">● 연결됨</div>
 
       <%-- [DB] trip_member 테이블 → role/invitation_status 기반 렌더 --%>
       <div class="avatar-group" title="동행자" onclick="openModal('memberModal')" style="cursor:pointer">
@@ -133,6 +142,8 @@
 
     <%-- 리사이저 핸들 --%>
     <div class="ws-resizer" id="wsResizer" title="드래그로 크기 조절 / 더블클릭으로 초기화"></div>
+	
+	
 
     <%-- 일정 패널 --%>
     <div class="sidebar-panel active" id="panel-schedule">
@@ -339,191 +350,15 @@
           <button class="rp-filter-btn" onclick="filterRec(this,'cafe')">☕ 카페</button>
         </div>
 
+        <%-- ✅ 카드는 workspace.recommend.js가 동적 렌더 --%>
         <div class="rp-cards" id="rpCards">
-
-          <div class="rp-card" data-cat="stay" data-name="스테이 밤편지">
-            <div class="rp-card-img-wrap">
-              <img class="rp-card-thumb-img" src="https://images.unsplash.com/photo-1566073771259-6a8506099945?w=400&q=80&auto=format&fit=crop" alt="스테이 밤편지" loading="lazy" onerror="this.style.display='none'">
-              <span class="rp-card-cat-badge">🏨 숙소</span>
-            </div>
-            <div class="rp-card-info">
-              <div class="rp-card-name">스테이 밤편지</div>
-              <div class="rp-card-addr">서귀포 남원읍 · 오션뷰 독채</div>
-              <div class="rp-card-meta-row">
-                <span class="rp-meta-item">🕐 체크인 15:00</span>
-                <span class="rp-meta-item">⏱ 1박</span>
-              </div>
-              <div class="rp-card-foot">
-                <span class="rp-badge purple">🏨 숙소</span>
-                <button class="rp-add-btn" onclick="event.stopPropagation();openAddToDay('스테이 밤편지','서귀포 남원읍')">+ 일정 추가</button>
-              </div>
-            </div>
+          <div id="rpCardsLoading" style="text-align:center;padding:32px 20px;color:#A0AEC0;">
+            <div style="font-size:32px;margin-bottom:8px;">🗺️</div>
+            <div style="font-size:13px;">추천 장소를 불러오는 중...</div>
           </div>
-          <div class="rp-card" data-cat="stay" data-name="제주 한옥 스테이">
-            <div class="rp-card-img-wrap">
-              <img class="rp-card-thumb-img" src="https://images.unsplash.com/photo-1520250497591-112f2f40a3f4?w=400&q=80&auto=format&fit=crop" alt="제주 한옥 스테이" loading="lazy" onerror="this.style.display='none'">
-              <span class="rp-card-cat-badge">🏨 숙소</span>
-            </div>
-            <div class="rp-card-info">
-              <div class="rp-card-name">제주 한옥 스테이</div>
-              <div class="rp-card-addr">제주시 애월읍 · 한옥 감성</div>
-              <div class="rp-card-meta-row">
-                <span class="rp-meta-item">🕐 체크인 15:00</span>
-                <span class="rp-meta-item">⏱ 1박</span>
-              </div>
-              <div class="rp-card-foot">
-                <span class="rp-badge purple">🏨 숙소</span>
-                <button class="rp-add-btn" onclick="event.stopPropagation();openAddToDay('제주 한옥 스테이','제주시 애월읍')">+ 일정 추가</button>
-              </div>
-            </div>
-          </div>
-          <div class="rp-card" data-cat="tour" data-name="한라산 영실 코스">
-            <div class="rp-card-img-wrap">
-              <img class="rp-card-thumb-img" src="https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=400&q=80&auto=format&fit=crop" alt="한라산 영실 코스" loading="lazy" onerror="this.style.display='none'">
-              <span class="rp-card-cat-badge">🥾 트레킹</span>
-            </div>
-            <div class="rp-card-info">
-              <div class="rp-card-name">한라산 영실 코스</div>
-              <div class="rp-card-addr">서귀포시 · 영실~윗세오름</div>
-              <div class="rp-card-meta-row">
-                <span class="rp-meta-item">🕐 05:00~12:00</span>
-                <span class="rp-meta-item">⏱ 3~4시간</span>
-              </div>
-              <div class="rp-card-foot">
-                <span class="rp-badge blue">🥾 트레킹</span>
-                <button class="rp-add-btn" onclick="event.stopPropagation();openAddToDay('한라산 영실 코스','서귀포시 해안동')">+ 일정 추가</button>
-              </div>
-            </div>
-          </div>
-          <div class="rp-card" data-cat="tour" data-name="협재해수욕장">
-            <div class="rp-card-img-wrap">
-              <img class="rp-card-thumb-img" src="https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=400&q=80&auto=format&fit=crop" alt="협재해수욕장" loading="lazy" onerror="this.style.display='none'">
-              <span class="rp-card-cat-badge">🏖 해수욕</span>
-            </div>
-            <div class="rp-card-info">
-              <div class="rp-card-name">협재해수욕장</div>
-              <div class="rp-card-addr">제주시 한림읍 · 에메랄드 바다</div>
-              <div class="rp-card-meta-row">
-                <span class="rp-meta-item">🕐 연중무휴</span>
-                <span class="rp-meta-item">⏱ 1~2시간</span>
-              </div>
-              <div class="rp-card-foot">
-                <span class="rp-badge pink">🏖 해수욕</span>
-                <button class="rp-add-btn" onclick="event.stopPropagation();openAddToDay('협재해수욕장','제주시 한림읍')">+ 일정 추가</button>
-              </div>
-            </div>
-          </div>
-          <div class="rp-card" data-cat="tour" data-name="비자림">
-            <div class="rp-card-img-wrap">
-              <img class="rp-card-thumb-img" src="https://images.unsplash.com/photo-1448375240586-882707db888b?w=400&q=80&auto=format&fit=crop" alt="비자림" loading="lazy" onerror="this.style.display='none'">
-              <span class="rp-card-cat-badge">🌳 자연</span>
-            </div>
-            <div class="rp-card-info">
-              <div class="rp-card-name">비자림</div>
-              <div class="rp-card-addr">제주시 구좌읍 · 수령 500~800년</div>
-              <div class="rp-card-meta-row">
-                <span class="rp-meta-item">🕐 09:00~18:00</span>
-                <span class="rp-meta-item">⏱ 1~2시간</span>
-              </div>
-              <div class="rp-card-foot">
-                <span class="rp-badge green">🌳 자연</span>
-                <button class="rp-add-btn" onclick="event.stopPropagation();openAddToDay('비자림','제주시 구좌읍')">+ 일정 추가</button>
-              </div>
-            </div>
-          </div>
-          <div class="rp-card" data-cat="tour" data-name="성산일출봉">
-            <div class="rp-card-img-wrap">
-              <img class="rp-card-thumb-img" src="https://images.unsplash.com/photo-1542314831-068cd1dbfeeb?w=400&q=80&auto=format&fit=crop" alt="성산일출봉" loading="lazy" onerror="this.style.display='none'">
-              <span class="rp-card-cat-badge">🏔 관광</span>
-            </div>
-            <div class="rp-card-info">
-              <div class="rp-card-name">성산일출봉</div>
-              <div class="rp-card-addr">서귀포시 성산읍 · 유네스코 세계유산</div>
-              <div class="rp-card-meta-row">
-                <span class="rp-meta-item">🕐 07:00~20:00</span>
-                <span class="rp-meta-item">⏱ 1.5시간</span>
-              </div>
-              <div class="rp-card-foot">
-                <span class="rp-badge blue">🏔 관광</span>
-                <button class="rp-add-btn" onclick="event.stopPropagation();openAddToDay('성산일출봉','서귀포시 성산읍')">+ 일정 추가</button>
-              </div>
-            </div>
-          </div>
-          <div class="rp-card" data-cat="eat" data-name="돔베고기 연구소">
-            <div class="rp-card-img-wrap">
-              <img class="rp-card-thumb-img" src="https://images.unsplash.com/photo-1529543544282-ea669407fca3?w=400&q=80&auto=format&fit=crop" alt="돔베고기 연구소" loading="lazy" onerror="this.style.display='none'">
-              <span class="rp-card-cat-badge">🍽 맛집</span>
-            </div>
-            <div class="rp-card-info">
-              <div class="rp-card-name">돔베고기 연구소</div>
-              <div class="rp-card-addr">제주시 연동 · 현지인 단골맛집</div>
-              <div class="rp-card-meta-row">
-                <span class="rp-meta-item">🕐 11:30~21:00 (월 휴무)</span>
-                <span class="rp-meta-item">⏱ 1~1.5시간</span>
-              </div>
-              <div class="rp-card-foot">
-                <span class="rp-badge pink">🍽 맛집</span>
-                <button class="rp-add-btn" onclick="event.stopPropagation();openAddToDay('돔베고기 연구소','제주시 연동')">+ 일정 추가</button>
-              </div>
-            </div>
-          </div>
-          <div class="rp-card" data-cat="eat" data-name="갈치조림 골목">
-            <div class="rp-card-img-wrap">
-              <img class="rp-card-thumb-img" src="https://images.unsplash.com/photo-1498654896293-37aec27f0cf3?w=400&q=80&auto=format&fit=crop" alt="갈치조림 골목" loading="lazy" onerror="this.style.display='none'">
-              <span class="rp-card-cat-badge">🍽 맛집</span>
-            </div>
-            <div class="rp-card-info">
-              <div class="rp-card-name">갈치조림 골목</div>
-              <div class="rp-card-addr">서귀포시 서홍동 · 제주 향토 해산물</div>
-              <div class="rp-card-meta-row">
-                <span class="rp-meta-item">🕐 11:00~21:00</span>
-                <span class="rp-meta-item">⏱ 1시간</span>
-              </div>
-              <div class="rp-card-foot">
-                <span class="rp-badge pink">🍽 맛집</span>
-                <button class="rp-add-btn" onclick="event.stopPropagation();openAddToDay('갈치조림 골목','서귀포시 서홍동')">+ 일정 추가</button>
-              </div>
-            </div>
-          </div>
-          <div class="rp-card" data-cat="cafe" data-name="카페 이음">
-            <div class="rp-card-img-wrap">
-              <img class="rp-card-thumb-img" src="https://images.unsplash.com/photo-1501339847302-ac426a4a7cbb?w=400&q=80&auto=format&fit=crop" alt="카페 이음" loading="lazy" onerror="this.style.display='none'">
-              <span class="rp-card-cat-badge">☕ 카페</span>
-            </div>
-            <div class="rp-card-info">
-              <div class="rp-card-name">카페 이음</div>
-              <div class="rp-card-addr">서귀포시 대정읍 · 마라도 오션뷰</div>
-              <div class="rp-card-meta-row">
-                <span class="rp-meta-item">🕐 10:00~19:00 (화 휴무)</span>
-                <span class="rp-meta-item">⏱ 1~1.5시간</span>
-              </div>
-              <div class="rp-card-foot">
-                <span class="rp-badge purple">☕ 카페</span>
-                <button class="rp-add-btn" onclick="event.stopPropagation();openAddToDay('카페 이음','서귀포시 대정읍')">+ 일정 추가</button>
-              </div>
-            </div>
-          </div>
-          <div class="rp-card" data-cat="cafe" data-name="카페 숨비소리">
-            <div class="rp-card-img-wrap">
-              <img class="rp-card-thumb-img" src="https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?w=400&q=80&auto=format&fit=crop" alt="카페 숨비소리" loading="lazy" onerror="this.style.display='none'">
-              <span class="rp-card-cat-badge">☕ 카페</span>
-            </div>
-            <div class="rp-card-info">
-              <div class="rp-card-name">카페 숨비소리</div>
-              <div class="rp-card-addr">서귀포시 성산읍 · 일출봉 뷰</div>
-              <div class="rp-card-meta-row">
-                <span class="rp-meta-item">🕐 09:00~18:00 (수 휴무)</span>
-                <span class="rp-meta-item">⏱ 1시간</span>
-              </div>
-              <div class="rp-card-foot">
-                <span class="rp-badge blue">☕ 카페</span>
-                <button class="rp-add-btn" onclick="event.stopPropagation();openAddToDay('카페 숨비소리','서귀포시 성산읍')">+ 일정 추가</button>
-              </div>
-            </div>
-          </div>
-        <div class="rp-no-result" id="rpNoResult">검색 결과가 없어요 🔍</div>
+        <div class="rp-no-result" id="rpNoResult" style="display:none;">검색 결과가 없어요 🔍</div>
         </div><%-- /rp-cards --%>
-      </div>
+      </div><%-- /rp-pane active --%>
 
       <%-- ── 탭: 일정 요약 ── --%>
       <div class="rp-pane" id="rpPane-summary">
@@ -624,52 +459,22 @@
     <div class="map-search-bar">
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
       <input type="text" placeholder="장소, 주소 검색…" id="mapSearchInput">
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="color:var(--light);cursor:pointer" onclick="showToast('🗺️ 카카오맵 연동 후 검색 가능')"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="color:var(--light);cursor:pointer" onclick="mapSearch()"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
     </div>
 
-    <%-- 지도 컨테이너 (Kakao API 연동 전: 더미 지도) --%>
-    <div id="kakaoMap">
-      <div class="dummy-map">
-        <%-- 더미 핀들 --%>
-        <div class="map-pin" style="position:absolute;top:30%;left:35%">
-          <div class="map-pin__bubble">1 공항</div>
-          <div class="map-pin__tail"></div>
-        </div>
-        <div class="map-pin" style="position:absolute;top:55%;left:28%">
-          <div class="map-pin__bubble" style="background:linear-gradient(135deg,#C2B8D9,#E0BBC2)">2 숙소</div>
-          <div class="map-pin__tail" style="background:var(--orchid)"></div>
-        </div>
-        <div class="map-pin" style="position:absolute;top:42%;left:55%">
-          <div class="map-pin__bubble">3 식당</div>
-          <div class="map-pin__tail"></div>
-        </div>
-        <div class="map-pin" style="position:absolute;top:25%;left:65%">
-          <div class="map-pin__bubble" style="background:linear-gradient(135deg,#C2B8D9,#E0BBC2)">Day2 성산일출봉</div>
-          <div class="map-pin__tail" style="background:var(--orchid)"></div>
-        </div>
-        <div class="map-pin" style="position:absolute;top:65%;left:60%">
-          <div class="map-pin__bubble" style="background:linear-gradient(135deg,#A8C8E1,#89CFF0)">Day3 우도</div>
-          <div class="map-pin__tail" style="background:var(--ice)"></div>
-        </div>
-        <svg width="80" height="80" viewBox="0 0 24 24" fill="none" stroke="#A0AEC0" stroke-width="1"><circle cx="12" cy="10" r="3"/><path d="M12 21.7C17.3 17 20 13 20 10a8 8 0 1 0-16 0c0 3 2.7 6.9 8 11.7z"/></svg>
-        <p>카카오맵 API 연동 후 실제 지도가 표시됩니다</p>
-      </div>
-    </div>
+	<div id="kakaoMap" style="width:100%; height:100%; min-height:600px; position:relative; z-index:1;"></div>
 
     <%-- 지도 컨트롤 버튼 --%>
     <div class="map-overlay-controls">
-      <button class="map-ctrl-btn" title="내 위치" onclick="showToast('📍 내 위치 기능 연동 예정')">📍</button>
-      <button class="map-ctrl-btn" title="전체 핀 보기" onclick="showToast('🗺️ 전체 경로 보기')">🗺️</button>
-      <button class="map-ctrl-btn" title="확대" onclick="showToast('+')">+</button>
-      <button class="map-ctrl-btn" title="축소" onclick="showToast('-')">−</button>
+      <button class="map-ctrl-btn" title="내 위치" onclick="mapMoveToMyLocation()">📍</button>
+      <button class="map-ctrl-btn" title="전체 핀 보기" onclick="mapFitAll()">🗺️</button>
+      <button class="map-ctrl-btn" title="확대" onclick="mapZoomIn()">+</button>
+      <button class="map-ctrl-btn" title="축소" onclick="mapZoomOut()">−</button>
     </div>
 
     <%-- 범례 --%>
-    <div class="map-legend">
-      <div class="legend-item"><div class="legend-dot" style="background:linear-gradient(135deg,#89CFF0,#FFB6C1)"></div>Day 1</div>
-      <div class="legend-item"><div class="legend-dot" style="background:linear-gradient(135deg,#C2B8D9,#E0BBC2)"></div>Day 2</div>
-      <div class="legend-item"><div class="legend-dot" style="background:linear-gradient(135deg,#A8C8E1,#89CFF0)"></div>Day 3</div>
-    </div>
+    <%-- ✅ 범례는 JS가 Day 수에 맞게 동적 렌더 --%>
+    <div class="map-legend" id="mapLegend"></div>
 
   </div>
 </div>
@@ -695,24 +500,12 @@
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
         <input type="text" placeholder="장소명, 주소 검색…" id="placeSearchInput" oninput="searchPlace(this.value)">
       </div>
-      <div class="place-results" id="placeResults">
-        <div class="place-result-item" onclick="addPlaceToDay(this, '협재해수욕장', '제주시 한림읍')">
-          <div class="place-result-icon">🏖️</div>
-          <div><div class="place-result-name">협재해수욕장</div><div class="place-result-addr">제주시 한림읍 협재리</div></div>
-        </div>
-        <div class="place-result-item" onclick="addPlaceToDay(this, '한라산 어리목 코스', '제주시 해안동')">
-          <div class="place-result-icon">🏔️</div>
-          <div><div class="place-result-name">한라산 어리목 코스</div><div class="place-result-addr">제주시 해안동</div></div>
-        </div>
-        <div class="place-result-item" onclick="addPlaceToDay(this, '제주 올레시장', '제주시 이도2동')">
-          <div class="place-result-icon">🛒</div>
-          <div><div class="place-result-name">제주 올레시장</div><div class="place-result-addr">제주시 이도2동</div></div>
-        </div>
-        <div class="place-result-item" onclick="addPlaceToDay(this, '카페 봄날', '서귀포시 중문동')">
-          <div class="place-result-icon">☕</div>
-          <div><div class="place-result-name">카페 봄날</div><div class="place-result-addr">서귀포시 중문동</div></div>
-        </div>
-      </div>
+     	<div class="place-results" id="placeResults">
+		  <div style="text-align:center;padding:28px 20px;color:#A0AEC0;">
+		    <div style="font-size:28px;margin-bottom:8px;">🔍</div>
+		    <div style="font-size:13px;">장소명을 2글자 이상 입력하면 검색해요</div>
+		  </div>
+		</div>
     </div>
   </div>
 </div>
@@ -820,9 +613,10 @@
       </div>
       <label class="form-label-sm" style="margin-top:12px;display:block">초대 링크</label>
       <div class="invite-link-box" style="margin-top:6px">
-        <span id="inviteLinkText">https://tripan.kr/invite/abc123xyz</span>
-        <button class="btn-copy" onclick="copyInviteLink()">복사</button>
-      </div>
+		  <%-- 동적 URL 생성 (서버 도메인 + /trip/invite/ + 초대코드) --%>
+		  <span id="inviteLinkText">${pageContext.request.scheme}://${pageContext.request.serverName}:${pageContext.request.serverPort}${pageContext.request.contextPath}/trip/invite/${tripDto.inviteCode}</span>
+		  <button class="btn-copy" onclick="copyInviteLink()">복사</button>
+	  </div>
       <p style="font-size:12px;color:var(--light);margin-top:10px;line-height:1.6;">
         링크를 클릭한 사람은 즉시 ACCEPTED로 참여돼요.<br>
         아이디 검색 초대는 상대방 수락 후 ACCEPTED 처리됩니다.
@@ -1027,9 +821,10 @@
         <label class="form-label-sm">카테고리</label>
         <div style="display:flex;gap:8px;align-items:center;">
           <select class="form-input" id="chk-category" style="flex:1;">
-            <option value="서류 & 결제">📋 서류 &amp; 결제</option>
-            <option value="의류 & 용품">👗 의류 &amp; 용품</option>
-            <option value="의약품">💊 의약품</option>
+            <option value="필수품">🔑 필수품</option>
+            <option value="의류">👗 의류</option>
+            <option value="세면 & 화장품">🪞 세면 &amp; 화장품</option>
+            <option value="비상약">💊 비상약</option>
             <option value="전자기기">📱 전자기기</option>
             <option value="기타">📦 기타</option>
           </select>
@@ -1125,7 +920,7 @@
       <%-- 날짜 --%>
       <div class="form-group" style="margin-bottom:12px">
         <label class="form-label-sm">날짜</label>
-        <input type="date" class="form-input" id="exp-date" value="2026-03-10">
+        <input type="date" class="form-input" id="exp-date">
       </div>
 
       <%-- 🔒 나만 보기 [DB] expense.is_private --%>
@@ -1169,730 +964,17 @@
 
 
 
-<%-- ══════════════════════════════════════════════════
-     JS: TRIP_ID, 체크리스트, 투표, 알림, 가계부
-════════════════════════════════════════════════== --%>
+<%-- ════════════════════════════════════════
+     전역 변수 주입 (JSP EL)
+════════════════════════════════════════ --%>
 <script>
 var TRIP_ID  = ${tripId};
 var CTX_PATH = '${pageContext.request.contextPath}';
-
-/* ══════════════════════════════════════════════
-   페이지 로드
-══════════════════════════════════════════════ */
-document.addEventListener('DOMContentLoaded', function() {
-  loadExpenseList();
-  loadChecklist();
-  loadVotes();
-  loadNotifList();
-});
-
-/* ══════════════════════════════════════════════
-   📝 메모 & 이미지 (장소별)
-══════════════════════════════════════════════ */
-var _memoImages = [];  // { base64: '...', file: File }
-
-function openMemo(btn) {
-  var card = btn.closest('.place-card');
-  var itemId   = card.dataset.id   || '';
-  var itemName = card.dataset.name || '장소';
-  var memo     = card.dataset.memo || '';
-  var imgUrl   = card.dataset.imgurl || '';
-
-  document.getElementById('memoItemId').value  = itemId;
-  document.getElementById('memoPlaceName').textContent = itemName;
-  document.getElementById('memoText').value    = memo;
-  _memoImages = [];
-  renderMemoImgGrid(imgUrl ? [{ src: imgUrl, existing: true }] : []);
-  openModal('memoModal');
-}
-
-function renderMemoImgGrid(imgs) {
-  var grid = document.getElementById('memoImgGrid');
-  var html = '';
-  imgs.forEach(function(img, idx) {
-    var src = img.base64 || img.src || '';
-    html += '<div style="position:relative;">'
-      + '<img src="' + src + '" class="memo-img-thumb" onclick="previewMemoImg('' + src + '')">'
-      + '<button onclick="removeMemoImg(' + idx + ')" style="position:absolute;top:2px;right:2px;width:20px;height:20px;border-radius:50%;background:#FC8181;border:1.5px solid white;color:white;font-size:10px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;">✕</button>'
-      + '</div>';
-  });
-  if (imgs.length < 3) {
-    html += '<div class="memo-img-add" onclick="document.getElementById('memoImgInput').click()">'
-      + '<span style="font-size:22px;">📷</span><span>추가</span></div>';
-  }
-  grid.innerHTML = html;
-}
-
-function onMemoImgSelect(event) {
-  var files = Array.from(event.target.files);
-  var remain = 3 - _memoImages.length;
-  files.slice(0, remain).forEach(function(file) {
-    if (file.size > 5 * 1024 * 1024) { showToast('⚠️ 5MB 이하 이미지만 가능해요'); return; }
-    var reader = new FileReader();
-    reader.onload = function(e) {
-      _memoImages.push({ base64: e.target.result, file: file });
-      renderMemoImgGrid(_memoImages);
-    };
-    reader.readAsDataURL(file);
-  });
-  event.target.value = '';
-}
-
-function removeMemoImg(idx) {
-  _memoImages.splice(idx, 1);
-  renderMemoImgGrid(_memoImages);
-}
-
-function previewMemoImg(src) {
-  window.open(src, '_blank');
-}
-
-function saveMemo() {
-  var itemId = document.getElementById('memoItemId').value;
-  var memo   = document.getElementById('memoText').value.trim();
-  if (!itemId) { showToast('⚠️ 저장할 장소가 없어요'); return; }
-
-  var btnTxt = document.getElementById('saveMemoTxt');
-  btnTxt.textContent = '저장 중…';
-
-  var imageBase64 = _memoImages.length > 0 ? _memoImages[0].base64 : null;
-
-  fetch(CTX_PATH + '/api/itinerary/' + itemId + '/memo', {
-    method: 'PATCH',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ memo: memo, imageBase64: imageBase64 })
-  })
-  .then(function(r) { return r.ok ? r.json() : Promise.reject(r.status); })
-  .then(function(data) {
-    btnTxt.textContent = '저장';
-    if (data.success) {
-      // 카드의 data 속성 업데이트
-      var card = document.querySelector('.place-card[data-id="' + itemId + '"]');
-      if (card) {
-        card.dataset.memo   = memo;
-        card.dataset.imgurl = data.imageUrl || '';
-        // 칩 업데이트
-        var chips = card.querySelector('.place-chips');
-        var memoChip = chips.querySelector('.place-chip.memo');
-        var imgChip  = chips.querySelector('.place-chip.img');
-        if (memo && !memoChip) chips.insertAdjacentHTML('beforeend', '<span class="place-chip memo">📝 메모</span>');
-        if (!memo && memoChip) memoChip.remove();
-        if (data.imageUrl && !imgChip) chips.insertAdjacentHTML('beforeend', '<span class="place-chip img">🖼 사진</span>');
-        if (!data.imageUrl && imgChip) imgChip.remove();
-      }
-      closeModal('memoModal');
-      showToast('✅ 메모가 저장됐어요');
-    } else {
-      showToast('⚠️ ' + (data.message || '저장 실패'));
-    }
-  })
-  .catch(function(err) {
-    btnTxt.textContent = '저장';
-    showToast('⚠️ 서버 오류 (' + err + ')');
-  });
-}
-
-/* ══════════════════════════════════════════════
-   ✅ 체크리스트
-══════════════════════════════════════════════ */
-function loadChecklist() {
-  fetch(CTX_PATH + '/api/trip/' + TRIP_ID + '/checklist')
-    .then(function(r) { return r.ok ? r.json() : Promise.reject(r.status); })
-    .then(function(list) { renderChecklist(list); })
-    .catch(function() {
-      document.getElementById('checkGrid').innerHTML =
-        '<div style="grid-column:1/-1;text-align:center;padding:20px;color:#bbb;font-size:13px">체크리스트를 불러오지 못했어요</div>';
-    });
-}
-
-function renderChecklist(list) {
-  var grid = document.getElementById('checkGrid');
-  if (!list || list.length === 0) {
-    grid.innerHTML = '<div id="checkEmpty" style="grid-column:1/-1;text-align:center;padding:40px 20px;color:#A0AEC0;">'
-      + '<div style="font-size:36px;margin-bottom:10px;">📋</div>'
-      + '<div style="font-size:14px;font-weight:600;margin-bottom:4px;">준비물이 없어요</div>'
-      + '<div style="font-size:12px;">+ 추가 버튼으로 항목을 만들어보세요</div></div>';
-    updateCheckProgress(0, 0);
-    return;
-  }
-
-  // 카테고리별 그룹핑
-  var groups = {};
-  list.forEach(function(item) {
-    var cat = item.category || '기타';
-    if (!groups[cat]) groups[cat] = [];
-    groups[cat].push(item);
-  });
-
-  var total = list.length;
-  var checked = list.filter(function(i) { return i.isChecked === 1 || i.isChecked === true; }).length;
-  updateCheckProgress(checked, total);
-
-  var catEmoji = {
-    '서류 & 결제': '📋', '의류 & 용품': '👗', '의약품': '💊',
-    '전자기기': '📱', '기타': '📦'
-  };
-
-  var html = '';
-  Object.keys(groups).forEach(function(cat) {
-    var emoji = catEmoji[cat] || '📦';
-    html += '<div class="check-category" id="cat-' + encodeURIComponent(cat) + '">'
-      + '<div class="check-cat-label">'
-      + '<span class="check-cat-label-left">' + emoji + ' ' + cat + '</span>'
-      + '</div>';
-    groups[cat].forEach(function(item) {
-      var done = (item.isChecked === 1 || item.isChecked === true) ? ' done' : '';
-      var mgrHtml = item.checkManager
-        ? '<span class="check-by">' + item.checkManager + '</span>' : '';
-      html += '<div class="check-item' + done + '" id="ci-' + item.checklistId + '">'
-        + '<input type="checkbox" id="chk' + item.checklistId + '"'
-        + (done ? ' checked' : '')
-        + ' onchange="toggleCheckItem(' + item.checklistId + ',this)">'
-        + '<label for="chk' + item.checklistId + '">' + item.itemName + '</label>'
-        + mgrHtml
-        + '<button class="check-item-del" onclick="event.stopPropagation();deleteCheckItem(' + item.checklistId + ')" title="삭제">✕</button>'
-        + '</div>';
-    });
-    html += '</div>';
-  });
-
-  // 카테고리 추가 버튼
-  html += '<button class="check-category-add-card" onclick="openCheckModal()">'
-    + '<span style="font-size:22px">+</span><span>항목 추가</span></button>';
-  grid.innerHTML = html;
-}
-
-function updateCheckProgress(checked, total) {
-  var pct = total === 0 ? 0 : Math.round(checked / total * 100);
-  document.getElementById('checkProgressBar').style.width = pct + '%';
-  document.getElementById('checkProgressTxt').textContent = checked + ' / ' + total + ' 완료';
-}
-
-function openCheckModal() {
-  document.getElementById('chk-itemName').value = '';
-  document.getElementById('chk-manager').value = '';
-  document.getElementById('chk-category').value = '서류 & 결제';
-  document.getElementById('chk-categoryNew').style.display = 'none';
-  document.getElementById('chk-category').style.display = '';
-  openModal('addCheckModal');
-}
-
-function toggleCustomCategory() {
-  var sel = document.getElementById('chk-category');
-  var inp = document.getElementById('chk-categoryNew');
-  var btn = document.getElementById('btnToggleCat');
-  if (inp.style.display === 'none') {
-    inp.style.display = ''; sel.style.display = 'none';
-    inp.focus(); if(btn){btn.textContent='선택으로';btn.classList.add('active');}
-  } else {
-    inp.style.display = 'none'; sel.style.display = '';
-    if(btn){btn.textContent='직접입력';btn.classList.remove('active');}
-  }
-}
-
-function submitCheckItem() {
-  var itemName = document.getElementById('chk-itemName').value.trim();
-  if (!itemName) { alert('항목 이름을 입력해주세요'); return; }
-
-  var selEl = document.getElementById('chk-category');
-  var newEl = document.getElementById('chk-categoryNew');
-  var category = (newEl.style.display !== 'none' && newEl.value.trim())
-    ? newEl.value.trim() : selEl.value;
-  var manager = document.getElementById('chk-manager').value.trim();
-
-  fetch(CTX_PATH + '/api/trip/' + TRIP_ID + '/checklist', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ itemName: itemName, category: category, checkManager: manager || null })
-  })
-  .then(function(r) { return r.json(); })
-  .then(function(data) {
-    if (data.success) {
-      closeModal('addCheckModal');
-      loadChecklist();
-      showToast('✅ ' + itemName + ' 추가됨!');
-    } else {
-      alert(data.message || '추가 실패');
-    }
-  })
-  .catch(function() { alert('서버 오류가 발생했어요'); });
-}
-
-function toggleCheckItem(checklistId, checkbox) {
-  var row = document.getElementById('ci-' + checklistId);
-  if (row) row.classList.toggle('done', checkbox.checked);
-
-  // 낙관적 업데이트 후 서버 동기화
-  fetch(CTX_PATH + '/api/trip/' + TRIP_ID + '/checklist/' + checklistId + '/toggle', {
-    method: 'PATCH'
-  })
-  .then(function(r) { return r.json(); })
-  .then(function() { loadChecklist(); })
-  .catch(function() { loadChecklist(); }); // 실패시 롤백
-}
-
-function deleteCheckItem(checklistId) {
-  if (!confirm('항목을 삭제할까요?')) return;
-  fetch(CTX_PATH + '/api/trip/' + TRIP_ID + '/checklist/' + checklistId, {
-    method: 'DELETE'
-  })
-  .then(function() { loadChecklist(); showToast('🗑 항목이 삭제됐어요'); });
-}
-
-/* ══════════════════════════════════════════════
-   🗳️ 투표
-══════════════════════════════════════════════ */
-function loadVotes() {
-  fetch(CTX_PATH + '/api/trip/' + TRIP_ID + '/vote')
-    .then(function(r) { return r.ok ? r.json() : Promise.reject(r.status); })
-    .then(function(rows) { renderVotes(rows); })
-    .catch(function() {
-      document.getElementById('voteGrid').innerHTML =
-        '<div style="text-align:center;padding:20px;color:#bbb;font-size:13px">투표를 불러오지 못했어요</div>';
-    });
-}
-
-function renderVotes(rows) {
-  var grid = document.getElementById('voteGrid');
-  if (!rows || rows.length === 0) {
-    grid.innerHTML = '<div id="voteEmpty" style="text-align:center;padding:40px 20px;color:#A0AEC0;">'
-      + '<div style="font-size:36px;margin-bottom:10px;">🗳️</div>'
-      + '<div style="font-size:14px;font-weight:600;margin-bottom:4px;">투표가 없어요</div>'
-      + '<div style="font-size:12px;">+ 투표 만들기로 의견을 모아보세요</div></div>';
-    return;
-  }
-
-  // voteId 기준으로 그룹핑 (서버에서 candidate별 row 반환)
-  var votes = {};
-  rows.forEach(function(r) {
-    if (!votes[r.voteId]) {
-      votes[r.voteId] = { voteId: r.voteId, title: r.title, totalVotes: r.totalVotes, candidates: [] };
-    }
-    votes[r.voteId].candidates.push(r);
-  });
-
-  var html = '';
-  Object.values(votes).forEach(function(v) {
-    var total = parseInt(v.totalVotes) || 0;
-    html += '<div class="vote-card">'
-      + '<div class="vote-card__emoji">🗳️</div>'
-      + '<div class="vote-card__title">' + v.title + '</div>'
-      + '<div class="vote-card__sub"><span>' + total + '명 참여</span></div>';
-
-    v.candidates.forEach(function(c) {
-      var cnt = parseInt(c.voteCount) || 0;
-      var pct = total === 0 ? 0 : Math.round(cnt / total * 100);
-      html += '<div class="vote-option">'
-        + '<div class="vote-option__top">'
-        + '<span class="vote-option__name">' + c.candidateName + '</span>'
-        + '<span class="vote-option__pct">' + pct + '%</span>'
-        + '</div>'
-        + '<div class="vote-bar-bg"><div class="vote-bar-fill" style="width:' + pct + '%"></div></div>'
-        + '</div>';
-    });
-
-    html += '<div class="vote-card__divider"></div>'
-      + '<div style="display:flex;gap:6px;flex-wrap:wrap;">';
-    v.candidates.forEach(function(c) {
-      html += '<button class="btn-vote" style="flex:1;font-size:12px;"'
-        + ' onclick="castVote(' + v.voteId + ',' + c.candidateId + ',this)">'
-        + c.candidateName + '</button>';
-    });
-    html += '</div>'
-      + '<button class="btn-vote" style="background:transparent;color:#FC8181;border:1px solid #FED7D7;font-size:11px;margin-top:6px;"'
-      + ' onclick="deleteVote(' + v.voteId + ')">🗑 투표 삭제</button>'
-      + '</div>';
-  });
-
-  grid.innerHTML = html;
-}
-
-function openVoteModal() {
-  document.getElementById('vote-title').value = '';
-  var opts = document.getElementById('voteOptions');
-  opts.innerHTML = '<input type="text" class="form-input vote-opt-input" placeholder="후보 1" style="margin-bottom:8px">'
-    + '<input type="text" class="form-input vote-opt-input" placeholder="후보 2" style="margin-bottom:8px">';
-  openModal('createVoteModal');
-}
-
-function addVoteOption() {
-  var opts = document.getElementById('voteOptions');
-  var count = opts.querySelectorAll('.vote-opt-input').length + 1;
-  var inp = document.createElement('input');
-  inp.type = 'text'; inp.className = 'form-input vote-opt-input';
-  inp.placeholder = '후보 ' + count; inp.style.marginBottom = '8px';
-  opts.appendChild(inp);
-}
-
-function submitVote() {
-  var title = document.getElementById('vote-title').value.trim();
-  if (!title) { alert('투표 제목을 입력해주세요'); return; }
-
-  var candidates = Array.from(document.querySelectorAll('.vote-opt-input'))
-    .map(function(i) { return i.value.trim(); })
-    .filter(function(v) { return v.length > 0; });
-
-  if (candidates.length < 2) { alert('후보지를 2개 이상 입력해주세요'); return; }
-
-  fetch(CTX_PATH + '/api/trip/' + TRIP_ID + '/vote', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ title: title, candidates: candidates })
-  })
-  .then(function(r) { return r.json(); })
-  .then(function(data) {
-    if (data.success) {
-      closeModal('createVoteModal');
-      loadVotes();
-      showToast('🗳️ 투표가 생성됐어요!');
-    } else {
-      alert(data.message || '투표 생성 실패');
-    }
-  });
-}
-
-function castVote(voteId, candidateId, btn) {
-  fetch(CTX_PATH + '/api/trip/' + TRIP_ID + '/vote/' + voteId + '/cast', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ candidateId: candidateId })
-  })
-  .then(function(r) { return r.json(); })
-  .then(function(data) {
-    if (data.success) {
-      showToast('✅ 투표 완료!');
-      loadVotes();
-    } else {
-      showToast('⚠️ ' + (data.message || '이미 투표하셨어요'));
-    }
-  });
-}
-
-function deleteVote(voteId) {
-  if (!confirm('투표를 삭제할까요?')) return;
-  fetch(CTX_PATH + '/api/trip/' + TRIP_ID + '/vote/' + voteId, { method: 'DELETE' })
-    .then(function() { loadVotes(); showToast('🗑 투표 삭제됨'); });
-}
-
-/* ══════════════════════════════════════════════
-   🔔 알림
-══════════════════════════════════════════════ */
-var _notifOpen = false;
-
-function toggleNotif() {
-  _notifOpen = !_notifOpen;
-  document.getElementById('notifDropdown').classList.toggle('active', _notifOpen);
-  document.getElementById('notifDim').classList.toggle('active', _notifOpen);
-  if (_notifOpen) loadNotifList();
-}
-function closeNotif() {
-  _notifOpen = false;
-  document.getElementById('notifDropdown').classList.remove('active');
-  document.getElementById('notifDim').classList.remove('active');
-}
-
-function loadNotifList() {
-  fetch(CTX_PATH + '/api/notification?tripId=' + TRIP_ID)
-    .then(function(r) { return r.ok ? r.json() : Promise.reject(r.status); })
-    .then(function(list) {
-      var typeIcon = { INVITE: '✉️', ACCEPT: '✅', SYSTEM: '🔔', VOTE: '🗳️', COMMENT: '💬' };
-      var unreadCount = list.filter(function(n) { return n.isRead === 0; }).length;
-
-      // 알림 뱃지 업데이트
-      var dot = document.getElementById('notifDot');
-      if (dot) dot.style.display = unreadCount > 0 ? 'block' : 'none';
-
-      var html = list.length === 0
-        ? '<div style="text-align:center;padding:32px 20px;color:#A0AEC0;">'
-          + '<div style="font-size:32px;margin-bottom:8px;">🔔</div>'
-          + '<div style="font-size:13px;">새 알림이 없어요</div></div>'
-        : list.map(function(n) {
-            var icon   = typeIcon[n.type] || '🔔';
-            var unread = (n.isRead === 0) ? ' unread' : '';
-            var dot2   = (n.isRead === 0) ? '<div class="notif-item-unread-dot"></div>' : '';
-            return '<div class="notif-item' + unread + '" onclick="markNotifRead(' + n.notificationId + ',this)">'
-              + '<div class="notif-item-icon">' + icon + '</div>'
-              + '<div class="notif-item-info">'
-              + '<div class="notif-item-text">' + n.message + '</div>'
-              + '<div class="notif-item-time">' + n.timeAgo + '</div>'
-              + '</div>' + dot2 + '</div>';
-          }).join('');
-
-      document.getElementById('notifList').innerHTML = html;
-    })
-    .catch(function() {
-      document.getElementById('notifList').innerHTML =
-        '<div style="text-align:center;padding:16px;color:#bbb;font-size:13px">알림을 불러오지 못했어요</div>';
-    });
-}
-
-function markNotifRead(notifId, el) {
-  if (el) el.classList.remove('unread');
-  var dot = el ? el.querySelector('.notif-item-unread-dot') : null;
-  if (dot) dot.remove();
-  fetch(CTX_PATH + '/api/notification/' + notifId + '/read', { method: 'PATCH' });
-  // 뱃지 업데이트
-  var remaining = document.querySelectorAll('.notif-item.unread').length;
-  var badge = document.getElementById('notifDot');
-  if (badge) badge.style.display = remaining > 0 ? 'block' : 'none';
-}
-
-function clearAllNotif() {
-  fetch(CTX_PATH + '/api/notification/read-all?tripId=' + TRIP_ID, { method: 'PATCH' })
-    .then(function() {
-      loadNotifList();
-      showToast('🔔 모두 읽음 처리됐어요');
-    });
-}
-
-/* ══════════════════════════════════════════════
-   💸 가계부
-══════════════════════════════════════════════ */
-function loadExpenseList() {
-  var catIcon = { FOOD:'🍽️', ACCOMMODATION:'🏨', TRANSPORT:'🚗', TOUR:'🎯', CAFE:'☕', SHOPPING:'🛍️', ETC:'📦' };
-  var catName = { FOOD:'식비', ACCOMMODATION:'숙소', TRANSPORT:'교통', TOUR:'관광', CAFE:'카페', SHOPPING:'쇼핑', ETC:'기타' };
-  var catColor = {
-    ACCOMMODATION:'linear-gradient(135deg,#89CFF0,#B5D8F7)',
-    FOOD:'linear-gradient(135deg,#FFB6C1,#FFCDD5)',
-    TRANSPORT:'linear-gradient(135deg,#C2B8D9,#D9C8E8)',
-    TOUR:'linear-gradient(135deg,#A8C8E1,#BFD9ED)',
-    CAFE:'linear-gradient(135deg,#F6C9A0,#FADA9C)',
-    SHOPPING:'linear-gradient(135deg,#A8E6CF,#B5EDD6)',
-    ETC:'linear-gradient(135deg,#D5D8DC,#E8EAED)'
-  };
-
-  function renderEmptyCats() {
-    var el = document.getElementById('expenseCats');
-    if (!el) return;
-    var order = ['ACCOMMODATION','FOOD','TRANSPORT','TOUR'];
-    el.innerHTML = order.map(function(k) {
-      return '<div class="expense-cat">'
-        + '<span class="expense-cat__icon">' + catIcon[k] + '</span>'
-        + '<span class="expense-cat__name">' + catName[k] + '</span>'
-        + '<span class="expense-cat__amt" style="color:#CBD5E0;">₩ 0</span>'
-        + '<div class="expense-cat__bar"><div class="expense-cat__bar-fill" style="width:0%"></div></div>'
-        + '</div>';
-    }).join('');
-  }
-
-  fetch(CTX_PATH + '/api/trip/' + TRIP_ID + '/expense')
-    .then(function(r) { return r.ok ? r.json() : Promise.reject(r.status); })
-    .then(function(list) {
-      /* ── 카테고리별 집계 ── */
-      var catTotals = {};
-      var grandTotal = 0;
-      if (list && list.length > 0) {
-        list.forEach(function(e) {
-          var k = (e.category || 'ETC').toUpperCase();
-          catTotals[k] = (catTotals[k] || 0) + (e.amount || 0);
-          grandTotal += (e.amount || 0);
-        });
-      }
-
-      /* ── 총액 업데이트 ── */
-      var amtEl = document.getElementById('summaryAmt');
-      var perEl = document.getElementById('summaryPer');
-      if (amtEl) amtEl.textContent = '₩ ' + grandTotal.toLocaleString();
-      var memberCnt = Math.max(document.querySelectorAll('.ws-topbar__actions .avatar').length, 1);
-      if (perEl) perEl.textContent = '1인당 약 ₩ ' + Math.round(grandTotal / memberCnt).toLocaleString();
-
-      /* ── 카테고리 카드 렌더 ── */
-      var catsEl = document.getElementById('expenseCats');
-      if (catsEl) {
-        var sortedCats = Object.keys(catTotals).sort(function(a,b){ return catTotals[b]-catTotals[a]; });
-        var top4 = sortedCats.slice(0, 4);
-        if (top4.length === 0) {
-          renderEmptyCats();
-        } else {
-          var maxAmt = catTotals[top4[0]] || 1;
-          catsEl.innerHTML = top4.map(function(k) {
-            var pct = Math.round(catTotals[k] / maxAmt * 100);
-            var bg  = catColor[k] || catColor.ETC;
-            return '<div class="expense-cat">'
-              + '<span class="expense-cat__icon">' + (catIcon[k]||'📦') + '</span>'
-              + '<span class="expense-cat__name">' + (catName[k]||'기타') + '</span>'
-              + '<span class="expense-cat__amt">₩ ' + catTotals[k].toLocaleString() + '</span>'
-              + '<div class="expense-cat__bar"><div class="expense-cat__bar-fill" style="width:' + pct + '%;background:' + bg + ';"></div></div>'
-              + '</div>';
-          }).join('');
-        }
-      }
-
-      /* ── 지출 리스트 렌더 ── */
-      var html = (!list || list.length === 0)
-        ? '<div style="text-align:center;padding:24px 20px;color:#A0AEC0;">'
-          + '<div style="font-size:32px;margin-bottom:8px;">💸</div>'
-          + '<div style="font-size:13px;font-weight:600;margin-bottom:4px;">아직 지출 내역이 없어요</div>'
-          + '<div style="font-size:12px;">+ 지출 추가 버튼으로 기록해보세요</div></div>'
-        : list.slice(0,10).map(function(e) {
-            var k    = (e.category||'ETC').toUpperCase();
-            var icon = catIcon[k] || '📦';
-            var cat  = catName[k] || '기타';
-            var priv = e.isPrivate === 'Y' ? '<span class="expense-private-badge">🔒 나만 보기</span>' : '';
-            var date = e.expenseDate ? e.expenseDate.substring(5).replace(/-/g,'/') : '';
-            return '<div class="expense-item">'
-              + '<div class="expense-item__icon-wrap">' + icon + '</div>'
-              + '<div class="expense-item__info">'
-              + '<div class="expense-item__name">' + (e.description||'') + priv + '</div>'
-              + '<div class="expense-item__detail">'
-              + '<span>' + date + '</span>'
-              + '<span class="expense-payer-chip">💳 ' + (e.payerNickname||'알 수 없음') + '</span>'
-              + '<span class="expense-cat-chip">' + icon + ' ' + cat + '</span>'
-              + '</div></div>'
-              + '<span class="expense-item__amt">₩ ' + (e.amount||0).toLocaleString() + '</span>'
-              + '</div>';
-          }).join('');
-      document.getElementById('expenseList').innerHTML = html;
-    })
-    .catch(function(err) {
-      console.warn('[Expense] 로드 실패:', err);
-      renderEmptyCats();
-      document.getElementById('expenseList').innerHTML =
-        '<div style="text-align:center;padding:16px;color:#bbb;font-size:13px">지출 내역을 불러오지 못했어요</div>';
-    });
-}
-
-/* ══════════════════════════════════════════════
-   🗓️ 일정 드래그앤드롭 (LexoRank 방식)
-   - visitOrder: String (DB, zero-padded 6자리)
-   - 같은 DAY 내 순서 변경 (실시간 삽입 표시)
-   - 다른 DAY로 이동 (place-list 드롭)
-   - 비어있는 DAY drop-zone으로 이동
-   - 편집/분할 모드 모두 적용
-══════════════════════════════════════════════ */
-var _dragCard    = null;
-var _dragDayFrom = null;
-
-/* LexoRank: 인덱스 → zero-padded 6자리 문자열 */
-function toLexoRank(idx) {
-  return String(idx + 1).padStart(6, '0');
-}
-
-function onCardDragStart(e, el) {
-  _dragCard    = el;
-  _dragDayFrom = parseInt(el.dataset.day);
-  e.dataTransfer.effectAllowed = 'move';
-  e.dataTransfer.setData('text/plain', el.dataset.id || '');
-  setTimeout(function() { if (_dragCard) _dragCard.classList.add('dragging'); }, 0);
-}
-
-function onCardDragEnd(e, el) {
-  el.classList.remove('dragging');
-  document.querySelectorAll('.place-card.drag-over').forEach(function(c) { c.classList.remove('drag-over'); });
-  document.querySelectorAll('.drop-zone.dz-active').forEach(function(z) { z.classList.remove('dz-active'); });
-  document.querySelectorAll('.place-list.list-drag-over').forEach(function(l) { l.classList.remove('list-drag-over'); });
-  _dragCard = null;
-}
-
-/* ── 리스트 내 정렬 ── */
-function onListDragOver(e) {
-  if (e.target && e.target.classList && e.target.classList.contains('drop-zone')) return;
-  e.preventDefault();
-  if (!_dragCard) return;
-  e.dataTransfer.dropEffect = 'move';
-  var list = e.currentTarget;
-  list.classList.add('list-drag-over');
-  var after = getDragAfterElement(list, e.clientY);
-  if (after == null) {
-    list.appendChild(_dragCard);
-  } else if (after !== _dragCard) {
-    list.insertBefore(_dragCard, after);
-  }
-  refreshPlaceNums(list);
-}
-
-function onListDragLeave(e) {
-  if (!e.currentTarget.contains(e.relatedTarget)) {
-    e.currentTarget.classList.remove('list-drag-over');
-  }
-}
-
-function onListDrop(e) {
-  e.preventDefault();
-  e.stopPropagation();
-  if (!_dragCard) return;
-  var list  = e.currentTarget;
-  var dayTo = parseInt(list.dataset.day);
-  list.classList.remove('list-drag-over');
-  _dragCard.dataset.day = dayTo;
-  refreshPlaceNums(list);
-  persistPlaceOrder(list, dayTo);
-  showToast('✅ 일정 순서가 변경됐어요');
-}
-
-/* ── 빈 DAY drop-zone (이름 없는 빈 day도 포함) ── */
-function onDropZoneDragOver(e) {
-  e.preventDefault();
-  e.stopPropagation();
-  if (!_dragCard) return;
-  e.dataTransfer.dropEffect = 'move';
-  e.currentTarget.classList.add('dz-active');
-}
-
-function onDropZoneDragLeave(e) {
-  e.currentTarget.classList.remove('dz-active');
-}
-
-function onDropZoneDrop(e) {
-  e.preventDefault();
-  e.stopPropagation();
-  e.currentTarget.classList.remove('dz-active');
-  if (!_dragCard) return;
-  var dayTo = parseInt(e.currentTarget.dataset.day);
-  var list  = document.getElementById('places-' + dayTo);
-  if (!list) return;
-  _dragCard.dataset.day = dayTo;
-  list.appendChild(_dragCard);
-  refreshPlaceNums(list);
-  persistPlaceOrder(list, dayTo);
-  showToast('📍 DAY ' + dayTo + '로 이동됐어요');
-}
-
-/* ── Y 기준 삽입 위치 계산 ── */
-function getDragAfterElement(container, y) {
-  var items = Array.from(container.querySelectorAll('.place-card:not(.dragging)'));
-  return items.reduce(function(closest, child) {
-    var box    = child.getBoundingClientRect();
-    var offset = y - box.top - box.height / 2;
-    if (offset < 0 && offset > closest.offset) return { offset: offset, element: child };
-    return closest;
-  }, { offset: Number.NEGATIVE_INFINITY }).element;
-}
-
-/* ── 번호 갱신 (편집/분할 모두 적용) ── */
-function refreshPlaceNums(list) {
-  list.querySelectorAll('.place-card').forEach(function(card, i) {
-    var n = card.querySelector('.place-num');
-    if (n) n.textContent = i + 1;
-    card.dataset.order = toLexoRank(i);
-  });
-}
-
-/* ── 서버에 LexoRank 기반 순서 저장 ── */
-function persistPlaceOrder(list, dayTo) {
-  var cards = Array.from(list.querySelectorAll('.place-card'));
-  var promises = cards.map(function(card, idx) {
-    var itemId    = card.dataset.id;
-    var visitOrder = toLexoRank(idx);
-    if (!itemId) return Promise.resolve();
-    card.dataset.order = visitOrder;
-    return fetch(CTX_PATH + '/api/itinerary/' + itemId + '/move', {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        dayNumber:   dayTo,
-        visitOrder:  visitOrder
-      })
-    }).catch(function(err) { console.warn('[DnD] 저장 실패 itemId=' + itemId, err); });
-  });
-  Promise.all(promises).then(function() {
-    console.log('[DnD] 전체 순서 저장 완료, dayTo=' + dayTo);
-  });
-}
-
 </script>
 
-<%-- JS 로드 순서 중요: ui.js가 showToast/openModal 등 공통 함수 제공 --%>
+<%-- ════════════════════════════════════════
+     JS 로드 순서 — ui.js 반드시 첫 번째
+════════════════════════════════════════ --%>
 <script src="${pageContext.request.contextPath}/dist/js/trip/workspace.ui.js"></script>
 <script src="${pageContext.request.contextPath}/dist/js/trip/workspace.notif.js"></script>
 <script src="${pageContext.request.contextPath}/dist/js/trip/workspace.schedule.js"></script>
@@ -1900,171 +982,67 @@ function persistPlaceOrder(list, dayTo) {
 <script src="${pageContext.request.contextPath}/dist/js/trip/workspace.vote.js"></script>
 <script src="${pageContext.request.contextPath}/dist/js/trip/workspace.expense.js"></script>
 <script src="${pageContext.request.contextPath}/dist/js/trip/workspace.recommend.js"></script>
-<%--
-  카카오맵 API 연동 시 아래 주석을 해제하세요:
-  <script src="//dapi.kakao.com/v2/maps/sdk.js?appkey=${kakaoAppKey}&libraries=services,clusterer"></script>
---%>
+<script src="${pageContext.request.contextPath}/dist/js/trip/workspace.map.js"></script>
+<script src="${pageContext.request.contextPath}/dist/js/trip/workspace.trip.js"></script>
+
+<%-- 카카오맵 데이터 주입 (JSP EL — 외부 파일 불가)
+     SDK는 <head>에서 이미 로드됨. appkey 재주입 불필요 --%>
 <script>
-var _editTripType = '${tripDto.tripType}';
-var _origStart    = '${fn:substring(tripDto.startDate,0,10)}';
-var _origEnd      = '${fn:substring(tripDto.endDate,0,10)}';
+/* ② 카카오맵 데이터 (workspace.map.js 가 읽음) */
 
-function openTripEditModal() {
-  // 현재 값으로 초기화
-  document.getElementById('editTripTitle').value = '${fn:escapeXml(tripDto.tripName)}';
-  document.getElementById('editTripDesc').value  = '${fn:escapeXml(tripDto.description)}';
-  document.getElementById('editDescCount').textContent = document.getElementById('editTripDesc').value.length;
-  document.getElementById('editStartDate').value = _origStart;
-  document.getElementById('editEndDate').value   = _origEnd;
-  document.getElementById('editTripType').value  = _editTripType;
-  document.getElementById('editDateWarning').style.display = 'none';
+var KAKAO_APP_KEY = '${kakaoMapKey}';
+var KAKAO_CITIES = [];
+<c:forEach var="city" items="${tripDto.cities}">
+  KAKAO_CITIES.push('${fn:escapeXml(city)}');
+</c:forEach>
 
-  // 유형 버튼 active 복원
-  document.querySelectorAll('.edit-type-btn').forEach(function(b) { b.classList.remove('active'); });
-  document.querySelectorAll('.edit-type-btn').forEach(function(b) {
-    if (b.textContent.trim() === getTripTypeLabel(_editTripType)) b.classList.add('active');
-  });
-  openModal('tripEditModal');
-}
+var KAKAO_PLACES = [];
+<c:forEach var="day" items="${tripDto.days}" varStatus="ds">
+  <c:forEach var="item" items="${day.items}" varStatus="is">
+    <c:if test="${not empty item.latitude and item.latitude != 0}">
+      KAKAO_PLACES.push({
+        dayNum : ${day.dayNumber},
+        itemId : ${item.itemId},
+        name   : '${fn:escapeXml(item.placeName)}',
+        lat    : ${item.latitude},
+        lng    : ${item.longitude},
+        order  : ${is.index + 1}
+      });
+    </c:if>
+  </c:forEach>
+</c:forEach>
 
-function getTripTypeLabel(type) {
-  var map = { COUPLE:'커플', FAMILY:'가족', FRIENDS:'친구', SOLO:'혼자', BUSINESS:'비즈니스' };
-  return map[type] || '';
-}
-
-function selectEditType(type, el) {
-  _editTripType = type;
-  document.getElementById('editTripType').value = type;
-  document.querySelectorAll('.edit-type-btn').forEach(function(b) { b.classList.remove('active'); });
-  el.classList.add('active');
-}
-
-document.addEventListener('DOMContentLoaded', function() {
-  // 설명 글자수 카운터
-  var descEl = document.getElementById('editTripDesc');
-  if (descEl) descEl.addEventListener('input', function() {
-    document.getElementById('editDescCount').textContent = this.value.length;
-  });
-
-  // 공개여부 토글 레이블
-  var pubEl = document.getElementById('editIsPublic');
-  if (pubEl) pubEl.addEventListener('change', function() {
-    document.getElementById('editPublicLabel').textContent = this.checked ? '공개 여행' : '비공개 여행';
-  });
-
-  // 날짜 변경 → 경고 메시지 실시간
-  var sEl = document.getElementById('editStartDate');
-  var eEl = document.getElementById('editEndDate');
-  if (sEl && eEl) {
-    sEl.addEventListener('change', checkEditDateWarning);
-    eEl.addEventListener('change', checkEditDateWarning);
-  }
-});
-
-function checkEditDateWarning() {
-  var newS   = document.getElementById('editStartDate').value;
-  var newE   = document.getElementById('editEndDate').value;
-  var warnEl = document.getElementById('editDateWarning');
-  if (!newS || !newE) { warnEl.style.display='none'; return; }
-
-  var os = new Date(_origStart); os.setHours(0,0,0,0);
-  var oe = new Date(_origEnd);   oe.setHours(0,0,0,0);
-  var ns = new Date(newS);       ns.setHours(0,0,0,0);
-  var ne = new Date(newE);       ne.setHours(0,0,0,0);
-
-  // 날짜 유효성
-  if (ns > ne) {
-    warnEl.innerHTML = '⚠️ 종료일이 시작일보다 빠를 수 없어요.';
-    warnEl.className = 'edit-date-warning warn-error';
-    warnEl.style.display = 'block';
-    return;
-  }
-
-  // 겹치는지 확인 (새 기간이 기존 기간과 전혀 겹치지 않으면 장소 초기화 경고)
-  var noOverlap = (ne < os) || (ns > oe);
-  if (noOverlap) {
-    warnEl.innerHTML = '🚨 기존 날짜와 겹치지 않아요. 저장 시 <strong>등록된 장소가 모두 초기화</strong>됩니다.';
-    warnEl.className = 'edit-date-warning warn-danger';
-    warnEl.style.display = 'block';
-    return;
-  }
-
-  // 날짜가 줄어드는 경우 (종료일이 기존보다 앞으로)
-  if (ne < oe || ns > os) {
-    // 늘어나기만 하면 경고 없음
-    var shrinks = ne < oe || ns > os;
-    if (ne < oe) {
-      warnEl.innerHTML = '📋 종료일이 줄었어요. <strong>삭제되는 날짜의 일정이 제거</strong>됩니다.';
-      warnEl.className = 'edit-date-warning warn-caution';
-      warnEl.style.display = 'block';
-      return;
-    }
-    if (ns > os) {
-      warnEl.innerHTML = '📋 시작일이 늦어졌어요. <strong>삭제되는 날짜의 일정이 제거</strong>됩니다.';
-      warnEl.className = 'edit-date-warning warn-caution';
-      warnEl.style.display = 'block';
-      return;
-    }
-  }
-
-  warnEl.style.display = 'none';
-}
-
-function submitTripEdit() {
-  var title   = document.getElementById('editTripTitle').value.trim();
-  var desc    = document.getElementById('editTripDesc').value.trim();
-  var startD  = document.getElementById('editStartDate').value;
-  var endD    = document.getElementById('editEndDate').value;
-  var type    = document.getElementById('editTripType').value;
-  var isPublic= document.getElementById('editIsPublic').checked ? 1 : 0;
-
-  if (!title)          { alert('여행 제목을 입력해 주세요.'); return; }
-  if (!startD || !endD){ alert('날짜를 입력해 주세요.'); return; }
-  if (startD > endD)   { alert('종료일이 시작일보다 빠를 수 없어요.'); return; }
-
-  // 경고 있으면 confirm
-  var warn = document.getElementById('editDateWarning');
-  if (warn.style.display !== 'none' && warn.className.includes('warn-danger')) {
-    if (!confirm('등록된 장소가 모두 초기화됩니다. 계속 진행할까요?')) return;
-  }
-  if (warn.style.display !== 'none' && warn.className.includes('warn-caution')) {
-    if (!confirm('삭제되는 날짜의 일정이 제거됩니다. 계속 진행할까요?')) return;
-  }
-
-  var btn = document.getElementById('btnEditSave');
-  btn.disabled = true; btn.textContent = '저장 중…';
-
-  fetch(CTX_PATH + '/trip/' + TRIP_ID, {
-    method: 'PATCH',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      title:       title,
-      tripName:    title,
-      description: desc,
-      startDate:   startD + 'T00:00:00',
-      endDate:     endD   + 'T00:00:00',
-      tripType:    type,
-      isPublic:    isPublic,
-      cities:      null
-    })
-  })
-  .then(function(r) { return r.json(); })
-  .then(function(d) {
-    if (d.success) {
-      closeModal('tripEditModal');
-      location.reload();
-    } else {
-      alert('수정 실패: ' + (d.message || '오류가 발생했습니다.'));
-      btn.disabled = false; btn.textContent = '저장하기';
-    }
-  })
-  .catch(function(e) {
-    alert('오류가 발생했습니다: ' + e.message);
-    btn.disabled = false; btn.textContent = '저장하기';
-  });
-}
-
+var KAKAO_DAY_NUMS = [];
+<c:forEach var="day" items="${tripDto.days}">
+  KAKAO_DAY_NUMS.push(${day.dayNumber});
+</c:forEach>
 </script>
 
+<%-- 여행 편집 데이터 주입 (workspace.trip.js 가 읽음) --%>
+<script>
+/* ③ 여행 편집 초기값 */
+var TRIP_META = {
+  tripName:    '${fn:escapeXml(tripDto.tripName)}',
+  description: '${fn:escapeXml(tripDto.description)}',
+  tripType:    '${tripDto.tripType}',
+  origStart:   '${fn:substring(tripDto.startDate,0,10)}',
+  origEnd:     '${fn:substring(tripDto.endDate,0,10)}'
+};
+</script>
+
+<%-- 동기화 토스트 (우상단) --%>
+<div id="wsToast" class="ws-toast"></div>
+
+<%-- WebSocket 클라이언트 --%>
+<script src="${pageContext.request.contextPath}/dist/js/trip/workspace.ws.js"></script>
+<script>
+  /* MY_NICK: TripController.workspace()에서 loginNickname 모델로 전달 */
+  var MY_NICK = '${fn:escapeXml(loginNickname)}';
+
+  document.addEventListener('DOMContentLoaded', function() {
+    wsConnect(TRIP_ID, CTX_PATH, MY_NICK);
+  });
+</script>
+<jsp:include page="/WEB-INF/views/layout/footerResources.jsp" />
 </body>
 </html>

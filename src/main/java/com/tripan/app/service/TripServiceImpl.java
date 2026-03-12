@@ -304,9 +304,7 @@ public class TripServiceImpl implements TripService {
             TripMember nm = new TripMember(); nm.setTripId(trip.getTripId()); nm.setMemberId(memberId);
             nm.setRole("EDITOR"); nm.setInvitationStatus("ACCEPTED");
             tripMemberRepository.save(nm);
-            Long ownerId = tripMemberRepository.findByTripIdAndRole(trip.getTripId(), "OWNER")
-                .map(TripMember::getMemberId).orElse(null);
-            saveNotification(trip.getTripId(), ownerId, memberId, "새 동행자가 합류했어요 🎉", "ACCEPT");
+            
             messagingTemplate.convertAndSend("/sub/trip/" + trip.getTripId(),
                 Map.of("action", "NEW_MEMBER_JOINED", "memberId", memberId));
         }
@@ -327,9 +325,7 @@ public class TripServiceImpl implements TripService {
             .orElseThrow(() -> new IllegalArgumentException("초대 내역이 없습니다."));
         member.setInvitationStatus("ACCEPTED");
         tripMemberRepository.save(member);
-        Long ownerId = tripMemberRepository.findByTripIdAndRole(tripId, "OWNER")
-            .map(TripMember::getMemberId).orElse(null);
-        saveNotification(tripId, ownerId, memberId, "동행자가 초대를 수락했어요 ✅", "ACCEPT");
+       
         messagingTemplate.convertAndSend("/sub/trip/" + tripId,
             Map.of("action", "NEW_MEMBER_JOINED", "memberId", memberId));
     }

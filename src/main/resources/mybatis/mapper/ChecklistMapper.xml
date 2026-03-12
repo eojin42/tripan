@@ -16,11 +16,15 @@
         ORDER BY category, checklist_id ASC
     </select>
 
-    <!-- 항목 추가 (IDENTITY PK) -->
-    <insert id="insertItem" useGeneratedKeys="true" keyProperty="checklistId" parameterType="com.tripan.app.trip.domain.entity.TripChecklist">
-    INSERT INTO trip_checklist (trip_id, item_name, category, is_checked, check_manager)
-    VALUES (#{tripId}, #{itemName}, #{category}, 0, #{checkManager})
-	</insert>
+    <!--
+      항목 추가
+      파라미터: TripChecklist 엔티티 (tripId, itemName, category, checkManager)
+      keyProperty="checklistId" → INSERT 후 PK를 item.checklistId 에 세팅
+    -->
+    <insert id="insertItem" useGeneratedKeys="true" keyProperty="checklistId" keyColumn="CHECKLIST_ID">
+        INSERT INTO trip_checklist (trip_id, item_name, category, is_checked, check_manager)
+        VALUES (#{tripId}, #{itemName}, #{category}, 0, #{checkManager})
+    </insert>
 
     <!-- 체크 토글 (0↔1) -->
     <update id="toggleItem">
