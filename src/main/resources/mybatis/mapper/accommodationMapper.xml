@@ -107,6 +107,16 @@
             p.ADDRESS as region, p.DESCRIPTION as description,
             a.CHECKINTIME as checkinTime,
             a.CHECKOUTTIME as checkoutTime
+            
+            <choose>
+                <when test="memberId != null">
+                    , (SELECT COUNT(*) FROM BOOKMARK bk WHERE bk.PLACE_ID = p.PLACE_ID AND bk.MEMBER_ID = #{memberId}) as isBookmarked
+                </when>
+                <otherwise>
+                    , 0 as isBookmarked
+                </otherwise>
+            </choose>
+            
         FROM PLACE p
         JOIN ACCOMMODATION a ON p.PLACE_ID = a.PLACE_ID
         WHERE p.PLACE_ID = #{placeId}

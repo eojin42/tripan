@@ -44,7 +44,7 @@ public class AccommodationController {
 		return "accommodation/home";
 	}
 	
-    @GetMapping("/list")
+    @GetMapping("list")
     public String list(@RequestParam(value = "region", defaultValue = "서울 전체") String region,
     		Model model) {
         System.out.println(kakaoApiKey);
@@ -56,7 +56,7 @@ public class AccommodationController {
         return "accommodation/list";
     }
     
-    @PostMapping("/search")
+    @PostMapping("search")
     @ResponseBody 
     public List<AccommodationDto> searchAccommodations(@RequestBody AdSearchConditionDto condition,
     										HttpSession session) {
@@ -69,17 +69,19 @@ public class AccommodationController {
         return accommodationService.searchAccommodations(condition);
     }
     
-    @GetMapping("/detail/{id}")
-    public String detail(@PathVariable("id") Long id, Model model) {
+    @GetMapping("detail/{id}")
+    public String detail(@PathVariable("id") Long id, HttpSession session, Model model) {
         
-        AccommodationDetailDto detail = accommodationService.getAccommodationDetail(id);
-        
+    	MemberDto loginUser = (MemberDto) session.getAttribute("loginUser");
+        Long memberId = (loginUser != null) ? loginUser.getMemberId() : null;
+
+        AccommodationDetailDto detail = accommodationService.getAccommodationDetail(id, memberId);
         model.addAttribute("detail", detail);
-        
+
         return "accommodation/detail";
     }
     
-    @GetMapping("/reservation")
+    @GetMapping("reservation")
     public String reservationForm(
             @RequestParam("roomId") String roomId,
             @RequestParam(value = "checkin", defaultValue = "") String checkin,
@@ -121,7 +123,7 @@ public class AccommodationController {
         return "accommodation/reservation";
     }
     
-    @PostMapping("/check-lock")
+    @PostMapping("check-lock")
     @ResponseBody
     public Map<String, Object> checkLock(@RequestBody Map<String, String> payload, HttpSession session) {
         String roomId = payload.get("roomId");
@@ -138,7 +140,7 @@ public class AccommodationController {
         return response;
     }
     
-    @PostMapping("/release-lock")
+    @PostMapping("release-lock")
     @ResponseBody
     public void releaseLock(@RequestBody Map<String, String> payload, HttpSession session) {
         String roomId = payload.get("roomId");
@@ -150,7 +152,7 @@ public class AccommodationController {
     }
     
     
-    @PostMapping("/complete")
+    @PostMapping("complete")
     @ResponseBody
     public Map<String, Object> completeReservation(
             @RequestBody ReservationRequestDto requestDto, 
@@ -187,7 +189,7 @@ public class AccommodationController {
         return response;
     }
     
-    @PostMapping("/bookmark")
+    @PostMapping("bookmark")
     @ResponseBody
     public Map<String, Object> toggleBookmark(@RequestBody Map<String, Long> payload, HttpSession session) {
         Map<String, Object> response = new HashMap<>();

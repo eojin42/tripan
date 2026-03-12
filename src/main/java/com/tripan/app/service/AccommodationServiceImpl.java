@@ -31,9 +31,9 @@ public class AccommodationServiceImpl implements AccommodationService{
 
 
 	@Override
-	public AccommodationDetailDto getAccommodationDetail(Long placeId) {
+	public AccommodationDetailDto getAccommodationDetail(Long placeId, Long memberId) {
 		
-		AccommodationDetailDto detail = mapper.selectAccommodationDetail(placeId);
+		AccommodationDetailDto detail = mapper.selectAccommodationDetail(placeId, memberId);
         
         if (detail != null) {
             detail.setImages(mapper.selectAccommodationImages(placeId));

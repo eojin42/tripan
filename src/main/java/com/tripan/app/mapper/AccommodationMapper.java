@@ -15,7 +15,7 @@ import com.tripan.app.domain.dto.RoomDto;
 public interface AccommodationMapper {
 	public List<AccommodationDto> selectAccommodationList(AdSearchConditionDto condition);
 	
-	public AccommodationDetailDto selectAccommodationDetail(Long placeId);
+	AccommodationDetailDto selectAccommodationDetail(@Param("placeId") Long placeId, @Param("memberId") Long memberId);
     
     public List<String> selectAccommodationImages(Long placeId);
     
