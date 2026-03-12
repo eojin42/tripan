@@ -11,7 +11,7 @@ import com.tripan.app.domain.dto.RoomDto;
 public interface AccommodationService {
 	public List<AccommodationDto> searchAccommodations(AdSearchConditionDto condition);
 	
-	public AccommodationDetailDto getAccommodationDetail(Long placeId);
+	public AccommodationDetailDto getAccommodationDetail(Long placeId, Long memberId);
 	
 	public RoomDto findRoomById(String roomId);
 	

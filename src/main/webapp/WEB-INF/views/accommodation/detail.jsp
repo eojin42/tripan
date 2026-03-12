@@ -167,8 +167,15 @@
             <div class="acc-location">📍 숙소 위치보기 > </div>
           </div>
           <div class="action-icons">
-            <span>♡</span>
-            <span>🔗</span>
+            <c:set var="svgFill" value="${detail.isBookmarked > 0 ? '#4A44F2' : 'none'}" />
+            <c:set var="svgStroke" value="${detail.isBookmarked > 0 ? '#4A44F2' : 'currentColor'}" />
+            
+            <div class="wish-btn" onclick="toggleBookmark(event, ${detail.placeId}, this)" style="display:flex; align-items:center; cursor:pointer;">
+                <svg width="28" height="28" viewBox="0 0 24 24" fill="${svgFill}" stroke="${svgStroke}" stroke-width="2">
+                    <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"></path>
+                </svg>
+            </div>
+            <span style="display:flex; align-items:center;">🔗</span>
           </div>
         </div>
 
@@ -291,7 +298,50 @@
 </div>
 
 <script type="text/javascript">
+window.toggleBookmark = function(event, placeId, btnElement) {
+    event.stopPropagation(); 
+    
+    const isLoggedIn = ${not empty sessionScope.loginUser};
+    if (!isLoggedIn) {
+        alert("로그인이 필요한 서비스입니다.");
+        location.href = '${pageContext.request.contextPath}/member/login';
+        return; 
+    }
+
+    fetch('${pageContext.request.contextPath}/accommodation/bookmark', {
+        method: 'POST', 
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ placeId: placeId })
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (!data.success) {
+            alert(data.message); return;
+        }
+        
+        const svg = btnElement.querySelector('svg');
+        if (data.isBookmarked) {
+            svg.setAttribute('fill', '#4A44F2'); 
+            svg.setAttribute('stroke', '#4A44F2');
+        } else {
+            svg.setAttribute('fill', 'none'); 
+            svg.setAttribute('stroke', 'currentColor'); // 디테일은 검정색(currentColor) 유지
+        }
+    })
+    .catch(err => console.error(err));
+};
+
 function goToReserve(roomId) {
+    
+    // JSP(JSTL)를 활용해 현재 로그인 유저가 있는지 브라우저 단에서 즉시 확인!
+    const isLoggedIn = ${not empty sessionScope.loginUser};
+    
+    if (!isLoggedIn) {
+        alert("로그인이 필요한 서비스입니다.");
+        location.href = '${pageContext.request.contextPath}/member/login';
+        return; 
+    }
+
     const urlParams = new URLSearchParams(window.location.search);
     const checkin = urlParams.get('checkin') || '';
     const checkout = urlParams.get('checkout') || '';
@@ -303,7 +353,7 @@ function goToReserve(roomId) {
       return;
     }
 
-    // 🌟 서버에 "나 이 방 5분만 잠가도 돼?" 하고 물어봄
+    // 서버에 "나 이 방 5분만 잠가도 돼?" 하고 물어봄
     fetch('${pageContext.request.contextPath}/accommodation/check-lock', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -312,17 +362,17 @@ function goToReserve(roomId) {
     .then(res => res.json())
     .then(data => {
         if (data.success) {
-            // 허락 받으면 폼으로 이동
+            // 락 허락 받으면 예약 폼으로 이동
             location.href = `${pageContext.request.contextPath}/accommodation/reservation?roomId=` + roomId 
                           + `&checkin=` + checkin + `&checkout=` + checkout 
                           + `&adult=` + adult + `&child=` + child;
         } else {
-            // 거절 당하면 알림창
+            // 락 거절 당하면 알림창
             alert(data.message);
         }
     })
     .catch(err => alert("서버 통신 오류가 발생했습니다."));
- }
+}
 </script>
 
 <jsp:include page="../accommodation/searchModal.jsp" />

@@ -366,28 +366,34 @@
 	    }
 	  }
 
-  window.toggleBookmark = function(event, placeId, btnElement) {
-    event.stopPropagation(); 
-    fetch('${pageContext.request.contextPath}/accommodation/bookmark', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ placeId: placeId })
-    })
-    .then(res => res.json())
-    .then(data => {
-        if (!data.success) {
-            alert(data.message);
-            if (data.message.includes('로그인')) location.href = '${pageContext.request.contextPath}/member/login';
-            return;
-        }
-        const svg = btnElement.querySelector('svg');
-        if (data.isBookmarked) {
-            svg.setAttribute('fill', '#4A44F2'); svg.setAttribute('stroke', '#4A44F2');
-        } else {
-            svg.setAttribute('fill', 'none'); svg.setAttribute('stroke', 'white');
-        }
-    })
-    .catch(err => console.error(err));
-  };
+ 	window.toggleBookmark = function(event, placeId, btnElement) {
+ 	    event.stopPropagation(); 
+ 	    
+ 	    const isLoggedIn = ${not empty sessionScope.loginUser};
+ 	    if (!isLoggedIn) {
+ 	        alert("로그인이 필요한 서비스입니다.");
+ 	        location.href = '${pageContext.request.contextPath}/member/login';
+ 	        return;
+ 	    }
+
+ 	    fetch('${pageContext.request.contextPath}/accommodation/bookmark', {
+ 	        method: 'POST', headers: { 'Content-Type': 'application/json' },
+ 	        body: JSON.stringify({ placeId: placeId })
+ 	    })
+ 	    .then(res => res.json())
+ 	    .then(data => {
+ 	        if (!data.success) {
+ 	            alert(data.message); return;
+ 	        }
+ 	        const svg = btnElement.querySelector('svg');
+ 	        if (data.isBookmarked) {
+ 	            svg.setAttribute('fill', '#4A44F2'); svg.setAttribute('stroke', '#4A44F2');
+ 	        } else {
+ 	            svg.setAttribute('fill', 'none'); svg.setAttribute('stroke', 'white');
+ 	        }
+ 	    })
+ 	    .catch(err => console.error(err));
+ 	  };
 
   document.addEventListener("DOMContentLoaded", () => {
     fetchAccommodations(true);
