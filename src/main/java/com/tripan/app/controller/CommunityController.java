@@ -413,5 +413,31 @@ public class CommunityController {
             return ResponseEntity.status(500).body(Map.of("status", "error", "message", "서버 오류가 발생했습니다."));
         }
     }
+    
+    /**
+     * 🗑️ 게시글 삭제 
+     */
+    @PostMapping("/api/feed/delete/{postId}")
+    @ResponseBody
+    public ResponseEntity<Map<String, Object>> deleteFeedPost(@PathVariable("postId") Long postId, HttpSession session) {
+        
+        MemberDto loginUser = (MemberDto) session.getAttribute("loginUser");
+        if (loginUser == null) {
+            return ResponseEntity.status(401).body(Map.of("status", "error", "message", "로그인이 필요합니다."));
+        }
+
+        try {
+            boolean isDeleted = feedService.deleteFeed(postId, loginUser.getMemberId());
+            
+            if (isDeleted) {
+                return ResponseEntity.ok(Map.of("status", "success", "message", "게시글이 삭제되었습니다."));
+            } else {
+                return ResponseEntity.status(403).body(Map.of("status", "error", "message", "삭제 권한이 없거나 이미 삭제된 게시글입니다."));
+            }
+        } catch (Exception e) {
+            log.error("게시글 삭제 중 에러 발생 (게시글 ID: {})", postId, e);
+            return ResponseEntity.status(500).body(Map.of("status", "error", "message", "서버 오류가 발생했습니다."));
+        }
+    }
 
 }

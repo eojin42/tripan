@@ -36,4 +36,7 @@ public interface CommunityFeedMapper {
     
     int deleteFeedComment(@Param("commentId") Long commentId, @Param("memberId") Long memberId);
     
+    Long getFeedWriterId(Long postId);
+    int deleteFeedPost(Long postId);
+    
 }

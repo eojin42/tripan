@@ -18,7 +18,9 @@ import com.tripan.app.domain.dto.CommunityFeedWriteRequestDto;
 import com.tripan.app.mapper.CommunityFeedMapper;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor 
 public class CommunityFeedServiceImpl implements CommunityFeedService {
@@ -129,6 +131,25 @@ public class CommunityFeedServiceImpl implements CommunityFeedService {
     @Transactional
     public boolean deleteFeedComment(Long commentId, Long memberId) {
         int result = feedMapper.deleteFeedComment(commentId, memberId);
+        return result > 0;
+    }
+    
+    @Override
+    @Transactional
+    public boolean deleteFeed(Long postId, Long currentMemberId) {
+        Long writerId = feedMapper.getFeedWriterId(postId);
+        
+        if (writerId == null) {
+            log.warn("존재하지 않는 게시글 삭제 시도 - postId: {}", postId);
+        }
+        
+        if (!writerId.equals(currentMemberId)) {
+            log.warn("게시글 삭제 권한 없음 - postId: {}, 요청자: {}, 실제작성자: {}", postId, currentMemberId, writerId);
+            return false; 
+        }
+        
+        int result = feedMapper.deleteFeedPost(postId);
+        
         return result > 0;
     }
     
