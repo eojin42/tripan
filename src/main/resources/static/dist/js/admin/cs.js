@@ -16,7 +16,13 @@ function switchTab(tab, el) {
   document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
   el.classList.add('active');
   document.getElementById('panel-' + tab).classList.add('active');
-  if (tab === 'chat')  loadChatRooms();
+  if (tab === 'chat') {
+    // 탭 재진입 시 채팅뷰 초기화 → 방 목록에서 직접 클릭해야 열림
+    currentRoomId = null;
+    document.getElementById('chatViewEmpty').style.display = 'flex';
+    document.getElementById('chatViewMain').style.display  = 'none';
+    loadChatRooms();
+  }
   if (tab === 'board') loadInquiries();
 }
 
@@ -168,7 +174,7 @@ function renderChatRooms(rooms) {
   const statusMeta = {
     WAITING: { label: '신규문의', cls: 'waiting', order: 0 },
     ACTIVE:  { label: '상담 중',  cls: 'active',  order: 1 },
-    CLOSED:  { label: '종료됨',   cls: 'closed',  order: 2 },
+    CLOSED:  { label: '상담완료', cls: 'closed',  order: 2 },
   };
 
   // 신규 → 상담중 → 종료 순 정렬
@@ -303,20 +309,39 @@ function subscribeRoom(roomId) {
 // ── 채팅 히스토리 로드 ──
 async function loadChatHistory(roomId) {
   try {
-    // 본인 서버 API 경로로 맞게 수정
     const res  = await fetch(`${ctxPath}/api/chat/history/${roomId}`);
     if (!res.ok) throw new Error(res.status);
     const msgs = await res.json();
     if (!Array.isArray(msgs) || msgs.length === 0) return;
-    
-    document.getElementById('chatMessagesArea').innerHTML = ''; // 중복 방지
-    msgs.forEach(m => renderMsg(m));
-    
+
     const area = document.getElementById('chatMessagesArea');
+    area.innerHTML = '';
+
+    let lastDate = null;
+    msgs.forEach(m => {
+      if (m.msgDate && m.msgDate !== lastDate) {
+        renderDateSeparator(m.msgDate);
+        lastDate = m.msgDate;
+      }
+      renderMsg(m);
+    });
+
     area.scrollTop = area.scrollHeight;
   } catch(e) {
     console.warn('채팅 히스토리 로드 실패:', e);
   }
+}
+
+function renderDateSeparator(dateStr) {
+  const area = document.getElementById('chatMessagesArea');
+  const d = new Date(dateStr);
+  const label = d.toLocaleDateString('ko-KR', { year: 'numeric', month: 'long', day: 'numeric', weekday: 'long' });
+  area.insertAdjacentHTML('beforeend', `
+    <div style="display:flex;align-items:center;gap:10px;margin:18px 0 10px;">
+      <div style="flex:1;height:1px;background:#E2E8F0;"></div>
+      <span style="font-size:11px;color:#A0AEC0;font-weight:700;white-space:nowrap;">${label}</span>
+      <div style="flex:1;height:1px;background:#E2E8F0;"></div>
+    </div>`);
 }
 
 // ── 메시지 렌더링 ──

@@ -108,12 +108,16 @@
         UPDATE chat_room SET status = #{status} WHERE chat_room_id = #{roomId}
     </update>
 
-    <!-- 관리자 마지막 접속 시각 갱신 (읽음 처리) -->
+    <!-- 관리자 마지막 접속 시각 갱신 (읽음 처리) - 없으면 INSERT, 있으면 UPDATE -->
     <update id="updateAdminLastConnected" parameterType="map">
-        UPDATE chat_member
-        SET    last_connected_at = SYSDATE
-        WHERE  chat_room_id = #{roomId}
-          AND  member_id    = #{adminId}
+        MERGE INTO chat_member cm
+        USING DUAL
+        ON (cm.chat_room_id = #{roomId} AND cm.member_id = #{adminId})
+        WHEN MATCHED THEN
+            UPDATE SET cm.last_connected_at = SYSDATE
+        WHEN NOT MATCHED THEN
+            INSERT (chat_member_id, chat_room_id, member_id, last_connected_at)
+            VALUES (SEQ_CHAT_MEMBER_ID.NEXTVAL, #{roomId}, #{adminId}, SYSDATE)
     </update>
 
 </mapper>

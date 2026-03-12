@@ -28,7 +28,8 @@
             m.message_type AS messageType,
             m.content,
             COALESCE(u2.nickname, u.username) AS senderNickname,
-            TO_CHAR(m.created_at, 'AM HH:MI') AS createdAt
+            TO_CHAR(m.created_at, 'AM HH:MI')   AS createdAt,
+            TO_CHAR(m.created_at, 'YYYY-MM-DD') AS msgDate
         FROM chat_message m
         JOIN   member1 u  ON m.member_id = u.member_id
         LEFT JOIN member2 u2 ON u.member_id = u2.member_id
