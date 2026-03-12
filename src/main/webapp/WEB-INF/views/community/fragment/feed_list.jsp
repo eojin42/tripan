@@ -1,5 +1,6 @@
 <%@ page contentType="text/html; charset=UTF-8" %>
 <%@ taglib prefix="c" uri="jakarta.tags.core"%>
+<%@ taglib prefix="fn" uri="jakarta.tags.functions"%>
 
 <style>
 /* 피드 카드 전용 스타일 */
@@ -152,6 +153,47 @@
   }
   .comment-input-wrap input:focus { border-color: var(--sky-blue); }
   
+  .custom-feed-slider {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 1 / 1; 
+    overflow: hidden;
+    background-color: #000;
+  }
+  .slider-track {
+    display: flex;
+    height: 100%;
+    transition: transform 0.4s ease-in-out;
+  }
+  .slider-item {
+    min-width: 100%;
+    height: 100%;
+  }
+  .slider-item img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+  .s-btn {
+    position: absolute;
+    top: 50%; transform: translateY(-50%);
+    background: rgba(255, 255, 255, 0.6);
+    border: none; width: 30px; height: 30px; border-radius: 50%;
+    cursor: pointer; z-index: 10; font-size: 14px; transition: 0.3s;
+  }
+  .s-btn:hover { background: #fff; }
+  .s-btn.prev { left: 10px; }
+  .s-btn.next { right: 10px; }
+  .slider-pagination {
+    position: absolute; bottom: 12px; left: 50%; transform: translateX(-50%);
+    display: flex; gap: 6px; z-index: 10;
+  }
+  .s-dot {
+    width: 6px; height: 6px; background: rgba(255,255,255,0.4);
+    border-radius: 50%; cursor: pointer;
+  }
+  .s-dot.active { background: #fff; width: 12px; border-radius: 4px; }
+  
 </style>
 
 
@@ -246,11 +288,30 @@
       </div>
     </div>
     
-    <c:if test="${not empty feed.imageUrl}">
-      <div class="feed-img">
-        <img src="${pageContext.request.contextPath}/uploads/feed/${feed.imageUrl}" alt="Feed Image">
-      </div>
-    </c:if>
+	<c:if test="${not empty feed.imageUrl}">
+	  <c:set var="imgArray" value="${feed.imageUrl.split(',')}" />
+	  
+	  <div class="custom-feed-slider" id="slider-${feed.postId}">
+	    <div class="slider-track">
+	      <c:forEach var="imgName" items="${imgArray}">
+	        <div class="slider-item">
+	          <img src="${pageContext.request.contextPath}/uploads/feed/${imgName.trim()}" alt="Feed Image">
+	        </div>
+	      </c:forEach>
+	    </div>
+	
+		<c:if test="${fn:length(imgArray) > 1}">
+	      <button class="s-btn prev" onclick="moveSlide(${feed.postId}, -1)">❮</button>
+	      <button class="s-btn next" onclick="moveSlide(${feed.postId}, 1)">❯</button>
+	      
+	      <div class="slider-pagination">
+	        <c:forEach var="dot" items="${imgArray}" varStatus="vs">
+	          <span class="s-dot ${vs.first ? 'active' : ''}" onclick="goSlide(${feed.postId}, ${vs.index})"></span>
+	        </c:forEach>
+	      </div>
+	    </c:if>
+	  </div>
+	</c:if>
     
     <div class="feed-content">
       <p class="feed-text" style="white-space: pre-wrap;">${feed.content}</p>
@@ -273,7 +334,6 @@
           <span class="heart-icon">♡</span> 좋아요 <span class="like-cnt">${feed.likeCount}</span>
         </div>
         <div class="action-btn" onclick="openComment(${feed.postId})">💬 댓글</div>
-        <div class="action-btn" onclick="sharePost(${feed.postId})">🔗 공유</div>
       </div>
 
       <div class="feed-comment-area" id="feed-comment-area-${feed.postId}">

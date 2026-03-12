@@ -18,5 +18,7 @@ public interface CommunityFeedService {
 	
     List<CommunityFeedCommentDto> getFeedComments(Long postId);
     void insertFeedComment(CommunityFeedCommentDto dto) throws Exception;
+    
+    boolean deleteFeedComment(Long commentId, Long memberId);
 	
 }

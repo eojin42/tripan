@@ -1,6 +1,7 @@
 package com.tripan.app.service; 
 
 import java.io.File;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -15,7 +16,6 @@ import com.tripan.app.domain.dto.CommunityFeedCommentDto;
 import com.tripan.app.domain.dto.CommunityFeedListDto;
 import com.tripan.app.domain.dto.CommunityFeedWriteRequestDto;
 import com.tripan.app.mapper.CommunityFeedMapper;
-import com.tripan.app.service.CommunityFeedService;
 
 import lombok.RequiredArgsConstructor;
 
@@ -29,43 +29,41 @@ public class CommunityFeedServiceImpl implements CommunityFeedService {
     private String uploadRoot;
 
     @Override
+    @Transactional
     public void insertFeed(CommunityFeedWriteRequestDto dto, Long memberId) throws Exception {
-        
         String finalContent = dto.getContent();
         if (dto.getTags() != null && !dto.getTags().trim().isEmpty()) {
-            finalContent = finalContent + "\n\n" + dto.getTags().trim(); 
+            finalContent += "\n\n" + dto.getTags().trim();
         }
 
-        Long finalTripId = null;
-        if (dto.getTripId() != null && !dto.getTripId().isEmpty()) {
-            String numericPart = dto.getTripId().replaceAll("[^0-9]", "");
-            if (!numericPart.isEmpty()) {
-                finalTripId = Long.parseLong(numericPart); 
-            }
-        }
-
-        String firstImageUrl = null;
+        String savedImageUrls = null;
+        
         if (dto.getFiles() != null && !dto.getFiles().isEmpty()) {
-            MultipartFile firstFile = dto.getFiles().get(0); 
-            if(!firstFile.isEmpty()) {
-                String originalFilename = firstFile.getOriginalFilename();
-                String savedFilename = UUID.randomUUID().toString() + "_" + originalFilename;
-                
-                String feedUploadPath = uploadRoot + "/feed/";
-                File destDir = new File(feedUploadPath);
-                if (!destDir.exists()) { destDir.mkdirs(); }
-                
-                File destFile = new File(destDir, savedFilename);
-                firstFile.transferTo(destFile); 
-                firstImageUrl = savedFilename; 
+            List<String> fileNameList = new ArrayList<>();
+            String feedUploadPath = uploadRoot + "/feed/";
+            File destDir = new File(feedUploadPath);
+            if (!destDir.exists()) destDir.mkdirs();
+
+            int limit = Math.min(dto.getFiles().size(), 4);
+            for (int i = 0; i < limit; i++) {
+                MultipartFile file = dto.getFiles().get(i);
+                if (!file.isEmpty()) {
+                    String originalFilename = file.getOriginalFilename();
+                    String savedFilename = UUID.randomUUID().toString() + "_" + originalFilename;
+                    file.transferTo(new File(destDir, savedFilename));
+                    fileNameList.add(savedFilename);
+                }
+            }
+            if (!fileNameList.isEmpty()) {
+                savedImageUrls = String.join(",", fileNameList);
             }
         }
 
         Map<String, Object> paramMap = new HashMap<>();
         paramMap.put("memberId", memberId);
-        paramMap.put("tripId", finalTripId); 
+        paramMap.put("tripId", dto.getTripId());
         paramMap.put("content", finalContent);
-        paramMap.put("imageUrl", firstImageUrl);
+        paramMap.put("imageUrl", savedImageUrls); 
 
         feedMapper.insertFeedPost(paramMap);
     }
@@ -125,6 +123,13 @@ public class CommunityFeedServiceImpl implements CommunityFeedService {
     @Transactional
     public void insertFeedComment(CommunityFeedCommentDto dto) throws Exception {
         feedMapper.insertFeedComment(dto);
+    }
+    
+    @Override
+    @Transactional
+    public boolean deleteFeedComment(Long commentId, Long memberId) {
+        int result = feedMapper.deleteFeedComment(commentId, memberId);
+        return result > 0;
     }
     
     

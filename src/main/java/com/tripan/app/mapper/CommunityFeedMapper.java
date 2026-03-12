@@ -34,4 +34,6 @@ public interface CommunityFeedMapper {
     List<CommunityFeedCommentDto> getFeedComments(@Param("postId") Long postId);
     void insertFeedComment(CommunityFeedCommentDto dto);
     
+    int deleteFeedComment(@Param("commentId") Long commentId, @Param("memberId") Long memberId);
+    
 }
