@@ -17,4 +17,5 @@ public class CommunityChatRoomDto {
     private Long createdBy;
     private LocalDateTime createdAt;
     private String lastMessage;
+    private boolean hasUnread;
 }
