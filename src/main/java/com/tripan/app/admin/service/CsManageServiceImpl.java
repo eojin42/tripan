@@ -32,7 +32,7 @@ public class CsManageServiceImpl implements CsManageService {
         roomParams.put("memberId", memberId);
         roomParams.put("roomName", "Tripan 고객 상담");
         csMapper.insertSupportRoom(roomParams);
-        Long roomId = (Long) roomParams.get("roomId");
+        Long roomId = ((Number) roomParams.get("roomId")).longValue();
         csMapper.insertRoomMember(Map.of("chatRoomId", roomId, "memberId", memberId));
         csMapper.insertRoomMember(Map.of("chatRoomId", roomId, "memberId", adminId));
         return csMapper.selectRoomById(roomId);
