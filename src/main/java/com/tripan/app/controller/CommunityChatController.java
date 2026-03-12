@@ -24,6 +24,7 @@ import com.tripan.app.service.CommunityChatService;
 
 import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
+import org.springframework.web.bind.annotation.PathVariable;
 
 @Controller
 @RequiredArgsConstructor
@@ -59,6 +60,16 @@ public class CommunityChatController {
         return ResponseEntity.ok(chatService.getMyPrivateRooms(loginUser.getMemberId()));
     }
     
+    @GetMapping("/api/chat/history/{roomId}")
+    @ResponseBody
+    public ResponseEntity<?> getChatHistory(@PathVariable Long roomId, HttpSession session) {
+        MemberDto loginUser = (MemberDto) session.getAttribute("loginUser");
+        if (loginUser == null) {
+            return ResponseEntity.status(401).build();
+        }
+        return ResponseEntity.ok(chatService.getChatHistory(roomId));
+    }
+
     @PostMapping("/api/chat/private")
     @ResponseBody
     public ResponseEntity<?> startPrivateChat(@RequestParam("targetId") Long targetId, HttpSession session) {
