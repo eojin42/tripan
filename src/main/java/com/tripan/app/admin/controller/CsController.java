@@ -5,6 +5,7 @@ import java.util.Map;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.messaging.simp.SimpMessageSendingOperations;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -25,34 +26,33 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @RequiredArgsConstructor
 public class CsController {
-	private final CsManageService csService;
-	@GetMapping("/admin/cs")
-	public String csmain() {
-		
-		return "admin/cs/main";
-	}
-	
-	@GetMapping("/admin/inquiry") 
+    private final CsManageService csService;
+    private final SimpMessageSendingOperations messagingTemplate;
+
+    @GetMapping("/admin/cs")
+    public String csmain() {
+        return "admin/cs/main";
+    }
+
+    @GetMapping("/admin/inquiry")
     @ResponseBody
     public ResponseEntity<?> getInquiryList() {
-        // List<InquiryDto> list = csService.getAllInquiries();
-        // return ResponseEntity.ok(list);
-        return ResponseEntity.ok().build(); // 임시
+        return ResponseEntity.ok(List.of());
     }
-	
-	@GetMapping("/api/chat/rooms/support")
-	@ResponseBody
+
+    /** 유저용: 본인의 상담 방 목록 */
+    @GetMapping("/api/chat/rooms/support")
+    @ResponseBody
     public ResponseEntity<?> getSupportRooms(HttpSession session) {
         MemberDto loginUser = (MemberDto) session.getAttribute("loginUser");
         if (loginUser == null) {
-        	return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
-        
         List<CommunityChatRoomDto> rooms = csService.getSupportRoomsByMemberId(loginUser.getMemberId());
         return ResponseEntity.ok(rooms);
-        
     }
-    
+
+    /** 유저용: 상담 방 생성 + 관리자에게 WebSocket 알림 */
     @PostMapping("/api/chat/rooms/support/create")
     @ResponseBody
     public ResponseEntity<?> createSupportRoom(HttpSession session) {
@@ -61,25 +61,60 @@ public class CsController {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
         try {
-			CommunityChatRoomDto room = csService.createSupportRoom(loginUser.getMemberId());
-			return ResponseEntity.ok(room);
-		} catch (Exception e) {
-			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-						.body(Map.of("error",e.getMessage()));
-		}
+            CommunityChatRoomDto room = csService.createSupportRoom(loginUser.getMemberId());
+
+            // 관리자에게 새 상담 알림 전송
+            Map<String, Object> notification = Map.of(
+                "roomId",   room.getChatRoomId(),
+                "userName", loginUser.getNickname() != null ? loginUser.getNickname() : loginUser.getUsername()
+            );
+            messagingTemplate.convertAndSend("/sub/admin/chat/new", notification);
+
+            return ResponseEntity.ok(room);
+        } catch (Exception e) {
+            log.error("상담 방 생성 실패: {}", e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("error", e.getMessage()));
+        }
     }
-    
+
+    /** 관리자용: 전체 상담 방 목록 */
+    @GetMapping("/admin/cs/api/chat/rooms/support")
+    @ResponseBody
+    public ResponseEntity<?> getAllSupportRooms(HttpSession session) {
+        MemberDto loginUser = (MemberDto) session.getAttribute("loginUser");
+        if (loginUser == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+        List<CommunityChatRoomDto> rooms = csService.getAllSupportRooms();
+        return ResponseEntity.ok(rooms);
+    }
+
+    /** 상담 종료 (관리자) */
+    @PostMapping("/api/chat/rooms/{roomId}/close")
+    @ResponseBody
+    public ResponseEntity<?> closeChatRoom(@PathVariable Long roomId, HttpSession session) {
+        MemberDto loginUser = (MemberDto) session.getAttribute("loginUser");
+        if (loginUser == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+        try {
+            csService.closeRoom(roomId);
+
+            // 해당 방 참여자들에게 종료 알림
+            messagingTemplate.convertAndSend("/sub/chat/room/" + roomId + "/closed", Map.of("roomId", roomId));
+
+            return ResponseEntity.ok(Map.of("message", "상담이 종료되었습니다."));
+        } catch (Exception e) {
+            log.error("상담 종료 실패: {}", e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("error", e.getMessage()));
+        }
+    }
+
     @PostMapping("/admin/inquiry/{id}/reply")
     @ResponseBody
     public ResponseEntity<?> replyInquiry(@PathVariable Long id, @RequestBody Map<String, String> body) {
-        // csService.replyInquiry(id, body.get("reply"));
-        return ResponseEntity.ok().build(); // 임시
-    }
-
-    @PostMapping("/api/chat/rooms/{roomId}/close")
-    @ResponseBody
-    public ResponseEntity<?> closeChatRoom(@PathVariable Long roomId) {
-        // csService.closeSupportRoom(roomId);
-        return ResponseEntity.ok().build(); // 임시
+        return ResponseEntity.ok().build();
     }
 }
