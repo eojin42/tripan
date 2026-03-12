@@ -22,15 +22,16 @@
     </insert>
 
     <select id="selectChatHistory" parameterType="long" resultType="com.tripan.app.domain.dto.CommunityChatMessageDto">
-        SELECT 
-            m.room_id,
-            m.member_id,
-            u.username AS senderNickname,
-            m.message_type,
+        SELECT
+            m.room_id      AS roomId,
+            m.member_id    AS memberId,
+            m.message_type AS messageType,
             m.content,
+            COALESCE(u2.nickname, u.username) AS senderNickname,
             TO_CHAR(m.created_at, 'AM HH:MI') AS createdAt
         FROM chat_message m
-        JOIN member1 u ON m.member_id = u.member_id
+        JOIN   member1 u  ON m.member_id = u.member_id
+        LEFT JOIN member2 u2 ON u.member_id = u2.member_id
         WHERE m.room_id = #{roomId}
         ORDER BY m.created_at ASC
     </select>

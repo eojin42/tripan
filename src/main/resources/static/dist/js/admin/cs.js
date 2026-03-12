@@ -132,8 +132,20 @@ async function loadChatRooms() {
     allChatRooms = rooms || [];
     renderChatRooms(allChatRooms);
 
+    // 현재 보고 있는 방은 배지 제거 (이미 읽고 있으므로)
+    if (currentRoomId) {
+      const cur = document.querySelector(`.chat-room-item[data-room-id="${currentRoomId}"]`);
+      if (cur) {
+        const b = cur.querySelector('.unread-badge');
+        if (b) b.remove();
+        cur.classList.remove('unread');
+      }
+    }
+
     // unreadCount 없으면 0으로
-    const totalUnread = allChatRooms.reduce((sum, r) => sum + (r.unreadCount || 0), 0);
+    const totalUnread = allChatRooms
+      .filter(r => String(r.chatRoomId) !== String(currentRoomId))
+      .reduce((sum, r) => sum + (r.unreadCount || 0), 0);
     const tabBadge = document.getElementById('chatBadge');
     tabBadge.textContent = totalUnread;
     tabBadge.style.display = totalUnread > 0 ? 'inline-flex' : 'none';
@@ -216,6 +228,10 @@ function enterRoom(room) {
   }
 
   currentRoomId = room.chatRoomId;
+
+  // DB 읽음 처리 (last_connected_at 갱신 → unreadCount 0으로)
+  fetch(`${ctxPath}/admin/cs/api/chat/rooms/${room.chatRoomId}/read`, { method: 'PUT' })
+    .catch(e => console.warn('읽음 처리 실패:', e));
 
   // 채팅 뷰 전환
   document.getElementById('chatViewEmpty').style.display = 'none';
