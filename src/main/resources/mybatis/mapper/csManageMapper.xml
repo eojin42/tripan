@@ -1,9 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
-
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.tripan.app.admin.mapper.CsManageMapper">
 
-    <!-- 유저 본인의 SUPPORT 방 목록 (유저 사이드) -->
+    <!-- 유저 본인의 SUPPORT 방 목록 -->
     <select id="findSupportRooms" resultType="com.tripan.app.domain.dto.CommunityChatRoomDto">
         SELECT cr.chat_room_id   AS chatRoomId,
                cr.chat_room_name AS chatRoomName,
@@ -22,7 +21,7 @@
         ORDER  BY cr.chat_room_id DESC
     </select>
 
-    <!-- SUPPORT 방 생성 (roomId를 params 맵에 반환) -->
+    <!-- SUPPORT 방 생성 -->
     <insert id="insertSupportRoom" parameterType="map">
         <selectKey keyProperty="roomId" resultType="long" order="BEFORE">
             SELECT SEQ_CHAT_ROOM_ID.NEXTVAL FROM DUAL
@@ -39,10 +38,7 @@
 
     <!-- 관리자 member_id 조회 -->
     <select id="selectAdminMemberId" resultType="long">
-        SELECT member_id
-        FROM   member1
-        WHERE  role = 'ROLE_ADMIN'
-        FETCH FIRST 1 ROWS ONLY
+        SELECT member_id FROM member1 WHERE role = 'ROLE_ADMIN' FETCH FIRST 1 ROWS ONLY
     </select>
 
     <!-- 방 ID로 방 정보 조회 -->
@@ -61,7 +57,8 @@
         SELECT SEQ_CHAT_ROOM_ID.CURRVAL FROM DUAL
     </select>
 
-    <!-- 관리자용: 전체 SUPPORT 방 목록 (유저 닉네임 포함) -->
+    <!-- 관리자용: 전체 SUPPORT 방 목록 (유저 닉네임 + 미읽음 수 포함)
+         정렬: 미읽은 방 먼저, 그 중 오래된(가장 오래 기다린) 순 -->
     <select id="selectAllSupportRooms" resultType="com.tripan.app.admin.domain.dto.AdminChatRoomDto">
         SELECT cr.chat_room_id   AS chatRoomId,
                cr.chat_room_name AS chatRoomName,
@@ -73,21 +70,50 @@
                 FROM   chat_message cm2
                 WHERE  cm2.room_id = cr.chat_room_id
                 ORDER  BY cm2.created_at DESC
-                FETCH FIRST 1 ROWS ONLY) AS lastMessage
+                FETCH FIRST 1 ROWS ONLY) AS lastMessage,
+               (SELECT COUNT(*)
+                FROM   chat_message cm3
+                WHERE  cm3.room_id   = cr.chat_room_id
+                  AND  cm3.member_id != (SELECT member_id FROM member1 WHERE role = 'ROLE_ADMIN' FETCH FIRST 1 ROWS ONLY)
+                  AND  cm3.created_at > NVL(
+                           (SELECT adm.last_connected_at
+                            FROM   chat_member adm
+                            WHERE  adm.chat_room_id = cr.chat_room_id
+                              AND  adm.member_id = (SELECT member_id FROM member1 WHERE role = 'ROLE_ADMIN' FETCH FIRST 1 ROWS ONLY)),
+                           DATE '1900-01-01')
+               ) AS unreadCount
         FROM   chat_room cr
         JOIN   chat_member crm ON cr.chat_room_id = crm.chat_room_id
         JOIN   member1     m1  ON crm.member_id   = m1.member_id
         JOIN   member2     m2  ON m1.member_id    = m2.member_id
         WHERE  cr.chat_room_type = 'SUPPORT'
           AND  m1.role          != 'ROLE_ADMIN'
-        ORDER  BY cr.created_at DESC
+        ORDER  BY
+            CASE WHEN (SELECT COUNT(*)
+                       FROM   chat_message cm3
+                       WHERE  cm3.room_id   = cr.chat_room_id
+                         AND  cm3.member_id != (SELECT member_id FROM member1 WHERE role = 'ROLE_ADMIN' FETCH FIRST 1 ROWS ONLY)
+                         AND  cm3.created_at > NVL(
+                                  (SELECT adm.last_connected_at
+                                   FROM   chat_member adm
+                                   WHERE  adm.chat_room_id = cr.chat_room_id
+                                     AND  adm.member_id = (SELECT member_id FROM member1 WHERE role = 'ROLE_ADMIN' FETCH FIRST 1 ROWS ONLY)),
+                                  DATE '1900-01-01')) > 0
+                 THEN 0 ELSE 1 END ASC,
+            cr.created_at ASC
     </select>
 
-    <!-- 방 상태 업데이트 (ACTIVE / CLOSED) -->
+    <!-- 방 상태 업데이트 -->
     <update id="updateRoomStatus" parameterType="map">
-        UPDATE chat_room
-        SET    status = #{status}
+        UPDATE chat_room SET status = #{status} WHERE chat_room_id = #{roomId}
+    </update>
+
+    <!-- 관리자 마지막 접속 시각 갱신 (읽음 처리) -->
+    <update id="updateAdminLastConnected" parameterType="map">
+        UPDATE chat_member
+        SET    last_connected_at = SYSDATE
         WHERE  chat_room_id = #{roomId}
+          AND  member_id    = #{adminId}
     </update>
 
 </mapper>

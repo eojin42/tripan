@@ -25,22 +25,22 @@ public class CsManageServiceImpl implements CsManageService {
     @Override
     public CommunityChatRoomDto createSupportRoom(Long memberId) {
         Long adminId = csMapper.selectAdminMemberId();
-
         if (adminId == null) {
             throw new IllegalStateException("관리자 계정이 없습니다.");
         }
-
         Map<String, Object> roomParams = new HashMap<>();
         roomParams.put("memberId", memberId);
         roomParams.put("roomName", "Tripan 고객 상담");
         csMapper.insertSupportRoom(roomParams);
-
         Long roomId = (Long) roomParams.get("roomId");
-
         csMapper.insertRoomMember(Map.of("chatRoomId", roomId, "memberId", memberId));
         csMapper.insertRoomMember(Map.of("chatRoomId", roomId, "memberId", adminId));
-
         return csMapper.selectRoomById(roomId);
+    }
+
+    @Override
+    public List<AdminChatRoomDto> getAllSupportRooms() {
+        return csMapper.selectAllSupportRooms();
     }
 
     @Override
@@ -48,14 +48,8 @@ public class CsManageServiceImpl implements CsManageService {
         csMapper.updateRoomStatus(Map.of("roomId", roomId, "status", "CLOSED"));
     }
 
-	@Override
-	public void resetNotification(Long roomId, Long adminId) {
-		csMapper.updateAdminLastConnected(Map.of("roomId",roomId,"adminId",adminId));
-	}
-
-	@Override
-	public List<AdminChatRoomDto> getAllSupportRooms() {
-		return csMapper.selectAllSupportRooms();
-	}
-
+    @Override
+    public void resetNotification(Long roomId, Long adminId) {
+        csMapper.updateAdminLastConnected(Map.of("roomId", roomId, "adminId", adminId));
+    }
 }

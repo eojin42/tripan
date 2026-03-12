@@ -1,21 +1,20 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.tripan.app.mapper.MyPageMapper">
-	<select id="selectMyPageSummary" resultType="com.tripan.app.domain.dto.MyPageSummaryDto">
+
+    <select id="selectMyPageSummary" resultType="com.tripan.app.domain.dto.MyPageSummaryDto">
         SELECT
             (SELECT COUNT(*) FROM trip WHERE member_id = #{memberId}) AS totalTripCount,
-
             (SELECT COUNT(DISTINCT r.sido_name)
              FROM conquest_map cm
              JOIN region r ON cm.region_id = r.region_id
              WHERE cm.member_id = #{memberId}) AS visitedRegionCount,
-
             (SELECT COUNT(*) FROM trip WHERE member_id = #{memberId} AND status = 'COMPLETED') AS completedTripCount,
-
             (SELECT NVL(AVG(end_date - start_date + 1), 0) FROM trip WHERE member_id = #{memberId}) AS avgTripDays
         FROM dual
     </select>
-    
+
+    <!-- 방문한 시도 목록 전체 (완료여행 자동 + 수동등록 통합) -->
     <select id="selectVisitedSidoNames" parameterType="long" resultType="String">
         SELECT DISTINCT r.sido_name
         FROM conquest_map cm
@@ -23,8 +22,9 @@
         WHERE cm.member_id = #{memberId}
         ORDER BY r.sido_name
     </select>
-    
-     <select id="selectManualVisitedSidos" parameterType="long" resultType="String">
+
+    <!-- 직접 등록한 시도 목록 (trip_place_id IS NULL = 수동) -->
+    <select id="selectManualVisitedSidos" parameterType="long" resultType="String">
         SELECT DISTINCT r.sido_name
         FROM conquest_map cm
         JOIN region r ON cm.region_id = r.region_id
@@ -32,7 +32,8 @@
           AND cm.trip_place_id IS NULL
         ORDER BY r.sido_name
     </select>
-    
+
+    <!-- 수동 방문 지역 추가 (sido 단위, 중복 방지) -->
     <insert id="insertUserVisitedRegion" parameterType="map">
         INSERT INTO conquest_map (conquest_map_id, member_id, region_id, conquest_date)
         SELECT SEQ_CONQUEST_MAP_ID.NEXTVAL, #{memberId}, r.region_id, SYSDATE
@@ -47,8 +48,9 @@
           )
           AND ROWNUM = 1
     </insert>
-    
-     <delete id="deleteUserVisitedRegion" parameterType="map">
+
+    <!-- 수동 방문 지역 삭제 -->
+    <delete id="deleteUserVisitedRegion" parameterType="map">
         DELETE FROM conquest_map
         WHERE member_id      = #{memberId}
           AND trip_place_id  IS NULL
@@ -58,4 +60,5 @@
                 AND api_sigungu_code IS NULL
           )
     </delete>
+
 </mapper>

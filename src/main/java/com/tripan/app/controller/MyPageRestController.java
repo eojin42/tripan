@@ -127,6 +127,16 @@ public class MyPageRestController {
         return ResponseEntity.ok(Map.of("message", "언팔로우 되었습니다."));
     }
     
+	@GetMapping("/visited-regions")
+	public ResponseEntity<?> getVisitedRegions(HttpSession session) {
+		MemberDto loginUser = getLoginUser(session);
+		if (loginUser == null) return unauthorized();
+		List<String> sidos = myPageService.getVisitedSidoNames(loginUser.getMemberId());
+		List<Map<String,String>> result = new ArrayList<>();
+		for (String s : sidos) { Map<String,String> m = new HashMap<>(); m.put("sidoName", s); result.add(m); }
+		return ResponseEntity.ok(result);
+	}
+
 	private MemberDto getLoginUser(HttpSession session) {
 		return (MemberDto) session.getAttribute("loginUser");
 	}

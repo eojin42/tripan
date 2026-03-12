@@ -35,6 +35,10 @@
         ORDER BY m.created_at ASC
     </select>
     
+    <select id="selectRoomType" parameterType="long" resultType="string">
+        SELECT chat_room_type FROM chat_room WHERE chat_room_id = #{roomId}
+    </select>
+
     <select id="selectRegionRooms" resultType="com.tripan.app.domain.dto.CommunityChatRoomDto">
         SELECT 
             chat_room_id as chatRoomId, 

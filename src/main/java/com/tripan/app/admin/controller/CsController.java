@@ -42,7 +42,10 @@ public class CsController {
         return ResponseEntity.ok(List.of());
     }
 
-    /** 유저용: 본인의 상담 방 목록 */
+    /**
+     * 유저용: 본인의 상담 방 목록
+     * 어드민이 마이페이지에서 호출하면 → 안읽은 방만 AdminChatRoomDto 반환
+     */
     @GetMapping("/api/chat/rooms/support")
     @ResponseBody
     public ResponseEntity<?> getSupportRooms(HttpSession session) {
@@ -56,7 +59,7 @@ public class CsController {
                     .filter(r -> r.getUnreadCount() > 0)
                     .collect(Collectors.toList());
             return ResponseEntity.ok(unread);
-    }
+        }
         List<CommunityChatRoomDto> rooms = csService.getSupportRoomsByMemberId(loginUser.getMemberId());
         return ResponseEntity.ok(rooms);
     }
@@ -71,14 +74,11 @@ public class CsController {
         }
         try {
             CommunityChatRoomDto room = csService.createSupportRoom(loginUser.getMemberId());
-
-            // 관리자에게 새 상담 알림 전송
             Map<String, Object> notification = Map.of(
                 "roomId",   room.getChatRoomId(),
                 "userName", loginUser.getNickname() != null ? loginUser.getNickname() : loginUser.getUsername()
             );
             messagingTemplate.convertAndSend("/sub/admin/chat/new", notification);
-
             return ResponseEntity.ok(room);
         } catch (Exception e) {
             log.error("상담 방 생성 실패: {}", e.getMessage());
@@ -99,6 +99,18 @@ public class CsController {
         return ResponseEntity.ok(rooms);
     }
 
+    /** 관리자가 채팅방 입장 시 미읽음 초기화 */
+    @PutMapping("/admin/cs/api/chat/rooms/{roomId}/read")
+    @ResponseBody
+    public ResponseEntity<?> resetNotification(@PathVariable Long roomId, HttpSession session) {
+        MemberDto loginUser = (MemberDto) session.getAttribute("loginUser");
+        if (loginUser == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+        csService.resetNotification(roomId, loginUser.getMemberId());
+        return ResponseEntity.ok().build();
+    }
+
     /** 상담 종료 (관리자) */
     @PostMapping("/api/chat/rooms/{roomId}/close")
     @ResponseBody
@@ -109,10 +121,7 @@ public class CsController {
         }
         try {
             csService.closeRoom(roomId);
-
-            // 해당 방 참여자들에게 종료 알림
             messagingTemplate.convertAndSend("/sub/chat/room/" + roomId + "/closed", Map.of("roomId", roomId));
-
             return ResponseEntity.ok(Map.of("message", "상담이 종료되었습니다."));
         } catch (Exception e) {
             log.error("상담 종료 실패: {}", e.getMessage());
@@ -121,22 +130,9 @@ public class CsController {
         }
     }
 
-    @PutMapping("/admin/cs/api/chat/rooms/{roomId}/read")
-    @ResponseBody
-    public ResponseEntity<?> resetNotification(@PathVariable Long roomId, HttpSession session) {
-    	MemberDto loginUser = (MemberDto) session.getAttribute("loginUser");
-    	if(loginUser == null) {
-    		return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
-    	}
-    	csService.resetNotification(roomId, loginUser.getMemberId());
-    	return ResponseEntity.ok().build();
-    }
-    
     @PostMapping("/admin/inquiry/{id}/reply")
     @ResponseBody
     public ResponseEntity<?> replyInquiry(@PathVariable Long id, @RequestBody Map<String, String> body) {
         return ResponseEntity.ok().build();
     }
-    
-   
 }

@@ -5,13 +5,12 @@ import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Map;
 
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.messaging.handler.annotation.MessageMapping;
 import org.springframework.messaging.simp.SimpMessageSendingOperations;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
@@ -19,12 +18,10 @@ import org.springframework.web.bind.annotation.ResponseBody;
 import com.tripan.app.domain.dto.CommunityChatMessageDto;
 import com.tripan.app.domain.dto.CommunityChatRoomDto;
 import com.tripan.app.domain.dto.MemberDto;
-import com.tripan.app.security.CustomUserDetails;
 import com.tripan.app.service.CommunityChatService;
 
 import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
-import org.springframework.web.bind.annotation.PathVariable;
 
 @Controller
 @RequiredArgsConstructor
@@ -35,15 +32,22 @@ public class CommunityChatController {
 
     @MessageMapping("/chat/message")
     public void message(CommunityChatMessageDto message) {
-        
         String now = LocalDateTime.now().format(DateTimeFormatter.ofPattern("a h:mm"));
         message.setCreatedAt(now);
-
         chatService.saveMessage(message);
-
         messagingTemplate.convertAndSend("/sub/chat/room/" + message.getRoomId(), message);
-    } 
-    
+
+        // SUPPORT 방 메시지 → 관리자 실시간 배지 업데이트
+        String roomType = chatService.getRoomType(message.getRoomId());
+        if ("SUPPORT".equals(roomType)) {
+            messagingTemplate.convertAndSend("/sub/admin/chat/message", Map.of(
+                "roomId",  message.getRoomId(),
+                "content", message.getContent() != null ? message.getContent() : "",
+                "memberId", message.getMemberId() != null ? message.getMemberId() : 0
+            ));
+        }
+    }
+
     @GetMapping("/api/chat/rooms/region")
     @ResponseBody
     public List<CommunityChatRoomDto> getRegionRooms() {
@@ -54,19 +58,15 @@ public class CommunityChatController {
     @ResponseBody
     public ResponseEntity<?> getMyPrivateRooms(HttpSession session) {
         MemberDto loginUser = (MemberDto) session.getAttribute("loginUser");
-        if (loginUser == null) {
-            return ResponseEntity.status(401).build();
-        }
+        if (loginUser == null) return ResponseEntity.status(401).build();
         return ResponseEntity.ok(chatService.getMyPrivateRooms(loginUser.getMemberId()));
     }
-    
+
     @GetMapping("/api/chat/history/{roomId}")
     @ResponseBody
     public ResponseEntity<?> getChatHistory(@PathVariable Long roomId, HttpSession session) {
         MemberDto loginUser = (MemberDto) session.getAttribute("loginUser");
-        if (loginUser == null) {
-            return ResponseEntity.status(401).build();
-        }
+        if (loginUser == null) return ResponseEntity.status(401).build();
         return ResponseEntity.ok(chatService.getChatHistory(roomId));
     }
 
@@ -77,7 +77,6 @@ public class CommunityChatController {
         if (loginUser == null) {
             return ResponseEntity.status(401).body(Map.of("message", "로그인이 필요합니다."));
         }
-        
         try {
             Long roomId = chatService.getOrMakePrivateChat(loginUser.getMemberId(), targetId);
             return ResponseEntity.ok(Map.of("roomId", roomId));
@@ -85,6 +84,4 @@ public class CommunityChatController {
             return ResponseEntity.status(500).body(Map.of("message", "채팅방 생성 중 오류 발생"));
         }
     }
-    
-    
 }

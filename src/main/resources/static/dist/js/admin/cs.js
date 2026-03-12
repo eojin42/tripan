@@ -174,7 +174,7 @@ function renderChatRooms(rooms) {
 
     return `
       ${groupHtml}
-      <div class="chat-room-item ${unreadCount > 0 ? 'unread' : ''}"
+      <div class="chat-room-item ${unread > 0 ? 'unread' : ''}"
            data-room-id="${r.chatRoomId}"
            onclick='enterRoom(${JSON.stringify(r)})'>
         <div class="room-avatar">👤</div>
@@ -186,7 +186,7 @@ function renderChatRooms(rooms) {
           <div class="room-preview">${escHtml(r.lastMessage || '대화를 시작해보세요')}</div>
           <span class="room-status-pill ${meta.cls}">${meta.label}</span>
         </div>
-        ${unreadCount > 0 ? `<span class="unread-badge">${unreadCount}</span>` : ''}
+        ${unread > 0 ? `<span class="unread-badge">${unread}</span>` : ''}
       </div>`;
   }).join('');
 }
