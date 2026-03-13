@@ -330,15 +330,20 @@
 
         rooms.forEach(function(room, idx) {
           var icon  = isCS ? '🎧' : (type === 'REGION' ? rIcons[idx%5] : pIcons[idx%5]);
-          var title = room.chatRoomName || '이름 없음';
+          var title = (isCS && room.userName) ? (room.userName + ' 님의 문의') : (room.chatRoomName || '이름 없음');
           var desc  = isCS ? ('1:1 고객센터 · ' + (room.status === 'CLOSED' ? '종료' : '상담 중'))
                     : (type === 'REGION' ? '다같이 떠드는 라운지' : '1:1 비밀 대화방');
+          var unreadBadge = (isCS && room.unreadCount > 0)
+            ? '<span style="background:#e53e3e;color:white;border-radius:50%;padding:2px 7px;font-size:11px;font-weight:800;margin-left:auto;">' + room.unreadCount + '</span>'
+            : '';
           listEl.insertAdjacentHTML('beforeend',
             '<div class="chat-room-item" onclick="window._onRoomClick(this)"' +
             ' data-room-id="' + room.chatRoomId +
-            '" data-room-name="' + title + '" data-room-type="' + type + '">' +
+            '" data-room-name="' + title + '" data-room-type="' + type + '"' +
+            ' style="display:flex;align-items:center;">' +
             '<div class="room-icon">' + icon + '</div>' +
-            '<div class="room-info"><h4>' + title + '</h4><p>' + desc + '</p></div></div>');
+            '<div class="room-info"><h4>' + title + '</h4><p>' + desc + '</p></div>' +
+            unreadBadge + '</div>');
         });
 
       })
@@ -450,8 +455,20 @@
   };
 
   function renderMessage(m) {
-	  
-	  
+    // 상담 종료 메시지 특별 처리
+    if (m.messageType === 'CLOSED' || m.messageType === 'SYSTEM') {
+      var closedDiv = document.createElement('div');
+      closedDiv.style.cssText = 'text-align:center;margin:8px 0;';
+      closedDiv.innerHTML = '<span style="background:rgba(0,0,0,0.07);color:#6B7280;font-size:12px;' +
+        'padding:5px 16px;border-radius:16px;font-weight:700;display:inline-block;">' +
+        '🔒 ' + (m.content || '상담이 종료되었습니다.') + '</span>';
+      msgArea.appendChild(closedDiv);
+      msgArea.scrollTop = msgArea.scrollHeight;
+      if (inputField) { inputField.disabled = true; inputField.placeholder = '종료된 상담입니다.'; }
+      if (sendBtn) sendBtn.disabled = true;
+      return;
+    }
+
     var isMe = (String(m.memberId) === String(memberId));
     var row  = document.createElement('div');
     row.className = 'msg-row ' + (isMe ? 'me' : 'other');

@@ -11,4 +11,5 @@ public class CommunityChatMessageDto {
     private String content;       // 메시지 내용
     private String messageType;   // TALK(대화), ENTER(입장), LEAVE(퇴장)
     private String createdAt;     // 작성 시간 (포맷팅된 문자열)
+    private String msgDate;		  // 날짜 구분용 (YYYY-MM-DD, 히스토리 전용)
 }

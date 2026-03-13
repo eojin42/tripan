@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -104,6 +105,17 @@ public class MyPageRestController {
 	       }
 	}
 	
+	@GetMapping("visited-regions")
+    public ResponseEntity<?> getVisitedRegions(HttpSession session) {
+        MemberDto loginUser = getLoginUser(session);
+        if (loginUser == null) return unauthorized();
+        List<String> sidos = myPageService.getVisitedSidoNames(loginUser.getMemberId());
+        List<Map<String, String>> result = sidos.stream()
+            .map(s -> Map.of("sidoName", s))
+            .collect(Collectors.toList());
+        return ResponseEntity.ok(result);
+    }
+	
    @GetMapping("/following")
     public ResponseEntity<?> getFollowing(HttpSession session) {
         MemberDto loginUser = getLoginUser(session);
@@ -126,6 +138,7 @@ public class MyPageRestController {
         myPageService.unfollow(loginUser.getMemberId(), followingId);
         return ResponseEntity.ok(Map.of("message", "언팔로우 되었습니다."));
     }
+    
     
 	private MemberDto getLoginUser(HttpSession session) {
 		return (MemberDto) session.getAttribute("loginUser");

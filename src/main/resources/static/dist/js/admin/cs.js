@@ -9,6 +9,7 @@ let roomSubscription = null;      // 현재 방 구독 핸들
 let allChatRooms     = [];
 let currentFilter    = 'all';
 let selectedInquiry  = null;
+let readDebounceTimer = null;     // 읽음 처리 디바운스 타이머
 
 // ── 탭 전환 ──
 function switchTab(tab, el) {
@@ -16,7 +17,17 @@ function switchTab(tab, el) {
   document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
   el.classList.add('active');
   document.getElementById('panel-' + tab).classList.add('active');
-  if (tab === 'chat')  loadChatRooms();
+  if (tab === 'chat') {
+     // 탭 재진입 시 채팅뷰 초기화 → 방 목록에서 직접 클릭해야 열림
+	 if (currentRoomId) {                                                      
+	           fetch(`${ctxPath}/admin/cs/api/chat/rooms/${currentRoomId}/read`, {   
+	   method: 'PUT' }).catch(() => {});                                          
+	       }    
+     currentRoomId = null;
+     document.getElementById('chatViewEmpty').style.display = 'flex';
+     document.getElementById('chatViewMain').style.display  = 'none';
+     loadChatRooms();
+   }
   if (tab === 'board') loadInquiries();
 }
 
@@ -131,9 +142,21 @@ async function loadChatRooms() {
     const rooms = await res.json();
     allChatRooms = rooms || [];
     renderChatRooms(allChatRooms);
+	
+	// 현재 보고 있는 방은 배지 제거 (이미 읽고 있으므로)
+	    if (currentRoomId) {
+	      const cur = document.querySelector(`.chat-room-item[data-room-id="${currentRoomId}"]`);
+	      if (cur) {
+	        const b = cur.querySelector('.unread-badge');
+	        if (b) b.remove();
+	        cur.classList.remove('unread');
+	      }
+	    }
 
     // unreadCount 없으면 0으로
-    const totalUnread = allChatRooms.reduce((sum, r) => sum + (r.unreadCount || 0), 0);
+	const totalUnread = allChatRooms
+	     .filter(r => String(r.chatRoomId) !== String(currentRoomId))
+	     .reduce((sum, r) => sum + (r.unreadCount || 0), 0);
     const tabBadge = document.getElementById('chatBadge');
     tabBadge.textContent = totalUnread;
     tabBadge.style.display = totalUnread > 0 ? 'inline-flex' : 'none';
@@ -174,7 +197,7 @@ function renderChatRooms(rooms) {
 
     return `
       ${groupHtml}
-      <div class="chat-room-item ${unreadCount > 0 ? 'unread' : ''}"
+      <div class="chat-room-item ${unread > 0 ? 'unread' : ''}"
            data-room-id="${r.chatRoomId}"
            onclick='enterRoom(${JSON.stringify(r)})'>
         <div class="room-avatar">👤</div>
@@ -186,7 +209,7 @@ function renderChatRooms(rooms) {
           <div class="room-preview">${escHtml(r.lastMessage || '대화를 시작해보세요')}</div>
           <span class="room-status-pill ${meta.cls}">${meta.label}</span>
         </div>
-        ${unreadCount > 0 ? `<span class="unread-badge">${unreadCount}</span>` : ''}
+        ${unread > 0 ? `<span class="unread-badge">${unread}</span>` : ''}
       </div>`;
   }).join('');
 }
@@ -214,8 +237,12 @@ function enterRoom(room) {
     tabBadge.textContent = next;
     tabBadge.style.display = next > 0 ? 'inline-flex' : 'none';
   }
-
+	
   currentRoomId = room.chatRoomId;
+  
+  // DB 읽음 처리 (last_connected_at 갱신 → unreadCount 0으로)
+    fetch(`${ctxPath}/admin/cs/api/chat/rooms/${room.chatRoomId}/read`, { method: 'PUT' })
+      .catch(e => console.warn('읽음 처리 실패:', e));
 
   // 채팅 뷰 전환
   document.getElementById('chatViewEmpty').style.display = 'none';
@@ -277,9 +304,15 @@ function subscribeRoom(roomId) {
 
     renderMsg(msg);
 
-    // 유저 메시지 && 내가 보낸 게 아닐 때 → 알림음
+    // 유저 메시지 && 내가 보낸 게 아닐 때 → 알림음 + 읽음 처리 갱신
     if (String(msg.memberId) !== String(adminId)) {
       playBeep();
+      // 방에서 실시간으로 읽고 있으므로 last_connected_at 갱신 (디바운스: 1초)
+      clearTimeout(readDebounceTimer);
+      readDebounceTimer = setTimeout(() => {
+        fetch(`${ctxPath}/admin/cs/api/chat/rooms/${roomId}/read`, { method: 'PUT' })
+          .catch(e => console.warn('읽음 갱신 실패:', e));
+      }, 1000);
     }
   });
 }
@@ -287,22 +320,38 @@ function subscribeRoom(roomId) {
 // ── 채팅 히스토리 로드 ──
 async function loadChatHistory(roomId) {
   try {
-    // 본인 서버 API 경로로 맞게 수정
     const res  = await fetch(`${ctxPath}/api/chat/history/${roomId}`);
     if (!res.ok) throw new Error(res.status);
     const msgs = await res.json();
     if (!Array.isArray(msgs) || msgs.length === 0) return;
     
-    document.getElementById('chatMessagesArea').innerHTML = ''; // 중복 방지
-    msgs.forEach(m => renderMsg(m));
-    
     const area = document.getElementById('chatMessagesArea');
+	area.innerHTML = '';
+
+	    let lastDate = null;
+	    msgs.forEach(m => {
+	      if (m.msgDate && m.msgDate !== lastDate) {
+	        renderDateSeparator(m.msgDate);
+	        lastDate = m.msgDate;
+	      }
+	      renderMsg(m);
+	    });
     area.scrollTop = area.scrollHeight;
   } catch(e) {
     console.warn('채팅 히스토리 로드 실패:', e);
   }
 }
-
+function renderDateSeparator(dateStr) {
+  const area = document.getElementById('chatMessagesArea');
+  const d = new Date(dateStr);
+  const label = d.toLocaleDateString('ko-KR', { year: 'numeric', month: 'long', day: 'numeric', weekday: 'long' });
+  area.insertAdjacentHTML('beforeend', `
+    <div style="display:flex;align-items:center;gap:10px;margin:18px 0 10px;">
+      <div style="flex:1;height:1px;background:#E2E8F0;"></div>
+      <span style="font-size:11px;color:#A0AEC0;font-weight:700;white-space:nowrap;">${label}</span>
+      <div style="flex:1;height:1px;background:#E2E8F0;"></div>
+    </div>`);
+}
 // ── 메시지 렌더링 ──
 function renderMsg(data) {
   const area = document.getElementById('chatMessagesArea');

@@ -24,6 +24,6 @@ public interface CommunityChatMapper {
     List<CommunityChatRoomDto> selectMyPrivateRooms(Long memberId);
     //void insertRoomMember(Map<String, Object> params);
     
-    
+   String selectRoomType(Long roomId);
     
 }
