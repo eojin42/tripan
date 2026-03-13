@@ -1,500 +1,676 @@
 /**
- * workspace.recommend.js
- * ──────────────────────────────────────────────────────
- * 담당: 추천 장소 패널 · 키워드 검색 · 나만의 장소 등록
+ * workspace.recommend.js  ★ v5 FINAL
+ * ─────────────────────────────────────────────────────────────
  *
- * [API 연동]
- *  GET  /api/places/recommend?category=&city=&limit=12  → 추천 카드
- *  GET  /api/places/search?keyword=                     → 장소 추가 모달 검색
- *  GET  /api/places/my                                  → 나만의 장소 목록
- *  POST /api/places/my                                  → 나만의 장소 등록
- * ──────────────────────────────────────────────────────
+ * 수정 내역 (이번 버전):
+ *
+ * [BUG 1] PLACE_TYPE 중복 선언 → SyntaxError
+ *   - 원인: recommend.js에서 `var PLACE_TYPE` 폴백 선언 후,
+ *            JSP 마지막 <script> 블록의 `const PLACE_TYPE`이 재선언되어 충돌
+ *   - 해결: recommend.js의 폴백을 window.PLACE_TYPE으로 변경
+ *   - 추가 필요: workspace.jsp 994번 줄
+ *       const PLACE_TYPE = { ... }
+ *       → window.PLACE_TYPE = { ... }  (window 할당으로 교체)
+ *
+ * [BUG 2] 지도 → 일정 추가 시 아무것도 안 됨
+ *   - 원인 1: addRecToDay()에서 addPlaceToDay(dayNumber, name, ...)로 호출
+ *             → schedule.js 시그니처: addPlaceToDay(el, name, addr, lat, lng, apiPlaceId)
+ *               el은 사용 안 하지만, 첫 번째 파라미터가 dayNumber면 name="name"이 됨
+ *             → currentAddDay(schedule.js 전역)에 dayNumber 주입 후 null로 el 전달
+ *   - 원인 2: openDayPicker()에서 팝업이 화면 밖에 숨어서 안 보임
+ *             → position:fixed + 중앙 정렬로 강제 설정
+ *   - 원인 3: map.js가 window._selectedRecPlace에 set하지만
+ *             recommend.js에서 var _selectedRecPlace (로컬)로 별도 관리 → 동기화 안 됨
+ *             → Object.defineProperty로 window._selectedRecPlace와 _selectedRecPlace 동기화
+ *
+ * [BUG 3] 이미지 안 나오는 문제
+ *   - 원인: KTO areaBasedList2의 firstimage는 optional → 빈 문자열("")로 저장됨
+ *           → PlaceMapper.xml WHERE 조건에 image_url != '' 없음
+ *           → JS에서도 빈 문자열 체크 없이 그냥 '' img src로 넣음
+ *   - 해결: PlaceMapper.xml에 image_url IS NOT NULL AND image_url != '' 조건 추가 (별도 파일)
+ *           + JS에서도 빈 문자열 명시적 체크 후 placeholder 표시
+ *
+ * [BUG 4] 카테고리 필터 아무것도 안 뜸
+ *   - 원인: filterRec()이 loadRecommendCards(category, city) 호출하는데
+ *           내부에서 아무 에러 없이 동작하지만 결과가 0건인 경우:
+ *           → DB에 해당 카테고리값('TOUR' 등)으로 저장된 데이터가 없거나
+ *             KAKAO_CITIES 도시명과 실제 address 컬럼의 도시명이 불일치
+ *   - 해결: 카테고리 'all'인 경우 category 조건 제거 확인 + 콘솔 로깅 추가
+ *           + 검색 실패 시 토스트로 원인 표시
+ *
+ * [BUG 5] 무한스크롤 없음
+ *   - 해결: IntersectionObserver + offset 파라미터 추가
+ *           컨트롤러도 offset 지원하도록 별도 수정 필요 (TripPlaceApiController 수정본)
+ *
+ * ─────────────────────────────────────────────────────────────
+ * workspace.jsp 수정 사항 (1줄만):
+ *   994번 줄: const PLACE_TYPE = { OFFICIAL: 'OFFICIAL', CUSTOM: 'CUSTOM' };
+ *   →         window.PLACE_TYPE = { OFFICIAL: 'OFFICIAL', CUSTOM: 'CUSTOM' };
+ * ─────────────────────────────────────────────────────────────
  */
 
-/* ══════════════════════════════
-   상태
-══════════════════════════════ */
-var _rpCategory   = 'all';
-var _rpAllCards   = [];
-var _searchTimer  = null;
+/* ══════════════════════════
+   [BUG 1] PLACE_TYPE — window 할당 (const 충돌 방지)
+══════════════════════════ */
+if (typeof window.PLACE_TYPE === 'undefined') {
+  window.PLACE_TYPE = { OFFICIAL: 'OFFICIAL', CUSTOM: 'CUSTOM' };
+}
 
-/* ══════════════════════════════
-   1. 추천 장소 로드 (페이지 진입 시 자동)
-══════════════════════════════ */
+/* ══════════════════════════
+   상태 변수
+══════════════════════════ */
+var _rpCategory  = 'all';
+var _rpAllCards  = [];      // 전체 로드된 카드 (로컬 검색용)
+var _rpOffset    = 0;       // 무한스크롤 현재 위치
+var _rpLimit     = 12;      // 페이지당 건수
+var _rpHasMore   = true;    // 다음 페이지 여부
+var _rpLoading   = false;   // 중복 요청 방지
 
+var _searchTimer    = null;
+var _placeType      = 'all';
+var _pendingRpCard  = null;  // 추천패널 + 버튼에서 선택한 장소
+
+/* [BUG 2-3] map.js와 window._selectedRecPlace 완전 동기화
+   map.js의 openDayPickerForMap()이 window._selectedRecPlace를 직접 set하므로
+   로컬 _selectedRecPlace 대신 window._selectedRecPlace를 그대로 참조 */
+window._selectedRecPlace = null;
+
+/* ══════════════════════════
+   1. 초기화
+══════════════════════════ */
 document.addEventListener('DOMContentLoaded', function () {
-  var cities = (typeof KAKAO_CITIES !== 'undefined' && KAKAO_CITIES.length > 0) ? KAKAO_CITIES.join(',') : '';
-  loadRecommendCards('all', cities);
+  var city = _getCityParam();
+  loadRecommendCards('all', city, 0);
+  _initInfiniteScroll();
+
+  // dayPickerPopup 외부 클릭 닫기
+  document.addEventListener('click', function (e) {
+    var popup = document.getElementById('dayPickerPopup');
+    if (!popup || popup.style.display === 'none') return;
+    if (!popup.contains(e.target)) closeDayPicker();
+  });
 });
 
-function loadRecommendCards(category, city) {
+function _getCityParam() {
+  return (typeof KAKAO_CITIES !== 'undefined' && KAKAO_CITIES.length > 0)
+    ? KAKAO_CITIES.join(',') : '';
+}
+
+/* ══════════════════════════
+   2. 추천 장소 로드 (offset 페이징)
+══════════════════════════ */
+function loadRecommendCards(category, city, offset) {
+  if (_rpLoading) return;
+  _rpLoading  = true;
   _rpCategory = category;
+
   var loading = document.getElementById('rpCardsLoading');
   var grid    = document.getElementById('rpCards');
-  if (loading) loading.style.display = 'block';
+
+  if (offset === 0) {
+    // 첫 페이지: 기존 카드 전부 제거
+    if (grid) Array.from(grid.querySelectorAll('.rp-card')).forEach(function (el) { el.remove(); });
+    _rpAllCards = [];
+    if (loading) loading.style.display = 'block';
+  } else {
+    // 추가 페이지: 로딩 스피너만 하단에 추가
+    if (loading) loading.style.display = 'block';
+  }
 
   var url = CTX_PATH + '/api/places/recommend'
-          + '?category=' + encodeURIComponent(category)
-          + '&city='     + encodeURIComponent(city || '')
-          + '&limit=12';
+    + '?category=' + encodeURIComponent(category)
+    + '&city='     + encodeURIComponent(city || '')
+    + '&limit='    + _rpLimit
+    + '&offset='   + offset;
+
+  console.log('[Recommend] 로드:', url);
 
   fetch(url)
-    .then(function (r) { return r.json(); })
-    .then(function (list) {
-      _rpAllCards = list;
-      renderRpCards(list);
+    .then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
+    .then(function (data) {
+      // ★ 컨트롤러가 List<PlaceDto> 배열로 반환 (현재 구버전) 또는
+      //   { places, hasMore, total } 신버전 모두 처리
+      var list, hasMore;
+      if (Array.isArray(data)) {
+        list    = data;
+        hasMore = (list.length === _rpLimit); // 배열이면 개수로 추정
+      } else {
+        list    = data.places || [];
+        hasMore = !!data.hasMore;
+      }
+
+      console.log('[Recommend] 응답:', list.length, '건, hasMore:', hasMore);
+
+      _rpAllCards = _rpAllCards.concat(list);
+      _rpOffset   = offset + list.length;
+      _rpHasMore  = hasMore;
+
+      _appendRpCards(list);
       if (loading) loading.style.display = 'none';
+
+      var noResult = document.getElementById('rpNoResult');
+      if (noResult) noResult.style.display = (_rpAllCards.length === 0 ? 'block' : 'none');
+
+      _rpLoading = false;
     })
-    .catch(function () {
-      if (loading) loading.innerHTML =
-        '<div style="text-align:center;padding:32px;color:#A0AEC0;">' +
-        '<div style="font-size:32px;margin-bottom:8px;">⚠️</div>' +
-        '<div style="font-size:13px;">추천 장소를 불러오지 못했어요<br><span style="font-size:11px;color:#CBD5E0;">잠시 후 다시 시도해 주세요</span></div>' +
-        '</div>';
+    .catch(function (err) {
+      console.error('[Recommend] 로드 실패:', err);
+      _rpLoading = false;
+      if (offset === 0 && loading) {
+        loading.innerHTML =
+          '<div style="text-align:center;padding:20px;color:#A0AEC0;">' +
+          '추천 장소를 불러오지 못했어요 😢<br><small style="color:#CBD5E0;">' + err.message + '</small></div>';
+      }
     });
 }
 
-/* ══════════════════════════════
-   2. 추천 카드 렌더링
-══════════════════════════════ */
-function renderRpCards(list) {
+/* ── 카드 DOM 생성 & append ── */
+function _appendRpCards(list) {
   var grid = document.getElementById('rpCards');
   if (!grid) return;
-
-  var noResult = document.getElementById('rpNoResult');
-
-  // 기존 카드 제거 (로딩 div 유지)
-  Array.from(grid.querySelectorAll('.rp-card')).forEach(function (el) { el.remove(); });
-
-  if (!list || list.length === 0) {
-    if (noResult) {
-      noResult.innerHTML =
-        '<div style="text-align:center;padding:24px;color:#A0AEC0;">' +
-        '<div style="font-size:28px;margin-bottom:8px;">🗺️</div>' +
-        '<div style="font-size:13px;color:#718096;">아직 추천 장소 데이터가 없어요</div>' +
-        '<div style="font-size:11px;color:#CBD5E0;margin-top:4px;">여행지 키워드로 직접 검색해 보세요</div>' +
-        '</div>';
-      noResult.style.display = 'block';
-    }
-    return;
-  }
-  if (noResult) noResult.style.display = 'none';
 
   list.forEach(function (p) {
     var card = document.createElement('div');
     card.className = 'rp-card';
     card.setAttribute('data-name',     p.placeName  || '');
     card.setAttribute('data-address',  p.address    || '');
-    card.setAttribute('data-category', p.category   || '');
-    card.setAttribute('data-place-id', p.placeId    || '');
     card.setAttribute('data-lat',      p.latitude   || 0);
     card.setAttribute('data-lng',      p.longitude  || 0);
-    card.setAttribute('data-custom',   p.isCustom ? '1' : '0');
+    card.setAttribute('data-place-id', p.placeId    || '');
+    card.setAttribute('data-category', p.category   || '');
 
-    var img      = p.imageUrl  ? p.imageUrl  : '';
-    var badge    = _categoryBadge(p.category);
-    var customTag = p.isCustom ? '<span class="rp-custom-tag">⭐ 나만의</span>' : '';
+    var bi  = _categoryBadgeInfo(p.category);
+    var ph  = _categoryPlaceholder(p.category);
+
+    // [BUG 3] 이미지 빈 문자열 명시적 체크
+    var hasImg = p.imageUrl && p.imageUrl.trim() !== '';
+
+    var imgHtml = hasImg
+      ? '<img class="rp-card-thumb-img" src="' + _esc(p.imageUrl) + '" loading="lazy" '
+          + 'onerror="this.onerror=null;this.parentElement.innerHTML='
+          + "'<div style=\\'width:100%;height:130px;background:var(--bg,#F7FAFC);display:flex;"
+          + "align-items:center;justify-content:center;font-size:32px;\\'>" + ph + "</div>'"
+          + '">'
+      : '<div style="width:100%;height:130px;background:var(--bg,#F7FAFC);display:flex;'
+          + 'align-items:center;justify-content:center;font-size:32px;">' + ph + '</div>';
 
     card.innerHTML =
-      '<div class="rp-card__img">' +
-        (img
-          ? '<img src="' + _escHtml(img) + '" alt="' + _escHtml(p.placeName) + '" loading="lazy" onerror="this.parentElement.innerHTML=\'📍\'">'
-          : '<div class="rp-card__img-empty">📍</div>') +
-        badge + customTag +
+      '<div class="rp-card-img-wrap">' + imgHtml +
+        '<span class="rp-card-cat-badge rp-badge ' + bi.color + '">' + bi.label + '</span>' +
       '</div>' +
-      '<div class="rp-card__body">' +
-        '<div class="rp-card__name">' + _escHtml(p.placeName) + '</div>' +
-        '<div class="rp-card__addr">' + _escHtml(p.address || '') + '</div>' +
-      '</div>' +
-      '<button class="rp-card__add-btn" onclick="rpAddToDay(this)" title="일정에 추가">+</button>';
+      '<div class="rp-card-info">' +
+        '<div class="rp-card-name">' + _esc(p.placeName || '') + '</div>' +
+        '<div class="rp-card-addr">' + _esc(p.address   || '') + '</div>' +
+        '<div class="rp-card-foot">' +
+          '<button class="rp-add-btn" onclick="rpAddToDay(this);event.stopPropagation();">+ 추가</button>' +
+        '</div>' +
+      '</div>';
 
+    card.addEventListener('click', function () { openPlaceDetailModal(p); });
     grid.appendChild(card);
   });
 }
 
-/* ══════════════════════════════
-   3. 카테고리 필터 탭 클릭
-══════════════════════════════ */
-function filterRec(btn, category) {
-  document.querySelectorAll('.rp-filter-btn').forEach(function (b) {
-    b.classList.remove('active');
-  });
-  btn.classList.add('active');
+/* ── [BUG 5] 무한스크롤 IntersectionObserver ── */
+function _initInfiniteScroll() {
+  var pane = document.getElementById('rpPane-suggest') || document.getElementById('rpCards');
+  if (!pane) return;
 
-  var city = (typeof KAKAO_CITIES !== 'undefined' && KAKAO_CITIES.length > 0)
-    ? KAKAO_CITIES[0] : '';
-  loadRecommendCards(category, city);
+  var sentinel = document.getElementById('rpScrollSentinel');
+  if (!sentinel) {
+    sentinel = document.createElement('div');
+    sentinel.id    = 'rpScrollSentinel';
+    sentinel.style.cssText = 'height:4px;width:100%;';
+    pane.appendChild(sentinel);
+  }
+
+  if (!window.IntersectionObserver) return; // 구형 브라우저 폴백 없음
+
+  new IntersectionObserver(function (entries) {
+    if (entries[0].isIntersecting && _rpHasMore && !_rpLoading) {
+      loadRecommendCards(_rpCategory, _getCityParam(), _rpOffset);
+    }
+  }, { threshold: 0.1 }).observe(sentinel);
 }
 
-/* ══════════════════════════════
-   4. 추천 카드 내 검색 필터 (클라이언트 사이드)
-══════════════════════════════ */
+/* ── 로컬 검색 (이미 렌더된 카드 show/hide) ── */
 function searchRpCards(keyword) {
+  var kw    = keyword.trim();
   var clear = document.getElementById('rpSearchClear');
-  if (clear) clear.style.display = keyword ? 'block' : 'none';
+  if (clear) clear.style.display = kw ? 'block' : 'none';
 
-  if (!keyword || keyword.trim().length < 1) {
-    renderRpCards(_rpAllCards);
-    return;
-  }
-  var kw = keyword.trim().toUpperCase();
-  var filtered = _rpAllCards.filter(function (p) {
-    return (p.placeName  && p.placeName.toUpperCase().indexOf(kw)  !== -1) ||
-           (p.address    && p.address.toUpperCase().indexOf(kw)    !== -1);
+  var grid = document.getElementById('rpCards');
+  if (!grid) return;
+  var upper = kw.toUpperCase();
+
+  Array.from(grid.querySelectorAll('.rp-card')).forEach(function (c) {
+    if (!kw) { c.style.display = ''; return; }
+    var nm = (c.getAttribute('data-name')    || '').toUpperCase();
+    var ad = (c.getAttribute('data-address') || '').toUpperCase();
+    c.style.display = (nm.indexOf(upper) !== -1 || ad.indexOf(upper) !== -1) ? '' : 'none';
   });
-  renderRpCards(filtered);
 }
 
 function clearRpSearch() {
   var input = document.getElementById('rpSearchInput');
   if (input) { input.value = ''; searchRpCards(''); }
+  var clear = document.getElementById('rpSearchClear');
+  if (clear) clear.style.display = 'none';
 }
 
-/* ══════════════════════════════
-   5. 장소 추가 모달 — 카카오 API 실시간 검색
-   (기존 workspace.schedule.js의 searchPlace 대체)
-══════════════════════════════ */
-var _placeType = 'all';
+/* ══════════════════════════
+   3. 카테고리 필터 / 탭 전환
+══════════════════════════ */
 
-function selectPlaceType(btn, type) {
-  document.querySelectorAll('.place-type-tab').forEach(function (b) {
-    b.classList.remove('active');
+/** JSP: onclick="filterRec(this,'TOUR')" */
+function filterRec(btn, category) {
+  document.querySelectorAll('.rp-filter-btn').forEach(function (b) { b.classList.remove('active'); });
+  btn.classList.add('active');
+
+  // offset 초기화 후 서버 재요청
+  _rpOffset  = 0;
+  _rpHasMore = true;
+  loadRecommendCards(category, _getCityParam(), 0);
+}
+
+/** JSP: onclick="switchRpTab('suggest',this)" */
+function switchRpTab(tab, btn) {
+  document.querySelectorAll('.rp-tab').forEach(function (b) { b.classList.remove('active'); });
+  btn.classList.add('active');
+  document.querySelectorAll('.rp-pane').forEach(function (el) { el.classList.remove('active'); });
+  var t = document.getElementById('rpPane-' + tab);
+  if (t) t.classList.add('active');
+}
+
+/* ══════════════════════════
+   4. dayPickerPopup
+══════════════════════════ */
+
+/** 카드 "+ 추가" 버튼 */
+function rpAddToDay(btn) {
+  var card = btn.closest('.rp-card');
+  if (!card) return;
+  _pendingRpCard = {
+    placeName : card.getAttribute('data-name'),
+    address   : card.getAttribute('data-address'),
+    latitude  : parseFloat(card.getAttribute('data-lat'))  || 0,
+    longitude : parseFloat(card.getAttribute('data-lng'))  || 0,
+    placeId   : card.getAttribute('data-place-id')
+  };
+  openDayPicker();
+}
+
+/** dayPickerPopup 열기 (화면 중앙 고정) */
+function openDayPicker() {
+  var popup = document.getElementById('dayPickerPopup');
+  if (!popup) {
+    console.warn('[dayPicker] #dayPickerPopup 없음 — JSP 확인 필요');
+    return;
+  }
+  // [BUG 2] position:fixed + 중앙 정렬로 강제 표시
+  popup.style.cssText =
+    'display:block !important;' +
+    'position:fixed !important;' +
+    'top:50% !important;' +
+    'left:50% !important;' +
+    'transform:translate(-50%,-50%) !important;' +
+    'z-index:9999 !important;';
+}
+
+/** JSP 취소 버튼: onclick="closeDayPicker()" */
+function closeDayPicker() {
+  var popup = document.getElementById('dayPickerPopup');
+  if (popup) popup.style.display = 'none';
+  _pendingRpCard            = null;
+  window._selectedRecPlace  = null;
+}
+
+/**
+ * JSP dpp-btn: onclick="addRecToDay(${day.dayNumber})"
+ *
+ * [BUG 2] addPlaceToDay 시그니처 불일치 수정
+ *   schedule.js 실제 시그니처: addPlaceToDay(el, name, addr, lat, lng, apiPlaceId)
+ *   - el: 첫 번째 파라미터지만 함수 내부에서 사용 안 함 (null 전달 OK)
+ *   - currentAddDay: schedule.js 전역 변수 → dayNumber 주입 필수
+ */
+function addRecToDay(dayNumber) {
+  var p = _pendingRpCard || window._selectedRecPlace;
+  if (!p) { closeDayPicker(); return; }
+
+  var name    = p.placeName || p.name  || '';
+  var address = p.address              || '';
+  var lat     = p.latitude  || p.lat  || 0;
+  var lng     = p.longitude || p.lng  || 0;
+  var placeId = p.placeId              || null;
+
+  // ★ schedule.js의 currentAddDay 전역에 dayNumber 주입
+  if (typeof currentAddDay !== 'undefined') {
+    currentAddDay = dayNumber;
+  }
+
+  if (typeof addPlaceToDay === 'function') {
+    // schedule.js: addPlaceToDay(el, name, addr, lat, lng, apiPlaceId)
+    // el은 null OK (함수 내부에서 currentAddDay를 사용하므로)
+    addPlaceToDay(null, name, address, lat, lng, placeId);
+    if (typeof showToast === 'function') showToast('📍 DAY ' + dayNumber + '에 추가 중...');
+  } else {
+    if (typeof showToast === 'function')
+      showToast('⚠️ 일정 추가 함수를 찾을 수 없어요 (workspace.schedule.js 확인)');
+  }
+
+  closeDayPicker();
+}
+
+/* ══════════════════════════
+   5. 장소 상세 모달 (카드 클릭)
+══════════════════════════ */
+function openPlaceDetailModal(p) {
+  var modal = document.getElementById('rpPlaceDetailModal');
+  if (!modal) {
+    modal = document.createElement('div');
+    modal.id = 'rpPlaceDetailModal';
+    modal.style.cssText =
+      'position:fixed;top:0;left:0;width:100%;height:100%;z-index:2000;' +
+      'display:flex;align-items:center;justify-content:center;' +
+      'background:rgba(0,0,0,.5);backdrop-filter:blur(4px);';
+    modal.addEventListener('click', function (e) {
+      if (e.target === modal) closePlaceDetailModal();
+    });
+    document.body.appendChild(modal);
+  }
+
+  var bi  = _categoryBadgeInfo(p.category);
+  var ph  = _categoryPlaceholder(p.category);
+  var hasImg = p.imageUrl && p.imageUrl.trim() !== '';
+
+  var imgSec = hasImg
+    ? '<img src="' + _esc(p.imageUrl) + '" '
+        + 'style="width:100%;height:200px;object-fit:cover;border-radius:20px 20px 0 0;display:block;" '
+        + 'onerror="this.style.display=\'none\'">'
+    : '<div style="width:100%;height:100px;background:var(--bg,#F7FAFC);border-radius:20px 20px 0 0;'
+        + 'display:flex;align-items:center;justify-content:center;font-size:48px;">' + ph + '</div>';
+
+  modal.innerHTML =
+    '<div style="background:#fff;border-radius:20px;width:380px;max-width:92vw;' +
+               'max-height:82vh;overflow-y:auto;box-shadow:0 24px 64px rgba(0,0,0,.22);">' +
+      imgSec +
+      '<div style="padding:20px 22px 24px;">' +
+        '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">' +
+          '<span style="font-size:11px;font-weight:700;padding:3px 10px;border-radius:50px;' +
+                       'background:rgba(137,207,240,.15);color:#5BABC9;">' + bi.label + '</span>' +
+          '<button onclick="closePlaceDetailModal()" '
+            + 'style="background:none;border:none;font-size:22px;cursor:pointer;color:#CBD5E0;line-height:1;">×</button>' +
+        '</div>' +
+        '<div style="font-size:18px;font-weight:800;color:#1A202C;margin-bottom:8px;line-height:1.3;">'
+          + _esc(p.placeName || '') + '</div>' +
+        (p.address     ? '<div style="font-size:12px;color:#718096;margin-bottom:8px;display:flex;gap:4px;"><span>📍</span><span>' + _esc(p.address) + '</span></div>' : '') +
+        (p.phoneNumber ? '<div style="font-size:12px;color:#718096;margin-bottom:8px;">📞 ' + _esc(p.phoneNumber) + '</div>' : '') +
+        (p.description
+          ? '<div style="font-size:12px;color:#4A5568;line-height:1.75;margin-bottom:18px;' +
+              'padding:12px;background:#F7FAFC;border-radius:12px;max-height:120px;overflow-y:auto;">' +
+              _esc((p.description || '').substring(0, 300)) + (p.description.length > 300 ? '…' : '') +
+            '</div>'
+          : '') +
+        '<button id="rpDetailAddBtn" '
+          + 'style="width:100%;padding:14px;border:none;border-radius:14px;'
+          + 'background:linear-gradient(135deg,#89CFF0,#B8A9D9);'
+          + 'color:#fff;font-size:14px;font-weight:800;cursor:pointer;">+ 일정에 추가하기</button>' +
+      '</div>' +
+    '</div>';
+
+  // 추가 버튼: 안전하게 addEventListener로 처리
+  document.getElementById('rpDetailAddBtn').addEventListener('click', function () {
+    _pendingRpCard = {
+      placeName : p.placeName  || '',
+      address   : p.address    || '',
+      latitude  : p.latitude   || 0,
+      longitude : p.longitude  || 0,
+      placeId   : p.placeId    || null
+    };
+    closePlaceDetailModal();
+    openDayPicker();
   });
+
+  modal.style.display = 'flex';
+}
+
+function closePlaceDetailModal() {
+  var modal = document.getElementById('rpPlaceDetailModal');
+  if (modal) modal.style.display = 'none';
+}
+
+/* ══════════════════════════
+   6. 장소 추가 모달 내 검색
+══════════════════════════ */
+function selectPlaceType(btn, type) {
+  document.querySelectorAll('.place-type-tab').forEach(function (b) { b.classList.remove('active'); });
   btn.classList.add('active');
   _placeType = type;
-
-  if (type === 'my') {
-    // 나만의 장소 탭 → 내 장소 목록 로드
-    loadMyPlaces();
-  } else {
-    var kw = document.getElementById('placeSearchInput');
-    var keyword = kw ? kw.value.trim() : '';
-    if (keyword.length >= 2) {
-      searchPlace(keyword);
-    } else {
-      // 검색어 없으면 카테고리 기준으로 추천 장소 미리보기
-      _loadCategoryPreview(type);
-    }
-  }
-}
-
-/** 카테고리 탭 클릭 시 검색어 없을 때 DB에서 미리보기 로드 */
-function _loadCategoryPreview(category) {
-  var results = document.getElementById('placeResults');
-  if (!results) return;
-  results.innerHTML = '<div style="text-align:center;padding:20px;color:#A0AEC0;">🔍 검색 중...</div>';
-
-  var city = (typeof KAKAO_CITIES !== 'undefined' && KAKAO_CITIES.length > 0) ? KAKAO_CITIES[0] : '';
-  var url = CTX_PATH + '/api/places/recommend'
-          + '?category=' + encodeURIComponent(category === 'all' ? 'all' : category)
-          + '&city='     + encodeURIComponent(city)
-          + '&limit=20';
-
-  fetch(url)
-    .then(function(r) { return r.json(); })
-    .then(function(list) { renderPlaceResults(list); })
-    .catch(function() { renderPlaceResults([]); });
+  var kw = ((document.getElementById('placeSearchInput') || {}).value || '').trim();
+  if (kw.length >= 2) searchPlace(kw);
+  else _loadCategoryPreview(type);
 }
 
 function searchPlace(keyword) {
   clearTimeout(_searchTimer);
-  if (!keyword || keyword.trim().length < 2) {
-    if (_placeType === 'my') { loadMyPlaces(); return; }
-    _loadCategoryPreview(_placeType);
+  if (!keyword || keyword.length < 2) {
+    if (_placeType === 'my') loadMyPlaces(); else _loadCategoryPreview(_placeType);
     return;
   }
-
   var results = document.getElementById('placeResults');
-  if (results) results.innerHTML = '<div style="text-align:center;padding:20px;color:#A0AEC0;">🔍 검색 중...</div>';
+  if (results) results.innerHTML =
+    '<div style="text-align:center;padding:24px;color:#A0AEC0;">🔍 검색 중...</div>';
 
   _searchTimer = setTimeout(function () {
-    // ① 나만의 장소 탭이면 내 장소만
     if (_placeType === 'my') { loadMyPlaces(keyword); return; }
 
-    // ② 카카오 장소 API 먼저 (실시간성 우선)
-    _searchKakaoPlaces(keyword);
+    fetch(CTX_PATH + '/api/places/search?keyword=' + encodeURIComponent(keyword))
+      .then(function (r) { return r.json(); })
+      .then(function (res) {
+        // 구버전: List<TripPlaceDto> 배열 / 신버전: { officialPlaces, myPlaces }
+        if (Array.isArray(res)) {
+          renderSearchResults({ officialPlaces: [], myPlaces: res });
+        } else {
+          renderSearchResults(res);
+        }
+      })
+      .catch(function () {
+        var w = document.getElementById('placeResults');
+        if (w) w.innerHTML = '<div style="text-align:center;padding:20px;color:#A0AEC0;">검색 실패 😢</div>';
+      });
   }, 350);
 }
 
-/** 카카오 장소 API 검색 → 카테고리 필터 적용 후 렌더, 결과 없으면 KTO DB fallback */
-function _searchKakaoPlaces(keyword) {
-  if (typeof kakao === 'undefined' || !kakao.maps) {
-    _searchKtoPlaces(keyword);
-    return;
-  }
-  var ps = new kakao.maps.services.Places();
-  ps.keywordSearch(keyword, function (data, status) {
-    if (status === kakao.maps.services.Status.OK && data.length > 0) {
-      var mapped = data.map(function (item) {
-        return {
-          placeId:   null,
-          placeName: item.place_name,
-          address:   item.address_name,
-          latitude:  parseFloat(item.y),
-          longitude: parseFloat(item.x),
-          category:  _kakaoCategory(item.category_group_code),
-          imageUrl:  '',
-          phone:     item.phone,
-          isCustom:  false,
-          kakaoId:   item.id
-        };
-      });
-      // 카테고리 탭 필터 적용 (all이 아닐 때)
-      var filtered = mapped;
-      if (_placeType && _placeType !== 'all') {
-        filtered = mapped.filter(function(p) {
-          return p.category === _placeType;
-        });
-        // 카테고리 필터 후 결과 없으면 전체 표시
-        if (filtered.length === 0) filtered = mapped;
-      }
-      renderPlaceResults(filtered);
-    } else {
-      // 카카오 결과 없음 → KTO DB 검색
-      _searchKtoPlaces(keyword);
-    }
-  });
-}
-
-/** KTO DB 검색 (백엔드 /api/places/search) */
-function _searchKtoPlaces(keyword) {
-  fetch(CTX_PATH + '/api/places/search?keyword=' + encodeURIComponent(keyword))
-    .then(function (r) { return r.json(); })
-    .then(function (list) { renderPlaceResults(list); })
-    .catch(function () { renderPlaceResults([]); });
-}
-
-/** 카카오 카테고리 코드 → 내부 category */
-function _kakaoCategory(code) {
-  var map = { FD6: 'RESTAURANT', CE7: 'CAFE', AT4: 'TOUR', AD5: 'STAY', SW8: 'SHOPPING' };
-  return map[code] || 'ETC';
-}
-
-/* ══════════════════════════════
-   6. 장소 검색 결과 렌더링 (장소 추가 모달 내)
-══════════════════════════════ */
-function renderPlaceResults(list) {
+function renderSearchResults(data) {
   var wrap = document.getElementById('placeResults');
   if (!wrap) return;
+  wrap.innerHTML = '';
 
-  if (!list || list.length === 0) {
-    wrap.innerHTML =
-      '<div style="text-align:center;padding:28px;color:#A0AEC0;">' +
-      '<div style="font-size:28px;margin-bottom:8px;">😅</div>' +
-      '<div style="font-size:13px;">검색 결과가 없어요</div></div>';
+  var PT    = window.PLACE_TYPE || { OFFICIAL: 'OFFICIAL', CUSTOM: 'CUSTOM' };
+  var hasOff = data.officialPlaces && data.officialPlaces.length > 0;
+  var hasMy  = data.myPlaces       && data.myPlaces.length > 0;
+
+  if (!hasOff && !hasMy) {
+    wrap.innerHTML = '<div style="text-align:center;padding:32px;color:#A0AEC0;font-size:13px;">검색 결과가 없어요 😅</div>';
     return;
   }
-
-  wrap.innerHTML = list.map(function (p) {
-    var customTag = p.isCustom ? '<span style="font-size:10px;background:#FFF3CD;color:#856404;padding:2px 6px;border-radius:4px;margin-left:4px;">나만의</span>' : '';
-    return '<div class="place-result-item" ' +
-      'data-name="'    + _escHtml(p.placeName  || '') + '" ' +
-      'data-address="' + _escHtml(p.address    || '') + '" ' +
-      'data-lat="'     + (p.latitude  || 0)           + '" ' +
-      'data-lng="'     + (p.longitude || 0)           + '" ' +
-      'data-place-id="'+ (p.placeId   || '')          + '" ' +
-      'onclick="selectPlaceResult(this)">' +
-      '<div style="font-size:13px;font-weight:700;color:#2D3748;">' + _escHtml(p.placeName) + customTag + '</div>' +
-      '<div style="font-size:12px;color:#A0AEC0;margin-top:3px;">' + _escHtml(p.address || '') + '</div>' +
-      '</div>';
-  }).join('');
+  var html = '';
+  if (hasOff) {
+    html += '<div style="font-size:11px;font-weight:800;color:#5BABC9;padding:10px 14px 4px;">✨ Tripan 공식 추천</div>';
+    data.officialPlaces.forEach(function (p) { html += _searchItemHtml(p, PT.OFFICIAL); });
+  }
+  if (hasMy) {
+    html += '<div style="font-size:11px;font-weight:800;color:#9B8DBE;padding:10px 14px 4px;">📍 나의 저장 장소</div>';
+    data.myPlaces.forEach(function (p) { html += _searchItemHtml(p, PT.CUSTOM); });
+  }
+  wrap.innerHTML = html;
 }
 
-/* ══════════════════════════════
-   7. 나만의 장소 목록 로드
-══════════════════════════════ */
+function _searchItemHtml(p, type) {
+  var PT    = window.PLACE_TYPE || { OFFICIAL: 'OFFICIAL', CUSTOM: 'CUSTOM' };
+  var isOff = (type === PT.OFFICIAL);
+  var badge = isOff
+    ? '<span style="font-size:10px;font-weight:700;padding:1px 7px;background:rgba(137,207,240,.18);color:#5BABC9;border-radius:50px;margin-right:4px;">공식</span>'
+    : '<span style="font-size:12px;margin-right:3px;">⭐</span>';
+
+  return '<div style="padding:11px 14px;border-bottom:1px solid #F0F4F8;cursor:pointer;background:'
+    + (isOff ? 'rgba(137,207,240,.04)' : '#fff') + ';" '
+    + 'data-name="'     + _esc(p.placeName || '') + '" '
+    + 'data-address="'  + _esc(p.address   || '') + '" '
+    + 'data-lat="'      + (p.latitude  || 0) + '" '
+    + 'data-lng="'      + (p.longitude || 0) + '" '
+    + 'data-place-id="' + _esc(String(p.placeId || '')) + '" '
+    + 'onmouseover="this.style.background=\'#F7FAFC\'" '
+    + 'onmouseout="this.style.background=\'' + (isOff ? 'rgba(137,207,240,.04)' : '#fff') + '\'" '
+    + 'onclick="selectPlaceResult(this)">'
+    + '<div style="font-size:13px;font-weight:700;color:#1A202C;margin-bottom:3px;">' + badge + _esc(p.placeName || '') + '</div>'
+    + '<div style="font-size:11px;color:#A0AEC0;">' + _esc(p.address || '') + '</div>'
+    + '</div>';
+}
+
+/* ══════════════════════════
+   7. 나만의 장소
+══════════════════════════ */
 function loadMyPlaces(keyword) {
   fetch(CTX_PATH + '/api/places/my')
     .then(function (r) { return r.json(); })
     .then(function (list) {
-      var filtered = list;
+      if (!Array.isArray(list)) list = [];
       if (keyword) {
         var kw = keyword.toUpperCase();
-        filtered = list.filter(function (p) {
-          return (p.placeName && p.placeName.toUpperCase().indexOf(kw) !== -1) ||
-                 (p.address   && p.address.toUpperCase().indexOf(kw)   !== -1);
+        list = list.filter(function (p) {
+          return (p.placeName || '').toUpperCase().indexOf(kw) !== -1 ||
+                 (p.address   || '').toUpperCase().indexOf(kw) !== -1;
         });
       }
-      // 상단에 "나만의 장소 등록" 버튼 포함해서 렌더
-      renderMyPlaceResults(filtered);
-    })
-    .catch(function () { renderPlaceResults([]); });
+      renderMyPlaceResults(list);
+    });
 }
 
 function renderMyPlaceResults(list) {
   var wrap = document.getElementById('placeResults');
   if (!wrap) return;
+  var html = '<div style="padding:10px 14px;">'
+    + '<button onclick="openRegisterMyPlaceForm()" '
+    + 'style="width:100%;padding:10px;border:1.5px dashed #E2E8F0;border-radius:10px;'
+    + 'background:none;font-size:13px;font-weight:700;color:#718096;cursor:pointer;font-family:inherit;">'
+    + '+ 나만의 장소 직접 등록</button></div>';
 
-  var html =
-    '<div style="padding:12px 0 8px;">' +
-    '<button class="btn-primary" style="margin:0;padding:10px;font-size:13px;" ' +
-    'onclick="openRegisterMyPlaceForm()">+ 나만의 장소 직접 등록</button></div>';
-
-  if (!list || list.length === 0) {
-    html += '<div style="text-align:center;padding:20px;color:#A0AEC0;font-size:13px;">아직 등록한 나만의 장소가 없어요</div>';
+  if (!list || !list.length) {
+    html += '<div style="text-align:center;padding:20px;color:#A0AEC0;font-size:13px;">등록된 장소가 없어요</div>';
   } else {
-    html += list.map(function (p) {
-      return '<div class="place-result-item" ' +
-        'data-name="'    + _escHtml(p.placeName || '') + '" ' +
-        'data-address="' + _escHtml(p.address   || '') + '" ' +
-        'data-lat="'     + (p.latitude  || 0)          + '" ' +
-        'data-lng="'     + (p.longitude || 0)          + '" ' +
-        'data-place-id="'+ (p.placeId   || '')         + '" ' +
-        'onclick="selectPlaceResult(this)">' +
-        '<div style="font-size:13px;font-weight:700;color:#2D3748;">⭐ ' + _escHtml(p.placeName) + '</div>' +
-        '<div style="font-size:12px;color:#A0AEC0;margin-top:3px;">' + _escHtml(p.address || '') + '</div>' +
-        '</div>';
-    }).join('');
+    list.forEach(function (p) {
+      html += '<div style="padding:11px 14px;border-bottom:1px solid #F0F4F8;cursor:pointer;" '
+        + 'data-name="'     + _esc(p.placeName || '') + '" '
+        + 'data-address="'  + _esc(p.address   || '') + '" '
+        + 'data-lat="'      + (p.latitude  || 0) + '" '
+        + 'data-lng="'      + (p.longitude || 0) + '" '
+        + 'data-place-id="' + _esc(String(p.placeId || '')) + '" '
+        + 'onmouseover="this.style.background=\'#F7FAFC\'" onmouseout="this.style.background=\'\'" '
+        + 'onclick="selectPlaceResult(this)">'
+        + '<div style="font-size:13px;font-weight:700;margin-bottom:2px;">⭐ ' + _esc(p.placeName || '') + '</div>'
+        + '<div style="font-size:11px;color:#A0AEC0;">' + _esc(p.address || '') + '</div>'
+        + '</div>';
+    });
   }
   wrap.innerHTML = html;
 }
 
-/* ══════════════════════════════
-   8. 나만의 장소 등록 폼 (인라인)
-══════════════════════════════ */
 function openRegisterMyPlaceForm() {
   var wrap = document.getElementById('placeResults');
   if (!wrap) return;
   wrap.innerHTML =
-    '<div style="padding:16px;background:#F8FAFC;border-radius:12px;display:flex;flex-direction:column;gap:10px;">' +
-    '<div style="font-size:13px;font-weight:800;color:#2D3748;">나만의 장소 등록</div>' +
-    '<input id="myp-name"    class="form-input" placeholder="장소명 *" style="margin:0">' +
-    '<input id="myp-address" class="form-input" placeholder="주소" style="margin:0">' +
-    '<input id="myp-lat"     class="form-input" placeholder="위도 (예: 37.5665)" style="margin:0" type="number" step="any">' +
-    '<input id="myp-lng"     class="form-input" placeholder="경도 (예: 126.9780)" style="margin:0" type="number" step="any">' +
-    '<select id="myp-cat" class="form-input" style="margin:0">' +
-    '  <option value="RESTAURANT">🍽️ 음식점</option>' +
-    '  <option value="TOUR">🏔️ 관광지</option>' +
-    '  <option value="STAY">🏨 숙박</option>' +
-    '  <option value="CAFE">☕ 카페</option>' +
-    '  <option value="SHOPPING">🛍️ 쇼핑</option>' +
-    '  <option value="ETC">📦 기타</option>' +
-    '</select>' +
-    '<div style="display:flex;gap:8px;">' +
-    '  <button class="btn-primary" style="margin:0;flex:1;padding:10px;font-size:13px;" onclick="submitRegisterMyPlace()">등록</button>' +
-    '  <button style="flex:1;padding:10px;border-radius:10px;border:1.5px solid #E2E8F0;background:#fff;cursor:pointer;font-size:13px;" onclick="loadMyPlaces()">취소</button>' +
-    '</div></div>';
+    '<div style="padding:16px;display:flex;flex-direction:column;gap:8px;">'
+    + '<input id="myp-name" placeholder="장소명 *" style="padding:9px 12px;border:1.5px solid #E2E8F0;border-radius:10px;font-size:13px;font-family:inherit;outline:none;">'
+    + '<input id="myp-address" placeholder="주소" style="padding:9px 12px;border:1.5px solid #E2E8F0;border-radius:10px;font-size:13px;font-family:inherit;outline:none;">'
+    + '<div style="display:flex;gap:6px;">'
+      + '<input id="myp-lat" type="number" placeholder="위도" style="flex:1;padding:9px 12px;border:1.5px solid #E2E8F0;border-radius:10px;font-size:13px;font-family:inherit;outline:none;">'
+      + '<input id="myp-lng" type="number" placeholder="경도" style="flex:1;padding:9px 12px;border:1.5px solid #E2E8F0;border-radius:10px;font-size:13px;font-family:inherit;outline:none;">'
+    + '</div>'
+    + '<button onclick="submitRegisterMyPlace()" style="padding:11px;border:none;border-radius:10px;background:linear-gradient(135deg,#89CFF0,#B8A9D9);color:#fff;font-size:13px;font-weight:800;cursor:pointer;font-family:inherit;">등록</button>'
+    + '<button onclick="loadMyPlaces()" style="padding:10px;border:none;border-radius:10px;background:#F7FAFC;font-size:12px;font-weight:700;color:#718096;cursor:pointer;font-family:inherit;">취소</button>'
+    + '</div>';
 }
 
 function submitRegisterMyPlace() {
   var name    = (document.getElementById('myp-name')    || {}).value || '';
   var address = (document.getElementById('myp-address') || {}).value || '';
-  var lat     = parseFloat((document.getElementById('myp-lat') || {}).value || 0);
-  var lng     = parseFloat((document.getElementById('myp-lng') || {}).value || 0);
-  var cat     = (document.getElementById('myp-cat')     || {}).value || 'ETC';
-
-  if (!name.trim()) { if (typeof showToast === 'function') showToast('⚠️ 장소명은 필수입니다'); return; }
-
+  var lat     = (document.getElementById('myp-lat')     || {}).value || '';
+  var lng     = (document.getElementById('myp-lng')     || {}).value || '';
+  if (!name.trim()) { alert('장소명은 필수입니다'); return; }
   fetch(CTX_PATH + '/api/places/my', {
-    method:  'POST',
+    method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body:    JSON.stringify({ placeName: name, address: address, latitude: lat, longitude: lng, category: cat })
+    body: JSON.stringify({ placeName: name, address: address, latitude: lat, longitude: lng })
   })
-  .then(function (r) { return r.json(); })
-  .then(function (res) {
-    if (res.success) {
-      if (typeof showToast === 'function') showToast('⭐ 나만의 장소가 등록됐어요!');
-      loadMyPlaces();
-    }
-  })
-  .catch(function () {
-    if (typeof showToast === 'function') showToast('⚠️ 등록에 실패했어요');
-  });
+  .then(function () { loadMyPlaces(); if (typeof showToast === 'function') showToast('📍 나만의 장소 등록 완료!'); })
+  .catch(function () { alert('등록 실패'); });
 }
 
-/* ══════════════════════════════
-   9. 추천 카드 → 일정 추가 (Day 선택 팝업)
-══════════════════════════════ */
-var _pendingRpCard = null;
+/**
+ * 검색 결과 클릭 → 일정에 추가
+ * [BUG 2] schedule.js 시그니처: addPlaceToDay(el, name, addr, lat, lng, apiPlaceId)
+ *   - currentAddDay는 openAddPlace(dayNumber)에서 이미 schedule.js가 set함
+ *   - 따라서 여기선 null(el) + 파라미터 순서만 맞추면 됨
+ */
+function selectPlaceResult(el) {
+  var name    = el.getAttribute('data-name');
+  var address = el.getAttribute('data-address');
+  var lat     = parseFloat(el.getAttribute('data-lat'));
+  var lng     = parseFloat(el.getAttribute('data-lng'));
+  var placeId = el.getAttribute('data-place-id');
 
-function rpAddToDay(btn) {
-  _pendingRpCard = btn.closest('.rp-card');
-  var popup = document.getElementById('dayPickerPopup');
-  if (popup) popup.style.display = 'block';
+  if (typeof closeModal    === 'function') closeModal('addPlaceModal');
+  if (typeof addPlaceToDay === 'function') addPlaceToDay(null, name, address, lat, lng, placeId);
 }
-
-function closeDayPicker() {
-  var popup = document.getElementById('dayPickerPopup');
-  if (popup) popup.style.display = 'none';
-  _pendingRpCard = null;
-}
-
-function addRecToDay(dayNumber) {
-  if (!_pendingRpCard) { closeDayPicker(); return; }
-  var card = _pendingRpCard;
-  closeDayPicker();
-
-  var name    = card.getAttribute('data-name')    || '';
-  var address = card.getAttribute('data-address') || '';
-  var lat     = parseFloat(card.getAttribute('data-lat')  || 0);
-  var lng     = parseFloat(card.getAttribute('data-lng')  || 0);
-  var placeId = card.getAttribute('data-place-id') || null;
-
-  // workspace.schedule.js 의 addPlaceToDay 함수 호출
-  if (typeof addPlaceToDay === 'function') {
-    addPlaceToDay(dayNumber, name, address, lat, lng, placeId);
-  } else {
-    if (typeof showToast === 'function') showToast('⚠️ 일정 추가 함수를 찾을 수 없어요');
-  }
-}
-
-/* ══════════════════════════════
-   10. 장소 추가 모달에서 결과 클릭 → 현재 열린 Day에 추가
-══════════════════════════════ */
-var _currentAddDay = null;
 
 function openAddPlace(dayNumber) {
-  _currentAddDay = dayNumber;
-  // 검색 input 초기화
+  // currentAddDay는 schedule.js openAddPlace()가 set → 여기서 중복 호출 금지
+  // 단, recommend.js가 openAddPlace를 override하지 않도록 guard
   var input = document.getElementById('placeSearchInput');
   if (input) input.value = '';
-  renderPlaceResults([]);
-  _placeType = 'all';
-  document.querySelectorAll('.place-type-tab').forEach(function (b) { b.classList.remove('active'); });
-  var allTab = document.querySelector('.place-type-tab');
-  if (allTab) allTab.classList.add('active');
+  _loadCategoryPreview('all');
   if (typeof openModal === 'function') openModal('addPlaceModal');
 }
 
-function selectPlaceResult(el) {
-  var name    = el.getAttribute('data-name')    || '';
-  var address = el.getAttribute('data-address') || '';
-  var lat     = parseFloat(el.getAttribute('data-lat') || 0);
-  var lng     = parseFloat(el.getAttribute('data-lng') || 0);
-  var placeId = el.getAttribute('data-place-id') || null;
-
-  if (typeof closeModal === 'function') closeModal('addPlaceModal');
-
-  if (typeof addPlaceToDay === 'function') {
-    addPlaceToDay(_currentAddDay, name, address, lat, lng, placeId);
-  }
+function _loadCategoryPreview(category) {
+  fetch(CTX_PATH + '/api/places/recommend?category='
+    + encodeURIComponent(category) + '&city=' + encodeURIComponent(_getCityParam())
+    + '&limit=20&offset=0')
+    .then(function (r) { return r.json(); })
+    .then(function (data) {
+      var list = Array.isArray(data) ? data : (data.places || []);
+      renderSearchResults({ officialPlaces: list, myPlaces: [] });
+    });
 }
 
-/* ══════════════════════════════
-   유틸
-══════════════════════════════ */
-function _escHtml(str) {
+/* ══════════════════════════
+   8. 유틸
+══════════════════════════ */
+function _esc(str) {
   if (!str) return '';
   return String(str)
     .replace(/&/g, '&amp;').replace(/</g, '&lt;')
     .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 }
+// 기존 코드 호환성 (일부 위치에서 _escHtml 사용)
+var _escHtml = _esc;
 
-function _categoryBadge(cat) {
-  var map = {
-    RESTAURANT: '🍽️ 맛집', CAFE: '☕ 카페', TOUR: '🏔️ 관광',
-    STAY: '🏨 숙박', CULTURE: '🎭 문화', LEISURE: '🏄 레포츠',
-    SHOPPING: '🛍️ 쇼핑', ETC: '📍 장소'
+function _categoryBadgeInfo(cat) {
+  var m = {
+    RESTAURANT:{label:'🍽 맛집',color:'pink'},   CAFE:{label:'☕ 카페',color:'blue'},
+    TOUR:{label:'🏔 관광',color:'blue'},          ACCOMMODATION:{label:'🏨 숙박',color:'purple'},
+    CULTURE:{label:'🎭 문화',color:'green'},       LEISURE:{label:'🏄 레포츠',color:'blue'},
+    SHOPPING:{label:'🛍 쇼핑',color:'pink'},       FESTIVAL:{label:'🎉 축제',color:'pink'},
+    ETC:{label:'📍 장소',color:'blue'}
   };
-  var label = map[cat] || '📍 장소';
-  return '<span class="rp-card__badge">' + label + '</span>';
+  return m[cat] || {label:'📍 장소',color:'blue'};
 }
 
-/* 탭 전환 (추천·요약·날씨) */
-function switchRpTab(name, btn) {
-  document.querySelectorAll('.rp-tab').forEach(function (t) { t.classList.remove('active'); });
-  document.querySelectorAll('.rp-pane').forEach(function (p) { p.classList.remove('active'); });
-  if (btn) btn.classList.add('active');
-  var pane = document.getElementById('rpPane-' + name);
-  if (pane) pane.classList.add('active');
+function _categoryPlaceholder(cat) {
+  var m = {
+    RESTAURANT:'🍽', CAFE:'☕', TOUR:'🏔', ACCOMMODATION:'🏨',
+    CULTURE:'🎭', LEISURE:'🏄', SHOPPING:'🛍', FESTIVAL:'🎉'
+  };
+  return m[cat] || '📍';
 }

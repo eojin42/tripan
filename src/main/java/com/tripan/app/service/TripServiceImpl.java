@@ -17,6 +17,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.tripan.app.domain.dto.TripCreateDto;
 import com.tripan.app.domain.dto.TripDto;
+import com.tripan.app.mapper.ExpenseMapper;
 import com.tripan.app.mapper.TripMapper;
 import com.tripan.app.mapper.TripPlaceMapper;
 import com.tripan.app.trip.domain.entity.Tag;
@@ -53,6 +54,7 @@ public class TripServiceImpl implements TripService {
     private final SimpMessagingTemplate messagingTemplate;
     private final TripMapper tripMapper;
     private final TripPlaceMapper tripPlaceMapper;
+    private final ExpenseMapper expenseMapper;
 
     /** application.properties: tripan.upload.dir=/uploads/thumbnails */
     @Value("${tripan.upload.dir:${user.home}/tripan-uploads/thumbnails}")
@@ -192,7 +194,8 @@ public class TripServiceImpl implements TripService {
         dto.setDays(tripPlaceMapper.findDayItemsByTripId(tripId));
         dto.setMembers(tripMapper.selectMembersByTripId(tripId));
         dto.setTags(tripMapper.selectTagsByTripId(tripId));
-        dto.setCurrentExpense(tripMapper.selectCurrentExpense(tripId));
+        Double totalExpense = expenseMapper.selectTotalExpenseAmount(tripId);
+        dto.setCurrentExpense(totalExpense != null ? totalExpense : 0.0);
         return dto;
     }
 

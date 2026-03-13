@@ -53,13 +53,6 @@
         ORDER BY tt.trip_tag_id ASC
     </select>
 
-    <!-- 현재 총 지출액 -->
-    <select id="selectCurrentExpense" resultType="double">
-        SELECT COALESCE(SUM(amount), 0)
-        FROM expense
-        WHERE trip_id = #{tripId}
-    </select>
-
     <!-- 태그 자동완성 -->
     <select id="selectTagNamesByKeyword" resultType="string">
         SELECT tag_name

@@ -1,28 +1,164 @@
 <?xml version="1.0" encoding="UTF-8"?>
-
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.tripan.app.mapper.PlaceMapper">
 
+    <!-- ════════════════════════════════════════
+         중복 체크
+    ════════════════════════════════════════ -->
     <select id="findPlaceIdByNameAndAddress" resultType="java.lang.Long">
-        SELECT place_id 
-        FROM place 
-        WHERE place_name = #{placeName} 
-          AND address = #{address}
+        SELECT place_id
+        FROM place
+        WHERE place_name = #{placeName}
+          AND address    = #{address}
           AND ROWNUM = 1
     </select>
 
+    <!--
+        ★ findPlaceIdByApiContentId: PlaceServiceImpl에서 String contentId를 넘김
+           기존 WHERE place_id = #{apiContentId} 는 place_id(Long)와 비교하므로
+           KTO contentid(숫자 문자열)를 Long으로 캐스팅하여 비교
+    -->
+    <select id="findPlaceIdByApiContentId" resultType="java.lang.Long">
+        SELECT place_id
+        FROM place
+        WHERE place_id = TO_NUMBER(#{apiContentId})
+          AND ROWNUM = 1
+    </select>
+
+    <!-- ════════════════════════════════════════
+         KTO 장소 INSERT
+         ※ 숙박(32)은 PlaceServiceImpl에서 insertKtoPlace + insertAccommodationDetail 2번 호출
+    ════════════════════════════════════════ -->
     <insert id="insertPlace" parameterType="com.tripan.app.domain.dto.PlaceDto">
         <selectKey keyProperty="placeId" resultType="long" order="BEFORE">
             SELECT SEQ_PLACE.NEXTVAL FROM DUAL
         </selectKey>
-        
         INSERT INTO place (
-            place_id, partner_id, place_name, category, address, 
+            place_id, partner_id, place_name, category, address,
             latitude, longitude, phone_number, description, image_url, createdtime
         ) VALUES (
-            #{placeId}, NULL, #{placeName}, #{category}, #{address}, 
+            #{placeId}, NULL, #{placeName}, #{category}, #{address},
             #{latitude}, #{longitude}, #{phoneNumber}, #{description}, #{imageUrl}, SYSDATE
         )
     </insert>
+
+    <!-- KTO contentId를 PK로 직접 사용 (배치용) -->
+    <insert id="insertKtoPlace" parameterType="com.tripan.app.domain.dto.PlaceDto">
+        INSERT INTO place (
+            place_id, partner_id, place_name, category, address,
+            latitude, longitude, phone_number, description, image_url, createdtime
+        ) VALUES (
+            #{placeId}, NULL, #{placeName}, #{category}, #{address},
+            #{latitude}, #{longitude}, #{phoneNumber}, #{description}, #{imageUrl}, SYSDATE
+        )
+    </insert>
+
+    <!-- 숙박 상세 (accommodation 테이블) — insertKtoPlace 후 별도 호출 -->
+    <insert id="insertAccommodationDetail" parameterType="com.tripan.app.domain.dto.PlaceDto">
+        MERGE INTO accommodation a
+        USING DUAL
+        ON (a.place_id = #{placeId})
+        WHEN NOT MATCHED THEN
+            INSERT (place_id, checkintime, checkouttime)
+            VALUES (#{placeId}, #{checkintime}, #{checkouttime})
+    </insert>
+
+    <!-- ════════════════════════════════════════
+         추천 장소 목록 (무한스크롤 offset 지원)
+
+         파라미터:
+           category — 'all' 이면 카테고리 조건 없음
+           cityList — 빈 리스트면 전체 / 있으면 address LIKE 필터 (OR 조건 — 다중 도시 지원)
+           limit    — 페이지당 건수 (기본 12)
+           offset   — 시작 위치 (0-based, 기본 0)
+
+         ★ 핵심 변경 사항:
+           1. image_url IS NOT NULL AND image_url != '' 조건 추가
+              → KTO firstimage가 빈 문자열로 저장된 장소 제외 (이미지 없는 카드 방지)
+           2. Oracle 페이징: ROWNUM 기반 offset~limit 처리
+           3. phone_number, description 도 함께 반환 (상세 모달용)
+    ════════════════════════════════════════ -->
+    <select id="selectRecommendPlaces" resultType="com.tripan.app.domain.dto.PlaceDto">
+        SELECT *
+        FROM (
+            SELECT
+                p.place_id      AS placeId,
+                p.place_name    AS placeName,
+                p.address       AS address,
+                p.latitude      AS latitude,
+                p.longitude     AS longitude,
+                p.category      AS category,
+                p.image_url     AS imageUrl,
+                p.phone_number  AS phoneNumber,
+                p.description   AS description,
+                ROWNUM          AS rn
+            FROM place p
+            WHERE p.image_url IS NOT NULL
+              AND p.latitude  IS NOT NULL
+              AND p.longitude IS NOT NULL
+            <if test="cityList != null and cityList.size() > 0">
+                AND (
+                    <foreach collection="cityList" item="city" separator=" OR ">
+                        p.address LIKE '%' || #{city} || '%'
+                    </foreach>
+                )
+            </if>
+            <if test="category != null and category != 'all'">
+                AND p.category = #{category}
+            </if>
+            ORDER BY DBMS_RANDOM.VALUE
+        )
+        WHERE rn > #{offset}
+          AND rn &lt;= (#{offset} + #{limit})
+    </select>
+
+    <!-- ════════════════════════════════════════
+         전체 건수 (hasMore 판단용)
+         TripPlaceApiController에서 offset 지원 시 사용
+    ════════════════════════════════════════ -->
+    <select id="countRecommendPlaces" resultType="java.lang.Long">
+        SELECT COUNT(*)
+        FROM place p
+        WHERE p.image_url IS NOT NULL
+          AND p.image_url != ''
+          AND p.latitude  IS NOT NULL
+          AND p.longitude IS NOT NULL
+        <if test="cityList != null and cityList.size() > 0">
+            AND (
+                <foreach collection="cityList" item="city" separator=" OR ">
+                    p.address LIKE '%' || #{city} || '%'
+                </foreach>
+            )
+        </if>
+        <if test="category != null and category != 'all'">
+            AND p.category = #{category}
+        </if>
+    </select>
+
+    <!-- ════════════════════════════════════════
+         키워드 검색 (장소 추가 모달)
+         이미지 없는 장소도 포함 (검색에서는 전부 보여줌)
+    ════════════════════════════════════════ -->
+    <select id="searchPlacesByName" resultType="com.tripan.app.domain.dto.PlaceDto">
+        SELECT
+            place_id      AS placeId,
+            place_name    AS placeName,
+            address       AS address,
+            latitude      AS latitude,
+            longitude     AS longitude,
+            category      AS category,
+            image_url     AS imageUrl,
+            phone_number  AS phoneNumber,
+            description   AS description
+        FROM place
+        WHERE (
+            UPPER(place_name) LIKE '%' || UPPER(#{keyword}) || '%'
+            OR UPPER(address) LIKE '%' || UPPER(#{keyword}) || '%'
+        )
+        ORDER BY
+            CASE WHEN image_url IS NOT NULL AND image_url != '' THEN 0 ELSE 1 END,
+            place_name
+        FETCH FIRST 30 ROWS ONLY
+    </select>
 
 </mapper>

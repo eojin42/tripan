@@ -2798,3 +2798,45 @@ body { font-family: 'Pretendard Variable', 'Pretendard', -apple-system, BlinkMac
 .settle-from, .settle-to { font-weight: 700; color: var(--dark); }
 .settle-to { color: #89CFF0; }
 .settle-item .settle-amt { margin-left: auto; font-weight: 900; color: var(--dark); }
+
+
+/* ═══════════════════════════════════════════
+   투트랙 검색 결과 (공식 vs 나만의장소) 스타일
+═══════════════════════════════════════════ */
+
+/* 섹션 구분 타이틀 (ex: ✨ Tripan 공식 추천) */
+.search-section-title {
+  padding: 12px 16px 8px;
+  font-size: 12px;
+  font-weight: 800;
+  color: var(--mid);
+  background: var(--bg);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  border-bottom: 1px solid var(--border);
+}
+
+/* '공식' 그라데이션 뱃지 */
+.badge-official {
+  background: var(--grad); /* Tripan 메인 그라데이션 토큰 활용 */
+  color: var(--white);
+  font-size: 10px;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-weight: 900;
+  margin-right: 6px;
+  vertical-align: middle;
+  display: inline-block;
+  line-height: 1.2;
+}
+
+/* 공식 장소 아이템 배경 강조 */
+.search-item.official-bg {
+  background-color: rgba(168, 200, 225, 0.15); /* --ice 색상 연하게 */
+  border-left: 3px solid var(--blue); /* 왼쪽 파란색 포인트 바 */
+}
+
+/* 마우스 올렸을 때 액션 (옵션) */
+.search-item.official-bg:hover {
+  background-color: rgba(168, 200, 225, 0.25);
+}
