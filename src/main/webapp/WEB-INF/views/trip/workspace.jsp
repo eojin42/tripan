@@ -344,7 +344,7 @@
       <div class="rp-pane active" id="rpPane-suggest">
         <div class="rp-filter">
           <button class="rp-filter-btn active" onclick="filterRec(this,'all')">전체</button>
-          <button class="rp-filter-btn" onclick="filterRec(this,'STAY')">🏨 숙소</button>
+          <button class="rp-filter-btn" onclick="filterRec(this,'ACCOMMODATION')">🏨 숙소</button>
           <button class="rp-filter-btn" onclick="filterRec(this,'TOUR')">🏔 관광</button>
           <button class="rp-filter-btn" onclick="filterRec(this,'RESTAURANT')">🍽 맛집</button>
           <button class="rp-filter-btn" onclick="filterRec(this,'CULTURE')">🎭 문화</button>
@@ -459,7 +459,7 @@
     <%-- 지도 검색바 --%>
    <div class="map-search-bar">
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-      <input type="text" placeholder="장소, 주소 검색…" id="mapSearchInput" onkeypress="if(event.key==='Enter') mapSearch()">
+      <input type="text" placeholder="장소, 주소 검색…" id="mapSearchInput" oninput="debounceMapSearch()" autocomplete="off">
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="color:var(--light);cursor:pointer" onclick="mapSearch()"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
     </div>
 
@@ -496,7 +496,7 @@
         <button class="place-type-tab active" onclick="selectPlaceType(this,'all')">🔍 전체</button>
         <button class="place-type-tab" onclick="selectPlaceType(this,'RESTAURANT')">🍽️ 맛집</button>
         <button class="place-type-tab" onclick="selectPlaceType(this,'TOUR')">🏔️ 관광</button>
-        <button class="place-type-tab" onclick="selectPlaceType(this,'STAY')">🏨 숙소</button>
+        <button class="place-type-tab" onclick="selectPlaceType(this,'ACCOMMODATION')">🏨 숙소</button>
         <button class="place-type-tab" onclick="selectPlaceType(this,'my')">⭐ 나만의</button>
       </div>
       <div class="search-input-wrap">
@@ -988,10 +988,14 @@ var CTX_PATH = '${pageContext.request.contextPath}';
 <script src="${pageContext.request.contextPath}/dist/js/trip/workspace.map.js"></script>
 <script src="${pageContext.request.contextPath}/dist/js/trip/workspace.trip.js"></script>
 
-<%-- 카카오맵 데이터 주입 (JSP EL — 외부 파일 불가)
-     SDK는 <head>에서 이미 로드됨. appkey 재주입 불필요 --%>
+<%-- 카카오맵 데이터 주입 및 KTO --%>
 <script>
-/* ② 카카오맵 데이터 (workspace.map.js 가 읽음) */
+// 컨텍스트 경로 및 KTO/카카오 장소 구분 상수
+window.PLACE_TYPE = {
+    OFFICIAL: 'OFFICIAL', // KTO 공식 데이터
+    CUSTOM: 'CUSTOM'      // 나만의 장소 (카카오/유저)
+};
+
 
 var KAKAO_APP_KEY = '${kakaoMapKey}';
 var KAKAO_CITIES = [];
@@ -1020,6 +1024,9 @@ var KAKAO_DAY_NUMS = [];
   KAKAO_DAY_NUMS.push(${day.dayNumber});
 </c:forEach>
 </script>
+
+
+
 
 <%-- 여행 편집 데이터 주입 (workspace.trip.js 가 읽음) --%>
 <script>

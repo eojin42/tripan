@@ -1,82 +1,98 @@
 package com.tripan.app.controller;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
+import com.tripan.app.domain.dto.PlaceDto;
 import com.tripan.app.domain.dto.TripPlaceDto;
+import com.tripan.app.mapper.PlaceMapper;
 import com.tripan.app.mapper.TripPlaceMapper;
+import com.tripan.app.service.PlaceService;
 import com.tripan.app.service.TripPlaceService;
 
 import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
 
-/**
- * 장소 검색 / 추천 / 나만의 장소 REST API
- *
- * GET  /api/places/recommend  → 카테고리별 추천 (워크스페이스 추천패널)
- * GET  /api/places/search     → 키워드 검색     (장소 추가 모달)
- * GET  /api/places/my         → 나만의 장소 목록
- * POST /api/places/my         → 나만의 장소 등록
- * POST /api/places/sync       → 배치 수동 트리거 (개발/관리자용)
- */
 @RestController
 @RequestMapping("/api/places")
 @RequiredArgsConstructor
 public class TripPlaceApiController {
 
-    private final TripPlaceService tripPlaceService;
-    private final TripPlaceMapper tripPlaceMapper;
+    // [Track 1] KTO 마스터 장소
+    private final PlaceService  placeService;
+    private final PlaceMapper   placeMapper;
 
-    // ── 카테고리별 추천 ──────────────────────────────────
-    // GET /api/places/recommend?category=RESTAURANT&city=부산&limit=12
+    // [Track 2] 나만의 장소 (카카오맵)
+    private final TripPlaceService tripPlaceService;
+    private final TripPlaceMapper  tripPlaceMapper;
+
+    // ── [KTO] 카테고리별 추천 (무한스크롤 offset 지원) ───────────
+    // GET /api/places/recommend?category=RESTAURANT&city=부산,제주&limit=12&offset=0
     @GetMapping("/recommend")
-    public ResponseEntity<List<TripPlaceDto>> recommend(
+    public ResponseEntity<Map<String, Object>> recommend(
             @RequestParam(value = "category", defaultValue = "all") String category,
             @RequestParam(value = "city",     defaultValue = "")    String city,
-            @RequestParam(value = "limit",    defaultValue = "15")  int    limit,
-            HttpSession session) {
+            @RequestParam(value = "limit",    defaultValue = "12")  int    limit,
+            @RequestParam(value = "offset",   defaultValue = "0")   int    offset) {
 
-        Long currentMemberId = getLoginMemberId(session);
-        // "서울,부산" 콤마로 분리해서 List로 변환
-        List<String> cityList = city.isBlank() ? List.of() : List.of(city.split(","));
-        
-        List<TripPlaceDto> results = tripPlaceMapper.selectRecommendPlaces(category, cityList, currentMemberId, limit);
-        return ResponseEntity.ok(results);
+        // "부산,제주" → ["부산", "제주"] — 다중 도시 지원
+        List<String> cityList = city.isBlank()
+            ? List.of()
+            : List.of(city.split(","));
+
+        List<PlaceDto> results = placeMapper.selectRecommendPlaces(category, cityList, limit, offset);
+        long total             = placeMapper.countRecommendPlaces(category, cityList);
+
+        Map<String, Object> body = new HashMap<>();
+        body.put("places",  results);
+        body.put("total",   total);
+        body.put("offset",  offset);
+        body.put("limit",   limit);
+        body.put("hasMore", (offset + limit) < total);
+
+        return ResponseEntity.ok(body);
     }
-    
-    // ── 키워드 검색 ──────────────────────────────────────
-    // GET /api/places/search?keyword=흑돼지
+
+    // ── [통합] 키워드 검색 ────────────────────────────────────────
+    // GET /api/places/search?keyword=제주
+    // 반환: { officialPlaces: [...PlaceDto], myPlaces: [...TripPlaceDto] }
     @GetMapping("/search")
-    public ResponseEntity<List<TripPlaceDto>> search(
+    public ResponseEntity<Map<String, Object>> search(
             @RequestParam("keyword") String keyword,
             HttpSession session) {
 
         Long memberId = getLoginMemberId(session);
-        List<TripPlaceDto> result = tripPlaceService.searchPlaces(keyword, memberId);
-        return ResponseEntity.ok(result);
+
+        // KTO 공식 장소 검색 (place 테이블)
+        List<PlaceDto> officialPlaces = placeMapper.searchPlacesByName(keyword);
+
+        // 나만의 장소 검색 (trip_place 테이블, 로그인 시만)
+        List<TripPlaceDto> myPlaces = (memberId != null)
+            ? tripPlaceService.searchPlaces(keyword, memberId)
+            : List.of();
+
+        Map<String, Object> body = new HashMap<>();
+        body.put("officialPlaces", officialPlaces);
+        body.put("myPlaces",       myPlaces);
+
+        return ResponseEntity.ok(body);
     }
 
-    // ── 나만의 장소 목록 ─────────────────────────────────
-    // GET /api/places/my
+    // ── [나만의 장소] 목록 ─────────────────────────────────────────
     @GetMapping("/my")
     public ResponseEntity<?> myPlaces(HttpSession session) {
         Long memberId = getLoginMemberId(session);
         if (memberId == null)
-            return ResponseEntity.status(401).body(Map.of("success", false, "message", "로그인이 필요합니다"));
+            return ResponseEntity.status(401)
+                .body(Map.of("success", false, "message", "로그인이 필요합니다"));
         return ResponseEntity.ok(tripPlaceService.getMyPlaces(memberId));
     }
 
-    // ── 나만의 장소 등록 ─────────────────────────────────
-    // POST /api/places/my
-    // Body: { placeName, address, latitude, longitude, category, imageUrl, phone }
+    // ── [나만의 장소] 등록 ─────────────────────────────────────────
     @PostMapping("/my")
     public ResponseEntity<?> registerMyPlace(
             @RequestBody TripPlaceDto dto,
@@ -84,23 +100,24 @@ public class TripPlaceApiController {
 
         Long memberId = getLoginMemberId(session);
         if (memberId == null)
-            return ResponseEntity.status(401).body(Map.of("success", false, "message", "로그인이 필요합니다"));
+            return ResponseEntity.status(401)
+                .body(Map.of("success", false, "message", "로그인이 필요합니다"));
         if (dto.getPlaceName() == null || dto.getPlaceName().isBlank())
-            return ResponseEntity.badRequest().body(Map.of("success", false, "message", "장소명은 필수입니다"));
+            return ResponseEntity.badRequest()
+                .body(Map.of("success", false, "message", "장소명은 필수입니다"));
 
         TripPlaceDto saved = tripPlaceService.registerMyPlace(dto, memberId);
         return ResponseEntity.ok(Map.of("success", true, "place", saved));
     }
 
-    // ── 배치 수동 트리거 (개발/관리자용) ────────────────────
-    // POST /api/places/sync
+    // ── [KTO] 배치 수동 트리거 ────────────────────────────────────
     @PostMapping("/sync")
     public ResponseEntity<Map<String, Object>> syncBatch() {
-        tripPlaceService.syncPlacesBatch();
-        return ResponseEntity.ok(Map.of("success", true, "message", "동기화 완료"));
+        placeService.syncPlacesBatch();
+        return ResponseEntity.ok(Map.of("success", true, "message", "KTO 동기화 완료"));
     }
 
-    // ────────────────────────────────────────────────────
+    // ──────────────────────────────────────────────────────────────
     private Long getLoginMemberId(HttpSession session) {
         Object user = session.getAttribute("loginUser");
         if (user == null) return null;

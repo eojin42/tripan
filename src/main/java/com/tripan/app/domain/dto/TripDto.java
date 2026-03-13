@@ -71,6 +71,7 @@ public class TripDto {
         private String memo;
         private Long placeId;
         private String placeName;
+        private String address;
         private Double latitude;
         private Double longitude;
         private String category;

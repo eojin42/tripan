@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.tripan.app.mapper.ExpenseMapper">
+
+	<select id="selectTotalExpenseAmount" parameterType="long" resultType="java.lang.Double">
+        SELECT COALESCE(SUM(amount), 0) 
+        FROM expense 
+        WHERE trip_id = #{tripId}
+    </select>
+
+    <select id="selectExpenseSummary" parameterType="long" resultType="map">
+        SELECT
+            COALESCE(SUM(e.amount), 0) AS totalAmount,
+            COALESCE(SUM(e.amount) / NULLIF((
+                SELECT COUNT(*) FROM trip_member 
+                WHERE trip_id = #{tripId} AND invitation_status = 'ACCEPTED'
+            ), 0), 0) AS avgPerPerson
+        FROM expense e
+        WHERE e.trip_id = #{tripId}
+    </select>
+
+    <select id="selectExpenseStatsByCategory" parameterType="long" resultType="map">
+        SELECT
+            category,
+            SUM(amount) AS totalAmount,
+            COUNT(*)    AS count
+        FROM expense
+        WHERE trip_id = #{tripId}
+        GROUP BY category
+        ORDER BY totalAmount DESC
+    </select>
+
+    <select id="selectExpenseList" resultType="com.tripan.app.domain.dto.ExpenseDto">
+        SELECT
+            e.expense_id    AS expenseId,
+            e.description,
+            e.amount,
+            e.category,
+            TO_CHAR(e.expense_date, 'YYYY-MM-DD') AS expenseDate,
+            e.payment_type  AS paymentType,
+            m.nickname      AS payerNickname,
+            ep.share_amount AS shareAmount,
+            ep.is_settled   AS isSettled
+        FROM expense e
+        JOIN member m ON m.member_id = e.payer_id
+        JOIN expense_participant ep ON ep.expense_id = e.expense_id
+        WHERE e.trip_id = #{tripId}
+          AND ep.member_id = #{myMemberId}
+        ORDER BY e.expense_date DESC
+    </select>
+
+</mapper>

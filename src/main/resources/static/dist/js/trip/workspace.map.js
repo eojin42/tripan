@@ -229,6 +229,28 @@ function mapMoveToMyLocation() {
    지도 내 장소 검색
 ══════════════════════════════ */
 var _tempMarkers = []; // 검색용 임시 마커
+var _mapSearchTimer = null; // 디바운스 타이머 변수
+
+// 입력이 끝나고 0.3초 뒤에만 실제 검색 실행
+function debounceMapSearch() {
+  var input = document.getElementById('mapSearchInput');
+  var q = input ? input.value.trim() : '';
+  var resultBox = document.getElementById('mapSearchResults');
+
+  // 검색어가 다 지워지면 즉시 드롭다운 닫기
+  if (!q) {
+    if (resultBox) resultBox.style.display = 'none';
+    clearTimeout(_mapSearchTimer);
+    return;
+  }
+
+  // 이전 타이머 취소 후 새 타이머 설정 (300ms)
+  clearTimeout(_mapSearchTimer);
+  _mapSearchTimer = setTimeout(function() {
+    mapSearch();
+  }, 300);
+}
+
 
 function mapSearch() {
   var input = document.getElementById('mapSearchInput');
@@ -262,7 +284,7 @@ function mapSearch() {
   });
 }
 
-// 리스트에서 장소를 클릭했을 때 (마커 찍기 + 말풍선)
+// 리스트에서 장소를 클릭했을 때 (마커 찍기 + 말풍선 + 일정 추가)
 function selectMapSearchResult(lat, lng, name, address) {
   var latlng = new kakao.maps.LatLng(lat, lng);
   _map.setCenter(latlng);
@@ -272,34 +294,65 @@ function selectMapSearchResult(lat, lng, name, address) {
   _tempMarkers.forEach(function(m) { m.setMap(null); });
   _tempMarkers = [];
 
-  var marker = new kakao.maps.Marker({ position: latlng, map: _map });
+  // 보라색 핀 마커 (커스텀 SVG)
+  var svg = [
+    '<svg xmlns="http://www.w3.org/2000/svg" width="32" height="40" viewBox="0 0 32 40">',
+    '<ellipse cx="16" cy="38" rx="5" ry="2" fill="rgba(0,0,0,0.15)"/>',
+    '<path d="M16 2C9.4 2 4 7.4 4 14c0 8.6 12 24 12 24S28 22.6 28 14C28 7.4 22.6 2 16 2z" fill="#667EEA"/>',
+    '<circle cx="16" cy="14" r="6" fill="white" opacity="0.9"/>',
+    '<text x="16" y="18" text-anchor="middle" font-size="9" font-weight="bold" fill="#667EEA">📍</text>',
+    '</svg>'
+  ].join('');
+  var markerImg = new kakao.maps.MarkerImage(
+    'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg),
+    new kakao.maps.Size(32, 40), { offset: new kakao.maps.Point(16, 40) }
+  );
+  var marker = new kakao.maps.Marker({ position: latlng, image: markerImg, map: _map });
   _tempMarkers.push(marker);
 
-  // 말풍선 안에 일정에 추가 버튼 생성
-  var iwContent = '<div style="padding:12px; width:220px; font-family:Pretendard;">' +
-                  '<div style="font-weight:800; font-size:14px; color:#2d3748; margin-bottom:4px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">' + name + '</div>' +
-                  '<div style="font-size:12px; color:#718096; margin-bottom:12px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">' + address + '</div>' +
-                  '<button onclick="openDayPickerForMap(\'' + name + '\', \'' + address + '\', ' + lat + ', ' + lng + ')" ' +
-                  'style="width:100%; padding:8px 0; background:#89CFF0; color:#fff; border:none; border-radius:6px; font-weight:700; cursor:pointer;">+ 일정에 추가</button>' +
-                  '</div>';
+  // 말풍선 - "일정에 추가" 버튼 포함
+  var safeN = name.replace(/\\/g, '\\\\').replace(/'/g, "\\'").replace(/"/g, '&quot;');
+  var safeA = address.replace(/\\/g, '\\\\').replace(/'/g, "\\'").replace(/"/g, '&quot;');
+  var iwContent =
+    '<div style="padding:14px;width:230px;font-family:Pretendard,sans-serif;">' +
+    '<div style="font-weight:800;font-size:14px;color:#2d3748;margin-bottom:3px;' +
+         'white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + name + '</div>' +
+    '<div style="font-size:12px;color:#718096;margin-bottom:12px;' +
+         'white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + address + '</div>' +
+    '<button onclick="openDayPickerForMap(\'' + safeN + '\', \'' + safeA + '\', ' + lat + ', ' + lng + ')" ' +
+    'style="width:100%;padding:9px 0;background:linear-gradient(135deg,#89CFF0,#B8A9D9);' +
+           'color:#fff;border:none;border-radius:8px;font-weight:700;font-size:13px;' +
+           'cursor:pointer;letter-spacing:0.3px;">+ 일정에 추가</button>' +
+    '</div>';
 
   if (_infowindow) _infowindow.close();
   _infowindow = new kakao.maps.InfoWindow({ content: iwContent });
   _infowindow.open(_map, marker);
 
-  // 검색 리스트 닫기
-  document.getElementById('mapSearchResults').style.display = 'none';
+  // 검색 드롭다운 닫기
+  var rb = document.getElementById('mapSearchResults');
+  if (rb) rb.style.display = 'none';
 }
 
+// 말풍선의 "일정에 추가" 클릭 → recommend.js의 dayPickerPopup 공유
 window.openDayPickerForMap = function(name, addr, lat, lng) {
-  // workspace.recommend.js 에 선언된 변수에 장소를 임시 저장
-  if (typeof _selectedRecPlace !== 'undefined') {
-    _selectedRecPlace = { name: name, address: addr, lat: lat, lng: lng, placeId: null };
-    document.getElementById('dayPickerPopup').style.display = 'block';
-  } else {
-    alert('추천 장소 스크립트가 로드되지 않았습니다.');
-  }
   if (_infowindow) _infowindow.close();
+
+  // _selectedRecPlace: recommend.js에 선언된 공유 변수
+  _selectedRecPlace = { name: name, address: addr, lat: lat, lng: lng, placeId: null };
+
+  var popup = document.getElementById('dayPickerPopup');
+  if (popup) {
+    // 화면 중앙에 고정 표시
+    popup.style.position  = 'fixed';
+    popup.style.top       = '50%';
+    popup.style.left      = '50%';
+    popup.style.transform = 'translate(-50%,-50%)';
+    popup.style.zIndex    = '9999';
+    popup.style.display   = 'block';
+  } else {
+    if (typeof showToast === 'function') showToast('⚠️ 일정 추가 팝업을 찾을 수 없어요');
+  }
 };
 
 /* ══════════════════════════════
@@ -341,3 +394,12 @@ function _showMapError(msg) {
     '<div style="font-size:14px;font-weight:700;color:#4A5568;line-height:1.8;">' + msg + '</div>' +
     '</div>';
 }
+
+// 검색창 외부 클릭 시 검색 결과 드롭다운 닫기
+document.addEventListener('click', function(e) {
+  var container = document.querySelector('.map-search-bar');
+  var resultBox = document.getElementById('mapSearchResults');
+  if (container && resultBox && !container.contains(e.target) && e.target !== resultBox) {
+    resultBox.style.display = 'none';
+  }
+});

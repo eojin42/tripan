@@ -17,9 +17,6 @@ public interface TripMapper {
     /** 테마 태그 목록 */
     List<String> selectTagsByTripId(@Param("tripId") Long tripId);
 
-    /** 총 지출액 */
-    double selectCurrentExpense(@Param("tripId") Long tripId);
-
     /** 태그 자동완성 */
     List<String> selectTagNamesByKeyword(@Param("keyword") String keyword);
 
