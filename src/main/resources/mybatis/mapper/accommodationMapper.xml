@@ -103,7 +103,7 @@
     <select id="selectAccommodationDetail" resultType="com.tripan.app.domain.dto.AccommodationDetailDto">
         SELECT 
             p.PLACE_ID as placeId,
-            p.PLACE_NAME as name,
+            p.PLACE_NAME as name, p.IMAGE_URL as imageUrl,
             p.ADDRESS as region, p.DESCRIPTION as description,
             a.CHECKINTIME as checkinTime,
             a.CHECKOUTTIME as checkoutTime

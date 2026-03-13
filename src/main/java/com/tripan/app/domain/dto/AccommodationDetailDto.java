@@ -8,6 +8,8 @@ import lombok.Setter;
 @Getter
 @Setter
 public class AccommodationDetailDto extends AccommodationDto{
+	private String imageUrl;
+	
 	private String description;       // 숙소 상세 설명
     private String checkinTime;       // 체크인 시간
     private String checkoutTime;      // 체크아웃 시간
