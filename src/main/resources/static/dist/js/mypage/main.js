@@ -70,3 +70,7 @@ async function loadMiniMap() {
   }
 }
 
+document.addEventListener('DOMContentLoaded', () => {
+  loadSummary();
+  loadMiniMap();
+});

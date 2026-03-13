@@ -73,21 +73,54 @@
                 FROM   chat_message cm2
                 WHERE  cm2.room_id = cr.chat_room_id
                 ORDER  BY cm2.created_at DESC
-                FETCH FIRST 1 ROWS ONLY) AS lastMessage
+                 FETCH FIRST 1 ROWS ONLY) AS lastMessage,
+               (SELECT COUNT(*)
+                FROM   chat_message cm3
+                WHERE  cm3.room_id   = cr.chat_room_id
+                  AND  cm3.member_id != (SELECT member_id FROM member1 WHERE role = 'ROLE_ADMIN' FETCH FIRST 1 ROWS ONLY)
+                  AND  cm3.created_at > NVL(
+                           (SELECT adm.last_connected_at
+                            FROM   chat_member adm
+                            WHERE  adm.chat_room_id = cr.chat_room_id
+                              AND  adm.member_id = (SELECT member_id FROM member1 WHERE role = 'ROLE_ADMIN' FETCH FIRST 1 ROWS ONLY)),
+                           DATE '1900-01-01')
+               ) AS unreadCount
         FROM   chat_room cr
         JOIN   chat_member crm ON cr.chat_room_id = crm.chat_room_id
         JOIN   member1     m1  ON crm.member_id   = m1.member_id
         JOIN   member2     m2  ON m1.member_id    = m2.member_id
         WHERE  cr.chat_room_type = 'SUPPORT'
           AND  m1.role          != 'ROLE_ADMIN'
-        ORDER  BY cr.created_at DESC
+        ORDER  BY
+            CASE WHEN (SELECT COUNT(*)
+                       FROM   chat_message cm3
+                       WHERE  cm3.room_id   = cr.chat_room_id
+                         AND  cm3.member_id != (SELECT member_id FROM member1 WHERE role = 'ROLE_ADMIN' FETCH FIRST 1 ROWS ONLY)
+                         AND  cm3.created_at > NVL(
+                                  (SELECT adm.last_connected_at
+                                   FROM   chat_member adm
+                                   WHERE  adm.chat_room_id = cr.chat_room_id
+                                     AND  adm.member_id = (SELECT member_id FROM member1 WHERE role = 'ROLE_ADMIN' FETCH FIRST 1 ROWS ONLY)),
+                                  DATE '1900-01-01')) > 0
+                 THEN 0 ELSE 1 END ASC,
+            cr.created_at ASC
     </select>
 
     <!-- 방 상태 업데이트 (ACTIVE / CLOSED) -->
     <update id="updateRoomStatus" parameterType="map">
-        UPDATE chat_room
-        SET    status = #{status}
-        WHERE  chat_room_id = #{roomId}
+        UPDATE chat_room SET status = #{status} WHERE chat_room_id = #{roomId}
+    </update>
+    
+    <!-- 관리자 마지막 접속 시각 갱신 (읽음 처리) -->
+    <update id="updateAdminLastConnected" parameterType="map">
+        MERGE INTO chat_member cm
+        USING DUAL
+        ON (cm.chat_room_id = #{roomId} AND cm.member_id = #{adminId})
+        WHEN MATCHED THEN
+            UPDATE SET cm.last_connected_at = SYSDATE
+        WHEN NOT MATCHED THEN
+            INSERT (chat_member_id, chat_room_id, member_id, last_connected_at)
+            VALUES (SEQ_CHAT_MEMBER_ID.NEXTVAL, #{roomId}, #{adminId}, SYSDATE)
     </update>
 
 </mapper>

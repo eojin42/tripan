@@ -17,4 +17,6 @@ public interface CommunityChatService {
     
     List<CommunityChatRoomDto> getRegionRooms();
     List<CommunityChatRoomDto> getMyPrivateRooms(Long memberId);
+    
+    String getRoomType(Long roomId);
 }

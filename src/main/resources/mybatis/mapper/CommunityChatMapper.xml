@@ -21,6 +21,7 @@
         )
     </insert>
 
+<!--  
     <select id="selectChatHistory" parameterType="long" resultType="com.tripan.app.domain.dto.CommunityChatMessageDto">
         SELECT 
             m.room_id,
@@ -33,6 +34,28 @@
         JOIN member1 u ON m.member_id = u.member_id
         WHERE m.room_id = #{roomId}
         ORDER BY m.created_at ASC
+    </select>-->
+    
+     <select id="selectChatHistory" parameterType="long" resultType="com.tripan.app.domain.dto.CommunityChatMessageDto">
+     	SELECT
+            m.room_id      AS roomId,
+            m.member_id    AS memberId,
+            m.message_type AS messageType,
+            m.content,
+            COALESCE(
+                (SELECT u2.nickname FROM member2 u2 WHERE u2.member_id = u.member_id FETCH FIRST 1 ROWS ONLY),
+                u.username
+            ) AS senderNickname,
+            TO_CHAR(m.created_at, 'AM HH:MI') AS createdAt,
+            TO_CHAR(m.created_at, 'YYYY-MM-DD') AS msgDate
+        FROM chat_message m
+        JOIN member1 u ON m.member_id = u.member_id
+        WHERE m.room_id = #{roomId}
+        ORDER BY m.created_at ASC
+     </select>
+    
+    <select id="selectRoomType" parameterType="long" resultType="string">
+        SELECT chat_room_type FROM chat_room WHERE chat_room_id = #{roomId}
     </select>
     
     <select id="selectRegionRooms" resultType="com.tripan.app.domain.dto.CommunityChatRoomDto">

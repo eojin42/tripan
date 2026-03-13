@@ -320,7 +320,28 @@
       </div>
       <div style="display:grid; grid-template-columns:1fr 160px; gap:16px; align-items:center;">
         <div id="mini-map-wrap">
-          <svg id="mini-map-svg" viewBox="0 0 380 480" xmlns="http://www.w3.org/2000/svg"></svg>
+           <svg id="mini-map-svg" viewBox="0 0 380 480" xmlns="http://www.w3.org/2000/svg">
+            <!-- 대형 도 단위 (먼저 렌더, 뒤에 위치) -->
+            <path class="mini-region" data-sido="강원특별자치도"  d="M178,5 L358,5 L360,10 L355,55 L345,75 L310,95 L306,140 L240,145 L210,115 L178,108 Z"/>
+            <path class="mini-region" data-sido="경기도"          d="M42,38 L178,38 L178,108 L148,148 L98,153 L65,133 L38,115 L36,70 Z"/>
+            <path class="mini-region" data-sido="충청남도"        d="M12,122 L132,122 L132,202 L88,222 L28,218 L8,178 Z"/>
+            <path class="mini-region" data-sido="충청북도"        d="M120,122 L218,122 L218,205 L178,218 L132,202 L132,122 Z"/>
+            <path class="mini-region" data-sido="경상북도"        d="M205,122 L358,122 L358,200 L335,255 L282,265 L242,248 L216,200 Z"/>
+            <path class="mini-region" data-sido="전북특별자치도"  d="M12,218 L178,218 L178,288 L138,298 L28,292 L8,265 Z"/>
+            <path class="mini-region" data-sido="경상남도"        d="M158,262 L308,262 L308,330 L242,340 L158,330 L152,295 Z"/>
+            <path class="mini-region" data-sido="전라남도"        d="M5,290 L162,290 L162,368 L98,378 L28,362 L2,330 Z"/>
+            <!-- 광역시·특별시·특별자치시 (나중에 렌더, 위에 표시) -->
+            <path class="mini-region" data-sido="인천광역시"      d="M10,68 L58,68 L62,112 L28,118 L8,97 Z"/>
+            <path class="mini-region" data-sido="서울특별시"      d="M88,62 L132,62 L132,97 L88,97 Z"/>
+            <path class="mini-region" data-sido="세종특별자치시"  d="M116,162 L140,162 L140,182 L116,182 Z"/>
+            <path class="mini-region" data-sido="대전광역시"      d="M122,188 L162,188 L162,212 L122,212 Z"/>
+            <path class="mini-region" data-sido="대구광역시"      d="M240,212 L282,212 L282,248 L240,248 Z"/>
+            <path class="mini-region" data-sido="울산광역시"      d="M308,242 L352,242 L352,280 L312,280 Z"/>
+            <path class="mini-region" data-sido="부산광역시"      d="M288,278 L352,278 L352,318 L308,328 L282,308 Z"/>
+            <path class="mini-region" data-sido="광주광역시"      d="M58,282 L98,282 L98,318 L58,318 Z"/>
+            <!-- 제주 (섬, 아래 분리) -->
+            <path class="mini-region" data-sido="제주특별자치도"  d="M32,425 L178,425 L182,458 L130,468 L38,462 Z"/>
+          </svg>
         </div>
         <div style="display:flex; flex-direction:column; gap:12px;">
           <div style="text-align:center; padding:16px; background:#F8FAFC; border-radius:14px;">

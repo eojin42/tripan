@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.tripan.app.admin.domain.dto.AdminChatRoomDto;
 import com.tripan.app.admin.mapper.CsManageMapper;
