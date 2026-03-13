@@ -8,6 +8,7 @@ import com.tripan.app.domain.dto.CommunityFreeboardCommentDto;
 
 public interface CommunityFreeboardService {
     List<CommunityFreeBoardDto> getBoardList();
+    List<CommunityFreeBoardDto> getBoardList(String category);
     
     void registerBoard(CommunityFreeBoardDto dto);
     

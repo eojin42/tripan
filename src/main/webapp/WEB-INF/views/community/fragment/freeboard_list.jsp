@@ -40,10 +40,11 @@
 
 <div class="filter-bar">
   <div class="filter-left">
-    <button class="f-chip on">전체</button>
-    <button class="f-chip">💡 여행 꿀팁</button>
-    <button class="f-chip">🙋‍♂️ 질문있어요</button>
-    <button class="f-chip">📸 다녀온 후기</button>
+    <button class="f-chip on" onclick="filterFreeboard('all', this)">전체</button>
+    <button class="f-chip" onclick="filterFreeboard('tip', this)">💡 여행 꿀팁</button>
+    <button class="f-chip" onclick="filterFreeboard('question', this)">🙋‍♂️ 질문있어요</button>
+    <button class="f-chip" onclick="filterFreeboard('review', this)">📸 다녀온 후기</button>
+    <button class="f-chip" onclick="filterFreeboard('etc', this)">💬 기타</button>
   </div>
   <button class="btn-write" onclick="openLoungeModal()">✏️ 글쓰기</button>
 </div>

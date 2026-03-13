@@ -50,9 +50,15 @@ public class CommunityFeedServiceImpl implements CommunityFeedService {
             for (int i = 0; i < limit; i++) {
                 MultipartFile file = dto.getFiles().get(i);
                 if (!file.isEmpty()) {
-                    String originalFilename = file.getOriginalFilename();
-                    String savedFilename = UUID.randomUUID().toString() + "_" + originalFilename;
-                    file.transferTo(new File(destDir, savedFilename));
+                	String originalFilename = file.getOriginalFilename();
+
+                	String cleanFilename = "feed_img"; 
+                	if (originalFilename != null) {
+                	    cleanFilename = originalFilename.replaceAll("[^a-zA-Z0-9가-힣\\.\\-_]", "_");
+                	}
+
+                	String savedFilename = UUID.randomUUID().toString() + "_" + cleanFilename;
+                	file.transferTo(new File(destDir, savedFilename));
                     fileNameList.add(savedFilename);
                 }
             }
