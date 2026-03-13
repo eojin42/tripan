@@ -186,31 +186,82 @@
   }
 
   async function loadBookings() {
-    var area = document.getElementById('booking-list-area');
-    try {
-      var res = await fetch('/mypage/api/bookings');
-      if (!res.ok) throw new Error();
-      var list = await res.json();
-      if (!list.length) { area.innerHTML = renderEmpty('bi-building', '예약 내역이 없어요'); return; }
-      area.innerHTML = '<div class="trip-list">' +
-        list.map(function(b) {
-          return '<div class="trip-card">' +
-            '<div class="trip-color-bar" style="background:var(--sky-blue)"></div>' +
-            '<div class="trip-info">' +
-              '<div class="trip-name">' + escHtml(b.accommodationName) + '</div>' +
-              '<div class="trip-meta">' +
-                '<span><i class="bi bi-calendar3"></i> ' + fmtDate(b.checkIn) + ' ~ ' + fmtDate(b.checkOut) + '</span>' +
-                '<span><i class="bi bi-geo-alt"></i> ' + escHtml(b.address || '') + '</span>' +
-              '</div>' +
-            '</div>' +
-            '<span class="trip-badge badge-upcoming">' + escHtml(b.status || '예약확정') + '</span>' +
-          '</div>';
-        }).join('') +
-      '</div>';
-    } catch(e) {
-      area.innerHTML = renderEmpty('bi-building', '예약 내역을 불러올 수 없어요','booking');
-    }
-  }
+	    var area = document.getElementById('booking-list-area');
+	    try {
+	        var res = await fetch('/mypage/api/bookings');
+	        if (!res.ok) throw new Error();
+	        var list = await res.json();
+	        
+	        if (!list.length) { 
+	            area.innerHTML = renderEmpty('bi-building', '예약 내역이 없어요', 'booking'); 
+	            return; 
+	        }
+
+	        area.innerHTML = '<div class="trip-list">' +
+	        list.map(function(b) {
+	            var now = new Date();
+	            now.setHours(0, 0, 0, 0);
+	            
+	            var checkIn = new Date(b.checkIn);
+	            checkIn.setHours(0, 0, 0, 0);
+	            
+	            var checkOut = new Date(b.checkOut);
+	            checkOut.setHours(0, 0, 0, 0);
+
+	            var diffCancel = Math.ceil((checkIn - now) / (1000 * 60 * 60 * 24));
+	            var daysSinceCheckIn = Math.ceil((now - checkIn) / (1000 * 60 * 60 * 24));
+
+	            var canCancel = diffCancel >= 5 && checkIn >= now; 
+	            var canWriteReview = daysSinceCheckIn >= 0 && daysSinceCheckIn <= 30; 
+
+	            var currentStatus = String(b.status || '').toUpperCase();
+	            var isCanceled = (currentStatus === '0' || currentStatus === 'CANCELED' || currentStatus === 'CANCEL');
+	            var isConfirmed = (currentStatus === '1' || currentStatus === 'SUCCESS' || currentStatus === 'PAID');
+
+	            var statusTxt = isCanceled ? '취소됨' : (isConfirmed ? '예약확정' : '예약중');
+	            var statusClass = isCanceled ? 'badge-completed' : 'badge-upcoming';
+
+	            if (!isCanceled && checkOut < now) {
+	                statusTxt = '이용완료';
+	                statusClass = 'badge-completed';
+	                isConfirmed = true; // 리뷰 쓰기 활성화를 위해
+	            }
+
+	            var isCancelable = (canCancel && !isCanceled);
+	            var cancelBtnStyle = isCancelable 
+	                ? 'flex: 1; border-color: var(--light-pink); color: var(--light-pink);' 
+	                : 'flex: 1; border-color: var(--border-light); color: var(--text-gray); background: #f8f9fa; cursor: not-allowed;';
+
+	            return '<div class="trip-card" style="flex-direction: column; align-items: stretch; gap: 15px;">' +
+	                '<div style="display: flex; align-items: center; gap: 20px;">' +
+	                    '<div class="trip-color-bar" style="background:var(--sky-blue)"></div>' +
+	                    '<div class="trip-info">' +
+	                        '<div class="trip-name">' + escHtml(b.accommodationName) + '</div>' +
+	                        '<div class="trip-meta">' +
+	                            '<span><i class="bi bi-calendar3"></i> ' + fmtDate(b.checkIn) + ' ~ ' + fmtDate(b.checkOut) + '</span>' +
+	                            '<span><i class="bi bi-geo-alt"></i> ' + escHtml(b.address || '') + '</span>' +
+	                        '</div>' +
+	                    '</div>' +
+	                    '<span class="trip-badge ' + statusClass + '">' + statusTxt + '</span>' +
+	                '</div>' +
+	                
+	                '<div style="display: flex; gap: 8px; margin-top: 5px;">' +
+	                    '<button class="btn-edit-profile" style="' + cancelBtnStyle + '" ' + 
+	                        (isCancelable ? 'onclick="location.href=\'#\'"' : 'disabled') + '>' +
+	                        '예약 취소' + 
+	                    '</button>' +
+	                    
+	                    (canWriteReview && !isCanceled && isConfirmed ? 
+	                        '<button class="btn-primary" style="flex: 1; padding: 8px; font-size: 13px;" onclick="location.href=\'#\'">리뷰 쓰기</button>' 
+	                        : '') +
+	                '</div>' +
+	            '</div>';
+	        }).join('') +
+	        '</div>';
+	    } catch(e) {
+	        area.innerHTML = renderEmpty('bi-building', '예약 내역을 불러올 수 없어요', 'booking');
+	    }
+	}
 
   function switchTab(tab, btn) {
     document.querySelectorAll('.tab-btn').forEach(function(b) { b.classList.remove('active'); });

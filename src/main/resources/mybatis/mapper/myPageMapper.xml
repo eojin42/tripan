@@ -58,4 +58,43 @@
                 AND api_sigungu_code IS NULL
           )
     </delete>
+    
+    
+    <!-- 북마크한 숙소 -->
+    <select id="selectMyBookmarks" resultType="com.tripan.app.domain.dto.BookmarkDto">
+        SELECT
+            b.BOOKMARK_ID as bookmarkId,
+            b.PLACE_ID as placeId,
+            p.PLACE_NAME as placeName,
+            p.ADDRESS as address,
+            p.IMAGE_URL as imageUrl,
+            p.CATEGORY as category,
+            b.CREATED_AT as createdAt
+        FROM BOOKMARK b
+        JOIN PLACE p ON b.PLACE_ID = p.PLACE_ID
+        WHERE b.MEMBER_ID = #{memberId}
+        <if test="type != null and type != '' and type != 'ALL'">
+            AND p.CATEGORY = #{type}
+        </if>
+        ORDER BY b.CREATED_AT DESC
+    </select>
+    
+    <!-- 내 예약 일정 가져오기 -->
+    <select id="getMyBookings" parameterType="long" resultType="map">
+	    SELECT 
+	        r.RESERVATION_ID AS "reservationId",
+	        r.ROOM_ID AS "roomId",
+	        r.CHECK_IN_DATE AS "checkIn",
+	        r.CHECK_OUT_DATE AS "checkOut",
+	        r.STATUS AS "status",
+	        p.PLACE_NAME AS "accommodationName",
+	        p.ADDRESS AS "address",
+	        rm.ROOM_NAME AS "roomName"
+	    FROM RESERVATION r
+	    JOIN ROOM rm ON r.ROOM_ID = rm.ROOM_ID
+	    JOIN ACCOMMODATION a ON rm.PLACE_ID = a.PLACE_ID
+	    JOIN PLACE p ON a.PLACE_ID = p.PLACE_ID
+	    WHERE r.MEMBER_ID = #{memberId}
+	    ORDER BY r.CHECK_IN_DATE DESC
+	</select>
 </mapper>
