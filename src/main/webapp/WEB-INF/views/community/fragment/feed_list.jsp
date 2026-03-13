@@ -318,7 +318,7 @@
 	      </div>
 	    </c:if>
 	  </div>
-	</c:if>
+	</c:if> 
     
     <div class="feed-content">
       <p class="feed-text" style="white-space: pre-wrap;">${feed.content}</p>
