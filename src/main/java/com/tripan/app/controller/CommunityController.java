@@ -70,21 +70,23 @@ public class CommunityController {
     }
 
     @GetMapping("/fragment/{tabType}")
-    public String handleFragment(@PathVariable("tabType") String tabType, HttpServletRequest request, Model model, HttpSession session) {
+    public String handleFragment(@PathVariable("tabType") String tabType, 
+                                 @RequestParam(value = "category", required = false, defaultValue = "all") String category,
+                                 HttpServletRequest request, Model model, HttpSession session) {
         String requestedWith = request.getHeader("X-Requested-With");
         
         if ("Fetch".equals(requestedWith) || "XMLHttpRequest".equals(requestedWith)) {
             
             if ("freeboard".equals(tabType)) {
-                List<CommunityFreeBoardDto> list = freeboardService.getBoardList();
+                List<CommunityFreeBoardDto> list = freeboardService.getBoardList(category);
                 model.addAttribute("boardList", list);
-                log.info("자유게시판 목록 조회 완료: {}건", list.size());
+                log.info("자유게시판 목록 조회 완료: {}건, 카테고리: {}", list.size(), category); 
                 
             } else if ("mate".equals(tabType)) {
                 return "community/fragment/mate/mate_list"; 
                 
             } else if ("feed".equals(tabType)) {
-            	MemberDto loginUser = (MemberDto) session.getAttribute("loginUser");
+                MemberDto loginUser = (MemberDto) session.getAttribute("loginUser");
                 Long loginId = (loginUser != null) ? loginUser.getMemberId() : -1L;
                 
                 List<CommunityFeedListDto> feedList = feedService.getFeedList(loginId);

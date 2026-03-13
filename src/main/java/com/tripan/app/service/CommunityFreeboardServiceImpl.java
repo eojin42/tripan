@@ -21,6 +21,16 @@ public class CommunityFreeboardServiceImpl implements CommunityFreeboardService 
     public List<CommunityFreeBoardDto> getBoardList() {
         return freeboardMapper.selectAll();
     }
+    
+    @Override
+    public List<CommunityFreeBoardDto> getBoardList(String category) {
+        if (category == null || "all".equals(category)) {
+            return freeboardMapper.selectAll();
+        } 
+        else {
+            return freeboardMapper.selectByCategory(category);
+        }
+    }
 
     @Override
     @Transactional

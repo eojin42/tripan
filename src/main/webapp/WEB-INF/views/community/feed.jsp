@@ -555,13 +555,13 @@
         <button class="btn-close-modal" onclick="closeLoungeModal()">✕</button>
       </div>
       
-      <div class="lounge-editor">
-        <select id="loungeCategory" class="lounge-input-style">
-          <option value="">말머리(카테고리)를 선택해주세요</option>
-          <option value="tip">💡 여행 꿀팁</option>
-          <option value="question">🙋‍♂️ 질문있어요</option>
-          <option value="review">📸 다녀온 후기</option>
-        </select>
+		<select id="loungeCategory" class="lounge-input-style">
+		  <option value="">말머리(카테고리)를 선택해주세요</option>
+		  <option value="tip">💡 여행 꿀팁</option>
+		  <option value="question">🙋‍♂️ 질문있어요</option>
+		  <option value="review">📸 다녀온 후기</option>
+		  <option value="etc">💬 기타</option>
+		</select>	
 
         <input type="text" id="loungeTitle" class="lounge-input-style" placeholder="제목을 입력하세요">
         
@@ -1940,6 +1940,42 @@
          }
      }
  }, true); 
+ 
+//자유게시판 카테고리 필터링 함수
+ function filterFreeboard(category, btnElement) {
+     const chips = document.querySelectorAll('.f-chip');
+     chips.forEach(chip => chip.classList.remove('on'));
+     btnElement.classList.add('on');
+
+     const contentArea = document.getElementById('dynamic-content');
+     contentArea.innerHTML = '<div style="text-align:center; padding: 100px 20px; color:var(--sky-blue);">데이터를 불러오는 중입니다... ⏳</div>';
+
+     const url = `${pageContext.request.contextPath}/community/fragment/freeboard?category=` + category;
+     
+     fetch(url, {
+         headers: { 'X-Requested-With': 'Fetch' }
+     })
+     .then(response => {
+         if(!response.ok) throw new Error("네트워크 응답 에러!");
+         return response.text();
+     })
+     .then(html => {
+         document.getElementById('dynamic-content').innerHTML = html;
+         
+         const newChips = document.querySelectorAll('.f-chip');
+         newChips.forEach(chip => {
+             if (chip.getAttribute('onclick').includes(`'${category}'`)) {
+                 chip.classList.add('on');
+             } else {
+                 chip.classList.remove('on');
+             }
+         });
+     })
+     .catch(error => {
+         console.error('Error:', error);
+         contentArea.innerHTML = '<div style="text-align:center; padding: 50px; color:red;">데이터를 불러오는데 실패했습니다. 😢</div>';
+     });
+ }
  
   </script>
   
