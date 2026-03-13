@@ -58,4 +58,6 @@ public interface MyPageService {
     List<String> getManualVisitedSidos(Long memberId);
     void addVisitedRegion(Long memberId, String sidoName);
     void removeVisitedRegion(Long memberId, String sidoName);
+    
+    List<Map<String, Object>> getMyBookings(Long memberId);
 }

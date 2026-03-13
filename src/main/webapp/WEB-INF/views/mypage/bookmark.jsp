@@ -170,15 +170,26 @@
   async function loadStays() {
     var area = document.getElementById('stay-grid-area');
     try {
-      var res = await fetch('/mypage/api/bookmarks?type=ACCOMMODATION');
+      var res = await fetch('${pageContext.request.contextPath}/mypage/api/bookmarks?type=ACCOMMODATION');
       if (!res.ok) throw new Error();
       var list = await res.json();
-      if (!list.length) { area.innerHTML = renderEmpty('bi-building', '찜한 숙소가 없어요', '/accommodation/list'); return; }
+      
+      if (!list.length) { 
+          area.innerHTML = renderEmpty('bi-building', '찜한 숙소가 없어요', '${pageContext.request.contextPath}/accommodation/list'); 
+          return; 
+      }
+      
       area.innerHTML = '<div class="wish-grid">' +
         list.map(function(p) {
-          return '<div class="wish-card" onclick="location.href=\'/accommodation/detail/' + p.placeId + '\'">' +
-            (p.thumbnailUrl
-              ? '<img class="wish-thumb" src="' + escHtml(p.thumbnailUrl) + '" alt="" loading="lazy">'
+          
+          let finalImg = '';
+          if (p.imageUrl) {
+              finalImg = p.imageUrl.startsWith('http') ? p.imageUrl : '${pageContext.request.contextPath}' + p.imageUrl;
+          }
+
+          return '<div class="wish-card" onclick="location.href=\'${pageContext.request.contextPath}/accommodation/detail/' + p.placeId + '\'">' +
+            (finalImg
+              ? '<img class="wish-thumb" src="' + escHtml(finalImg) + '" alt="" loading="lazy" onerror="this.src=\'https://images.unsplash.com/photo-1542314831-068cd1dbfeeb?w=600\'">'
               : '<div class="wish-thumb-placeholder"><i class="bi bi-building"></i></div>') +
             '<div class="wish-body">' +
               '<div class="wish-name">' + escHtml(p.placeName) + '</div>' +
@@ -188,8 +199,9 @@
           '</div>';
         }).join('') +
       '</div>';
+      
     } catch(e) {
-      area.innerHTML = renderEmpty('bi-building', '불러오기에 실패했어요', '/accommodation/list');
+      area.innerHTML = renderEmpty('bi-building', '불러오기에 실패했어요', '${pageContext.request.contextPath}/accommodation/list');
     }
   }
 

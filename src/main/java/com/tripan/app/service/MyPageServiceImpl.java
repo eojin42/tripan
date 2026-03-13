@@ -263,4 +263,16 @@ public class MyPageServiceImpl implements MyPageService {
 	public void removeVisitedRegion(Long memberId, String sidoName) {
 		mapper.deleteUserVisitedRegion(Map.of("memberId",memberId,"sidoName",sidoName));
 	}
+	
+	
+	// 예약 가져오기
+	@Override
+	public List<Map<String, Object>> getMyBookings(Long memberId) {
+		try {
+			return mapper.getMyBookings(memberId);
+		} catch (Exception e) {
+			log.info("getMyBookings : ", e);
+			return List.of();
+		}
+	}
 }

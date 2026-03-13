@@ -139,6 +139,13 @@ public class MyPageRestController {
         return ResponseEntity.ok(Map.of("message", "언팔로우 되었습니다."));
     }
     
+    @GetMapping("bookings")
+    public ResponseEntity<?> getBookings(HttpSession session) {
+        MemberDto loginUser = getLoginUser(session);
+        if (loginUser == null) return unauthorized();
+        return ResponseEntity.ok(myPageService.getMyBookings(loginUser.getMemberId()));
+    }
+    
     
 	private MemberDto getLoginUser(HttpSession session) {
 		return (MemberDto) session.getAttribute("loginUser");
@@ -147,6 +154,8 @@ public class MyPageRestController {
 	private ResponseEntity<?> unauthorized(){
 		return ResponseEntity.status(401).body(Map.of("message","로그인이 필요합니다."));
 	}
+	
+	
 	
 	 
 }

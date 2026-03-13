@@ -5,6 +5,7 @@ import java.util.Map;
 import java.util.Set;
 
 import org.apache.ibatis.annotations.Mapper;
+import org.apache.ibatis.annotations.Param;
 
 import com.tripan.app.domain.dto.BadgeInfoDto;
 import com.tripan.app.domain.dto.BookmarkDto;
@@ -35,7 +36,7 @@ public interface MyPageMapper {
     List<MyReviewDto> selectMyReviews(Long memberId);
 
     // 찜 목록 (bookmark 테이블)
-    List<BookmarkDto> selectMyBookmarks(Long memberId, String type);
+    List<BookmarkDto> selectMyBookmarks(@Param("memberId") Long memberId, @Param("type") String type);
 
     // 배지 전체 (badge LEFT JOIN member_badge)
     List<BadgeInfoDto> selectAllBadgesWithStatus(Long memberId);
@@ -54,4 +55,7 @@ public interface MyPageMapper {
     List<String> selectManualVisitedSidos(Long memberId);
     void insertUserVisitedRegion(Map<String, Object> params);
     void deleteUserVisitedRegion(Map<String, Object> params);
+    
+    // 내 예약 일정 가져오기
+    List<Map<String, Object>> getMyBookings(Long memberId);
 }
