@@ -1,16 +1,15 @@
 package com.tripan.app.service;
-import com.tripan.app.domain.dto.MyPageSummaryDto;
-import com.tripan.app.domain.dto.MyTripDto;
-import com.tripan.app.domain.dto.MyReviewDto;
-import com.tripan.app.domain.dto.BookmarkDto;
-import com.tripan.app.domain.dto.BadgeInfoDto;
-import com.tripan.app.domain.dto.FollowDto;
-import com.tripan.app.domain.dto.MemberDto;
-
-
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+
+import com.tripan.app.domain.dto.BadgeInfoDto;
+import com.tripan.app.domain.dto.BookmarkDto;
+import com.tripan.app.domain.dto.FollowDto;
+import com.tripan.app.domain.dto.MemberDto;
+import com.tripan.app.domain.dto.MyPageSummaryDto;
+import com.tripan.app.domain.dto.MyReviewDto;
+import com.tripan.app.domain.dto.MyTripDto;
 
 /**
  * 마이페이지 서비스 인터페이스

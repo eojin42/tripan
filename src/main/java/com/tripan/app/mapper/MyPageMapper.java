@@ -53,9 +53,11 @@ public interface MyPageMapper {
  // 방문 시도 이름 목록(완료여행+수동등록)
     List<String> selectVisitedSidoNames(Long memberId);
     List<String> selectManualVisitedSidos(Long memberId);
+    
     void insertUserVisitedRegion(Map<String, Object> params);
     void deleteUserVisitedRegion(Map<String, Object> params);
     
-    // 내 예약 일정 가져오기
+ // 내 예약 일정 가져오기
     List<Map<String, Object>> getMyBookings(Long memberId);
+    
 }

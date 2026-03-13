@@ -102,7 +102,7 @@ public class CsController {
     /** 상담 종료 (관리자) */
     @PostMapping("/api/chat/rooms/{roomId}/close")
     @ResponseBody
-    public ResponseEntity<?> closeChatRoom(@PathVariable Long roomId, HttpSession session) {
+    public ResponseEntity<?> closeChatRoom(@PathVariable("roomId") Long roomId, HttpSession session) {
         MemberDto loginUser = (MemberDto) session.getAttribute("loginUser");
         if (loginUser == null) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
@@ -123,7 +123,7 @@ public class CsController {
 
     @PutMapping("/admin/cs/api/chat/rooms/{roomId}/read")
     @ResponseBody
-    public ResponseEntity<?> resetNotification(@PathVariable Long roomId, HttpSession session) {
+    public ResponseEntity<?> resetNotification(@PathVariable("roomId") Long roomId, HttpSession session) {
     	MemberDto loginUser = (MemberDto) session.getAttribute("loginUser");
     	if(loginUser == null) {
     		return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
@@ -134,7 +134,7 @@ public class CsController {
     
     @PostMapping("/admin/inquiry/{id}/reply")
     @ResponseBody
-    public ResponseEntity<?> replyInquiry(@PathVariable Long id, @RequestBody Map<String, String> body) {
+    public ResponseEntity<?> replyInquiry(@PathVariable("id") Long id, @RequestBody Map<String, String> body) {
         return ResponseEntity.ok().build();
     }
     

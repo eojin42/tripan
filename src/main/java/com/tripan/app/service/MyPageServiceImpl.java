@@ -5,8 +5,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.bind.annotation.GetMapping;
 
 import com.tripan.app.domain.dto.BadgeInfoDto;
 import com.tripan.app.domain.dto.BookmarkDto;
@@ -16,14 +18,14 @@ import com.tripan.app.domain.dto.MyPageSummaryDto;
 import com.tripan.app.domain.dto.MyPageSummaryDto.ActivityItem;
 import com.tripan.app.domain.dto.MyReviewDto;
 import com.tripan.app.domain.dto.MyTripDto;
-import com.tripan.app.domain.dto.MemberDto;
 import com.tripan.app.mapper.MyPageMapper;
 import com.tripan.app.repository.BookmarkRepository;
+import com.tripan.app.repository.FollowRepository;
 import com.tripan.app.repository.Member2Repository;
 import com.tripan.app.repository.MemberBadgeRepository;
-import com.tripan.app.repository.FollowRepository;
 import com.tripan.app.repository.PlaceReviewRepository;
 
+import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -243,7 +245,8 @@ public class MyPageServiceImpl implements MyPageService {
 			return List.of();
 		}
 	}
-
+	
+	
 	@Override
 	public List<String> getManualVisitedSidos(Long memberId) {
 		try {
@@ -253,6 +256,17 @@ public class MyPageServiceImpl implements MyPageService {
 			return List.of();
 		}
 	}
+	
+	// 예약 가져오기
+    @Override
+    public List<Map<String, Object>> getMyBookings(Long memberId) {
+        try {
+            return mapper.getMyBookings(memberId);
+        } catch (Exception e) {
+            log.info("getMyBookings : ", e);
+            return List.of();
+        }
+    }
 
 	@Override
 	public void addVisitedRegion(Long memberId, String sidoName) {
@@ -262,17 +276,5 @@ public class MyPageServiceImpl implements MyPageService {
 	@Override
 	public void removeVisitedRegion(Long memberId, String sidoName) {
 		mapper.deleteUserVisitedRegion(Map.of("memberId",memberId,"sidoName",sidoName));
-	}
-	
-	
-	// 예약 가져오기
-	@Override
-	public List<Map<String, Object>> getMyBookings(Long memberId) {
-		try {
-			return mapper.getMyBookings(memberId);
-		} catch (Exception e) {
-			log.info("getMyBookings : ", e);
-			return List.of();
-		}
 	}
 }

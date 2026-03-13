@@ -261,6 +261,65 @@
     }
     .btn-view-all:hover { background: var(--sky-blue); color: white; }
     .mini-modal-body { padding: 12px; max-height: 320px; overflow-y: auto; }
+    
+    /* 지도 마우스 호버 애니메이션 */
+    .mini-region {
+      transition: all 0.3s ease; /* 부드러운 전환 효과 */
+      cursor: pointer;
+    }
+    .mini-region:hover {
+      fill-opacity: 0.6; /* 살짝 투명해지는 효과 */
+      stroke: var(--sky-blue); /* 테두리가 하늘색으로 변함 */
+      stroke-width: 1.5px;
+    }
+
+    /* 마우스 따라다니는 지역 이름 툴팁 */
+    #map-tooltip {
+      position: absolute;
+      background: rgba(45, 55, 72, 0.85); /* 진한 회색 배경 */
+      color: white;
+      padding: 6px 12px;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 700;
+      pointer-events: none; /* 마우스 이벤트 무시 (지도 클릭을 방해하지 않음) */
+      opacity: 0;
+      transition: opacity 0.2s ease;
+      z-index: 10000;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    }
+    
+    /* 지도 위 버튼 컨트롤 (저장, 확대/축소) */
+    .map-controls {
+      position: absolute;
+      top: 15px;
+      right: 15px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      z-index: 10;
+    }
+    .btn-map-control {
+      background: white;
+      border: 1px solid var(--border-light);
+      border-radius: 8px;
+      padding: 8px 12px;
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--text-dark);
+      cursor: pointer;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+      transition: all 0.2s;
+    }
+    .btn-map-control:hover { background: var(--sky-blue); color: white; }
+    
+    /* 지도 컨테이너 상대 위치 설정 (버튼 배치를 위해) */
+    #mini-map-wrap {
+      position: relative;
+      background: #F8FAFC; 
+      border-radius: 16px; 
+      overflow: hidden; 
+    }
   </style>
 </head>
 <body>
@@ -311,51 +370,48 @@
     </div>
 
     <!-- 나의 여행 지도 (D3.js 미니 지도) -->
-    <div class="clean-card">
-      <div class="map-header">
-        <h3><i class="bi bi-map"></i> 나의 여행 지도</h3>
-        <a href="${pageContext.request.contextPath}/mypage/map" class="btn-view-map">
-          <i class="bi bi-arrow-right"></i> 전체 보기
-        </a>
-      </div>
-      <div style="display:grid; grid-template-columns:1fr 160px; gap:16px; align-items:center;">
-        <div id="mini-map-wrap">
-           <svg id="mini-map-svg" viewBox="0 0 380 480" xmlns="http://www.w3.org/2000/svg">
-            <!-- 대형 도 단위 (먼저 렌더, 뒤에 위치) -->
-            <path class="mini-region" data-sido="강원특별자치도"  d="M178,5 L358,5 L360,10 L355,55 L345,75 L310,95 L306,140 L240,145 L210,115 L178,108 Z"/>
-            <path class="mini-region" data-sido="경기도"          d="M42,38 L178,38 L178,108 L148,148 L98,153 L65,133 L38,115 L36,70 Z"/>
-            <path class="mini-region" data-sido="충청남도"        d="M12,122 L132,122 L132,202 L88,222 L28,218 L8,178 Z"/>
-            <path class="mini-region" data-sido="충청북도"        d="M120,122 L218,122 L218,205 L178,218 L132,202 L132,122 Z"/>
-            <path class="mini-region" data-sido="경상북도"        d="M205,122 L358,122 L358,200 L335,255 L282,265 L242,248 L216,200 Z"/>
-            <path class="mini-region" data-sido="전북특별자치도"  d="M12,218 L178,218 L178,288 L138,298 L28,292 L8,265 Z"/>
-            <path class="mini-region" data-sido="경상남도"        d="M158,262 L308,262 L308,330 L242,340 L158,330 L152,295 Z"/>
-            <path class="mini-region" data-sido="전라남도"        d="M5,290 L162,290 L162,368 L98,378 L28,362 L2,330 Z"/>
-            <!-- 광역시·특별시·특별자치시 (나중에 렌더, 위에 표시) -->
-            <path class="mini-region" data-sido="인천광역시"      d="M10,68 L58,68 L62,112 L28,118 L8,97 Z"/>
-            <path class="mini-region" data-sido="서울특별시"      d="M88,62 L132,62 L132,97 L88,97 Z"/>
-            <path class="mini-region" data-sido="세종특별자치시"  d="M116,162 L140,162 L140,182 L116,182 Z"/>
-            <path class="mini-region" data-sido="대전광역시"      d="M122,188 L162,188 L162,212 L122,212 Z"/>
-            <path class="mini-region" data-sido="대구광역시"      d="M240,212 L282,212 L282,248 L240,248 Z"/>
-            <path class="mini-region" data-sido="울산광역시"      d="M308,242 L352,242 L352,280 L312,280 Z"/>
-            <path class="mini-region" data-sido="부산광역시"      d="M288,278 L352,278 L352,318 L308,328 L282,308 Z"/>
-            <path class="mini-region" data-sido="광주광역시"      d="M58,282 L98,282 L98,318 L58,318 Z"/>
-            <!-- 제주 (섬, 아래 분리) -->
-            <path class="mini-region" data-sido="제주특별자치도"  d="M32,425 L178,425 L182,458 L130,468 L38,462 Z"/>
-          </svg>
-        </div>
-        <div style="display:flex; flex-direction:column; gap:12px;">
-          <div style="text-align:center; padding:16px; background:#F8FAFC; border-radius:14px;">
-            <div style="font-size:32px; font-weight:900; color:var(--text-black);" id="mini-visited-cnt">-</div>
-            <div style="font-size:11px; color:var(--text-gray); font-weight:700;">/ 17 지역 방문</div>
-            <div style="height:6px; background:#E2E8F0; border-radius:4px; margin-top:8px; overflow:hidden;">
-              <div id="mini-progress" style="height:100%; background:var(--grad-main); border-radius:4px; width:0%; transition:width .6s ease;"></div>
-            </div>
-          </div>
-          <div id="mini-visited-tags" style="display:flex; flex-wrap:wrap; gap:6px;"></div>
-        </div>
-      </div>
+   <div class="clean-card">
+  <div class="map-header">
+    <h3><i class="bi bi-map"></i> 나의 여행 지도</h3>
+  </div>
+  <div id="mini-map-wrap">
+    <div class="map-controls">
+      <button class="btn-map-control" id="btn-zoom-in"><i class="bi bi-zoom-in"></i> 확대</button>
+      <button class="btn-map-control" id="btn-zoom-out"><i class="bi bi-zoom-out"></i> 축소</button>
+      <button class="btn-map-control" id="btn-zoom-reset"><i class="bi bi-arrow-counterclockwise"></i> 초기화</button>
+      <button class="btn-map-control" id="btn-save-image" style="margin-top:10px; border-color:var(--sky-blue); color:var(--sky-blue);">
+        <i class="bi bi-camera"></i> 이미지 저장
+      </button>
     </div>
+    
+    <svg id="mini-map-svg" viewBox="0 0 500 550" style="width:100%; height:auto;" xmlns="http://www.w3.org/2000/svg"></svg>
+  </div>
+</div>
 
+<div class="modal-overlay" id="detailModal" onclick="closeModalByOverlay('detailModal', event)">
+  <div class="custom-modal">
+    <div class="modal-body" style="display:flex; flex-direction:column; gap:12px;">
+      <input type="hidden" id="modal-sigungu">
+      
+      <label>지도 색상</label>
+      <input type="color" id="modal-color" value="#89CFF0" style="width:100%; height:40px; border-radius:8px; border:none; cursor:pointer;">
+      
+      <div style="display:flex; gap:10px;">
+        </div>
+      
+      <label>추억 사진 등록</label>
+      <input type="file" id="modal-photo" accept="image/*" style="width:100%; padding:8px; border-radius:8px; border:1px solid #ddd; font-size:12px;">
+      
+      <label>여행 메모</label>
+      <textarea id="modal-memo" rows="3" style="width:100%; padding:8px; border-radius:8px; border:1px solid #ddd;"></textarea>
+      
+      <button id="btn-save-region" style="background:var(--sky-blue); color:white; border:none; padding:12px; border-radius:12px; font-weight:800; cursor:pointer; margin-top:10px;">
+        저장하기
+      </button>
+    </div>
+  </div>
+</div>
+<div id="map-tooltip"></div>
   </div>
 </main>
 
@@ -386,10 +442,161 @@
 </div>
 <jsp:include page="/WEB-INF/views/layout/footer.jsp"/>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js"></script>
 <script src="${pageContext.request.contextPath}/dist/js/mypage/main.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js"></script>
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+	const svg = d3.select("#mini-map-svg");
+    const width = 500, height = 550;
+    
+    const projection = d3.geoMercator()
+        .center([127.5, 36.0])
+        .scale(5200)
+        .translate([width / 2, height / 2.1]);
+    const path = d3.geoPath().projection(projection);
 
+    // 시/군/구 단위 GeoJSON (신뢰할 수 있는 kostat 데이터)
+    const geoJsonUrl = "https://raw.githubusercontent.com/southkorea/southkorea-maps/master/kostat/2013/json/skorea_municipalities_geo_simple.json";
+    const tooltip = d3.select("#map-tooltip");
+    let visitedDataMap = {}; 
 
+    const g = svg.append("g");
 
+    const zoom = d3.zoom()
+        .scaleExtent([1, 8]) // 1배 ~ 8배까지 확대 가능
+        .on("zoom", (event) => {
+            g.attr("transform", event.transform);
+        });
+    svg.call(zoom);
+
+    // 줌 컨트롤 버튼 이벤트
+    d3.select("#btn-zoom-in").on("click", () => svg.transition().duration(300).call(zoom.scaleBy, 1.5));
+    d3.select("#btn-zoom-out").on("click", () => svg.transition().duration(300).call(zoom.scaleBy, 0.75));
+    d3.select("#btn-zoom-reset").on("click", () => svg.transition().duration(300).call(zoom.transform, d3.zoomIdentity));
+    
+    d3.json(geoJsonUrl).then(function(data) {
+        // 지도 그리기
+        const paths = svg.selectAll("path")
+            .data(data.features)
+            .enter().append("path")
+            .attr("d", path)
+            .attr("class", "mini-region")
+            .attr("data-sigungu", d => d.properties.name)
+            .style("fill", "#EDF2F7")
+            .style("stroke", "#ffffff")
+            .style("stroke-width", "0.5px")
+            .on("mouseover", function(event, d) {
+                // 마우스 올리면 툴팁 보이기
+                tooltip.style("opacity", 1).text(d.properties.name);
+                d3.select(this).style("fill-opacity", 0.7).style("stroke", "#89CFF0").style("stroke-width", "1.5px");
+            })
+            .on("mousemove", function(event) {
+                // 마우스 따라 툴팁 위치 이동
+                tooltip.style("left", (event.pageX + 15) + "px")
+                       .style("top", (event.pageY - 20) + "px");
+            })
+            .on("mouseout", function() {
+                tooltip.style("opacity", 0);
+                d3.select(this).style("fill-opacity", 1).style("stroke", "#ffffff").style("stroke-width", "0.5px");
+            })
+            .on("click", function(event, d) {
+                openDetailModal(d.properties.name, this);
+            });
+
+        // 서버에서 내 데이터 불러와서 색칠하기
+        loadVisitedData();
+    });
+
+    function loadVisitedData() {
+        fetch('${pageContext.request.contextPath}/mypage/api/visited-regions-data')
+            .then(res => res.json())
+            .then(list => {
+                list.forEach(item => {
+                    visitedDataMap[item.sigunguName] = item; // 캐싱해두기
+                    // 데이터 기반 색상 칠하기
+                    g.select(`path[data-sigungu="\${item.sigunguName}"]`)
+                       .style("fill", item.colorCode || '#89CFF0')
+                       .classed("visited", true);
+                }).catch(err => console.error(err));
+            });
+    }
+	
+    // 모달 열기
+    function openDetailModal(sigunguName, pathElement) {
+        document.getElementById('modal-region-name').innerText = sigunguName + " 여행 기록";
+        document.getElementById('modal-sigungu').value = sigunguName;
+        
+        // 기존에 저장된 데이터가 있다면 모달에 셋팅 (보기/수정 모드)
+        const existingData = visitedDataMap[sigunguName];
+        document.getElementById('modal-color').value = existingData?.colorCode || '#89CFF0';
+        document.getElementById('modal-start').value = existingData?.startDate || '';
+        document.getElementById('modal-end').value = existingData?.endDate || '';
+        document.getElementById('modal-memo').value = existingData?.memo || '';
+        document.getElementById('modal-photo').value = ''; // 사진 입력 초기화
+
+        document.getElementById('detailModal').classList.add('active');
+    }
+    
+    // 저장 버튼 이벤트
+    document.getElementById('btn-save-region').addEventListener('click', function() {
+    	const formData = new FormData();
+        formData.append("sigunguName", document.getElementById('modal-sigungu').value);
+        formData.append("colorCode", document.getElementById('modal-color').value);
+        
+        const sd = document.getElementById('modal-start').value;
+        const ed = document.getElementById('modal-end').value;
+        if(sd) formData.append("startDate", sd);
+        if(ed) formData.append("endDate", ed);
+        
+        formData.append("memo", document.getElementById('modal-memo').value);
+
+        // 사진 파일이 첨부되었으면 추가
+        const photoFile = document.getElementById('modal-photo').files[0];
+        if (photoFile) {
+            formData.append("photo", photoFile);
+        }
+
+        const csrfToken = document.querySelector("meta[name='_csrf']")?.getAttribute("content");
+        const csrfHeader = document.querySelector("meta[name='_csrf_header']")?.getAttribute("content");
+        let headers = {};
+        if (csrfToken && csrfHeader) headers[csrfHeader] = csrfToken;
+
+        // FormData 전송 시 Content-Type은 브라우저가 자동으로 multipart/form-data로 설정합니다.
+        fetch('${pageContext.request.contextPath}/mypage/api/visited-regions-save', {
+            method: 'POST',
+            headers: headers,
+            body: formData
+        }).then(res => {
+            if(res.ok) {
+                alert("저장되었습니다.");
+                closeModal('detailModal');
+                loadVisitedData(); 
+            } else res.text().then(text => alert("오류 발생: " + text));
+        }).catch(err => alert("서버 연결 실패"));
+    });
+
+    // 이미지로 저장하기 (html2canvas)
+    document.getElementById("btn-save-image").addEventListener("click", function() {
+        // 일시적으로 컨트롤 버튼들 숨기기 (깔끔한 캡처를 위해)
+        const controls = document.querySelector('.map-controls');
+        controls.style.display = 'none';
+
+        html2canvas(document.getElementById("mini-map-wrap"), {
+            backgroundColor: "#F8FAFC",
+            scale: 2 // 고화질 캡처
+        }).then(canvas => {
+            controls.style.display = 'flex'; // 다시 보이기
+            
+            const link = document.createElement("a");
+            link.download = "My_Tripan_Map.png";
+            link.href = canvas.toDataURL("image/png");
+            link.click();
+        });
+    });
+
+    window.closeModal = function(id) { document.getElementById(id).classList.remove('active'); }
+    window.closeModalByOverlay = function(id, e) { if (e.target.id === id) closeModal(id); }
+});
+</script>
 </body>
 </html>
