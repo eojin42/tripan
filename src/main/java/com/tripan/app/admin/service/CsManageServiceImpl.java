@@ -59,4 +59,10 @@ public class CsManageServiceImpl implements CsManageService {
 		return csMapper.selectAllSupportRooms();
 	}
 
+	@Override
+	public void reopenRoomIfClosed(Long roomId) {
+		csMapper.updateRoomStatusToActive(roomId);
+		
+	}
+
 }

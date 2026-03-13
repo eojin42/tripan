@@ -11,4 +11,5 @@ public interface CsManageService {
     List<AdminChatRoomDto> getAllSupportRooms();
     void closeRoom(Long roomId);
     void resetNotification(Long roomId, Long adminId);
+    void reopenRoomIfClosed(Long roomId);
 }

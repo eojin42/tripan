@@ -189,7 +189,7 @@
     .chat-empty-list p { font-size: 13px; font-weight: 600; }
 
     /* ── 채팅 뷰 ── */
-    .chat-view-panel { display: flex; flex-direction: column; background: var(--bg); }
+    .chat-view-panel { display: flex; flex-direction: column; background: var(--bg); min-height: 0;}
     .chat-view-empty {
       flex: 1; display: flex; flex-direction: column;
       align-items: center; justify-content: center; gap: 12px; color: var(--muted);
@@ -207,7 +207,7 @@
     .chat-status-closed { background: #F3F4F6; color: #6B7280; font-size: 11px; font-weight: 800; padding: 4px 12px; border-radius: 20px; }
     .chat-messages-area {
       flex: 1; padding: 18px 22px; overflow-y: auto;
-      display: flex; flex-direction: column; gap: 12px;
+      display: flex; flex-direction: column; gap: 12px; min-height: 0;
     }
     .msg-row { display: flex; gap: 8px; align-items: flex-end; }
     .msg-row.admin-msg { justify-content: flex-end; }
@@ -217,7 +217,7 @@
       background: linear-gradient(135deg, #89CFF0, #FFB6C1);
     }
     .msg-bubble {
-       min-width: 60px; max-width: 60%; padding: 9px 14px; border-radius: 14px;
+       min-width: 60px; max-width: 85%; padding: 9px 14px; border-radius: 14px;
       font-size: 13px; line-height: 1.5; font-weight: 600; word-break: break-word;
     }
     .msg-row.user-msg .msg-bubble  { background: #fff; border-top-left-radius: 4px; box-shadow: 0 2px 6px rgba(0,0,0,.05); }
@@ -263,6 +263,11 @@
 	  padding: 8px 18px 4px;
 	  font-size: 10px; font-weight: 900; color: var(--muted);
 	  letter-spacing: 0.5px; text-transform: uppercase;
+}
+#chatViewMain {
+  display: none; flex-direction: column; height: 100%;
+  min-height: 0; 
+  overflow: hidden; 
 }
   </style>
 </head>
@@ -371,7 +376,7 @@
                 <p>좌측에서 상담을 선택하세요</p>
               </div>
 
-              <div id="chatViewMain" style="display:none; flex-direction:column; height:100%;">
+              <div id="chatViewMain" style="display:none; flex-direction:column; height:100%; overflow:hidden;">
                 <div class="chat-view-header">
                   <div>
                     <h3 id="chatViewTitle">상담</h3>

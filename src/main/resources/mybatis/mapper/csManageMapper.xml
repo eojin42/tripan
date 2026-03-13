@@ -122,5 +122,11 @@
             INSERT (chat_member_id, chat_room_id, member_id, last_connected_at)
             VALUES (SEQ_CHAT_MEMBER_ID.NEXTVAL, #{roomId}, #{adminId}, SYSDATE)
     </update>
+    
+    <!-- 종료된 채팅방에 유저가 다시 상담걸면 상태변경 -->
+    <update id="updateRoomStatusToActive" parameterType="Long">
+    	UPDATE CHAT_ROOM SET STATUS = 'ACTIVE' 
+    	WHERE CHAT_ROOM_ID = #{roomId} AND STATUS = 'CLOSED'
+    </update>
 
 </mapper>

@@ -21,4 +21,5 @@ public interface CsManageMapper {
     List<AdminChatRoomDto> selectAllSupportRooms(); 
     void updateRoomStatus(Map<String, Object> params);
     void updateAdminLastConnected(Map<String, Object> params);
+    void updateRoomStatusToActive(Long roomId);
 }

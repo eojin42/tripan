@@ -220,7 +220,7 @@ function filterChatRooms(q) {
 }
 
 // ── 채팅방 입장 ──
-function enterRoom(room) {
+async function enterRoom(room) {
   // 목록 활성화
   document.querySelectorAll('.chat-room-item').forEach(el => el.classList.remove('active'));
   const roomItem = document.querySelector(`[data-room-id="${room.chatRoomId}"]`);
@@ -241,8 +241,11 @@ function enterRoom(room) {
   currentRoomId = room.chatRoomId;
   
   // DB 읽음 처리 (last_connected_at 갱신 → unreadCount 0으로)
-    fetch(`${ctxPath}/admin/cs/api/chat/rooms/${room.chatRoomId}/read`, { method: 'PUT' })
-      .catch(e => console.warn('읽음 처리 실패:', e));
+  try {
+      await fetch(`${ctxPath}/admin/cs/api/chat/rooms/${room.chatRoomId}/read`, { method: 'PUT' });
+    } catch (e) {
+      console.warn('읽음 처리 실패:', e);
+    }
 
   // 채팅 뷰 전환
   document.getElementById('chatViewEmpty').style.display = 'none';
@@ -252,6 +255,12 @@ function enterRoom(room) {
 
   // 상태 뱃지
   const isClosed = room.status === 'CLOSED';
+  const endBtn = document.querySelector('.btn-end-chat');
+    if (endBtn) {
+      endBtn.disabled = isClosed;
+      endBtn.style.opacity = isClosed ? '0.5' : '1';
+      endBtn.style.cursor = isClosed ? 'not-allowed' : 'pointer';
+    }
   const statusBadge = document.getElementById('chatStatusBadge');
   statusBadge.className = isClosed ? 'chat-status-closed' : 'chat-status-open';
   statusBadge.textContent = isClosed ? '상담 종료' : '상담 중';
@@ -261,7 +270,7 @@ function enterRoom(room) {
   input.disabled = isClosed;
   input.placeholder = isClosed ? '종료된 상담입니다.' : '답변을 입력하세요... (Enter: 전송, Shift+Enter: 줄바꿈)';
 
-  connectRoom(room.chatRoomId);
+ connectRoom(room.chatRoomId);
 }
 
 // ── 채팅방 WebSocket 연결 ──
@@ -293,29 +302,47 @@ function subscribeRoom(roomId) {
     const msg = JSON.parse(frame.body);
 
     // 종료 메시지 처리
-    if (msg.messageType === 'CLOSED' || msg.messageType === 'END') {
+    if (msg.messageType === 'CLOSED' || msg.messageType === 'END' || msg.messageType === 'SYSTEM') {
       renderMsg(msg);
       const badge = document.getElementById('chatStatusBadge');
       if (badge) { badge.className = 'chat-status-closed'; badge.textContent = '상담 종료'; }
-      const input = document.getElementById('adminMsgInput');
-      input.disabled = true; input.placeholder = '종료된 상담입니다.';
-      return;
+      
+	  const endBtn = document.querySelector('.btn-end-chat');
+	        if (endBtn) { endBtn.disabled = true; endBtn.style.opacity = '0.5'; endBtn.style.cursor = 'not-allowed'; }
+	        return;
     }
 
+	const badge = document.getElementById('chatStatusBadge');
+	    if (badge && badge.className === 'chat-status-closed') {
+	      badge.className = 'chat-status-open';
+	      badge.textContent = '상담 중';
+	      const input = document.getElementById('adminMsgInput');
+	      input.disabled = false;
+	      input.placeholder = '답변을 입력하세요... (Enter: 전송, Shift+Enter: 줄바꿈)';
+	      
+	      // 방 목록 갱신 (상태 업데이트 반영)
+	      loadChatRooms();
+	    }
+	
     renderMsg(msg);
 
     // 유저 메시지 && 내가 보낸 게 아닐 때 → 알림음 + 읽음 처리 갱신
-    if (String(msg.memberId) !== String(adminId)) {
-      playBeep();
-      // 방에서 실시간으로 읽고 있으므로 last_connected_at 갱신 (디바운스: 1초)
-      clearTimeout(readDebounceTimer);
-      readDebounceTimer = setTimeout(() => {
-        fetch(`${ctxPath}/admin/cs/api/chat/rooms/${roomId}/read`, { method: 'PUT' })
-          .catch(e => console.warn('읽음 갱신 실패:', e));
-      }, 1000);
-    }
-  });
-}
+	if (String(msg.memberId) !== String(adminId)) { 
+	      const badge = document.getElementById('chatStatusBadge');
+	      if (badge && badge.className === 'chat-status-closed') {
+	        // 현재 채팅방 상단 뱃지와 버튼만 즉시 활성화
+	        badge.className = 'chat-status-open';
+	        badge.textContent = '상담 중';
+	        
+	        const endBtn = document.querySelector('.btn-end-chat');
+	        if (endBtn) { endBtn.disabled = false; endBtn.style.opacity = '1'; endBtn.style.cursor = 'pointer'; }
+	      }
+
+	      // DB 상태가 바뀌었을 테니 방 목록을 즉시 새로고침
+	      loadChatRooms(); 
+	    }
+		});
+		}
 
 // ── 채팅 히스토리 로드 ──
 async function loadChatHistory(roomId) {
@@ -399,20 +426,30 @@ function sendAdminMsg() {
   input.style.height = 'auto';
 }
 
-// ── 상담 종료 ──
+// 상담 종료
 async function endChat() {
   if (!currentRoomId || !confirm('상담을 종료하시겠습니까?')) return;
   try {
     await fetch(`${ctxPath}/api/chat/rooms/${currentRoomId}/close`, { method: 'POST' });
 
-    // ← WebSocket으로 종료 메시지 발행 (유저 화면에도 전달됨)
+    // 내 화면에 즉시 종료 메시지 띄우기 (서버 응답을 기다리지 않음)
+    renderMsg({ messageType: 'SYSTEM', content: '상담이 종료되었습니다.' });
+	
+	const endBtn = document.querySelector('.btn-end-chat');
+	    if (endBtn) {
+	      endBtn.disabled = true;
+	      endBtn.style.opacity = '0.5';
+	      endBtn.style.cursor = 'not-allowed';
+	    }
+
+    // 유저 화면에도 전달되도록 WebSocket 발행
     if (stompClient?.connected) {
       stompClient.send('/pub/chat/message', {}, JSON.stringify({
         roomId: currentRoomId,
         memberId: adminId,
         senderNickname: adminNick,
         content: '상담이 종료되었습니다.',
-        messageType: 'CLOSED'
+        messageType: 'SYSTEM' 
       }));
     }
 
@@ -420,14 +457,13 @@ async function endChat() {
     const badge = document.getElementById('chatStatusBadge');
     badge.className = 'chat-status-closed'; badge.textContent = '상담 종료';
     const input = document.getElementById('adminMsgInput');
-    input.disabled = true; input.placeholder = '종료된 상담입니다.';
+     input.placeholder = '채팅을 입력하세요... (Enter: 전송, Shift+Enter: 줄바꿈)';
 
     loadChatRooms();
   } catch (e) {
     alert('상담 종료에 실패했습니다.');
   }
 }
-
 function playBeep() {
   try {
     const ac = new (window.AudioContext || window.webkitAudioContext)();
@@ -484,36 +520,13 @@ function connectNotification() {
       if (String(data.roomId) === String(currentRoomId)) return; // 보고 있는 방은 스킵
 
       playBeep();
-
-      // 탭 뱃지 +1
-      const tabBadge = document.getElementById('chatBadge');
-      const next = (parseInt(tabBadge.textContent) || 0) + 1;
-      tabBadge.textContent = next;
-      tabBadge.style.display = 'inline-flex';
-
-      // 목록 아이템 뱃지 +1
-      const roomItem = document.querySelector(`.chat-room-item[data-room-id="${data.roomId}"]`);
-      if (!roomItem) { loadChatRooms(); return; }
-
-      roomItem.classList.add('unread');
-      let badge = roomItem.querySelector('.unread-badge');
-      if (!badge) {
-        badge = document.createElement('span');
-        badge.className = 'unread-badge';
-        badge.style.cssText = 'background:#FC8181;color:white;font-size:11px;font-weight:900;padding:2px 7px;border-radius:10px;min-width:18px;text-align:center;flex-shrink:0;align-self:center;';
-        badge.textContent = '0';
-        roomItem.appendChild(badge);
-      }
-      badge.textContent = (parseInt(badge.textContent) || 0) + 1;
-
-      // preview 최신 메시지로 갱신
-      const preview = roomItem.querySelector('.room-preview');
-      if (preview && data.content) preview.textContent = data.content;
-    });
+      loadChatRooms();
+    }); 
 
   }, () => {
+    // 연결 실패 시 5초 후 재시도
     setTimeout(connectNotification, 5000);
-  });
+  }); 
 }
 // ── 토스트 알림 ──
 function showToast(title, body) {

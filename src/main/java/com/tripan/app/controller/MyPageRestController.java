@@ -1,7 +1,5 @@
 package com.tripan.app.controller;
 
-import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -116,6 +114,32 @@ public class MyPageRestController {
         return ResponseEntity.ok(result);
     }
 	
+	@PostMapping("visited-regions/{sidoName}")
+    public ResponseEntity<?> addManualVisitedRegion(@PathVariable String sidoName, HttpSession session) {
+        MemberDto loginUser = getLoginUser(session);
+        if (loginUser == null) return unauthorized();
+        
+        try {
+            myPageService.addVisitedRegion(loginUser.getMemberId(), sidoName);
+            return ResponseEntity.ok(Map.of("message", "방문 지역이 추가되었습니다."));
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body(Map.of("message", "서버 오류가 발생했습니다."));
+        }
+    }
+	
+	@DeleteMapping("visited-regions/{sidoName}")
+    public ResponseEntity<?> removeManualVisitedRegion(@PathVariable String sidoName, HttpSession session) {
+        MemberDto loginUser = getLoginUser(session);
+        if (loginUser == null) return unauthorized();
+        
+        try {
+            myPageService.removeVisitedRegion(loginUser.getMemberId(), sidoName);
+            return ResponseEntity.ok(Map.of("message", "방문 지역이 해제되었습니다."));
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body(Map.of("message", "서버 오류가 발생했습니다."));
+        }
+    }
+	
    @GetMapping("/following")
     public ResponseEntity<?> getFollowing(HttpSession session) {
         MemberDto loginUser = getLoginUser(session);
@@ -145,7 +169,7 @@ public class MyPageRestController {
         if (loginUser == null) return unauthorized();
         return ResponseEntity.ok(myPageService.getMyBookings(loginUser.getMemberId()));
     }
-    
+
     
 	private MemberDto getLoginUser(HttpSession session) {
 		return (MemberDto) session.getAttribute("loginUser");
@@ -154,8 +178,6 @@ public class MyPageRestController {
 	private ResponseEntity<?> unauthorized(){
 		return ResponseEntity.status(401).body(Map.of("message","로그인이 필요합니다."));
 	}
-	
-	
 	
 	 
 }

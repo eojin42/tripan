@@ -464,11 +464,24 @@
         '🔒 ' + (m.content || '상담이 종료되었습니다.') + '</span>';
       msgArea.appendChild(closedDiv);
       msgArea.scrollTop = msgArea.scrollHeight;
-      if (inputField) { inputField.disabled = true; inputField.placeholder = '종료된 상담입니다.'; }
-      if (sendBtn) sendBtn.disabled = true;
+      var currentRoomItem = document.querySelector('.chat-room-item.active[data-room-id="' + currentRoomId + '"]');
+      if (currentRoomItem) {
+        var p = currentRoomItem.querySelector('.room-info p');
+        if (p && p.innerText.includes('상담 중')) {
+          p.innerText = p.innerText.replace('상담 중', '종료');
+        }
+      }
       return;
     }
-
+	
+    var currentRoomItem = document.querySelector('.chat-room-item.active[data-room-id="' + currentRoomId + '"]');
+    if (currentRoomItem) {
+      var p = currentRoomItem.querySelector('.room-info p');
+      if (p && p.innerText.includes('종료')) {
+        p.innerText = p.innerText.replace('종료', '상담 중');
+      }
+    }
+    
     var isMe = (String(m.memberId) === String(memberId));
     var row  = document.createElement('div');
     row.className = 'msg-row ' + (isMe ? 'me' : 'other');

@@ -15,6 +15,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 
+import com.tripan.app.admin.service.CsManageService;
 import com.tripan.app.domain.dto.CommunityChatMessageDto;
 import com.tripan.app.domain.dto.CommunityChatRoomDto;
 import com.tripan.app.domain.dto.MemberDto;
@@ -31,15 +32,24 @@ public class CommunityChatController {
 
     private final SimpMessageSendingOperations messagingTemplate;
     private final CommunityChatService chatService;
+    private final CsManageService csService;
 
     @MessageMapping("/chat/message")
     public void message(CommunityChatMessageDto message) {
 
         String now = LocalDateTime.now().format(DateTimeFormatter.ofPattern("a h:mm"));
         message.setCreatedAt(now);
+        
+        String roomType = null;
 
         try {
             chatService.saveMessage(message);
+            
+            roomType = chatService.getRoomType(message.getRoomId());
+            if ("SUPPORT".equals(roomType)) {
+                // Service 단에서 UPDATE CHAT_ROOM SET STATUS = 'ACTIVE' WHERE ROOM_ID = ? 쿼리 실행
+            	csService.reopenRoomIfClosed(message.getRoomId()); 
+            }
         } catch (Exception e) {
             log.error("메시지 저장 실패 - roomId: {}, memberId: {}, error: {}",
                 message.getRoomId(), message.getMemberId(), e.getMessage(), e);
@@ -48,7 +58,6 @@ public class CommunityChatController {
         messagingTemplate.convertAndSend("/sub/chat/room/" + message.getRoomId(), message);
      
         // SUPPORT 방 메시지 → 관리자 실시간 배지 업데이트
-        String roomType = chatService.getRoomType(message.getRoomId());
         if ("SUPPORT".equals(roomType)) {
             messagingTemplate.convertAndSend("/sub/admin/chat/message", Map.of(
                 "roomId",  message.getRoomId(),
@@ -76,7 +85,7 @@ public class CommunityChatController {
     
     @GetMapping("/api/chat/history/{roomId}")
     @ResponseBody
-    public ResponseEntity<?> getChatHistory(@PathVariable Long roomId, HttpSession session) {
+    public ResponseEntity<?> getChatHistory(@PathVariable("roomId") Long roomId, HttpSession session) {
         MemberDto loginUser = (MemberDto) session.getAttribute("loginUser");
         if (loginUser == null) {
             return ResponseEntity.status(401).build();
