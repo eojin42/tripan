@@ -556,6 +556,32 @@ function downloadCoupon() {
     // 백엔드 쿠폰 테이블에 INSERT 처리 후 성공하면 알림을 띄우는 로직이 들어갑니다.
     alert("쿠폰이 발급되었습니다! 예약 결제 시 사용 가능합니다. 🎉");
 }
+
+//최근 본 숙소 localStorage 저장
+function saveRecentAccom() {
+    try {
+        const recent = {
+            accommodationId: '${detail.placeId}',
+            accommodationName: '${detail.name}',
+            address: '${detail.region}',
+            thumbnailUrl: '${detail.imageUrl}',
+            viewedAt: new Date().toISOString()
+        };
+
+        const raw = localStorage.getItem('tripan_recent_stays');
+        let list = raw ? JSON.parse(raw) : [];
+
+        // 중복 제거
+        list = list.filter(x => x.accommodationId != recent.accommodationId);
+        // 맨 앞에 추가
+        list.unshift(recent);
+        // 최대 10개만 유지
+        if (list.length > 10) list = list.slice(0, 10);
+
+        localStorage.setItem('tripan_recent_stays', JSON.stringify(list));
+    } catch(e) {}
+}
+saveRecentAccom();
 </script>
 
 <jsp:include page="../accommodation/searchModal.jsp" />

@@ -15,16 +15,16 @@ async function loadSummary() {
     if (!res.ok) return;
     const data = await res.json();
 
-    document.getElementById('val-trips')?.let(el => el.textContent = data.totalTripCount ?? 0);
-    document.getElementById('val-regions')?.let(el => el.textContent = data.visitedRegionCount ?? 0);
-    document.getElementById('val-avgdays')?.let(el => el.textContent = (data.avgTripDays ?? '-'));
-    document.getElementById('val-history')?.let(el => el.textContent = data.completedTripCount ?? 0);
+    const setVal = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val ?? '-'; };
+    setVal('val-trips',   data.totalTripCount   ?? 0);
+    setVal('val-regions', data.visitedRegionCount ?? 0);
+    setVal('val-avgdays', data.avgTripDays       ?? '-');
+    setVal('val-history', data.completedTripCount ?? 0);
 
     if (data.member) {
-      const setEl = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val ?? 0; };
-      setEl('stat-follower',  data.member.followerCount);
-      setEl('stat-following', data.member.followingCount);
-      setEl('stat-badge',     data.member.badgeCount);
+      setVal('stat-follower',  data.member.followerCount);
+      setVal('stat-following', data.member.followingCount);
+      setVal('stat-badge',     data.member.badgeCount);
     }
   } catch (e) { console.error('요약 로드 실패', e); }
 }
@@ -50,7 +50,12 @@ async function loadUpcoming() {
       return;
     }
 
-    const ddayLabel = data.dday === 0 ? 'D-Day!' : data.dday > 0 ? `D-${data.dday}` : `D+${Math.abs(data.dday)}`;
+	const today = new Date();
+	today.setHours(0, 0, 0, 0);
+	const start = new Date(data.startDate);
+	start.setHours(0, 0, 0, 0);
+	const diff = Math.floor((start - today) / (1000 * 60 * 60 * 24));
+	const ddayLabel = diff === 0 ? 'D-Day!' : diff > 0 ? `D-${diff}` : `D+${Math.abs(diff)}`;
     area.innerHTML = `
       <div class="upcoming-banner" onclick="location.href='${ctxPath}/mypage/schedule'">
         <i class="bi bi-airplane-fill"></i>
@@ -78,34 +83,32 @@ async function loadRecentAccom() {
   const area = document.getElementById('recent-accom-area');
   if (!area) return;
   try {
-    const res = await fetch(ctxPath + '/mypage/api/recent-accom?limit=3');
-    if (!res.ok) throw new Error(res.status);
-    const list = await res.json();
-
-    if (!list || list.length === 0) {
-      area.innerHTML = `
-        <div class="empty-state">
-          <i class="bi bi-building"></i>
-          <p>최근 본 숙소가 없어요. 마음에 드는 숙소를 찾아보세요!</p>
-        </div>`;
+    const raw = localStorage.getItem('tripan_recent_stays');
+    const list = raw ? JSON.parse(raw) : [];
+    if (!list.length) {
+      area.innerHTML = `<div class="empty-state"><i class="bi bi-building"></i><p>최근 본 숙소가 없어요. 맘에 드는 숙소를 찾아보세요!</p></div>`;
       return;
     }
 
-    area.innerHTML = `<div class="accom-grid">${list.map(a => `
-      <div class="accom-card" onclick="location.href='${ctxPath}/accom/${a.accomId}'">
-        <div class="accom-thumb">
-          ${a.thumbUrl
-            ? `<img src="${escHtml(a.thumbUrl)}" alt="${escHtml(a.name)}" loading="lazy">`
-            : `<i class="bi bi-building"></i>`}
-        </div>
-        <div class="accom-info">
-          <div class="accom-name">${escHtml(a.name)}</div>
-          <div class="accom-loc"><i class="bi bi-geo-alt-fill" style="color:var(--sky);font-size:10px;"></i>${escHtml(a.location || '')}</div>
-          ${a.price ? `<div class="accom-price">${Number(a.price).toLocaleString()}원 <span>/ 1박</span></div>` : ''}
-        </div>
-      </div>`).join('')}</div>`;
+    const cards = list.slice(0, 5).map(a => {
+      const img = a.thumbnailUrl
+        ? '<img src="' + escHtml(a.thumbnailUrl) + '" style="width:100%;height:150px;object-fit:cover;">'
+        : '<div style="width:100%;height:150px;background:#E6F4FF;display:flex;align-items:center;justify-content:center;"><i class="bi bi-building" style="font-size:32px;color:#89CFF0;"></i></div>';
+      return '<div onclick="location.href=\'' + ctxPath + '/accommodation/detail/' + a.accommodationId + '\'" '
+        + 'style="background:#fff;border-radius:12px;border:1px solid #E2E8F0;cursor:pointer;overflow:hidden;transition:all .2s;"'
+        + 'onmouseover="this.style.transform=\'translateY(-4px)\';this.style.boxShadow=\'0 8px 24px rgba(137,207,240,.2)\'"'
+        + 'onmouseout="this.style.transform=\'\';this.style.boxShadow=\'\'">'
+        + img
+        + '<div style="padding:10px;background:#F8FAFC;border-top:1px solid #E2E8F0;">'
+        + '<div style="font-size:13px;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + escHtml(a.accommodationName || a.placeName || '') + '</div>'
+        + '<div style="font-size:11px;color:#718096;margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + escHtml(a.address || '') + '</div>'
+        + '</div></div>';
+    }).join('');
+
+    area.innerHTML = '<div style="display:grid;grid-template-columns:repeat(5,1fr);gap:12px;">' + cards + '</div>';
+
   } catch (e) {
-    area.innerHTML = `<div class="empty-state"><i class="bi bi-building"></i><p>숙소 정보를 불러올 수 없어요</p></div>`;
+    area.innerHTML = `<div class="empty-state"><i class="bi bi-building"></i><p>최근 본 숙소가 없어요</p></div>`;
   }
 }
 
@@ -114,7 +117,7 @@ async function loadWishlist() {
   const area = document.getElementById('wish-list-area');
   if (!area) return;
   try {
-    const res = await fetch(ctxPath + '/mypage/api/wishlist?limit=5');
+    const res = await fetch(ctxPath + '/mypage/api/bookmarks');
     if (!res.ok) throw new Error(res.status);
     const list = await res.json();
 
@@ -122,27 +125,19 @@ async function loadWishlist() {
       area.innerHTML = `
         <div class="empty-state">
           <i class="bi bi-heart"></i>
-          <p>찜한 숙소가 없어요. 마음에 드는 숙소에 ❤️를 눌러보세요!</p>
+          <p>찜한 항목이 없어요. 마음에 드는 숙소에 ❤️를 눌러보세요!</p>
         </div>`;
       return;
     }
-
-    area.innerHTML = `<div class="wish-list">${list.map(a => `
-      <div class="wish-item" onclick="location.href='${ctxPath}/accom/${a.accomId}'">
-        <div class="wish-thumb">
-          ${a.thumbUrl
-            ? `<img src="${escHtml(a.thumbUrl)}" alt="${escHtml(a.name)}">`
-            : `<i class="bi bi-building"></i>`}
-        </div>
-        <div class="wish-info">
-          <div class="wish-name">${escHtml(a.name)}</div>
-          <div class="wish-meta">${escHtml(a.location || '')}${a.rating ? ` · ⭐ ${a.rating}` : ''}</div>
-        </div>
-        ${a.price ? `<div class="wish-price">${Number(a.price).toLocaleString()}원</div>` : ''}
-        <button class="btn-heart" onclick="toggleWish(event, ${a.accomId}, this)">♥</button>
-      </div>`).join('')}</div>`;
+	area.innerHTML = `<div class="wish-list">${list.slice(0,5).map(a => `
+	      <div class="wish-item">
+	        <div class="wish-info">
+	          <div class="wish-name">${escHtml(a.placeName)}</div>
+	          <div class="wish-meta">${escHtml(a.address || '')}</div>
+	        </div>
+	      </div>`).join('')}</div>`;
   } catch (e) {
-    area.innerHTML = `<div class="empty-state"><i class="bi bi-heart"></i><p>관심 목록을 불러올 수 없어요</p></div>`;
+    area.innerHTML = `<div class="empty-state"><i class="bi bi-heart"></i><p>찜한 항목이 없어요</p></div>`;
   }
 }
 

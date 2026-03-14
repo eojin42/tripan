@@ -230,25 +230,17 @@
 
   // ── 최근 본 숙소 (서버 API → 없으면 localStorage fallback) ──
   async function loadRecent() {
-    var area = document.getElementById('recent-grid-area');
-    area.innerHTML = '<div class="spin"></div>';
-    try {
-      var res = await fetch('/mypage/api/recent-accommodations');
-      if (!res.ok) throw new Error('no-api');
-      var list = await res.json();
-      renderRecentList(area, list);
-    } catch(e) {
-      // API 없을 때 localStorage 로 fallback
-      try {
-        var raw  = localStorage.getItem('tripan_recent_stays');
-        var list = raw ? JSON.parse(raw) : [];
-        renderRecentList(area, list);
-      } catch(le) {
-        area.innerHTML = renderEmpty('bi-building', '최근 본 숙소가 없어요', '/accommodation/list');
-      }
-    }
+  var area = document.getElementById('recent-grid-area');
+  area.innerHTML = '<div class="spin"></div>';
+  try {
+    var raw = localStorage.getItem('tripan_recent_stays');
+    var list = raw ? JSON.parse(raw) : [];
+    renderRecentList(area, list);
+  } catch(e) {
+    area.innerHTML = renderEmpty('bi-building', '최근 본 숙소가 없어요', '/accommodation/list');
   }
-
+}
+  
   function renderRecentList(area, list) {
     if (!list || !list.length) {
       area.innerHTML = renderEmpty('bi-clock-history', '최근 본 숙소가 없어요', '/accommodation/list');
@@ -314,7 +306,21 @@
   }
   function escHtml(s) { if (!s) return ''; return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
 
-  document.addEventListener('DOMContentLoaded', function() { loadStats(); loadPlaces(); });
+  document.addEventListener('DOMContentLoaded', function() {
+	  loadStats();
+	  loadPlaces();
+
+	  const tab = sessionStorage.getItem('bookmarkTab');
+	  if (tab === 'recent') {
+	    sessionStorage.removeItem('bookmarkTab');
+	    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+	    document.querySelector('[onclick*="recent"]').classList.add('active');
+	    document.getElementById('tab-place').style.display  = 'none';
+	    document.getElementById('tab-stay').style.display   = 'none';
+	    document.getElementById('tab-recent').style.display = '';
+	    loadRecent();
+	  }
+	});
 </script>
 </body>
 </html>
