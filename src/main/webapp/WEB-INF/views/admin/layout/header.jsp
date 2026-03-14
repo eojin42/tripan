@@ -27,10 +27,25 @@
       <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
     </button>
 
-    <button class="icon-btn" title="알림">
-      <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></svg>
-      <span class="notif-badge">3</span>
-    </button>
+    <div class="notif-wrapper" style="position: relative; display: flex; align-items: center;">
+      <button class="icon-btn" title="알림" onclick="toggleNotifDropdown(event)">
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></svg>
+        <span class="notif-badge" style="display:none;">0</span>
+      </button>
+
+      <div id="notifDropdown" style="display:none; position:absolute; top:calc(100% + 15px); right:-10px; width:300px; background:#fff; border-radius:14px; box-shadow:0 10px 30px rgba(0,0,0,0.1); border:1px solid #E2E8F0; z-index:9999; overflow:hidden;">
+        <div style="padding:14px 18px; border-bottom:1px solid #E2E8F0; display:flex; justify-content:space-between; align-items:center;">
+          <span style="font-weight:800; font-size:14px; color:#2D3748;">🔔 알림</span>
+          <button onclick="clearNotifs(event)" style="background:none; border:none; font-size:11px; color:#718096; cursor:pointer; font-weight:600;">모두 읽음</button>
+        </div>
+        <div id="notifList" style="max-height:340px; overflow-y:auto; display:flex; flex-direction:column;">
+          <div id="emptyNotif" style="padding:30px 20px; text-align:center; color:#A0AEC0;">
+            <i class="bi bi-bell-slash" style="font-size:24px; opacity:0.5; display:block; margin-bottom:8px;"></i>
+            <span style="font-size:12px; font-weight:600;">새로운 알림이 없습니다.</span>
+          </div>
+        </div>
+      </div>
+    </div>
 
     <div class="profile-wrapper">
       <button class="profile-btn" style="border:none; background:none; display:flex; align-items:center; gap:8px; cursor:pointer;">
@@ -56,3 +71,40 @@
     </div>
   </div>
 </header>
+
+<script>
+      // 종 모양 클릭 시 열고 닫기
+      function toggleNotifDropdown(e) {
+        e.stopPropagation();
+        var dropdown = document.getElementById('notifDropdown');
+        dropdown.style.display = (dropdown.style.display === 'none' || dropdown.style.display === '') ? 'block' : 'none';
+      }
+
+      // 모두 읽음 처리
+      function clearNotifs(e) {
+        e.stopPropagation();
+        var notifList = document.getElementById('notifList');
+        notifList.innerHTML = `
+          <div id="emptyNotif" style="padding:30px 20px; text-align:center; color:#A0AEC0;">
+            <i class="bi bi-bell-slash" style="font-size:24px; opacity:0.5; display:block; margin-bottom:8px;"></i>
+            <span style="font-size:12px; font-weight:600;">새로운 알림이 없습니다.</span>
+          </div>
+        `;
+        var badge = document.querySelector('.notif-badge');
+        if(badge) {
+            badge.textContent = '0';
+            badge.style.display = 'none';
+        }
+      }
+
+      // 알림창 바깥을 클릭하면 자동으로 닫히게 설정
+      document.addEventListener('click', function(e) {
+        var dropdown = document.getElementById('notifDropdown');
+        if (dropdown && dropdown.style.display === 'block') {
+          var wrapper = document.querySelector('.notif-wrapper');
+          if (wrapper && !wrapper.contains(e.target)) {
+            dropdown.style.display = 'none';
+          }
+        }
+      });
+    </script>

@@ -1,27 +1,37 @@
 package com.tripan.app.controller;
 
+import java.io.File;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 import org.springframework.http.ResponseEntity;
+import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.multipart.MultipartFile;
 
+import com.tripan.app.domain.dto.ConquestMapDto;
 import com.tripan.app.domain.dto.MemberDto;
 import com.tripan.app.service.MyPageService;
 
 import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 @RestController
 @RequestMapping("/mypage/api/*")
 @RequiredArgsConstructor
+@Slf4j
 public class MyPageRestController {
 	private final MyPageService myPageService;
 	
@@ -48,7 +58,7 @@ public class MyPageRestController {
 	}
 	
 	@DeleteMapping("/reviews/{reviewId}")
-	public ResponseEntity<?> deleteReview(@PathVariable Long reviewId, HttpSession session){
+	public ResponseEntity<?> deleteReview(@PathVariable("reviewId") Long reviewId, HttpSession session){
 		MemberDto loginUser = getLoginUser(session);
 		if(loginUser == null) return unauthorized();
 		
@@ -90,8 +100,7 @@ public class MyPageRestController {
 	}
 	
 	@PostMapping("badges/{badgeId}/equip")
-	public ResponseEntity<?> equipBadge(@PathVariable Long badgeId,
-            HttpSession session) {
+	public ResponseEntity<?> equipBadge(@PathVariable("badgeId") Long badgeId, HttpSession session) {
 		  MemberDto loginUser = getLoginUser(session);
 	       if (loginUser == null) return unauthorized();
 	        
@@ -103,38 +112,92 @@ public class MyPageRestController {
 	       }
 	}
 	
-	@GetMapping("visited-regions")
-    public ResponseEntity<?> getVisitedRegions(HttpSession session) {
-        MemberDto loginUser = getLoginUser(session);
-        if (loginUser == null) return unauthorized();
-        List<String> sidos = myPageService.getVisitedSidoNames(loginUser.getMemberId());
-        List<Map<String, String>> result = sidos.stream()
-            .map(s -> Map.of("sidoName", s))
-            .collect(Collectors.toList());
-        return ResponseEntity.ok(result);
-    }
-	
-	@PostMapping("visited-regions/{sidoName}")
-    public ResponseEntity<?> addManualVisitedRegion(@PathVariable String sidoName, HttpSession session) {
+	// 내 지도 데이터 불러오기
+    @GetMapping("visited-regions-data")
+    public ResponseEntity<?> getVisitedRegionsData(HttpSession session) {
         MemberDto loginUser = getLoginUser(session);
         if (loginUser == null) return unauthorized();
         
+        List<ConquestMapDto> list = myPageService.getVisitedRegionsData(loginUser.getMemberId());
+        return ResponseEntity.ok(list);
+    }
+	
+    // 지도 색칠 기록 저장/수정 (map.jsp에서 FormData로 보냄)
+    @PostMapping("visited-regions-save")
+    public ResponseEntity<?> saveVisitedRegion(
+            @ModelAttribute ConquestMapDto dto,
+            @RequestParam(value = "photos", required = false) List<MultipartFile> photos,
+            HttpSession session) {
+     
+        MemberDto loginUser = getLoginUser(session);
+        if (loginUser == null) return unauthorized();
+     
         try {
-            myPageService.addVisitedRegion(loginUser.getMemberId(), sidoName);
-            return ResponseEntity.ok(Map.of("message", "방문 지역이 추가되었습니다."));
+            dto.setMemberId(loginUser.getMemberId());
+            myPageService.saveVisitedRegion(dto);  // insert or update
+     
+            // 사진 처리 (있을 때만)
+            if (photos != null && !photos.isEmpty()) {
+                String uploadDir = System.getProperty("user.home") + "/tripan/uploads/map_photos/";
+                File dir = new File(uploadDir);
+                if (!dir.exists()) dir.mkdirs();
+     
+                for (MultipartFile photo : photos) {
+                    if (photo.isEmpty()) continue;
+     
+                    String ext      = StringUtils.getFilenameExtension(photo.getOriginalFilename());
+                    String fileName = loginUser.getUsername() + "_" + System.currentTimeMillis() + "." + ext;
+                    Files.copy(photo.getInputStream(), 
+                            Path.of(uploadDir + fileName), 
+                            StandardCopyOption.REPLACE_EXISTING);
+     
+                    // DB에 사진 경로 저장
+                    myPageService.savePhoto(
+                        loginUser.getMemberId(),
+                        dto.getConquestMapId(),  // insertRegionData 후 selectKey로 세팅됨
+                        "/uploads/map_photos/" + fileName
+                    );
+                }
+            }
+     
+            return ResponseEntity.ok(Map.of("message", "저장되었습니다."));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.status(400).body(Map.of("message", e.getMessage()));
         } catch (Exception e) {
+            log.error("saveVisitedRegion error", e);
             return ResponseEntity.status(500).body(Map.of("message", "서버 오류가 발생했습니다."));
         }
     }
 	
-	@DeleteMapping("visited-regions/{sidoName}")
-    public ResponseEntity<?> removeManualVisitedRegion(@PathVariable String sidoName, HttpSession session) {
+ // 기록 삭제 (map.jsp에서 JSON 바디로 보냄)
+    @DeleteMapping("visited-regions-delete")
+    public ResponseEntity<?> deleteVisitedRegion(@RequestBody Map<String, String> body, HttpSession session) {
+            
         MemberDto loginUser = getLoginUser(session);
         if (loginUser == null) return unauthorized();
         
         try {
-            myPageService.removeVisitedRegion(loginUser.getMemberId(), sidoName);
-            return ResponseEntity.ok(Map.of("message", "방문 지역이 해제되었습니다."));
+            String sigunguName = body.get("sigunguName");
+            myPageService.deleteVisitedRegion(loginUser.getMemberId(), sigunguName);
+            return ResponseEntity.ok(Map.of("message", "기록이 삭제되었습니다."));
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body(Map.of("message", "서버 오류가 발생했습니다."));
+        }
+    }
+    
+ // ── 사진 단건 삭제 ──
+    @DeleteMapping("visited-regions-photo/{photoId}")
+    public ResponseEntity<?> deletePhoto(@PathVariable("photoId") Long photoId,
+            HttpSession session) {
+     
+        MemberDto loginUser = getLoginUser(session);
+        if (loginUser == null) return unauthorized();
+     
+        try {
+            myPageService.deletePhoto(loginUser.getMemberId(), photoId);
+            return ResponseEntity.ok(Map.of("message", "사진이 삭제되었습니다."));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.status(403).body(Map.of("message", e.getMessage()));
         } catch (Exception e) {
             return ResponseEntity.status(500).body(Map.of("message", "서버 오류가 발생했습니다."));
         }
@@ -155,7 +218,7 @@ public class MyPageRestController {
     }
 
     @DeleteMapping("/following/{followingId}")
-    public ResponseEntity<?> unfollow(@PathVariable Long followingId,
+    public ResponseEntity<?> unfollow(@PathVariable("followingId") Long followingId,
                                       HttpSession session) {
         MemberDto loginUser = getLoginUser(session);
         if (loginUser == null) return unauthorized();

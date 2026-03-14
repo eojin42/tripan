@@ -217,7 +217,7 @@
       background: linear-gradient(135deg, #89CFF0, #FFB6C1);
     }
     .msg-bubble {
-       min-width: 60px; max-width: 85%; padding: 9px 14px; border-radius: 14px;
+       min-width: 60px; max-width: 90%; padding: 9px 14px; border-radius: 14px;
       font-size: 13px; line-height: 1.5; font-weight: 600; word-break: break-word;
     }
     .msg-row.user-msg .msg-bubble  { background: #fff; border-top-left-radius: 4px; box-shadow: 0 2px 6px rgba(0,0,0,.05); }

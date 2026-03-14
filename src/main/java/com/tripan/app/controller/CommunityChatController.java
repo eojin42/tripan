@@ -47,8 +47,9 @@ public class CommunityChatController {
             
             roomType = chatService.getRoomType(message.getRoomId());
             if ("SUPPORT".equals(roomType)) {
-                // Service 단에서 UPDATE CHAT_ROOM SET STATUS = 'ACTIVE' WHERE ROOM_ID = ? 쿼리 실행
-            	csService.reopenRoomIfClosed(message.getRoomId()); 
+            	if (!"SYSTEM".equals(message.getMessageType()) && !"CLOSED".equals(message.getMessageType())) {
+                    csService.reopenRoomIfClosed(message.getRoomId()); 
+                } 
             }
         } catch (Exception e) {
             log.error("메시지 저장 실패 - roomId: {}, memberId: {}, error: {}",

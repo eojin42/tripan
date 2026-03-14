@@ -9,6 +9,7 @@ import org.apache.ibatis.annotations.Param;
 
 import com.tripan.app.domain.dto.BadgeInfoDto;
 import com.tripan.app.domain.dto.BookmarkDto;
+import com.tripan.app.domain.dto.ConquestMapDto;
 import com.tripan.app.domain.dto.FollowDto;
 import com.tripan.app.domain.dto.MyPageSummaryDto;
 import com.tripan.app.domain.dto.MyPageSummaryDto.ActivityItem;
@@ -50,14 +51,31 @@ public interface MyPageMapper {
     // 활동 요약 (bookmark + follow + review + trip UNION)
     List<ActivityItem> selectActivitySummary(Long memberId);
     
- // 방문 시도 이름 목록(완료여행+수동등록)
-    List<String> selectVisitedSidoNames(Long memberId);
-    List<String> selectManualVisitedSidos(Long memberId);
-    
-    void insertUserVisitedRegion(Map<String, Object> params);
-    void deleteUserVisitedRegion(Map<String, Object> params);
-    
- // 내 예약 일정 가져오기
+    // 예약 일정
     List<Map<String, Object>> getMyBookings(Long memberId);
     
+    // ---지도정복---
+    
+    // 지역 이름("강남구")으로 region_id(101) 찾기
+    Long selectRegionIdByName(String sigunguName);
+    
+    // 내 지도 데이터 전체 조회
+    List<ConquestMapDto> selectVisitedRegionsData(Long memberId);
+    
+    // 해당 지역에 이미 기록이 있는지 확인 (regionId 기준)
+    int checkRegionExists(@Param("memberId") Long memberId, @Param("regionId") Long regionId);
+    
+    // 기록 등록/수정/삭제
+    void insertRegionData(ConquestMapDto dto);
+    void updateRegionData(ConquestMapDto dto);
+    void deleteRegionData(@Param("memberId") Long memberId, @Param("regionId") Long regionId);
+
+    void insertPhoto(ConquestMapDto dto);
+    int  deletePhoto(@Param("photoId")   Long photoId, @Param("memberId")  Long memberId);
+
+    // update 케이스에서 사진 저장용 conquestMapId 조회
+    Long selectConquestMapId(@Param("memberId") Long memberId, @Param("regionId") Long regionId);
+
+    // 사진 목록 조회 (resultMap collection에서 호출)
+    List<ConquestMapDto> selectPhotosByConquestMapId(Long conquestMapId);
 }

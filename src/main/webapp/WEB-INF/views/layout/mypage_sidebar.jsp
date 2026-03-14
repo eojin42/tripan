@@ -30,7 +30,6 @@
       </div>
     </div>
   </div>
- 
 
   <div class="glass-card">
     <ul class="side-nav">
@@ -52,6 +51,11 @@
       <li class="${activeMenu == 'review' ? 'active' : ''}">
         <a href="${pageContext.request.contextPath}/mypage/review">
           <i class="bi bi-chat-square-text"></i> 나의 리뷰 기록
+        </a>
+      </li>
+      <li class="${activeMenu == 'map' ? 'active' : ''}">
+        <a href="${pageContext.request.contextPath}/mypage/map">
+          <i class="bi bi-map"></i> 나의 여행 지도
         </a>
       </li>
       <li class="${activeMenu == 'coupon' ? 'active' : ''}">
