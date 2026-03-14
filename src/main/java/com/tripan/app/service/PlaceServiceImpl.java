@@ -84,43 +84,59 @@ public class PlaceServiceImpl implements PlaceService {
 
     private int fetchAndSaveByCategory(String contentTypeId) {
         int savedCount = 0;
+        int pageNo = 1;
+        int numOfRows = 800; 
+        boolean hasNextPage = true;
 
-        URI listUri = buildBaseUri("/areaBasedList2")
-                .queryParam("contentTypeId", contentTypeId)
-                .queryParam("numOfRows", "100")
-                .queryParam("pageNo",    "1")
-                .queryParam("arrange",   "Q") // 수정일 순
-                .build(true).toUri();
+        while (hasNextPage) {
+            URI listUri = buildBaseUri("/areaBasedList2")
+                    .queryParam("contentTypeId", contentTypeId)
+                    .queryParam("numOfRows", String.valueOf(numOfRows))
+                    .queryParam("pageNo",    String.valueOf(pageNo)) // 동적 페이지 순회
+                    .queryParam("arrange",   "Q") // 수정일 순
+                    .build(true).toUri();
 
-        try {
-            String   listResponse = new RestTemplate().getForObject(listUri, String.class);
-            JsonNode items = objectMapper.readTree(listResponse)
-                    .path("response").path("body").path("items").path("item");
+            try {
+                log.info("[KTO Sync] 카테고리 {} - {}페이지 요청 중... (단위: {}개)", contentTypeId, pageNo, numOfRows);
+                
+                String listResponse = new RestTemplate().getForObject(listUri, String.class);
+                JsonNode items = objectMapper.readTree(listResponse)
+                        .path("response").path("body").path("items").path("item");
 
-            if (items.isMissingNode() || !items.isArray()) {
-                log.warn("[KTO Sync] items 없음 - contentTypeId:{}", contentTypeId);
-                return 0;
-            }
-
-            for (JsonNode item : items) {
-                String contentId = item.path("contentid").asText();
-
-                // 중복 체크
-                if (placeMapper.findPlaceIdByApiContentId(contentId) != null) continue;
-
-                PlaceDto dto = buildPlaceDto(contentId, contentTypeId, item);
-                if (dto == null) continue;
-
-                // [2] 숙박은 accommodation 테이블에도 저장
-                placeMapper.insertKtoPlace(dto);
-                if ("32".equals(contentTypeId)) {
-                    fetchAndSaveAccommodationDetail(contentId, dto);
+                // 더 이상 가져올 데이터가 없으면 무한루프 종료
+                if (items.isMissingNode() || !items.isArray() || items.isEmpty()) {
+                    log.info("[KTO Sync] 카테고리 {} - 데이터 적재 완료. (종료)", contentTypeId);
+                    hasNextPage = false;
+                    break;
                 }
 
-                savedCount++;
+                for (JsonNode item : items) {
+                    String contentId = item.path("contentid").asText();
+
+                    // DB 중복 체크
+                    if (placeMapper.findPlaceIdByApiContentId(contentId) != null) continue;
+
+                    PlaceDto dto = buildPlaceDto(contentId, contentTypeId, item);
+                    if (dto == null) continue;
+
+                    // 단건 INSERT 실행
+                    placeMapper.insertKtoPlace(dto);
+                    
+                    if ("32".equals(contentTypeId)) {
+                        fetchAndSaveAccommodationDetail(contentId, dto);
+                    }
+                    savedCount++;
+                }
+
+                pageNo++; // 다음 페이지로 이동
+                
+                // 공공 API Rate Limit (호출 제한) 및 서버 부하 방어를 위해 0.5초 대기
+                Thread.sleep(500); 
+
+            } catch (Exception e) {
+                log.error("[KTO Sync] 오류 발생 - contentTypeId:{}, pageNo:{}", contentTypeId, pageNo, e);
+                hasNextPage = false; // 안전을 위해 해당 카테고리 순회 중단
             }
-        } catch (Exception e) {
-            log.error("[KTO Sync] 오류 - contentTypeId:{}", contentTypeId, e);
         }
         return savedCount;
     }

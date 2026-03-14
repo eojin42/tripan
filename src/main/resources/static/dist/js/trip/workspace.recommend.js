@@ -295,7 +295,8 @@ function rpAddToDay(btn) {
     address   : card.getAttribute('data-address'),
     latitude  : parseFloat(card.getAttribute('data-lat'))  || 0,
     longitude : parseFloat(card.getAttribute('data-lng'))  || 0,
-    placeId   : card.getAttribute('data-place-id')
+    placeId   : card.getAttribute('data-place-id'),
+    category  : card.getAttribute('data-category') || 'ETC'
   };
   openDayPicker();
 }
@@ -351,7 +352,8 @@ function addRecToDay(dayNumber) {
   if (typeof addPlaceToDay === 'function') {
     // schedule.js: addPlaceToDay(el, name, addr, lat, lng, apiPlaceId)
     // el은 null OK (함수 내부에서 currentAddDay를 사용하므로)
-    addPlaceToDay(null, name, address, lat, lng, placeId);
+    var _addCat = (_pendingRpCard && _pendingRpCard.category) || (window._selectedRecPlace && window._selectedRecPlace.category) || 'ETC';
+    addPlaceToDay(null, name, address, lat, lng, placeId, _addCat);
     if (typeof showToast === 'function') showToast('📍 DAY ' + dayNumber + '에 추가 중...');
   } else {
     if (typeof showToast === 'function')
@@ -485,6 +487,8 @@ function renderSearchResults(data) {
   var wrap = document.getElementById('placeResults');
   if (!wrap) return;
   wrap.innerHTML = '';
+  // 센티넬 초기화 (무한스크롤용)
+  _prObserver = null;
 
   var PT    = window.PLACE_TYPE || { OFFICIAL: 'OFFICIAL', CUSTOM: 'CUSTOM' };
   var hasOff = data.officialPlaces && data.officialPlaces.length > 0;
@@ -496,22 +500,22 @@ function renderSearchResults(data) {
   }
   var html = '';
   if (hasOff) {
-    html += '<div style="font-size:11px;font-weight:800;color:#5BABC9;padding:10px 14px 4px;">✨ Tripan 공식 추천</div>';
     data.officialPlaces.forEach(function (p) { html += _searchItemHtml(p, PT.OFFICIAL); });
   }
   if (hasMy) {
-    html += '<div style="font-size:11px;font-weight:800;color:#9B8DBE;padding:10px 14px 4px;">📍 나의 저장 장소</div>';
+    if (hasOff) html += '<div style="height:1px;background:#F0F4F8;margin:4px 0;"></div>';
+    html += '<div style="font-size:10px;font-weight:700;color:#9B8DBE;padding:8px 14px 2px;letter-spacing:.5px;">나의 저장 장소</div>';
     data.myPlaces.forEach(function (p) { html += _searchItemHtml(p, PT.CUSTOM); });
   }
   wrap.innerHTML = html;
+  // 무한스크롤 sentinel 재등록
+  setTimeout(_initPlaceResultsScroll, 50);
 }
 
 function _searchItemHtml(p, type) {
   var PT    = window.PLACE_TYPE || { OFFICIAL: 'OFFICIAL', CUSTOM: 'CUSTOM' };
   var isOff = (type === PT.OFFICIAL);
-  var badge = isOff
-    ? '<span style="font-size:10px;font-weight:700;padding:1px 7px;background:rgba(137,207,240,.18);color:#5BABC9;border-radius:50px;margin-right:4px;">공식</span>'
-    : '<span style="font-size:12px;margin-right:3px;">⭐</span>';
+  // ★ 공식 배지 제거됨
 
   return '<div style="padding:11px 14px;border-bottom:1px solid #F0F4F8;cursor:pointer;background:'
     + (isOff ? 'rgba(137,207,240,.04)' : '#fff') + ';" '
@@ -520,10 +524,14 @@ function _searchItemHtml(p, type) {
     + 'data-lat="'      + (p.latitude  || 0) + '" '
     + 'data-lng="'      + (p.longitude || 0) + '" '
     + 'data-place-id="' + _esc(String(p.placeId || '')) + '" '
+    + 'data-category="' + _esc(p.category || p.categoryName || '') + '" '
     + 'onmouseover="this.style.background=\'#F7FAFC\'" '
-    + 'onmouseout="this.style.background=\'' + (isOff ? 'rgba(137,207,240,.04)' : '#fff') + '\'" '
+    + 'onmouseout="this.style.background=\'#fff\'" '
     + 'onclick="selectPlaceResult(this)">'
-    + '<div style="font-size:13px;font-weight:700;color:#1A202C;margin-bottom:3px;">' + badge + _esc(p.placeName || '') + '</div>'
+    + '<div style="font-size:13px;font-weight:700;color:#1A202C;margin-bottom:3px;">'
+    + (isOff ? '' : '⭐ ') + _esc(p.placeName || '')
+    + _catLabel(p.category || p.categoryName || '')
+    + '</div>'
     + '<div style="font-size:11px;color:#A0AEC0;">' + _esc(p.address || '') + '</div>'
     + '</div>';
 }
@@ -620,28 +628,104 @@ function selectPlaceResult(el) {
   var lng     = parseFloat(el.getAttribute('data-lng'));
   var placeId = el.getAttribute('data-place-id');
 
+  var _srCat = el.getAttribute('data-category') || 'ETC';
   if (typeof closeModal    === 'function') closeModal('addPlaceModal');
-  if (typeof addPlaceToDay === 'function') addPlaceToDay(null, name, address, lat, lng, placeId);
+  if (typeof addPlaceToDay === 'function') addPlaceToDay(null, name, address, lat, lng, placeId, _srCat);
 }
 
 function openAddPlace(dayNumber) {
-  // currentAddDay는 schedule.js openAddPlace()가 set → 여기서 중복 호출 금지
-  // 단, recommend.js가 openAddPlace를 override하지 않도록 guard
   var input = document.getElementById('placeSearchInput');
-  if (input) input.value = '';
+  if (input) { input.value = ''; }
+
+  // ★ currentAddDay를 schedule.js와 공유
+  if (typeof currentAddDay !== 'undefined') currentAddDay = dayNumber;
+
+  // 탭 초기화
+  document.querySelectorAll('.place-type-tab').forEach(function(b) { b.classList.remove('active'); });
+  var allTab = document.querySelector('.place-type-tab[onclick*="all"]');
+  if (allTab) allTab.classList.add('active');
+
+  // 즉시 전체 카테고리 미리보기 로드
   _loadCategoryPreview('all');
+
   if (typeof openModal === 'function') openModal('addPlaceModal');
 }
 
-function _loadCategoryPreview(category) {
+/* 장소 추가 모달 - 카테고리 프리뷰 + 무한스크롤 */
+var _prOffset   = 0;
+var _prLimit    = 20;
+var _prCategory = 'all';
+var _prLoading  = false;
+var _prHasMore  = true;
+var _prObserver = null;
+
+function _loadCategoryPreview(category, reset) {
+  if (reset !== false) {
+    _prOffset   = 0;
+    _prCategory = category;
+    _prHasMore  = true;
+    _prLoading  = false;
+    // 결과 초기화
+    var wrap = document.getElementById('placeResults');
+    if (wrap) wrap.innerHTML = '<div style="text-align:center;padding:20px;color:#A0AEC0;">🔍 로드 중...</div>';
+  }
+  if (!_prHasMore || _prLoading) return;
+  _prLoading = true;
+
   fetch(CTX_PATH + '/api/places/recommend?category='
-    + encodeURIComponent(category) + '&city=' + encodeURIComponent(_getCityParam())
-    + '&limit=20&offset=0')
+    + encodeURIComponent(category || _prCategory)
+    + '&city='    + encodeURIComponent(_getCityParam())
+    + '&limit='   + _prLimit
+    + '&offset='  + _prOffset)
     .then(function (r) { return r.json(); })
     .then(function (data) {
-      var list = Array.isArray(data) ? data : (data.places || []);
-      renderSearchResults({ officialPlaces: list, myPlaces: [] });
-    });
+      var list    = Array.isArray(data) ? data : (data.places || []);
+      var hasMore = Array.isArray(data) ? (list.length === _prLimit) : (data.hasMore !== false && list.length > 0);
+      _prOffset  += list.length;
+      _prHasMore  = hasMore;
+      _prLoading  = false;
+
+      if (_prOffset === list.length) {
+        // 첫 페이지: 전체 렌더
+        renderSearchResults({ officialPlaces: list, myPlaces: [] });
+      } else {
+        // 추가 페이지: append
+        _appendSearchResults(list);
+      }
+      _initPlaceResultsScroll();
+    })
+    .catch(function() { _prLoading = false; });
+}
+
+function _appendSearchResults(list) {
+  var wrap = document.getElementById('placeResults');
+  if (!wrap) return;
+  var PT = window.PLACE_TYPE || { OFFICIAL: 'OFFICIAL' };
+  list.forEach(function(p) {
+    wrap.insertAdjacentHTML('beforeend', _searchItemHtml(p, PT.OFFICIAL));
+  });
+}
+
+function _initPlaceResultsScroll() {
+  if (_prObserver) { _prObserver.disconnect(); _prObserver = null; }
+  if (!window.IntersectionObserver) return;
+  var wrap = document.getElementById('placeResults');
+  if (!wrap) return;
+
+  var sentinel = document.getElementById('placeResultsSentinel');
+  if (!sentinel) {
+    sentinel = document.createElement('div');
+    sentinel.id = 'placeResultsSentinel';
+    sentinel.style.cssText = 'height:4px;width:100%;';
+    wrap.appendChild(sentinel);
+  }
+
+  _prObserver = new IntersectionObserver(function(entries) {
+    if (entries[0].isIntersecting && _prHasMore && !_prLoading) {
+      _loadCategoryPreview(_prCategory, false);
+    }
+  }, { root: wrap, threshold: 0.1 });
+  _prObserver.observe(sentinel);
 }
 
 /* ══════════════════════════
@@ -673,4 +757,25 @@ function _categoryPlaceholder(cat) {
     CULTURE:'🎭', LEISURE:'🏄', SHOPPING:'🛍', FESTIVAL:'🎉'
   };
   return m[cat] || '📍';
+}
+
+function _categoryMiniLabel(cat) {
+  var m = {
+    RESTAURANT:'식당', CAFE:'카페', TOUR:'관광지',
+    ACCOMMODATION:'숙박', CULTURE:'문화', LEISURE:'레포츠',
+    SHOPPING:'쇼핑', FESTIVAL:'축제'
+  };
+  return m[(cat||'').toUpperCase()] || '';
+}
+
+function _catLabel(cat) {
+  if (!cat) return '';
+  var m = {
+    RESTAURANT:'🍽️ 식당', CAFE:'☕ 카페',         TOUR:'🏔️ 관광지',
+    ACCOMMODATION:'🏨 숙박', CULTURE:'🎭 문화',    LEISURE:'🏄 레포츠',
+    SHOPPING:'🛍️ 쇼핑',   FESTIVAL:'🎉 축제',     ETC:''
+  };
+  var label = m[(cat||'').toUpperCase()];
+  if (!label) return '';
+  return ' <span style="font-size:10px;font-weight:600;padding:1px 6px;border-radius:50px;background:#F0F4F8;color:#718096;vertical-align:middle;">' + label + '</span>';
 }

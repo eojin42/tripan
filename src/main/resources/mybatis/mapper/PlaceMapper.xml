@@ -37,7 +37,7 @@
             place_id, partner_id, place_name, category, address,
             latitude, longitude, phone_number, description, image_url, createdtime
         ) VALUES (
-            #{placeId}, NULL, #{placeName}, #{category}, #{address},
+            #{placeId}, 0, #{placeName}, #{category}, #{address},
             #{latitude}, #{longitude}, #{phoneNumber}, #{description}, #{imageUrl}, SYSDATE
         )
     </insert>
@@ -48,7 +48,7 @@
             place_id, partner_id, place_name, category, address,
             latitude, longitude, phone_number, description, image_url, createdtime
         ) VALUES (
-            #{placeId}, NULL, #{placeName}, #{category}, #{address},
+            #{placeId}, 0, #{placeName}, #{category}, #{address},
             #{latitude}, #{longitude}, #{phoneNumber}, #{description}, #{imageUrl}, SYSDATE
         )
     </insert>
@@ -93,8 +93,7 @@
                 p.description   AS description,
                 ROWNUM          AS rn
             FROM place p
-            WHERE p.image_url IS NOT NULL
-              AND p.latitude  IS NOT NULL
+            WHERE p.latitude  IS NOT NULL
               AND p.longitude IS NOT NULL
             <if test="cityList != null and cityList.size() > 0">
                 AND (
@@ -106,7 +105,9 @@
             <if test="category != null and category != 'all'">
                 AND p.category = #{category}
             </if>
-            ORDER BY DBMS_RANDOM.VALUE
+            ORDER BY
+                CASE WHEN p.image_url IS NOT NULL AND p.image_url != '' THEN 0 ELSE 1 END,
+                DBMS_RANDOM.VALUE
         )
         WHERE rn > #{offset}
           AND rn &lt;= (#{offset} + #{limit})
@@ -119,9 +120,7 @@
     <select id="countRecommendPlaces" resultType="java.lang.Long">
         SELECT COUNT(*)
         FROM place p
-        WHERE p.image_url IS NOT NULL
-          AND p.image_url != ''
-          AND p.latitude  IS NOT NULL
+        WHERE p.latitude  IS NOT NULL
           AND p.longitude IS NOT NULL
         <if test="cityList != null and cityList.size() > 0">
             AND (

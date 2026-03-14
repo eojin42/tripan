@@ -3,6 +3,7 @@ package com.tripan.app.service;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.Base64;
 import java.util.List;
 import java.util.UUID;
@@ -29,10 +30,10 @@ import lombok.extern.slf4j.Slf4j;
 @RequiredArgsConstructor
 public class ItineraryServiceImpl implements ItineraryService {
 
-    private final ItineraryItemRepository itemRepository;
-    private final TripPlaceRepository     placeRepository;
+    private final ItineraryItemRepository  itemRepository;
+    private final TripPlaceRepository      placeRepository;
     private final ItineraryImageRepository imageRepository;
-    private final TripDayRepository       dayRepository;
+    private final TripDayRepository        dayRepository;
 
     @Value("${tripan.upload.dir:${user.home}/tripan-uploads/thumbnails}")
     private String uploadDir;
@@ -40,7 +41,8 @@ public class ItineraryServiceImpl implements ItineraryService {
     /* ── 새로운 장소 추가 ──────────────────────────────── */
     @Override
     @Transactional
-    public Long addPlaceAndItinerary(Long tripId, Long dayId, TripDto.PlaceAddDto dto, Long loginMemberId) {
+    public Long addPlaceAndItinerary(Long tripId, Long dayId,
+                                     TripDto.PlaceAddDto dto, Long loginMemberId) {
         TripPlace place = placeRepository.findByApiPlaceId(dto.getApiPlaceId())
             .orElseGet(() -> {
                 TripPlace np = new TripPlace();
@@ -68,7 +70,7 @@ public class ItineraryServiceImpl implements ItineraryService {
         return itemRepository.save(item).getItemId();
     }
 
-    /* ── 전체 순서 배열 업데이트 (기존 방식) ───────────── */
+    /* ── 전체 순서 배열 업데이트 ─────────────────────── */
     @Override
     @Transactional
     public void updateVisitOrder(Long tripId, List<ItemOrderDto> orderList) {
@@ -91,64 +93,64 @@ public class ItineraryServiceImpl implements ItineraryService {
         itemRepository.deleteById(itemId);
     }
 
-    /* ── 메모 + 이미지 저장 ─────────────────────────────── */
+    /* ────────────────────────────────────────────────────
+       ★ 메모 + 다중 이미지 저장 (최대 3장)
+       ──────────────────────────────────────────────────── */
     @Override
     @Transactional
-    public String saveMemoAndImage(Long itemId, String memo, String imageBase64, Long loginMemberId) {
+    public List<String> saveMemoAndImages(Long itemId, String memo,
+                                          List<String> imageBase64List, Long loginMemberId) {
         ItineraryItem item = itemRepository.findById(itemId)
             .orElseThrow(() -> new IllegalArgumentException("장소 아이템 없음: " + itemId));
 
+        // 메모 저장
         if (memo != null) {
             item.setMemo(memo.trim());
         }
 
-        String savedUrl = null;
-        if (imageBase64 != null && !imageBase64.isBlank()) {
-            savedUrl = saveImageFile(imageBase64);
-            if (savedUrl != null) {
-                ItineraryImage image = new ItineraryImage();
-                image.setItemId(itemId);
-                image.setMemberId(loginMemberId);
-                image.setImageUrl(savedUrl);
-                imageRepository.save(image);
-            }
+        // 기존 이미지 삭제 후 새로 저장 (덮어쓰기)
+        // ★ 기존 이미지를 유지하고 싶으면 이 줄을 제거
+        imageRepository.deleteByItemId(itemId);
+
+        List<String> savedUrls = new ArrayList<>();
+        if (imageBase64List != null) {
+            // 최대 3장까지만 처리
+            imageBase64List.stream()
+                .filter(b64 -> b64 != null && !b64.isBlank())
+                .limit(3)
+                .forEach(b64 -> {
+                    String url = saveImageFile(b64);
+                    if (url != null) {
+                        ItineraryImage img = new ItineraryImage();
+                        img.setItemId(itemId);
+                        img.setMemberId(loginMemberId);
+                        img.setImageUrl(url);
+                        imageRepository.save(img);
+                        savedUrls.add(url);
+                    }
+                });
         }
-        return savedUrl;
+
+        return savedUrls;
     }
 
-    /* ══════════════════════════════════════════════════════
-       ✅ WS 연동용 신규 3개 메서드
-    ══════════════════════════════════════════════════════ */
-
-    /**
-     * getTripIdByItemId
-     * itemId → ItineraryItem.dayId → TripDay.tripId
-     */
+    /* ── getTripIdByItemId ─────────────────────────────── */
     @Override
     public Long getTripIdByItemId(Long itemId) {
         return itemRepository.findTripIdByItemId(itemId);
     }
 
-    /**
-     * moveItem
-     * 드래그앤드롭 단건 이동
-     * 1. 현재 item 조회
-     * 2. item의 dayId → TripDay → tripId 확보
-     * 3. (tripId + dayNumber)로 이동 목적지 TripDay 조회
-     * 4. item의 dayId + visitOrder 갱신 후 저장
-     */
+    /* ── moveItem ──────────────────────────────────────── */
     @Override
     @Transactional
     public void moveItem(Long itemId, int dayNumber, String visitOrder) {
         ItineraryItem item = itemRepository.findById(itemId)
             .orElseThrow(() -> new IllegalArgumentException("아이템 없음: " + itemId));
 
-        // 현재 dayId → tripId
         TripDay currentDay = dayRepository.findById(item.getDayId())
             .orElseThrow(() -> new IllegalArgumentException("현재 일차 없음: " + item.getDayId()));
         Long tripId = currentDay.getTripId();
 
-        // 이동 목적지 TripDay
         TripDay targetDay = dayRepository.findByTripIdAndDayNumber(tripId, dayNumber)
             .orElseThrow(() -> new IllegalArgumentException(
                 "이동 목적지 일차 없음: tripId=" + tripId + ", dayNumber=" + dayNumber));
@@ -158,10 +160,7 @@ public class ItineraryServiceImpl implements ItineraryService {
         itemRepository.save(item);
     }
 
-    /**
-     * deleteItem
-     * 장소 단건 삭제 (itemId만으로)
-     */
+    /* ── deleteItem ────────────────────────────────────── */
     @Override
     @Transactional
     public void deleteItem(Long itemId) {

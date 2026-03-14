@@ -303,14 +303,23 @@ public class TripServiceImpl implements TripService {
     public Long joinTripViaLink(String inviteCode, Long memberId) {
         Trip trip = tripRepository.findByInviteCode(inviteCode)
             .orElseThrow(() -> new IllegalArgumentException("유효하지 않은 링크"));
-        if (!tripMemberRepository.existsByTripIdAndMemberId(trip.getTripId(), memberId)) {
-            TripMember nm = new TripMember(); nm.setTripId(trip.getTripId()); nm.setMemberId(memberId);
-            nm.setRole("EDITOR"); nm.setInvitationStatus("ACCEPTED");
-            tripMemberRepository.save(nm);
-            
-            messagingTemplate.convertAndSend("/sub/trip/" + trip.getTripId(),
-                Map.of("action", "NEW_MEMBER_JOINED", "memberId", memberId));
+
+        // ★ 이미 멤버인 경우 → 알림/방송 없이 그냥 워크스페이스로 이동만 (중복 방지)
+        if (tripMemberRepository.existsByTripIdAndMemberId(trip.getTripId(), memberId)) {
+            return trip.getTripId();
         }
+
+        TripMember nm = new TripMember();
+        nm.setTripId(trip.getTripId());
+        nm.setMemberId(memberId);
+        nm.setRole("EDITOR");
+        nm.setInvitationStatus("ACCEPTED");
+        nm.setIsFirstVisit(1); // ★ 환영 모달 표시용
+        tripMemberRepository.save(nm);
+
+        messagingTemplate.convertAndSend("/sub/trip/" + trip.getTripId(),
+            Map.of("action", "NEW_MEMBER_JOINED", "memberId", memberId));
+
         return trip.getTripId();
     }
 
@@ -327,8 +336,9 @@ public class TripServiceImpl implements TripService {
         TripMember member = tripMemberRepository.findByTripIdAndMemberId(tripId, memberId)
             .orElseThrow(() -> new IllegalArgumentException("초대 내역이 없습니다."));
         member.setInvitationStatus("ACCEPTED");
+        member.setIsFirstVisit(1); // ★ 수락 시 환영 모달 표시용
         tripMemberRepository.save(member);
-       
+
         messagingTemplate.convertAndSend("/sub/trip/" + tripId,
             Map.of("action", "NEW_MEMBER_JOINED", "memberId", memberId));
     }
