@@ -40,4 +40,14 @@ public class TripMember {
     @Column(name = "invitation_status", length = 20)
     private String invitationStatus = "PENDING";
 
+    /**
+     * 최초 진입 환영 모달 표시 여부
+     * 1 = 아직 안 봄 (모달 표시)
+     * 0 = 이미 봄   (모달 표시 안 함)
+     * 여행 생성/초대 수락/링크 가입 시 1로 세팅
+     * 워크스페이스 첫 진입 후 JS가 PATCH 호출하여 0으로 변경
+     */
+    @Column(name = "is_first_visit", nullable = false)
+    private Integer isFirstVisit = 1;
+
 }

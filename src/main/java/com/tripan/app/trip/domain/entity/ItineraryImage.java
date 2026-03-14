@@ -29,6 +29,6 @@ public class ItineraryImage {
     @Column(name = "image_url", nullable = false, length = 500)
     private String imageUrl; // 이미지 url 
 
-    @Column(name = "created_at", nullable = false, updatable = false)
-    private LocalDateTime createdAt = LocalDateTime.now(); 
+    @Column(name = "uploaded_at", nullable = false, updatable = false)
+    private LocalDateTime uploadedAt = LocalDateTime.now(); 
 }

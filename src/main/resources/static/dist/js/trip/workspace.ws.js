@@ -1,23 +1,19 @@
 /* ═══════════════════════════════════════════════════════════════
    workspace.ws.js  —  Tripan 워크스페이스 실시간 동기화
-   ─────────────────────────────────────────────────────────────
-   저장 구조:
-     사용자 액션 → REST fetch() → DB 저장(영속)
-     → wsPublisher.publish() → STOMP broadcast
-     → 같은 방 다른 유저 DOM 갱신 (새로고침 없이)
 
-   재진입 시:
-     JSP 렌더 → TripController.workspace() → DB 최신 조회
-     → 항상 최신 상태 (WebSocket 없어도 DB에 영구 저장됨)
+   수정 내역:
+    [1] MEMO_UPDATED 핸들러 개선
+        - 기존: wsUpdateMemo(itemId, memo) → 메모 텍스트만 DOM에 직접 써넣음
+                → 동행자 화면에 갑자기 메모 내용이 raw 텍스트로 나타남
+        - 변경: wsUpdateMemoFull(itemId, memo, imageUrls) 호출
+                → schedule.js의 함수를 통해 뱃지 방식으로 업데이트
+                → 뱃지 클릭 시 조회 모달로 내용 확인 가능
 
-   WebSocket 설정 (WebSocketConfig.java):
-     endpoint  : /ws-tripan  (SockJS)
-     broker    : /sub
-     구독 주소 : /sub/trip/{tripId}
+    [2] wsAddPlace에 chip 이벤트 바인딩 추가
+        - 새 카드 삽입 후 _bindChipClick(card) 호출
+        - data-images 속성 초기화
 
-   수정:
-     - copyInviteLink 제거 → workspace.ui.js 에서만 정의
-     - wsAddPlace lat/lng 파라미터 추가 (지도 마커 연동)
+    [3] wsUpdateMemo(구버전) 유지 — 하위 호환용
 ═══════════════════════════════════════════════════════════════ */
 
 var _stompClient = null;
@@ -69,23 +65,46 @@ function wsHandle(msg) {
 
   switch (msg.type) {
 
-    case 'ORDER_UPDATED':
-      wsMoveCard(msg.targetId, p.dayNumber, p.visitOrder);
-      wsToast(msg.senderNickname + '님이 일정 순서를 변경했어요 🔀');
-      break;
+	case 'ORDER_UPDATED':
+	      var _targetCard = document.querySelector('.place-card[data-id="' + msg.targetId + '"]');
+	      var _oldDayNum = _targetCard ? parseInt(_targetCard.dataset.day) : null;
+
+	      wsMoveCard(msg.targetId, p.dayNumber, p.visitOrder);
+	      
+	      if (typeof _reorderMarkersForDay === 'function') {
+	          _reorderMarkersForDay(p.dayNumber);
+	          
+	          if (_oldDayNum && _oldDayNum !== parseInt(p.dayNumber)) {
+	              _reorderMarkersForDay(_oldDayNum);
+	          }
+	      }
+	      wsToast(msg.senderNickname + '님이 일정 순서를 변경했어요 🔀');
+	      break;
 
     case 'PLACE_ADDED':
-      wsAddPlace(p.dayNumber, msg.targetId, p.placeName, p.address || '', p.latitude || 0, p.longitude || 0);
+      //  카테고리 파라미터(p.categoryName) 추가 전달
+      wsAddPlace(p.dayNumber, msg.targetId, p.placeName,
+                 p.address || '', p.latitude || 0, p.longitude || 0, p.categoryName);
       wsToast(msg.senderNickname + '님이 장소를 추가했어요 📍');
       break;
 
     case 'PLACE_DELETED':
       wsRemoveCard(msg.targetId);
+      // 누군가 장소를 지웠을 때 지도 마커도 실시간으로 뽑아버림
+      if (typeof mapRemoveMarker === 'function') {
+          mapRemoveMarker(msg.targetId);
+      }
       wsToast(msg.senderNickname + '님이 장소를 삭제했어요 🗑️');
       break;
 
     case 'MEMO_UPDATED':
-      wsUpdateMemo(msg.targetId, p.memo);
+      var imageUrls = p.imageUrls || (p.imageUrl ? [p.imageUrl] : []);
+      if (typeof wsUpdateMemoFull === 'function') {
+        wsUpdateMemoFull(msg.targetId, p.memo, imageUrls);
+      } else {
+        wsUpdateMemo(msg.targetId, p.memo);
+      }
+      wsToast(msg.senderNickname + '님이 메모를 수정했어요 📝');
       break;
 
     case 'CHECKLIST_ADDED':
@@ -113,7 +132,8 @@ function wsHandle(msg) {
     case 'VOTE_DELETED':
       if (typeof loadVotes === 'function') loadVotes();
       if (msg.type !== 'VOTE_CASTED')
-        wsToast(msg.senderNickname + '님이 투표를 ' + (msg.type === 'VOTE_CREATED' ? '만들었어요 🗳️' : '삭제했어요 🗑️'));
+        wsToast(msg.senderNickname + '님이 투표를 ' +
+                (msg.type === 'VOTE_CREATED' ? '만들었어요 🗳️' : '삭제했어요 🗑️'));
       break;
 
     case 'TRIP_UPDATED':
@@ -131,17 +151,17 @@ function wsHandle(msg) {
 /* ══════════════════════════════════════════════
    3. DOM 처리 함수들
 ══════════════════════════════════════════════ */
-
-/**
- * 다른 유저가 장소 추가 시 내 화면에 카드 삽입
- * lat/lng 추가 → 지도 마커도 함께 찍음
- */
-function wsAddPlace(dayNumber, itemId, placeName, address, lat, lng) {
+function wsAddPlace(dayNumber, itemId, placeName, address, lat, lng, categoryName) {
   var list = document.getElementById('places-' + dayNumber);
   if (!list) return;
   if (list.querySelector('.place-card[data-id="' + itemId + '"]')) return; // 중복 방지
 
   var count = list.querySelectorAll('.place-card').length + 1;
+  
+  var catInfo = (typeof window.getTripanCategory === 'function') 
+                ? window.getTripanCategory(categoryName) 
+                : { icon: '📍', label: categoryName || '장소' };
+
   var card  = document.createElement('div');
   card.className = 'place-card';
   card.draggable = true;
@@ -150,14 +170,16 @@ function wsAddPlace(dayNumber, itemId, placeName, address, lat, lng) {
   card.setAttribute('data-name',   placeName);
   card.setAttribute('data-memo',   '');
   card.setAttribute('data-imgurl', '');
+  card.setAttribute('data-images', '[]');
   card.setAttribute('data-lat',    lat || 0);
   card.setAttribute('data-lng',    lng || 0);
+
   card.innerHTML =
     '<div class="place-num">' + count + '</div>' +
     '<div class="place-info">' +
       '<div class="place-name">' + _escapeHtml(placeName) + '</div>' +
       '<div class="place-addr">' + _escapeHtml(address)   + '</div>' +
-      '<span class="place-type-badge">📍 장소</span>' +
+      '<span class="place-type-badge">' + catInfo.icon + ' ' + catInfo.label + '</span>' + 
       '<div class="place-chips"></div>' +
     '</div>' +
     '<div class="place-actions">' +
@@ -165,20 +187,21 @@ function wsAddPlace(dayNumber, itemId, placeName, address, lat, lng) {
       '<button class="place-action-btn" onclick="removePlace(this)">🗑</button>' +
     '</div>';
 
-  if (typeof initDrag === 'function') initDrag(card);
+  if (typeof initDrag      === 'function') initDrag(card);
+  if (typeof _bindChipClick === 'function') _bindChipClick(card);
+
   list.appendChild(card);
-  if (typeof renumberPlaces === 'function') renumberPlaces(dayNumber);
+  if (typeof renumberPlaces   === 'function') renumberPlaces(dayNumber);
   else if (typeof refreshPlaceNums === 'function') refreshPlaceNums(list);
 
-  // 추가 강조
   card.style.outline      = '2px solid #89CFF0';
   card.style.borderRadius = '14px';
   card.style.animation    = 'fadeIn .3s ease';
   setTimeout(function () { card.style.outline = ''; card.style.borderRadius = ''; }, 1500);
 
-  // 지도 마커
   if (typeof mapAddMarkerExternal === 'function' && lat && lng) {
-    mapAddMarkerExternal(lat, lng, placeName, dayNumber, count);
+    var catForMap = categoryName || '장소';
+    mapAddMarkerExternal(lat, lng, placeName, dayNumber, count, itemId, catForMap, address);
   }
 }
 
@@ -224,21 +247,34 @@ function wsRemoveCard(itemId) {
   }, 260);
 }
 
+/**
+ * [3] wsUpdateMemo — 구버전 하위 호환 (schedule.js v1 사용 시)
+ * schedule.js v2 사용 시엔 wsUpdateMemoFull이 대신 호출됨
+ */
 function wsUpdateMemo(itemId, memo) {
   var card = document.querySelector('.place-card[data-id="' + itemId + '"]');
   if (!card) return;
-  var chip = card.querySelector('.memo-chip');
+
+  // 구버전 memo-chip 방식 제거 후 뱃지 방식으로 교체
+  var oldChip = card.querySelector('.memo-chip');
+  if (oldChip) oldChip.remove();
+
+  // schedule.js v2 함수가 있으면 위임
+  if (typeof wsUpdateMemoFull === 'function') {
+    wsUpdateMemoFull(itemId, memo, []);
+    return;
+  }
+
+  // 구버전 fallback: place-chips에 뱃지 추가
+  var chips    = card.querySelector('.place-chips');
+  if (!chips) return;
+  var memoChip = chips.querySelector('.place-chip.memo');
   if (memo && memo.trim()) {
-    if (chip) { chip.textContent = memo; }
-    else {
-      var newChip = document.createElement('div');
-      newChip.className   = 'memo-chip';
-      newChip.textContent = memo;
-      var info = card.querySelector('.place-info');
-      if (info) info.appendChild(newChip);
-    }
-  } else if (chip) {
-    chip.remove();
+    card.dataset.memo = memo;
+    if (!memoChip) chips.insertAdjacentHTML('beforeend', '<span class="place-chip memo">📝 메모</span>');
+  } else {
+    card.dataset.memo = '';
+    if (memoChip) memoChip.remove();
   }
 }
 
@@ -266,7 +302,7 @@ function wsSaveStatus(state) {
 }
 
 /* ══════════════════════════════════════════════
-   5. 동기화 토스트 (우상단 — showToast와 별개)
+   5. 동기화 토스트 (우상단)
 ══════════════════════════════════════════════ */
 var _wsToastTimer = null;
 

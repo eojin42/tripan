@@ -289,3 +289,24 @@ function normalizeRow(row) {
   });
   return out;
 }
+
+/* ══════════════════════════════
+   이미지 뷰어 (Lightbox) 
+══════════════════════════════ */
+function openImageViewer(src) {
+  var viewer = document.getElementById('imageViewerModal');
+  var img = document.getElementById('viewerImage');
+  if(viewer && img) {
+    img.src = src;
+    viewer.classList.add('open');
+  }
+}
+
+function closeImageViewer() {
+  var viewer = document.getElementById('imageViewerModal');
+  if(viewer) {
+    viewer.classList.remove('open');
+    // 애니메이션 끝난 후 src 초기화 (깜빡임 방지)
+    setTimeout(() => { document.getElementById('viewerImage').src = ""; }, 200); 
+  }
+}

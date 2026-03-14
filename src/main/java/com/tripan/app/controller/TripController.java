@@ -23,6 +23,7 @@ import com.tripan.app.domain.dto.TripCreateDto;
 import com.tripan.app.domain.dto.TripDto;
 import com.tripan.app.service.NotificationService;
 import com.tripan.app.service.TripService;
+import com.tripan.app.trip.repository.TripMemberRepository;
 import com.tripan.app.websocket.WorkspaceEventPublisher;
 
 import jakarta.servlet.http.HttpSession;
@@ -36,6 +37,7 @@ public class TripController {
     private final TripService tripService;
     private final WorkspaceEventPublisher wsPublisher;
     private final NotificationService notificationService;
+    private final TripMemberRepository tripMemberRepository;
     
     @Value("${tripan.api.kakao-map-api-key}")
     private String kakaoMapKey; // yml에서 읽어옴 
@@ -61,10 +63,28 @@ public class TripController {
         model.addAttribute("tripId",       tripId);
         model.addAttribute("tripDto",      tripDto);
         model.addAttribute("tripNights",   tripNights);
-        model.addAttribute("kakaoMapKey",  kakaoMapKey); // jsp 로 전달시킴 
-        
+        model.addAttribute("kakaoMapKey",  kakaoMapKey);
+
         String nick = getLoginNickname(session);
         model.addAttribute("loginNickname", nick != null ? nick : "");
+
+        // ★ 환영 모달: 현재 유저의 isFirstVisit 확인
+        Long loginMemberIdForWelcome = getLoginMemberId(session);
+        boolean showWelcome = false;
+        if (loginMemberIdForWelcome != null) {
+            showWelcome = tripMemberRepository
+                .findByTripIdAndMemberId(tripId, loginMemberIdForWelcome)
+                .map(m -> Integer.valueOf(1).equals(m.getIsFirstVisit()))
+                .orElse(false);
+        }
+        model.addAttribute("showWelcome",  showWelcome);
+        // OWNER(생성자) 여부 판별
+        boolean isOwner = tripMemberRepository
+            .findByTripIdAndMemberId(tripId, loginMemberIdForWelcome)
+            .map(m -> "OWNER".equals(m.getRole()))
+            .orElse(false);
+        model.addAttribute("isOwner", isOwner);
+
         return "trip/workspace";
     }
 
@@ -227,6 +247,20 @@ public class TripController {
     @ResponseBody
     public List<String> searchTags(@RequestParam("keyword") String keyword) {
         return tripService.searchTags(keyword);
+    }
+
+    // ═══════════════════════════════════════════════════════
+    //  ★ 환영 모달 읽음 처리 (1회성)
+    // ═══════════════════════════════════════════════════════
+    @PatchMapping("/{tripId}/welcome/done")
+    @ResponseBody
+    public ResponseEntity<Map<String, Object>> markWelcomeDone(
+            @PathVariable("tripId") Long tripId, HttpSession session) {
+        Long loginId = getLoginMemberId(session);
+        if (loginId == null)
+            return ResponseEntity.status(401).body(Map.of("success", false));
+        tripMemberRepository.markFirstVisitDone(tripId, loginId);
+        return ResponseEntity.ok(Map.of("success", true));
     }
 
     private Long getLoginMemberId(HttpSession session) {

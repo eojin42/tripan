@@ -176,22 +176,28 @@
               ondragend="onCardDragEnd(event, this)">
               <div class="place-num">${is.index + 1}</div>
               <div class="place-info">
-                <div class="place-name">${fn:escapeXml(item.placeName)}</div>
-                <c:if test="${not empty item.address}">
-                  <div class="place-addr">${fn:escapeXml(item.address)}</div>
-                </c:if>
-                <div class="place-chips">
-                  <c:if test="${not empty item.startTime}">
-                    <span class="place-chip time">⏰ ${item.startTime}</span>
-                  </c:if>
-                  <c:if test="${not empty item.memo}">
-                    <span class="place-chip memo">📝 메모</span>
-                  </c:if>
-                  <c:if test="${not empty item.imageUrl}">
-                    <span class="place-chip img">🖼 사진</span>
-                  </c:if>
-                </div>
-              </div>
+				  <div class="place-name">${fn:escapeXml(item.placeName)}</div>
+				  <c:if test="${not empty item.address}">
+				    <div class="place-addr">${fn:escapeXml(item.address)}</div>
+				  </c:if>
+				  
+				  <div class="place-chips" style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap; margin-top: 4px;">
+				    
+				    <c:if test="${not empty item.category}">
+				      <span class="place-type-badge">${item.category}</span>
+				    </c:if>
+				
+				    <c:if test="${not empty item.startTime}">
+				      <span class="place-chip time">⏰ ${item.startTime}</span>
+				    </c:if>
+				    <c:if test="${not empty item.memo}">
+				      <span class="place-chip memo">📝 메모</span>
+				    </c:if>
+				    <c:if test="${not empty item.imageUrl}">
+				      <span class="place-chip img">🖼 사진</span>
+				    </c:if>
+				  </div>
+				</div>
               <div class="place-actions">
                 <button class="place-action-btn" onclick="openMemo(this)" title="메모/사진">📝</button>
                 <button class="place-action-btn" onclick="removePlace(this)" title="삭제">🗑</button>
@@ -344,11 +350,13 @@
       <div class="rp-pane active" id="rpPane-suggest">
         <div class="rp-filter">
           <button class="rp-filter-btn active" onclick="filterRec(this,'all')">전체</button>
+          <button class="rp-filter-btn" onclick="filterRec(this,'RESTAURANT')">🍽 맛집</button>
           <button class="rp-filter-btn" onclick="filterRec(this,'ACCOMMODATION')">🏨 숙소</button>
           <button class="rp-filter-btn" onclick="filterRec(this,'TOUR')">🏔 관광</button>
-          <button class="rp-filter-btn" onclick="filterRec(this,'RESTAURANT')">🍽 맛집</button>
           <button class="rp-filter-btn" onclick="filterRec(this,'CULTURE')">🎭 문화</button>
           <button class="rp-filter-btn" onclick="filterRec(this,'LEISURE')">🏄 레포츠</button>
+          <button class="rp-filter-btn" onclick="filterRec(this,'SHOPPING')">🛍️ 쇼핑</button>
+          <button class="rp-filter-btn" onclick="filterRec(this,'FESTIVAL')">🎉 축제</button>
         </div>
 
         <%-- ✅ 카드는 workspace.recommend.js가 동적 렌더 --%>
@@ -486,7 +494,7 @@
 
 <%-- 장소 추가 모달 --%>
 <div class="modal-overlay" id="addPlaceModal">
-  <div class="modal-box">
+  <div class="modal-box" style="width:min(660px,96vw);">
     <div class="modal-box__head">
       <span class="modal-box__title">📍 장소 추가</span>
       <button class="modal-close-btn" onclick="closeModal('addPlaceModal')">✕</button>
@@ -495,56 +503,124 @@
       <div class="place-type-tabs">
         <button class="place-type-tab active" onclick="selectPlaceType(this,'all')">🔍 전체</button>
         <button class="place-type-tab" onclick="selectPlaceType(this,'RESTAURANT')">🍽️ 맛집</button>
-        <button class="place-type-tab" onclick="selectPlaceType(this,'TOUR')">🏔️ 관광</button>
         <button class="place-type-tab" onclick="selectPlaceType(this,'ACCOMMODATION')">🏨 숙소</button>
+        <button class="place-type-tab" onclick="selectPlaceType(this,'TOUR')">🏔️ 관광</button>
+        <button class="place-type-tab" onclick="selectPlaceType(this,'CULTURE')">🎭 문화</button>
+        <button class="place-type-tab" onclick="selectPlaceType(this,'LEISURE')">🏄 레포츠</button>
+        <button class="place-type-tab" onclick="selectPlaceType(this,'SHOPPING')">🛍️ 쇼핑</button>
         <button class="place-type-tab" onclick="selectPlaceType(this,'my')">⭐ 나만의</button>
       </div>
       <div class="search-input-wrap">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
         <input type="text" placeholder="장소명, 주소 검색…" id="placeSearchInput" oninput="searchPlace(this.value)">
       </div>
-     	<div class="place-results" id="placeResults">
-		  <div style="text-align:center;padding:28px 20px;color:#A0AEC0;">
-		    <div style="font-size:28px;margin-bottom:8px;">🔍</div>
-		    <div style="font-size:13px;">장소명을 2글자 이상 입력하면 검색해요</div>
-		  </div>
-		</div>
+      <div class="place-results" id="placeResults">
+        <div style="text-align:center;padding:28px 20px;color:#A0AEC0;">
+          <div style="font-size:28px;margin-bottom:8px;">🗺️</div>
+          <div style="font-size:13px;">장소를 검색하거나 카테고리를 선택하세요</div>
+        </div>
+      </div>
     </div>
   </div>
 </div>
 
+
+<%-- ═══════════════════════════════════════════════════════
+     환영 모달 (1회성) - workspace에 첫 진입 시만 표시
+     showWelcome=true AND isOwner=true  → 여행 생성자 환영
+     showWelcome=true AND isOwner=false → 초대받은 동행자 환영
+═══════════════════════════════════════════════════════ --%>
+<c:if test="${showWelcome}">
+<div class="modal-overlay" id="welcomeModal" style="z-index:3000;">
+  <div class="welcome-modal-box">
+    <div class="welcome-modal-glow"></div>
+
+    <%-- 여행 생성자 환영 --%>
+    <c:if test="${isOwner}">
+      <div class="welcome-icon">✈️</div>
+      <h2 class="welcome-title">여행 만들기 완료!</h2>
+      <p class="welcome-subtitle">
+        <strong>${fn:escapeXml(tripDto.tripName)}</strong><br>
+        여행 플랜이 만들어졌어요 🎉<br>
+        지금 바로 일정을 채워보세요!
+      </p>
+      <div class="welcome-info-row">
+        <span class="welcome-chip">📅 ${fn:substring(tripDto.startDate,0,10)} ~ ${fn:substring(tripDto.endDate,0,10)}</span>
+        <span class="welcome-chip">🗺️ ${not empty tripDto.cities ? tripDto.cities[0] : '여행지'}</span>
+      </div>
+      <div class="welcome-tips">
+        <div class="welcome-tip-item"><span>1</span> 왼쪽 패널에서 장소를 추가하세요</div>
+        <div class="welcome-tip-item"><span>2</span> 지도에서 동선을 확인하세요</div>
+        <div class="welcome-tip-item"><span>3</span> 초대 링크로 동행자를 불러오세요</div>
+      </div>
+    </c:if>
+
+    <%-- 초대받은 동행자 환영 --%>
+    <c:if test="${!isOwner}">
+      <div class="welcome-icon">🎉</div>
+      <h2 class="welcome-title">여행에 합류했어요!</h2>
+      <p class="welcome-subtitle">
+        <strong>${fn:escapeXml(tripDto.tripName)}</strong><br>
+        여행에 초대됐어요 ✈️<br>
+        함께 멋진 여행을 만들어보세요!
+      </p>
+      <div class="welcome-info-row">
+        <span class="welcome-chip">📅 ${fn:substring(tripDto.startDate,0,10)} ~ ${fn:substring(tripDto.endDate,0,10)}</span>
+        <span class="welcome-chip">👥 ${fn:length(tripDto.members)}명 동행</span>
+      </div>
+      <div class="welcome-tips">
+        <div class="welcome-tip-item"><span>1</span> 일정을 확인하고 장소를 추가하세요</div>
+        <div class="welcome-tip-item"><span>2</span> 체크리스트로 준비물을 챙기세요</div>
+        <div class="welcome-tip-item"><span>3</span> 투표로 의견을 모아보세요</div>
+      </div>
+    </c:if>
+
+    <button class="welcome-btn" onclick="closeWelcomeModal()">
+      🚀 시작하기
+    </button>
+  </div>
+</div>
+</c:if>
+
 <%-- 메모 & 첨부 모달 --%>
 <%-- 메모 & 이미지 모달 --%>
+<%-- 메모 & 이미지 모달 (View & Edit 겸용) --%>
 <div class="modal-overlay" id="memoModal">
-  <div class="modal-box" style="max-width:460px;">
-    <div class="modal-box__head">
-      <span class="modal-box__title">📝 메모 & 사진</span>
+  <div class="modal-box" style="max-width: 420px; border-radius: 24px;">
+    <div class="modal-box__head" style="border-bottom: none; padding-bottom: 10px;">
+      <span class="modal-box__title" style="font-size: 18px; color: var(--dark);">✨ 장소 기록</span>
       <button class="modal-close-btn" onclick="closeModal('memoModal')">✕</button>
     </div>
-    <div class="modal-box__body">
-      <%-- 장소명 --%>
-      <div style="font-size:13px;font-weight:800;color:#4A5568;margin-bottom:12px;padding:8px 12px;background:#F8FAFC;border-radius:8px;border-left:3px solid #89CFF0;" id="memoPlaceName">—</div>
+    <div class="modal-box__body" style="padding-top: 0;">
+      
+      <%-- 장소명 헤더 --%>
+      <div class="memo-modern-header">
+        <span class="memo-icon">📍</span>
+        <span id="memoPlaceName" class="memo-title-text">—</span>
+      </div>
       <input type="hidden" id="memoItemId" value="">
 
-      <%-- 메모 입력 --%>
-      <div class="form-group" style="margin-bottom:14px;">
-        <label class="form-label-sm">메모</label>
-        <textarea class="form-textarea" id="memoText"
-          placeholder="브레이크타임 주의, 예약 필수, 주차 가능 등 메모를 입력하세요…"
-          style="min-height:80px;"></textarea>
+      <%-- 텍스트 영역 --%>
+      <div class="form-group" style="margin-bottom: 16px;">
+        <textarea class="form-textarea modern-textarea" id="memoText"
+          placeholder="이 장소에서의 기억이나 팁을 남겨보세요..."
+          style="min-height: 90px;"></textarea>
       </div>
 
-      <%-- 이미지 업로드 --%>
-      <div class="form-group" style="margin-bottom:16px;">
-        <label class="form-label-sm">사진 첨부 <span style="font-weight:400;color:#A0AEC0">(최대 3장 · JPG/PNG/WEBP · 5MB)</span></label>
-        <div class="memo-img-grid" id="memoImgGrid">
-          <%-- JS로 렌더 --%>
+      <%-- 사진 썸네일 그리드 영역 --%>
+      <div class="form-group" style="margin-bottom: 20px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+          <label class="form-label-sm" style="margin-bottom: 0;">📸 사진</label>
+          <label for="memoImgInput" class="btn-add-photo-sm">+ 추가</label>
+        </div>
+        
+        <div class="memo-img-grid modern-grid" id="memoImgGrid">
         </div>
         <input type="file" id="memoImgInput" accept="image/*" multiple style="display:none" onchange="onMemoImgSelect(event)">
       </div>
 
-      <button class="btn-primary" id="btnSaveMemo" onclick="saveMemo()">
-        <span id="saveMemoTxt">저장</span>
+      <button class="btn-primary" id="btnSaveMemo" onclick="saveMemo()" style="border-radius: 14px;">
+        <span id="saveMemoTxt">기록 저장하기</span>
       </button>
     </div>
   </div>
@@ -943,6 +1019,12 @@
   </div>
 </div>
 
+<%-- 이미지 전체화면 뷰어 --%>
+<div class="modal-overlay" id="imageViewerModal" style="z-index: 9999; background: rgba(0,0,0,0.85); backdrop-filter: blur(5px);" onclick="closeImageViewer()">
+  <button class="viewer-close-btn" onclick="closeImageViewer()" style="position: absolute; top: 20px; right: 20px; background: rgba(255,255,255,0.2); border: none; border-radius: 50%; width: 40px; height: 40px; color: white; font-size: 20px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: background 0.2s;">✕</button>
+  <img id="viewerImage" src="" style="max-width: 90vw; max-height: 85vh; border-radius: 16px; object-fit: contain; cursor: zoom-out; box-shadow: 0 10px 40px rgba(0,0,0,0.5);">
+</div>
+
 <%-- 알림 dim --%>
 <div class="notif-dd-dim" id="notifDim" onclick="closeNotif()"></div>
 
@@ -971,8 +1053,9 @@
      전역 변수 주입 (JSP EL)
 ════════════════════════════════════════ --%>
 <script>
-var TRIP_ID  = ${tripId};
-var CTX_PATH = '${pageContext.request.contextPath}';
+var TRIP_ID     = ${tripId};
+var CTX_PATH    = '${pageContext.request.contextPath}';
+var SHOW_WELCOME = ${showWelcome};
 </script>
 
 <%-- ════════════════════════════════════════
@@ -985,6 +1068,8 @@ var CTX_PATH = '${pageContext.request.contextPath}';
 <script src="${pageContext.request.contextPath}/dist/js/trip/workspace.vote.js"></script>
 <script src="${pageContext.request.contextPath}/dist/js/trip/workspace.expense.js"></script>
 <script src="${pageContext.request.contextPath}/dist/js/trip/workspace.recommend.js"></script>
+<script src="${pageContext.request.contextPath}/dist/js/trip/workspace.summary.js"></script>
+<script src="${pageContext.request.contextPath}/dist/js/trip/workspace.welcome.js"></script>
 <script src="${pageContext.request.contextPath}/dist/js/trip/workspace.map.js"></script>
 <script src="${pageContext.request.contextPath}/dist/js/trip/workspace.trip.js"></script>
 
@@ -1008,12 +1093,14 @@ var KAKAO_PLACES = [];
   <c:forEach var="item" items="${day.items}" varStatus="is">
     <c:if test="${not empty item.latitude and item.latitude != 0}">
       KAKAO_PLACES.push({
-        dayNum : ${day.dayNumber},
-        itemId : ${item.itemId},
-        name   : '${fn:escapeXml(item.placeName)}',
-        lat    : ${item.latitude},
-        lng    : ${item.longitude},
-        order  : ${is.index + 1}
+        dayNum   : ${day.dayNumber},
+        itemId   : ${item.itemId},
+        name     : '${fn:escapeXml(item.placeName)}',
+        lat      : ${item.latitude},
+        lng      : ${item.longitude},
+        order    : ${is.index + 1},
+        category : '${fn:escapeXml(not empty item.category ? item.category : "ETC")}',
+        address  : '${fn:escapeXml(not empty item.address ? item.address : "")}'
       });
     </c:if>
   </c:forEach>
