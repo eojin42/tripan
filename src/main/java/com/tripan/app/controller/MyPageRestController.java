@@ -22,7 +22,9 @@ import org.springframework.web.multipart.MultipartFile;
 
 import com.tripan.app.domain.dto.ConquestMapDto;
 import com.tripan.app.domain.dto.MemberDto;
+import com.tripan.app.domain.dto.TripDto;
 import com.tripan.app.service.MyPageService;
+import com.tripan.app.service.MyTripsService;
 
 import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
@@ -34,6 +36,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class MyPageRestController {
 	private final MyPageService myPageService;
+	private final MyTripsService myTripService;
 	
 	@GetMapping("summary")
 	public ResponseEntity<?> getSummary(HttpSession session){
@@ -46,7 +49,7 @@ public class MyPageRestController {
 	public ResponseEntity<?> getTrips(HttpSession session){
 		MemberDto loginUser = getLoginUser(session);
 		if(loginUser == null) return unauthorized();
-		return ResponseEntity.ok(myPageService.getMyTrips(loginUser.getMemberId()));
+		return ResponseEntity.ok(myTripService.getMyTrips(loginUser.getMemberId()));
 	}
 	
 	@GetMapping("reviews")
@@ -231,6 +234,21 @@ public class MyPageRestController {
         MemberDto loginUser = getLoginUser(session);
         if (loginUser == null) return unauthorized();
         return ResponseEntity.ok(myPageService.getMyBookings(loginUser.getMemberId()));
+    }
+    
+    @GetMapping("upcoming")
+    public ResponseEntity<?> getUpcoming(HttpSession session) {
+        MemberDto loginUser = getLoginUser(session);
+        if (loginUser == null) return unauthorized();
+        
+        List<TripDto> trips = myTripService.getMyTrips(loginUser.getMemberId());
+        if (trips == null || trips.isEmpty()) return ResponseEntity.ok(Map.of());
+        
+        TripDto upcoming = trips.stream()
+            .filter(t -> "PLANNING".equals(t.getStatus()) || "ONGOING".equals(t.getStatus()))
+            .findFirst().orElse(null);
+        
+        return ResponseEntity.ok(upcoming != null ? upcoming : Map.of());
     }
 
     

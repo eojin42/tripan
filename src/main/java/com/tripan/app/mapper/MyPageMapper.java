@@ -30,9 +30,6 @@ public interface MyPageMapper {
     List<MyPageSummaryDto> selectVisitedRegions(Long memberId);
     Set<Long> selectVisitedRegionIds(Long memberId);
 
-    // 내 여행 일정 (trip_member JOIN trip)
-    List<MyTripDto> selectMyTrips(Long memberId);
-
     // 내 리뷰
     List<MyReviewDto> selectMyReviews(Long memberId);
 

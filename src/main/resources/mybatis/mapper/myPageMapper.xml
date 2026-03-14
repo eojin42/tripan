@@ -3,17 +3,29 @@
 <mapper namespace="com.tripan.app.mapper.MyPageMapper">
 
     <!-- 마이페이지 요약 -->
-    <select id="selectMyPageSummary" resultType="com.tripan.app.domain.dto.MyPageSummaryDto">
-        SELECT
-            (SELECT COUNT(*) FROM trip WHERE member_id = #{memberId}) AS totalTripCount,
-            (SELECT COUNT(DISTINCT r.sido_name)
-             FROM conquest_map cm
-             JOIN region r ON cm.region_id = r.region_id
-             WHERE cm.member_id = #{memberId}) AS visitedRegionCount,
-            (SELECT COUNT(*) FROM trip WHERE member_id = #{memberId} AND status = 'COMPLETED') AS completedTripCount,
-            (SELECT NVL(AVG(end_date - start_date + 1), 0) FROM trip WHERE member_id = #{memberId}) AS avgTripDays
-        FROM dual
-    </select>
+   <select id="selectMyPageSummary" resultType="com.tripan.app.domain.dto.MyPageSummaryDto">
+	    SELECT
+	        (SELECT COUNT(*) 
+	         FROM trip_member 
+	         WHERE member_id = #{memberId} 
+	         AND invitation_status = 'ACCEPTED') AS totalTripCount,
+	        (SELECT COUNT(DISTINCT r.sido_name)
+	         FROM conquest_map cm
+	         JOIN region r ON cm.region_id = r.region_id
+	         WHERE cm.member_id = #{memberId}) AS visitedRegionCount,
+	        (SELECT COUNT(*) 
+	         FROM trip t
+	         JOIN trip_member tm ON t.trip_id = tm.trip_id
+	         WHERE tm.member_id = #{memberId}
+	         AND tm.invitation_status = 'ACCEPTED'
+	         AND TRUNC(SYSDATE) > TRUNC(t.end_date)) AS completedTripCount,
+	        (SELECT NVL(ROUND(AVG(t.end_date - t.start_date + 1), 1), 0)
+	         FROM trip t
+	         JOIN trip_member tm ON t.trip_id = tm.trip_id
+	         WHERE tm.member_id = #{memberId}
+	         AND tm.invitation_status = 'ACCEPTED') AS avgTripDays
+	    FROM dual
+	</select>
 
     <select id="selectVisitedSidoNames" parameterType="long" resultType="String">
         SELECT DISTINCT r.sido_name
@@ -78,7 +90,7 @@
     </select>
 
     <!-- 예약 -->
-    <select id="getMyBookings" parameterType="long" resultType="map">
+    <select id="getMyBookings" parameterType="Long" resultType="map">
         SELECT
             r.RESERVATION_ID  AS "reservationId",
             r.ROOM_ID         AS "roomId",
@@ -95,7 +107,6 @@
         WHERE r.MEMBER_ID = #{memberId}
         ORDER BY r.CHECK_IN_DATE DESC
     </select>
-
    
     <!-- 내 지도 기록 전체 조회 -->
     <select id="selectVisitedRegionsData" resultType="com.tripan.app.domain.dto.ConquestMapDto">

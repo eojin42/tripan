@@ -10,7 +10,6 @@ import com.tripan.app.domain.dto.FollowDto;
 import com.tripan.app.domain.dto.MemberDto;
 import com.tripan.app.domain.dto.MyPageSummaryDto;
 import com.tripan.app.domain.dto.MyReviewDto;
-import com.tripan.app.domain.dto.MyTripDto;
 
 /**
  * 마이페이지 서비스 인터페이스
@@ -26,9 +25,6 @@ public interface MyPageService {
     // 나의 여행 지도
     List<MyPageSummaryDto> getVisitedRegions(Long memberId);
     Set<Long> getVisitedRegionIds(Long memberId);  // JSP 조건 렌더링용
-
-    // 내 여행 일정
-    List<MyTripDto> getMyTrips(Long memberId);
 
     // 내 리뷰 (숙소팀 테이블)
     List<MyReviewDto> getMyReviews(Long memberId);

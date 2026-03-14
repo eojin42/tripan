@@ -91,7 +91,7 @@
     .up-lbl{font-size:11px;font-weight:700;opacity:.85;margin-bottom:4px;}
     .up-name{font-size:18px;font-weight:900;margin-bottom:4px;}
     .up-date{font-size:12px;opacity:.85;display:flex;align-items:center;gap:5px;}
-    .up-dday{font-size:34px;font-weight:900;flex-shrink:0;letter-spacing:-1px;}
+    .up-dday{font-size:34px;font-weight:900;flex-shrink:0;letter-spacing:-1px; margin-left: auto;}
     .upcoming-none{background:#fff;border-radius:20px;padding:22px 28px;
       display:flex;align-items:center;gap:20px;border:1px solid var(--border);}
     .upcoming-none-icon{width:50px;height:50px;border-radius:14px;background:var(--sky-light);
@@ -228,7 +228,8 @@
     <div>
       <div class="section-head">
         <h3 class="section-title"><i class="bi bi-eye"></i> 최근 본 숙소</h3>
-        <a href="${pageContext.request.contextPath}/accom" class="section-more">더 보기</a>
+       <a href="${pageContext.request.contextPath}/mypage/bookmark" 
+   class="section-more" onclick="sessionStorage.setItem('bookmarkTab','recent')">더 보기</a>
       </div>
       <p class="section-subtitle">다시 확인하고 싶은 숙소</p>
       <div id="recent-accom-area">
@@ -244,7 +245,7 @@
     <div>
       <div class="section-head">
         <h3 class="section-title"><i class="bi bi-heart"></i> 나의 관심 목록</h3>
-        <a href="${pageContext.request.contextPath}/mypage/wishlist" class="section-more">전체 보기</a>
+        <a href="${pageContext.request.contextPath}/mypage/bookmark" class="section-more">전체 보기</a>
       </div>
       <p class="section-subtitle">찜해둔 숙소를 빠르게 확인하세요</p>
       <div class="clean-card" style="padding:16px;">
@@ -271,6 +272,7 @@
 </div>
 
 <jsp:include page="/WEB-INF/views/layout/footer.jsp"/>
+
 <script src="${pageContext.request.contextPath}/dist/js/mypage/main.js"></script>
 </body>
 </html>
