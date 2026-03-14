@@ -5,13 +5,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.bind.annotation.GetMapping;
 
 import com.tripan.app.domain.dto.BadgeInfoDto;
 import com.tripan.app.domain.dto.BookmarkDto;
+import com.tripan.app.domain.dto.ConquestMapDto;
 import com.tripan.app.domain.dto.FollowDto;
 import com.tripan.app.domain.dto.MemberDto;
 import com.tripan.app.domain.dto.MyPageSummaryDto;
@@ -25,7 +24,6 @@ import com.tripan.app.repository.Member2Repository;
 import com.tripan.app.repository.MemberBadgeRepository;
 import com.tripan.app.repository.PlaceReviewRepository;
 
-import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -235,27 +233,6 @@ public class MyPageServiceImpl implements MyPageService {
             return null;
         }
     }
-
-	@Override
-	public List<String> getVisitedSidoNames(Long memberId) {
-		try {
-			return mapper.selectVisitedSidoNames(memberId);
-		} catch (Exception e) {
-			log.info("getVisitedSidoNames : ",e);
-			return List.of();
-		}
-	}
-	
-	
-	@Override
-	public List<String> getManualVisitedSidos(Long memberId) {
-		try {
-			return mapper.selectManualVisitedSidos(memberId);
-		} catch (Exception e) {
-			log.info("getManualVisitedSidos : ",e);
-			return List.of();
-		}
-	}
 	
 	// 예약 가져오기
     @Override
@@ -269,12 +246,79 @@ public class MyPageServiceImpl implements MyPageService {
     }
 
 	@Override
-	public void addVisitedRegion(Long memberId, String sidoName) {
-		mapper.insertUserVisitedRegion(Map.of("memberId",memberId,"sidoName",sidoName));
+	public List<ConquestMapDto> getVisitedRegionsData(Long memberId) {
+		try {
+			List<ConquestMapDto> list = mapper.selectVisitedRegionsData(memberId);
+	        // 각 지역마다 사진 목록 별도 조회
+	        for (ConquestMapDto dto : list) {
+	            List<ConquestMapDto> photos = mapper.selectPhotosByConquestMapId(dto.getConquestMapId());
+	            dto.setPhotoList(photos);
+	        }
+	        return list;
+        } catch (Exception e) {
+            log.info("getVisitedRegionsData : ", e);
+            return List.of();
+        }
 	}
 
 	@Override
-	public void removeVisitedRegion(Long memberId, String sidoName) {
-		mapper.deleteUserVisitedRegion(Map.of("memberId",memberId,"sidoName",sidoName));
+	public void saveVisitedRegion(ConquestMapDto dto) {
+		try {
+            // 프론트에서 넘어온 지역명("강남구")으로 DB의 region_id 조회
+            Long regionId = mapper.selectRegionIdByName(dto.getSigunguName());
+            if (regionId == null) {
+                throw new IllegalArgumentException("존재하지 않는 지역명입니다: " + dto.getSigunguName());
+            }
+            dto.setRegionId(regionId); // 알아낸 ID 세팅
+
+            // 해당 ID로 이미 저장된 기록이 있는지 확인
+            int count = mapper.checkRegionExists(dto.getMemberId(), regionId);
+            
+            // 분기 처리 (있으면 Update, 없으면 Insert)
+            if (count > 0) {
+                mapper.updateRegionData(dto);
+                Long conquestMapId = mapper.selectConquestMapId(dto.getMemberId(), regionId);
+                dto.setConquestMapId(conquestMapId);
+            } else {
+                mapper.insertRegionData(dto);
+            }
+        } catch (Exception e) {
+            log.info("saveVisitedRegion : ", e);
+            throw e;
+        }
+		
 	}
+
+	@Override
+	public void deleteVisitedRegion(Long memberId, String sigunguName) {
+		try {
+            Long regionId = mapper.selectRegionIdByName(sigunguName);
+            if (regionId != null) {
+                mapper.deleteRegionData(memberId, regionId);
+            }
+        } catch (Exception e) {
+            log.info("deleteVisitedRegion : ", e);
+            throw e;
+        }
+    }
+	
+	@Override
+	@Transactional
+	public void savePhoto(Long memberId, Long conquestMapId, String photoUrl) {
+	    // 본인 소유 검증
+	    ConquestMapDto photo = new ConquestMapDto();
+	    photo.setConquestMapId(conquestMapId);
+	    photo.setPhotoUrl(photoUrl);
+	    mapper.insertPhoto(photo);
+	}
+	
+	@Override
+	@Transactional
+	public void deletePhoto(Long memberId, Long photoId) {
+	    int result = mapper.deletePhoto(photoId, memberId);
+	    if (result == 0) {
+	        throw new IllegalArgumentException("삭제 권한이 없거나 존재하지 않는 사진입니다.");
+	    }
+	}
+	
 }

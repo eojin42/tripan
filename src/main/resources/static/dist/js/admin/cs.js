@@ -337,7 +337,6 @@ function subscribeRoom(roomId) {
 	        const endBtn = document.querySelector('.btn-end-chat');
 	        if (endBtn) { endBtn.disabled = false; endBtn.style.opacity = '1'; endBtn.style.cursor = 'pointer'; }
 	      }
-
 	      // DB 상태가 바뀌었을 테니 방 목록을 즉시 새로고침
 	      loadChatRooms(); 
 	    }
@@ -430,10 +429,7 @@ function sendAdminMsg() {
 async function endChat() {
   if (!currentRoomId || !confirm('상담을 종료하시겠습니까?')) return;
   try {
-    await fetch(`${ctxPath}/api/chat/rooms/${currentRoomId}/close`, { method: 'POST' });
-
-    // 내 화면에 즉시 종료 메시지 띄우기 (서버 응답을 기다리지 않음)
-    renderMsg({ messageType: 'SYSTEM', content: '상담이 종료되었습니다.' });
+    const res = await fetch(`${ctxPath}/api/chat/rooms/${currentRoomId}/close`, { method: 'POST' });
 	
 	const endBtn = document.querySelector('.btn-end-chat');
 	    if (endBtn) {
@@ -449,7 +445,7 @@ async function endChat() {
         memberId: adminId,
         senderNickname: adminNick,
         content: '상담이 종료되었습니다.',
-        messageType: 'SYSTEM' 
+        messageType: 'CLOSED' 
       }));
     }
 
@@ -457,7 +453,7 @@ async function endChat() {
     const badge = document.getElementById('chatStatusBadge');
     badge.className = 'chat-status-closed'; badge.textContent = '상담 종료';
     const input = document.getElementById('adminMsgInput');
-     input.placeholder = '채팅을 입력하세요... (Enter: 전송, Shift+Enter: 줄바꿈)';
+     input.placeholder = '채팅을 입력하세요.';
 
     loadChatRooms();
   } catch (e) {
@@ -520,7 +516,38 @@ function connectNotification() {
       if (String(data.roomId) === String(currentRoomId)) return; // 보고 있는 방은 스킵
 
       playBeep();
+	  showToast('새 메시지', `${data.userName || '사용자'}님이 메시지를 보냈습니다.`);
       loadChatRooms();
+	  const bellBadge = document.querySelector('.notif-badge'); 
+	        if (bellBadge) {
+	          bellBadge.textContent = (parseInt(bellBadge.textContent) || 0) + 1;
+	          bellBadge.style.display = 'inline-block';
+	        }
+			const notifList = document.getElementById('notifList');
+			      if (notifList) {
+			        // "알림이 없습니다" 문구 제거
+			        const emptyMsg = document.getElementById('emptyNotif');
+			        if (emptyMsg) emptyMsg.remove(); 
+
+			        const timeStr = new Date().toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' });
+			        
+			        // 새로 추가될 알림의 HTML 구조
+			        const itemHtml = `
+			          <div style="padding:14px 18px; border-bottom:1px solid #f1f5f9; cursor:pointer; transition:background 0.2s;" 
+			               onmouseover="this.style.background='#F8FAFC'" onmouseout="this.style.background='white'"
+			               onclick="location.href='${ctxPath}/admin/cs'">
+			            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+			              <span style="font-size:12px; font-weight:800; color:#2D3748;">🎧 상담 메시지</span>
+			              <span style="font-size:10px; color:#A0AEC0; font-weight:600;">${timeStr}</span>
+			            </div>
+			            <div style="font-size:12px; color:#718096; line-height:1.4;">
+			              <strong style="color:#4A5568;">${data.userName || '사용자'}</strong>님이 메시지를 보냈습니다.
+			            </div>
+			          </div>
+			        `;
+			        // 최신 알림이 맨 위에 오도록 추가
+			        notifList.insertAdjacentHTML('afterbegin', itemHtml); 
+			      }	
     }); 
 
   }, () => {

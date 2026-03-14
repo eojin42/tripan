@@ -44,5 +44,10 @@ public class MypageController {
 		return "mypage/coupon";
 	}
 	
+	@GetMapping("map")
+	public String map(Model model) {
+		model.addAttribute("activeMenu", "map");
+		return "mypage/map";
+	}
 	
 }

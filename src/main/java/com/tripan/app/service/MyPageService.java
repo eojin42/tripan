@@ -5,6 +5,7 @@ import java.util.Set;
 
 import com.tripan.app.domain.dto.BadgeInfoDto;
 import com.tripan.app.domain.dto.BookmarkDto;
+import com.tripan.app.domain.dto.ConquestMapDto;
 import com.tripan.app.domain.dto.FollowDto;
 import com.tripan.app.domain.dto.MemberDto;
 import com.tripan.app.domain.dto.MyPageSummaryDto;
@@ -40,6 +41,9 @@ public interface MyPageService {
     // 배지 & 칭호
     List<BadgeInfoDto> getMyBadges(Long memberId);
     void updateEquippedBadge(Long memberId, Long badgeId);
+    
+    // 내 예약
+    List<Map<String, Object>> getMyBookings(Long memberId) ;
 
     // 팔로우/팔로잉
     List<FollowDto> getFollowingList(Long memberId);
@@ -53,10 +57,11 @@ public interface MyPageService {
     List<MyPageSummaryDto.ActivityItem> getActivitySummary(Long memberId);
     
     // 방문 시도 (여행지도)
-    List<String> getVisitedSidoNames(Long memberId);
-    List<String> getManualVisitedSidos(Long memberId);
-    void addVisitedRegion(Long memberId, String sidoName);
-    void removeVisitedRegion(Long memberId, String sidoName);
     
-    List<Map<String, Object>> getMyBookings(Long memberId);
+    List<ConquestMapDto> getVisitedRegionsData(Long memberId);
+    void saveVisitedRegion(ConquestMapDto dto); // 등록 및 수정 처리
+    void deleteVisitedRegion(Long memberId, String sigunguName);
+    
+    void savePhoto(Long memberId, Long conquestMapId, String photoUrl);
+    void deletePhoto(Long memberId, Long photoId);
 }
