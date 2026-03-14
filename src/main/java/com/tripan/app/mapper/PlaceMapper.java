@@ -47,4 +47,13 @@ public interface PlaceMapper {
 
     // ── 키워드 검색 ────────────────────────────────────────────
     List<PlaceDto> searchPlacesByName(@Param("keyword") String keyword);
+    
+    /** 설명이 없는 장소 50개 조회 */
+    List<PlaceDto> findPlacesWithNullDescription();
+
+    /** 장소 전화번호, 설명 업데이트 */
+    int updatePlaceDetails(@Param("placeId") Long placeId, 
+                           @Param("phoneNumber") String phoneNumber, 
+                           @Param("description") String description);
+    
 }

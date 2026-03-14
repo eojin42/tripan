@@ -172,6 +172,11 @@
               data-name="${fn:escapeXml(item.placeName)}"
               data-memo="${fn:escapeXml(not empty item.memo ? item.memo : '')}"
               data-imgurl="${fn:escapeXml(not empty item.imageUrl ? item.imageUrl : '')}"
+              data-images="[]"
+              data-address="${fn:escapeXml(not empty item.address ? item.address : '')}"
+              data-category="${fn:escapeXml(not empty item.category ? item.category : 'ETC')}"
+              data-lat="${not empty item.latitude ? item.latitude : 0}"
+              data-lng="${not empty item.longitude ? item.longitude : 0}"
               ondragstart="onCardDragStart(event, this)"
               ondragend="onCardDragEnd(event, this)">
               <div class="place-num">${is.index + 1}</div>
