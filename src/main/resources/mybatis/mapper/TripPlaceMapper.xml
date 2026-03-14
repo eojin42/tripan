@@ -27,6 +27,7 @@
             <result property="memo"       column="memo"/>
             <result property="placeId"    column="trip_place_id"/>
             <result property="placeName"  column="place_name"/>
+            <result property="address"    column="address"/>
             <result property="latitude"   column="latitude"/>
             <result property="longitude"  column="longitude"/>
             <result property="category"   column="category_name"/>
@@ -49,6 +50,7 @@
             i.memo,
             p.trip_place_id,
             p.place_name,
+            p.address,
             p.latitude,
             p.longitude,
             p.category_name

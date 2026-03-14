@@ -134,6 +134,19 @@ function addMapMarker(lat, lng, name, dayNum, order, itemId, category, address) 
   var color = DAY_COLORS[(dayNum - 1) % DAY_COLORS.length];
   var catInfo = (typeof window.getTripanCategory === 'function') ? window.getTripanCategory(category) : { icon: '📍', label: category || '장소' };
 
+  // ★ 같은 좌표에 이미 마커가 있으면 살짝 offset 적용 (겹침 방지)
+  var finalLat = lat, finalLng = lng;
+  var OFFSET_STEP = 0.00008; // 약 8m
+  var sameCoordCount = _markers.filter(function(m) {
+    return Math.abs(m._lat - lat) < 0.000001 && Math.abs(m._lng - lng) < 0.000001;
+  }).length;
+  if (sameCoordCount > 0) {
+    // 겹친 개수만큼 시계방향으로 조금씩 밀어냄
+    var angle = (sameCoordCount * 90) * (Math.PI / 180);
+    finalLat = lat + OFFSET_STEP * Math.cos(angle);
+    finalLng = lng + OFFSET_STEP * Math.sin(angle);
+  }
+
   var svg = [
     '<svg xmlns="http://www.w3.org/2000/svg" width="36" height="46" viewBox="0 0 36 46">',
     '<filter id="sh' + (itemId||order) + '">',
@@ -153,7 +166,7 @@ function addMapMarker(lat, lng, name, dayNum, order, itemId, category, address) 
   );
 
   var marker = new kakao.maps.Marker({
-    position: new kakao.maps.LatLng(lat, lng),
+    position: new kakao.maps.LatLng(finalLat, finalLng),
     image:    markerImg,
     map:      _map
   });
