@@ -9,7 +9,13 @@
   .filter-left { display: flex; gap: 8px; flex-wrap: wrap; }
   .f-chip { padding: 8px 16px; border-radius: 50px; border: 1.5px solid rgba(0,0,0,0.1); background: var(--glass-bg); font-size: 13px; font-weight: 700; color: var(--text-gray); cursor: pointer; transition: all .2s; }
   .f-chip:hover { border-color: var(--sky-blue); color: var(--sky-blue); background: #F0F8FF; }
-  .f-chip.on { border-color: transparent; background: var(--grad-main); color: white; box-shadow: 0 4px 14px rgba(137,207,240,.3); }
+  .f-chip.on { 
+        border-color: var(--text-black); 
+        background: var(--text-black); 
+        color: white; 
+        font-weight: 800;
+        box-shadow: 0 4px 12px rgba(45, 55, 72, 0.25); 
+    }
   .btn-write { padding: 9px 20px; border: none; border-radius: 50px; background: var(--grad-main); color: white; font-size: 14px; font-weight: 800; cursor: pointer; box-shadow: 0 4px 14px rgba(137,207,240,.3); transition: all .3s; }
   .btn-write:hover { transform: translateY(-2px); box-shadow: 0 7px 20px rgba(137,207,240,.4); }
   .board-list { display: flex; flex-direction: column; gap: 16px; }
@@ -21,6 +27,7 @@
   .badge-tip { background: #E6FFFA; color: #00A88F; }
   .badge-question { background: #FFF3CD; color: #D69E2E; }
   .badge-review { background: #EBF8FF; color: var(--sky-blue); }
+  .badge-etc { background: #F1F5F9; color: #718096; }
   
   .card-title { font-size: 17px; font-weight: 800; margin: 0 0 8px; line-height: 1.4; }
   .card-text { font-size: 14px; color: var(--text-gray); margin: 0 0 16px; line-height: 1.5; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
@@ -31,6 +38,8 @@
   .card-thumb { width: 120px; height: 120px; border-radius: 12px; overflow: hidden; flex-shrink: 0; }
   .card-thumb img { width: 100%; height: 100%; object-fit: cover; }
   
+  
+  
 </style>
 
 <div class="board-header">
@@ -40,11 +49,11 @@
 
 <div class="filter-bar">
   <div class="filter-left">
-    <button class="f-chip on" onclick="filterFreeboard('all', this)">전체</button>
-    <button class="f-chip" onclick="filterFreeboard('tip', this)">💡 여행 꿀팁</button>
-    <button class="f-chip" onclick="filterFreeboard('question', this)">🙋‍♂️ 질문있어요</button>
-    <button class="f-chip" onclick="filterFreeboard('review', this)">📸 다녀온 후기</button>
-    <button class="f-chip" onclick="filterFreeboard('etc', this)">💬 기타</button>
+    <button id="chip-all" class="f-chip" onclick="filterFreeboard('all')">전체</button>
+    <button id="chip-tip" class="f-chip" onclick="filterFreeboard('tip')">💡 여행 꿀팁</button>
+    <button id="chip-question" class="f-chip" onclick="filterFreeboard('question')">🙋‍♂️ 질문있어요</button>
+    <button id="chip-review" class="f-chip" onclick="filterFreeboard('review')">📸 다녀온 후기</button>
+    <button id="chip-etc" class="f-chip" onclick="filterFreeboard('etc')">💬 기타</button>
   </div>
   <button class="btn-write" onclick="openLoungeModal()">✏️ 글쓰기</button>
 </div>
@@ -57,18 +66,19 @@
 	        <a href="javascript:void(0);" onclick="loadBoardDetail(${board.boardId})" class="board-card">
 	          
 	          <div class="card-content">
-	            <c:choose>
-	              <c:when test="${board.category == 'tip'}">
-	                <span class="card-badge badge-tip">💡 여행 꿀팁</span>
-	              </c:when>
-	              <c:when test="${board.category == 'question'}">
-	                <span class="card-badge badge-question">🙋‍♂️ 질문있어요</span>
-	              </c:when>
-	              <c:otherwise>
-	                <span class="card-badge badge-review">📸 다녀온 후기</span>
-	              </c:otherwise>
-	            </c:choose>
-
+				<c:choose>
+				  <c:when test="${board.category == 'tip'}">
+				    <span class="card-badge badge-tip">💡 여행 꿀팁</span>
+				  </c:when>
+				  <c:when test="${board.category == 'question'}">
+				    <span class="card-badge badge-question">🙋‍♂️ 질문있어요</span>
+				  </c:when>
+				  <c:when test="${board.category == 'review'}"> <span class="card-badge badge-review">📸 다녀온 후기</span>
+				  </c:when>
+				  <c:otherwise> <span class="card-badge badge-etc">💬 기타</span>
+				  </c:otherwise>
+				</c:choose>
+				
 	            <h3 class="card-title">${board.title}</h3>
 	            <p class="card-text">${board.content}</p>
 

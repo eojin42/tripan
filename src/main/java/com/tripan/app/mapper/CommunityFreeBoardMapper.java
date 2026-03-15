@@ -28,9 +28,18 @@ public interface CommunityFreeBoardMapper {
     void insertComment(CommunityFreeboardCommentDto dto);
     
     int getLikeCount(Long boardId);
-    int checkLike(Map<String, Object> map); // 좋아요 여부 확인 (target_type 포함)
-    void insertLike(Map<String, Object> map); // 좋아요 추가
-    void deleteLike(Map<String, Object> map); // 좋아요 취소
+    int checkLike(Map<String, Object> map);
+    void insertLike(Map<String, Object> map); 
+    void deleteLike(Map<String, Object> map);
     void updateLikeCount(@Param("boardId") Long boardId, @Param("amount") int amount);
     
+    Long getBoardWriterId(Long boardId);
+    int deleteBoard(Long boardId);
+    int deleteComment(Long commentId);
+    
+    CommunityFreeboardCommentDto selectCommentById(Long commentId);
+    void decreaseReplyCount(Long boardId);
+    
+    int updateBoard(CommunityFreeBoardDto dto);
 }
+    

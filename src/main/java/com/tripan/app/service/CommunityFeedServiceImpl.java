@@ -15,6 +15,7 @@ import org.springframework.web.multipart.MultipartFile;
 import com.tripan.app.domain.dto.CommunityFeedCommentDto;
 import com.tripan.app.domain.dto.CommunityFeedListDto;
 import com.tripan.app.domain.dto.CommunityFeedWriteRequestDto;
+import com.tripan.app.domain.dto.MemberDto;
 import com.tripan.app.mapper.CommunityFeedMapper;
 
 import lombok.RequiredArgsConstructor;
@@ -158,6 +159,69 @@ public class CommunityFeedServiceImpl implements CommunityFeedService {
         
         return result > 0;
     }
+    
+    @Override
+    public int getMyFeedCount(Long memberId) {
+        return feedMapper.countMyFeeds(memberId);
+    }
+    
+    @Override
+    public CommunityFeedListDto getFeedById(Long postId) {
+        return feedMapper.selectFeedById(postId);
+    }
+
+    @Override
+    @Transactional
+    public void updateFeed(CommunityFeedWriteRequestDto dto, Long memberId) throws Exception {
+        String finalContent = dto.getContent();
+        if (dto.getTags() != null && !dto.getTags().trim().isEmpty()) {
+            finalContent += "\n\n" + dto.getTags().trim();
+        }
+
+        String savedImageUrls = null;
+        if (dto.getFiles() != null && !dto.getFiles().isEmpty()) {
+            List<String> fileNameList = new ArrayList<>();
+            String feedUploadPath = uploadRoot + "/feed/";
+            File destDir = new File(feedUploadPath);
+            if (!destDir.exists()) destDir.mkdirs();
+
+            for (MultipartFile file : dto.getFiles()) {
+                if (!file.isEmpty()) {
+                    String savedFilename = UUID.randomUUID().toString() + "_" + file.getOriginalFilename();
+                    file.transferTo(new File(destDir, savedFilename));
+                    fileNameList.add(savedFilename);
+                }
+            }
+            if (!fileNameList.isEmpty()) savedImageUrls = String.join(",", fileNameList);
+        } else {
+            CommunityFeedListDto origin = feedMapper.selectFeedById(dto.getPostId());
+            savedImageUrls = origin.getImageUrl();
+        }
+
+        Map<String, Object> paramMap = new HashMap<>();
+        paramMap.put("postId", dto.getPostId());
+        paramMap.put("memberId", memberId);
+        paramMap.put("tripId", dto.getTripId());
+        paramMap.put("content", finalContent);
+        paramMap.put("imageUrl", savedImageUrls);
+
+        feedMapper.updateFeedPost(paramMap);
+    }
+    
+    @Override
+    public MemberDto getMemberInfo(Long memberId) {
+        return feedMapper.getMemberInfo(memberId);
+    }
+
+    @Override
+    public List<CommunityFeedListDto> getUserFeedList(Long targetMemberId, Long loginMemberId) {
+        Map<String, Object> params = new HashMap<>();
+        params.put("targetMemberId", targetMemberId);
+        params.put("loginMemberId", loginMemberId); // 로그인 안 했으면 -1 같은 값이 들어옴
+        
+        return feedMapper.getUserFeedList(params);
+    }
+
     
     
 }

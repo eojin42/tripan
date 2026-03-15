@@ -44,21 +44,10 @@
         WHERE f.category = #{category} ORDER BY f.board_id DESC
     </select>
 
-    <select id="selectById" resultType="com.tripan.app.domain.dto.CommunityFreeBoardDto">
-        SELECT 
-            f.*, 
-            m2.nickname, 
-            m2.profile_image as profilePhoto 
-        FROM freeboard f
-        JOIN member2 m2 ON f.member_id = m2.member_id
-        WHERE f.board_id = #{boardId}
-    </select>
-
-    <insert id="insertBoard" parameterType="com.tripan.app.domain.dto.CommunityFreeBoardDto">
+	<insert id="insertBoard" parameterType="com.tripan.app.domain.dto.CommunityFreeBoardDto">
         INSERT INTO freeboard (
-            board_id, member_id, category, title, content, thumbnail_url
-        ) VALUES (
-            SEQ_FREEBOARD_ID.NEXTVAL, #{memberId}, #{category}, #{title}, #{content}, #{thumbnailUrl}
+        board_id, member_id, category, title, content, thumbnail_url, trip_id ) VALUES (
+        SEQ_FREEBOARD_ID.NEXTVAL, #{memberId}, #{category}, #{title}, #{content}, #{thumbnailUrl}, #{tripId}
         )
     </insert>
 
@@ -119,6 +108,45 @@
 	    DELETE FROM likes 
 	    WHERE target_id = #{boardId} AND member_id = #{memberId} AND target_type = 'FREEBOARD'
 	</delete>
-	
+
+	<select id="getBoardWriterId" resultType="Long">
+        SELECT member_id FROM freeboard WHERE board_id = #{boardId}
+    </select>
+
+    <delete id="deleteBoard">
+        DELETE FROM freeboard WHERE board_id = #{boardId}
+    </delete>
+    
+	<select id="selectById" resultType="com.tripan.app.domain.dto.CommunityFreeBoardDto">
+	    SELECT 
+	        f.*, 
+	        m2.nickname, 
+	        m2.profile_image as profilePhoto,
+	        t.trip_name as tripName,
+	        TO_CHAR(t.start_date, 'YYYY.MM.DD') || ' ~ ' || TO_CHAR(t.end_date, 'YYYY.MM.DD') as tripDate
+	    FROM freeboard f
+	    JOIN member2 m2 ON f.member_id = m2.member_id
+	    LEFT JOIN trip t ON f.trip_id = t.trip_id
+	    WHERE f.board_id = #{boardId}
+	</select>
+    
+    <delete id="deleteComment">
+        DELETE FROM freeboard_comment
+        WHERE comment_id = #{commentId}
+    </delete>
+
+    <update id="decreaseReplyCount">
+        UPDATE freeboard 
+        SET reply_count = reply_count - 1 
+        WHERE board_id = #{boardId}
+    </update>
+    
+ 	<update id="updateBoard" parameterType="com.tripan.app.domain.dto.CommunityFreeBoardDto">
+        UPDATE freeboard
+        SET category = #{category},
+        title = #{title},
+        content = #{content},
+        trip_id = #{tripId} WHERE board_id = #{boardId}
+    </update>
 
 </mapper>

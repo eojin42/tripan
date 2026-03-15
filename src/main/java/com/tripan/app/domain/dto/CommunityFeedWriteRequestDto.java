@@ -6,6 +6,7 @@ import java.util.List;
 
 @Data
 public class CommunityFeedWriteRequestDto {
+	private Long postId;
     private String content;      
     private String tags;        
     private String tripId;      

@@ -252,7 +252,7 @@
   <article class="glass-card feed-card" data-post-id="${feed.postId}" style="${status.index >= 5 ? 'display: none;' : ''}">
  
     <div class="feed-author">
-      <div class="author-left" onclick="location.href='${pageContext.request.contextPath}/community/myfeed?memberId=${feed.memberId}'">
+      <div class="author-left" onclick="loadUserProfile('${feed.memberId}')">
         <c:choose>
           <c:when test="${not empty feed.profileImage}">
             <img src="${pageContext.request.contextPath}/uploads/profile/${feed.profileImage}" alt="User">
@@ -287,7 +287,7 @@
               </c:when>
               <c:otherwise>
                 <a href="${pageContext.request.contextPath}/community/myfeed?memberId=${feed.memberId}">👤 프로필 보기</a>
-                <a href="javascript:void(0)" onclick="reportPost(${feed.postId})">🚨 게시글 신고</a>
+                <a href="javascript:void(0)" onclick="openReportModal('FEED', ${feed.postId})">🚨 게시글 신고</a>
               </c:otherwise>
             </c:choose>
           </div>

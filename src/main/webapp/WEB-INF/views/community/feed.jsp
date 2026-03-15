@@ -449,7 +449,7 @@
       <div class="glass-card profile-widget">
 		  <c:choose>
 		    <c:when test="${not empty sessionScope.loginUser}">
-		      <a href="${pageContext.request.contextPath}/community/myfeed?memberId=${sessionScope.loginUser.memberId}" style="text-decoration: none; color: inherit;">
+		      <a href="javascript:void(0);" onclick="loadUserProfile('${sessionScope.loginUser.memberId}')" style="text-decoration: none; color: inherit;">
 		        <div class="profile-avatar">
 		          <c:choose>
 		            <c:when test="${not empty sessionScope.loginUser.profilePhoto}">
@@ -463,11 +463,11 @@
 		        <div class="profile-name">${sessionScope.loginUser.nickname} 님</div>
 		      </a>
 		      
-		      <div class="profile-stats">
-		        <div class="stat-box">게시물 <strong>0</strong></div>
-		        <div class="stat-box">팔로워 <strong>0</strong></div>
-		        <div class="stat-box">팔로잉 <strong>0</strong></div>
-		      </div>
+			  <div class="profile-stats">
+			    <div class="stat-box">게시물 <strong>${postCount != null ? postCount : 0}</strong></div>
+			    <div class="stat-box">팔로워 <strong>${followerCount != null ? followerCount : 0}</strong></div>
+			    <div class="stat-box">팔로잉 <strong>${followingCount != null ? followingCount : 0}</strong></div>
+			  </div>
 		    </c:when>
 		    
 		    <%-- 비로그인 상태일 때 --%>
@@ -549,51 +549,45 @@
   </div>
   
   <div id="loungeWriteModal" class="lounge-modal-overlay">
-    <div class="lounge-modal-content glass-card">
-      <div class="lounge-modal-header">
-        <h3>새로운 이야기 ✈️</h3>
-        <button class="btn-close-modal" onclick="closeLoungeModal()">✕</button>
-      </div>
-      
-		<select id="loungeCategory" class="lounge-input-style">
-		  <option value="">말머리(카테고리)를 선택해주세요</option>
-		  <option value="tip">💡 여행 꿀팁</option>
-		  <option value="question">🙋‍♂️ 질문있어요</option>
-		  <option value="review">📸 다녀온 후기</option>
-		  <option value="etc">💬 기타</option>
-		</select>	
+      <div class="lounge-modal-content glass-card">
+        <div class="lounge-modal-header">
+          <h3>새로운 이야기 ✈️</h3>
+          <button class="btn-close-modal" onclick="closeLoungeModal()">✕</button>
+        </div>
+        
+        <div class="lounge-editor">
+          
+          <select id="loungeCategory" class="lounge-input-style">
+            <option value="">말머리(카테고리)를 선택해주세요</option>
+            <option value="tip">💡 여행 꿀팁</option>
+            <option value="question">🙋‍♂️ 질문있어요</option>
+            <option value="review">📸 다녀온 후기</option>
+            <option value="etc">💬 기타</option>
+          </select>	
 
-        <input type="text" id="loungeTitle" class="lounge-input-style" placeholder="제목을 입력하세요">
-        
-        <textarea id="loungeTextarea" class="lounge-input-style" placeholder="여행자님, 지금 어떤 생각 중이신가요?"></textarea>
-        
-        <div id="photoPreviewArea" class="preview-area"></div>
-        
-        <div id="locationPreviewArea" class="location-area" style="display: none;">
-          📍 <span id="locationText">위치 정보를 불러오는 중...</span>
-          <button type="button" class="btn-remove-loc" onclick="removeLocation()" title="위치 지우기">✕</button>
+          <input type="text" id="loungeTitle" class="lounge-input-style" placeholder="제목을 입력하세요">
+          
+          <textarea id="loungeTextarea" class="lounge-input-style" placeholder="여행자님, 지금 어떤 생각 중이신가요?"></textarea>
+          
+          <div id="photoPreviewArea" class="preview-area"></div>
+          
+          <div id="scheduleSelectArea" class="schedule-area" style="display: none;">
+            <select id="myTripSelect" class="lounge-input-style">
+              <option value="">📅 공유할 내 일정을 선택하세요</option>
+            </select>
+          </div>
+          
+        </div> <div class="lounge-toolbar">
+          <div class="toolbar-icons">
+            <button type="button" class="icon-btn" onclick="toggleSchedule()" title="일정 공유">📅</button>
+            <button type="button" class="icon-btn" onclick="document.getElementById('loungeFileInput').click()" title="사진 첨부">📷</button>
+            <input type="file" id="loungeFileInput" accept="image/*" style="display: none;" onchange="handleFiles(this.files)">
+          </div>
+          <button class="btn-submit-lounge" onclick="submitLoungePost()">작성 완료</button>
         </div>
         
-        <div id="scheduleSelectArea" class="schedule-area" style="display: none;">
-          <select id="myTripSelect" class="lounge-input-style">
-            <option value="">📅 공유할 내 일정을 선택하세요</option>
-            <option value="1">제주도 3박 4일 힐링 여행</option>
-            <option value="2">여수 밤바다 낭만 투어</option>
-          </select>
-        </div>
-      </div>
-
-      <div class="lounge-toolbar">
-        <div class="toolbar-icons">
-          <button type="button" class="icon-btn" onclick="toggleSchedule()" title="일정 공유">📅</button>
-          <button type="button" class="icon-btn" onclick="document.getElementById('loungeFileInput').click()" title="사진 첨부">📷</button>
-          <input type="file" id="loungeFileInput" accept="image/*" multiple style="display: none;" onchange="handleFiles(this.files)">
-          <button type="button" class="icon-btn" onclick="getLocation()" title="위치 공유">📍</button>
-        </div>
-        <button class="btn-submit-lounge" onclick="submitLoungePost()">작성 완료</button>
       </div>
     </div>
-  </div>
   
   <div id="scheduleModal" class="schedule-modal-overlay">
  <div class="schedule-modal-content">
@@ -636,10 +630,40 @@
     </div>
   </div>
 </div>
+
+<div id="commonReportModal" class="lounge-modal-overlay">
+  <div class="lounge-modal-content glass-card" style="max-width: 400px; text-align: center;">
+    <div class="lounge-modal-header" style="justify-content: center; border-bottom: none;">
+      <h3 style="color: #ff4d4d;">🚨 신고하기</h3>
+    </div>
+    
+    <p style="font-size: 13px; color: var(--text-gray); margin-bottom: 16px;">
+      관리자 확인 후 조치됩니다. 올바른 사유를 선택해 주세요.
+    </p>
+
+    <input type="hidden" id="reportTargetType" value="">
+    <input type="hidden" id="reportTargetId" value="">
+
+    <select id="reportReasonSelect" class="lounge-input-style" style="margin-bottom: 20px;">
+      <option value="">신고 사유를 선택해주세요</option>
+      <option value="SPAM">스팸홍보/도배글입니다.</option>
+      <option value="ABUSE">욕설/혐오/차별적 표현입니다.</option>
+      <option value="ILLEGAL">불법정보를 포함하고 있습니다.</option>
+      <option value="PORN">음란/선정적인 내용입니다.</option>
+      <option value="OTHER">기타 부적절한 내용입니다.</option>
+    </select>
+
+    <div style="display: flex; gap: 10px; justify-content: center;">
+      <button onclick="closeReportModal()" style="padding: 10px 20px; border-radius: 20px; border: 1px solid var(--border-color); background: white; font-weight: 700; cursor: pointer;">취소</button>
+      <button onclick="submitReport()" style="padding: 10px 20px; border-radius: 20px; border: none; background: #ff4d4d; color: white; font-weight: 800; cursor: pointer; box-shadow: 0 4px 12px rgba(255, 77, 77, 0.3);">신고 접수</button>
+    </div>
+  </div>
+</div>
+
 	  
 	  <jsp:include page="/WEB-INF/views/layout/footer.jsp"/>
-  <jsp:include page="/WEB-INF/views/member/loginModal.jsp" />
-  <jsp:include page="/WEB-INF/views/community/fragment/mate/mate_write_modal.jsp" />
+	  <jsp:include page="/WEB-INF/views/member/loginModal.jsp" />
+	  <jsp:include page="/WEB-INF/views/community/fragment/mate/mate_write_modal.jsp" />
 
   <script>
 	
@@ -668,56 +692,58 @@
       scrollObserver.observe(targetEl);
     }
 
-    function handleInfiniteScroll(trigger) {
-        if (isFetching) return;
-        
-        if (!IS_LOGGED_IN) {
-            scrollCount++;
-            
-            if (scrollCount > 2) {
-                showLoginModal(); 
-                return; 
-            }
-        }
+	function handleInfiniteScroll(trigger) {
+	        if (isFetching) return;
+	        
+	        const checkLogin = typeof IS_LOGGED_IN !== 'undefined' ? IS_LOGGED_IN : true;
 
-        isFetching = true;
-        trigger.innerHTML = '로딩 중... ⏳';
+	        if (!checkLogin) {
+	            scrollCount++;
+	            if (scrollCount > 2) {
+	                if(typeof showLoginModal === 'function') showLoginModal(); 
+	                return; 
+	            }
+	        }
 
-        setTimeout(() => {
-            const hiddenCards = document.querySelectorAll('.feed-card[style*="display: none"]');
-            
-            if (hiddenCards.length > 0) {
-                for (let i = 0; i < LOAD_COUNT && i < hiddenCards.length; i++) {
-                    hiddenCards[i].style.display = 'block';
-                }
-                
-                isFetching = false;
-                trigger.innerHTML = '아래로 스크롤하여 더 보기...';
+	        isFetching = true;
+	        trigger.innerHTML = '로딩 중... ⏳';
 
-                if (hiddenCards.length <= LOAD_COUNT && IS_LOGGED_IN) {
-                    trigger.innerHTML = '모든 게시글을 불러왔습니다 ✨';
-                    trigger.style.opacity = '0.5'; 
-                    if(scrollObserver) scrollObserver.disconnect();
-                }
-                
-            } else {
-                if (!IS_LOGGED_IN) {
-                    const spacer = document.createElement('div');
-                    spacer.style.height = '400px'; 
-                    trigger.parentNode.insertBefore(spacer, trigger);
-                    
-                    isFetching = false;
-                    trigger.innerHTML = '아래로 스크롤하여 더 보기...';
-                } else {
-                    isFetching = false;
-                    trigger.innerHTML = '모든 게시글을 불러왔습니다 ✨';
-                    trigger.style.opacity = '0.5'; 
-                    if(scrollObserver) scrollObserver.disconnect();
-                }
-            }
-            
-        }, 800);
-    }
+	        setTimeout(() => {
+	            const allCards = document.querySelectorAll('.feed-card');
+	            const hiddenCards = Array.from(allCards).filter(card => card.style.display === 'none' || card.style.display === 'none;');
+	            
+	            if (hiddenCards.length > 0) {
+	                for (let i = 0; i < LOAD_COUNT && i < hiddenCards.length; i++) {
+	                    hiddenCards[i].style.display = 'block';
+	                }
+	                
+	                isFetching = false;
+	                trigger.innerHTML = '아래로 스크롤하여 더 보기...';
+
+	                if (hiddenCards.length <= LOAD_COUNT && checkLogin) {
+	                    trigger.innerHTML = '모든 게시글을 불러왔습니다 ✨';
+	                    trigger.style.opacity = '0.5'; 
+	                    if(scrollObserver) scrollObserver.disconnect();
+	                }
+	                
+	            } else {
+	                if (!checkLogin) {
+	                    const spacer = document.createElement('div');
+	                    spacer.style.height = '400px'; 
+	                    trigger.parentNode.insertBefore(spacer, trigger);
+	                    
+	                    isFetching = false;
+	                    trigger.innerHTML = '아래로 스크롤하여 더 보기...';
+	                } else {
+	                    isFetching = false;
+	                    trigger.innerHTML = '모든 게시글을 불러왔습니다 ✨';
+	                    trigger.style.opacity = '0.5'; 
+	                    if(scrollObserver) scrollObserver.disconnect();
+	                }
+	            }
+	            
+	        }, 800);
+	    }
 
    function loadTabContent(tabType, event) {
        if(event) event.preventDefault();
@@ -771,20 +797,7 @@
        });
    }
     
-    window.addEventListener('DOMContentLoaded', () => { 
-    	setupInfiniteScroll(); 
-		const now = new Date();
-		loadMiniFestivalSidebar(now.getFullYear(), now.getMonth() + 1);
-		
-    	const urlParams = new URLSearchParams(window.location.search);
-    	const tabParams = urlParams.get('tab');
-    	
-    	if (tabParams && tabParams !== 'feed') {
-    		loadTabContent(tabParams, null);
-    	}
-    
-    });
-	
+
 	async function loadMiniFestivalSidebar(year, month) {
 	    const miniList = document.getElementById('mini-festival-list');
 	    
@@ -1056,23 +1069,23 @@
 	    }
 	}
 
-    window.addEventListener('DOMContentLoaded', () => { 
-        setupInfiniteScroll(); 
-        const now = new Date();
-        loadMiniFestivalSidebar(now.getFullYear(), now.getMonth() + 1);
-        
-        loadLiveChatSidebar();
+	window.addEventListener('DOMContentLoaded', () => { 
+	    setupInfiniteScroll(); 
+	    const now = new Date();
+	    loadMiniFestivalSidebar(now.getFullYear(), now.getMonth() + 1);
+	    
+	    loadLiveChatSidebar();
 
-        const urlParams = new URLSearchParams(window.location.search);
-        const tabParams = urlParams.get('tab');
-        if (tabParams && tabParams !== 'feed') {
-            loadTabContent(tabParams, null);
-        }
-    });
+	    const urlParams = new URLSearchParams(window.location.search);
+	    const tabParams = urlParams.get('tab');
+	    const memberIdParam = urlParams.get('memberId'); 
+
+	    loadUserProfile(memberIdParam);
+	});
 	
 	function loadBoardDetail(boardId, updateView = true) {
 	    const contentArea = document.getElementById('dynamic-content');
-	    contentArea.innerHTML = '<div style="...">데이터 로딩 중...</div>';
+	    contentArea.innerHTML = '<div style="text-align:center; padding: 100px; color:var(--sky-blue); font-weight:800;">데이터 로딩 중... ⏳</div>';
 
 	    const url = `${pageContext.request.contextPath}/community/freeboard/detail/` + boardId + "?updateView=" + updateView;
 
@@ -1163,36 +1176,82 @@
   <script>
 	let uploadedFiles = []; 
 
-	  function openLoungeModal() {
-	    document.getElementById('loungeWriteModal').classList.add('active');
+	async function openLoungeModal() {
+	      document.getElementById('loungeWriteModal').classList.add('active');
+	      
+	      const tripSelect = document.getElementById('myTripSelect');
+	      tripSelect.innerHTML = '<option value="">⏳ 일정을 불러오는 중...</option>'; 
+
+	      try {
+	          const response = await fetch(`${pageContext.request.contextPath}/trip/api/my-trips`, {
+	              headers: { 'X-Requested-With': 'Fetch' }
+	          });
+	          
+	          if (!response.ok) throw new Error('데이터 로드 실패');
+	          
+	          const trips = await response.json();
+	          
+	          let optionsHtml = '<option value="">📅 공유할 내 일정을 선택하세요</option>';
+	          
+	          if (trips && trips.length > 0) {
+	              trips.forEach(trip => {
+	                  optionsHtml += `<option value="\${trip.tripId}">\${trip.tripName}</option>`;
+	              });
+	          } else {
+	              optionsHtml = '<option value="">📅 공유할 일정이 없습니다</option>';
+	          }
+	          
+	          tripSelect.innerHTML = optionsHtml;
+	          
+	      } catch (error) {
+	          console.error("일정 목록 로딩 실패:", error);
+	          tripSelect.innerHTML = '<option value="">❌ 일정 불러오기 실패</option>';
+	      }
 	  }
 	  
+	  //  모달 닫기 
 	  function closeLoungeModal() {
-	    document.getElementById('loungeWriteModal').classList.remove('active');
+	      document.getElementById('loungeWriteModal').classList.remove('active');
+	      
+	      document.getElementById('loungeCategory').style.display = 'block'; 
+	      document.getElementById('loungeTitle').style.display = 'block';
+	      
+	      document.getElementById('loungeCategory').value = '';
+	      document.getElementById('loungeTitle').value = '';
+	      document.getElementById('loungeTextarea').value = '';
+	      uploadedFiles = [];
+	      document.getElementById('photoPreviewArea').innerHTML = '';
+	      
+	      const submitBtn = document.querySelector('.btn-submit-lounge');
+	      submitBtn.innerText = '작성 완료';
+	      submitBtn.removeAttribute('data-mode');
+	      submitBtn.removeAttribute('data-board-id');
+	      submitBtn.removeAttribute('data-post-id');
+	      document.querySelector('.lounge-modal-header h3').innerText = '새로운 이야기 ✈️';
 	  }
-
 	  function toggleSchedule() {
 	    const scheduleArea = document.getElementById('scheduleSelectArea');
 	    scheduleArea.style.display = scheduleArea.style.display === 'none' ? 'block' : 'none';
 	  }
 
 	  function handleFiles(files) {
-	    const previewArea = document.getElementById('photoPreviewArea');
-	    if (uploadedFiles.length + files.length > 4) {
-	      alert("사진은 최대 4장까지만 첨부할 수 있습니다.");
-	      return;
-	    }
-	    Array.from(files).forEach(file => {
-	      uploadedFiles.push(file);
+	      const previewArea = document.getElementById('photoPreviewArea');
+	      if (files.length === 0) return;
+
+	      const file = files[0];
+	      uploadedFiles = [file]; 
+	      
+	      previewArea.innerHTML = ''; 
+	      
 	      const fileUrl = URL.createObjectURL(file);
 	      const thumbWrap = document.createElement('div');
 	      thumbWrap.className = 'thumb-wrap';
+	      
 	      thumbWrap.innerHTML = `
-	        <img src="${fileUrl}" alt="미리보기">
-	        <button type="button" class="thumb-remove" onclick="removeFile(this, '${file.name}')">x</button>
+	        <img src="\${fileUrl}" alt="미리보기">
+	        <button type="button" class="thumb-remove" onclick="removeFile(this, '\${file.name}')">x</button>
 	      `;
 	      previewArea.appendChild(thumbWrap);
-	    });
 	  }
 
 	  function removeFile(btn, fileName) {
@@ -1200,61 +1259,69 @@
 	    btn.parentElement.remove();
 	  }
 
-	  function getLocation() {
-	    const locArea = document.getElementById('locationPreviewArea');
-	    const locText = document.getElementById('locationText');
-	    
-	    locArea.style.display = 'inline-flex';
-	    locText.innerText = "위치 정보를 불러오는 중..."; 
 
-	    if (navigator.geolocation) {
-	      navigator.geolocation.getCurrentPosition(
-	        (position) => {
-	          const lat = position.coords.latitude.toFixed(4);
-	          const lon = position.coords.longitude.toFixed(4);
-	          locText.innerText = `현재 위치 (위도: ${lat}, 경도: ${lon})`;
-	        },
-	        (error) => {
-	          locText.innerText = "위치 정보 권한을 확인해주세요.";
-	        }
-	      );
-	    } else {
-	      locText.innerText = "위치 정보를 지원하지 않는 브라우저입니다.";
-	    }
-	  }
-
-	  function removeLocation() {
-	    document.getElementById('locationPreviewArea').style.display = 'none';
-	    document.getElementById('locationText').innerText = '';
-	  }
-
+	  //  작성/수정 전송 함수 (글쓰기와 수정을 모두 처리)
 	  function submitLoungePost() {
-	    const category = document.getElementById('loungeCategory').value;
-	    const title = document.getElementById('loungeTitle').value;
-	    const content = document.getElementById('loungeTextarea').value;
-	    const tripId = document.getElementById('myTripSelect').value;
-	    
-	    if(!category) {
-	      alert("카테고리를 선택해주세요!");
-	      return;
-	    }
-	    if(!title.trim()) {
-	      alert("제목을 입력해주세요!");
-	      return;
-	    }
-	    if(!content.trim()) {
-	      alert("내용을 입력해주세요!");
-	      return;
-	    }
+	      const submitBtn = document.querySelector('.btn-submit-lounge');
+	      const mode = submitBtn.getAttribute('data-mode');
+	      const targetId = submitBtn.getAttribute('data-post-id') || submitBtn.getAttribute('data-board-id');
+	      
+	      const category = document.getElementById('loungeCategory').value;
+	      const title = document.getElementById('loungeTitle').value;
+	      const content = document.getElementById('loungeTextarea').value;
+	      const tripId = document.getElementById('myTripSelect').value;
 
-	    console.log("카테고리:", category);
-	    console.log("제목:", title);
-	    console.log("내용:", content);
-	    console.log("일정 ID:", tripId);
-	    console.log("첨부 파일 수:", uploadedFiles.length);
+	      if (mode !== 'edit-feed') {
+	          if(!category) { alert("카테고리를 선택해주세요!"); return; }
+	          if(!title.trim()) { alert("제목을 입력해주세요!"); return; }
+	      }
+	      
+	      if(!content.trim()) { alert("내용을 입력해주세요!"); return; }
 
-	    alert("비동기 작성이 완료되었습니다! (콘솔 확인)");
-	    closeLoungeModal();
+	      const formData = new FormData();
+	      
+	      if (mode !== 'edit-feed') {
+	          formData.append('category', category);
+	          formData.append('title', title);
+	      }
+	      
+	      formData.append('content', content);
+	      if (tripId) formData.append('tripId', tripId);
+	      
+	      uploadedFiles.forEach(file => {
+	          formData.append('files', file); 
+	      });
+
+	      let url = `${pageContext.request.contextPath}/community/api/freeboard/write`; 
+	      
+	      if (mode === 'edit') {
+	          url = `${pageContext.request.contextPath}/community/api/freeboard/update`;
+	          formData.append('boardId', targetId);
+	      } else if (mode === 'edit-feed') {
+	          url = `${pageContext.request.contextPath}/community/api/feed/update`;
+	          formData.append('postId', targetId);
+	      }
+
+	      fetch(url, {
+	          method: 'POST',
+	          body: formData 
+	      })
+	      .then(response => {
+	          if (!response.ok) throw new Error('서버 통신 에러');
+	          return response.json();
+	      })
+	      .then(data => {
+	          if(data.status === 'success') {
+	              alert("✨ " + (data.message || "처리가 완료되었습니다!"));
+	              location.reload(); 
+	          } else {
+	              alert("실패: " + data.message);
+	          }
+	      })
+	      .catch(error => {
+	          console.error('Error:', error);
+	          alert("작업 중 오류가 발생했습니다. 🥲");
+	      });
 	  }
 	  
 	  window.startPrivateChat = function(targetMemberId, targetNickname) {
@@ -1526,7 +1593,7 @@
 		        return;
 		    }
 
-		    fetch(`/community/api/follow/\${targetMemberId}`, { 
+		    fetch(`${pageContext.request.contextPath}/community/api/follow/\${targetMemberId}`, { 
 		        method: 'POST',
 		        headers: { 'X-Requested-With': 'Fetch' }
 		    })
@@ -1553,7 +1620,7 @@
 		        return;
 		    }
 
-		    const url = '/trip/' + tripId + '/scrap';
+		    const url = '${pageContext.request.contextPath}/trip/' + tripId + '/scrap';
 
 		    fetch(url, {
 		        method: 'POST',
@@ -1727,9 +1794,9 @@
              let profileImg = comment.profileImage ? `${pageContext.request.contextPath}/uploads/profile/\${comment.profileImage}` : `${pageContext.request.contextPath}/dist/images/default.png`;
              let isMyComment = (currentUserId !== '' && currentUserId == comment.memberId);
              
-             let kebabMenu = isMyComment 
-                 ? `<button class="kebab-item danger" onclick="deleteFeedComment(\${comment.commentId}, \${postId})">🗑️ 삭제하기</button>`
-                 : `<button class="kebab-item danger" onclick="alert('해당 댓글을 신고합니다.')">🚨 신고하기</button>`;
+			 let kebabMenu = isMyComment 
+			     ? `<button class="kebab-item danger" onclick="deleteFeedComment(${comment.commentId}, ${postId})">🗑️ 삭제하기</button>`
+			     : `<button class="kebab-item danger" onclick="openReportModal('FEED_COMMENT', ${comment.commentId})">🚨 신고하기</button>`;
 
              html += `
              <div style="display: flex; flex-direction: column; gap: 10px; border-bottom: 1px dashed var(--border-color); padding-bottom: 12px; margin-bottom: 12px;">
@@ -1758,9 +1825,9 @@
                  let cProfileImg = child.profileImage ? `${pageContext.request.contextPath}/uploads/profile/\${child.profileImage}` : `${pageContext.request.contextPath}/dist/images/default.png`;
                  let isMyChild = (currentUserId !== '' && currentUserId == child.memberId);
                  
-                 let childKebab = isMyChild 
-                     ? `<button class="kebab-item danger" onclick="deleteFeedComment(\${child.commentId}, \${postId})">🗑️ 삭제하기</button>`
-                     : `<button class="kebab-item danger" onclick="alert('해당 댓글을 신고합니다.')">🚨 신고하기</button>`;
+				 let childKebab = isMyChild 
+				     ? `<button class="kebab-item danger" onclick="deleteFeedComment(\${child.commentId}, \${postId})">🗑️ 삭제하기</button>`
+				     : `<button class="kebab-item danger" onclick="openReportModal('FEED_COMMENT', \${child.commentId})">🚨 신고하기</button>`;
 
                  html += `
                  <div style="display: flex; gap: 8px; margin-left: 36px; margin-top: 4px; padding: 10px 14px; background: rgba(137, 207, 240, 0.05); border-radius: 12px;">
@@ -1941,14 +2008,11 @@
      }
  }, true); 
  
-//자유게시판 카테고리 필터링 함수
- function filterFreeboard(category, btnElement) {
-     const chips = document.querySelectorAll('.f-chip');
-     chips.forEach(chip => chip.classList.remove('on'));
-     btnElement.classList.add('on');
-
+ // 자유게시판 카테고리 필터링 함수 
+ function filterFreeboard(category) {
      const contentArea = document.getElementById('dynamic-content');
-     contentArea.innerHTML = '<div style="text-align:center; padding: 100px 20px; color:var(--sky-blue);">데이터를 불러오는 중입니다... ⏳</div>';
+     
+     contentArea.innerHTML = '<div style="text-align:center; padding: 100px 20px; color:var(--sky-blue); font-size: 18px; font-weight:800;">데이터를 불러오는 중입니다... ⏳</div>';
 
      const url = `${pageContext.request.contextPath}/community/fragment/freeboard?category=` + category;
      
@@ -1960,22 +2024,308 @@
          return response.text();
      })
      .then(html => {
-         document.getElementById('dynamic-content').innerHTML = html;
-         
-         const newChips = document.querySelectorAll('.f-chip');
-         newChips.forEach(chip => {
-             if (chip.getAttribute('onclick').includes(`'${category}'`)) {
-                 chip.classList.add('on');
-             } else {
-                 chip.classList.remove('on');
-             }
-         });
+         contentArea.innerHTML = html;
+          
+         const activeChip = document.getElementById('chip-' + category);
+         if(activeChip) {
+             activeChip.classList.add('on');
+         }
      })
      .catch(error => {
          console.error('Error:', error);
          contentArea.innerHTML = '<div style="text-align:center; padding: 50px; color:red;">데이터를 불러오는데 실패했습니다. 😢</div>';
      });
  }
+ 
+ function deleteFreeboardPost(boardId) {
+     if (!confirm('정말 이 게시글을 삭제하시겠습니까? 삭제 후에는 복구할 수 없습니다.')) {
+         return; 
+     }
+
+     fetch(`${pageContext.request.contextPath}/community/api/freeboard/delete/` + boardId, {
+         method: 'POST',
+         headers: { 'X-Requested-With': 'Fetch' } 
+     })
+     .then(res => {
+         if (res.status === 401) {
+             showLoginModal();
+             throw new Error('Unauthorized');
+         }
+         return res.json();
+     })
+     .then(data => {
+         if(data.status === 'success') {
+             alert("✨ 게시글이 성공적으로 삭제되었습니다.");
+             loadTabContent('freeboard', null); 
+         } else {
+             alert("삭제 실패: " + data.message);
+         }
+     })
+     .catch(err => {
+         if(err.message !== 'Unauthorized') {
+             console.error('게시글 삭제 에러:', err);
+             alert("게시글 삭제 중 오류가 발생했습니다. 🥲");
+         }
+     });
+ }
+
+ function editFreeboardPost(boardId) {
+      fetch(`${pageContext.request.contextPath}/community/api/freeboard/` + boardId)
+      .then(res => res.json())
+      .then(data => {
+          document.getElementById('loungeCategory').value = data.category;
+          document.getElementById('loungeTitle').value = data.title;
+          document.getElementById('loungeTextarea').value = data.content;
+          
+          const submitBtn = document.querySelector('.btn-submit-lounge');
+          submitBtn.innerText = '수정 완료'; 
+          submitBtn.setAttribute('data-mode', 'edit'); 
+          submitBtn.setAttribute('data-board-id', boardId); 
+          
+          document.querySelector('.lounge-modal-header h3').innerText = '게시글 수정 ✏️';
+
+          openLoungeModal();
+      })
+      .catch(err => {
+          console.error(err);
+          alert('게시글 정보를 불러오지 못했습니다.');
+      });
+  }
+
+  function reportFreeboardPost(boardId) {
+      openReportModal('FREEBOARD', boardId); // 종류: FREEBOARD
+  }
+ 
+ // 🗑️ 자유게시판 댓글 삭제 함수
+ function deleteFreeboardComment(commentId, boardId) {
+     if (!confirm('정말 이 댓글을 삭제하시겠습니까?')) {
+         return; 
+     }
+
+     fetch(`${pageContext.request.contextPath}/community/api/freeboard/comment/delete/` + commentId, {
+         method: 'POST',
+         headers: { 'X-Requested-With': 'Fetch' }
+     })
+     .then(res => {
+         if (res.status === 401) { // 로그인이 풀렸을 경우
+             showLoginModal();
+             throw new Error('Unauthorized');
+         }
+         return res.json();
+     })
+     .then(data => {
+         if(data.status === 'success') {
+             loadBoardDetail(boardId, false); 
+         } else {
+             alert("댓글 삭제 실패: " + data.message);
+         }
+     })
+     .catch(err => {
+         if(err.message !== 'Unauthorized') {
+             console.error('댓글 삭제 에러:', err);
+             alert("댓글 삭제 중 오류가 발생했습니다. 🥲");
+         }
+     });
+ }
+
+ function reportFreeboardComment(commentId) {
+     openReportModal('FREEBOARD_COMMENT', commentId); // 종류: FREEBOARD_COMMENT
+ }
+ 
+ function initCommunity() {
+         setupInfiniteScroll(); 
+         
+         const now = new Date();
+         if(typeof loadMiniFestivalSidebar === 'function') {
+             loadMiniFestivalSidebar(now.getFullYear(), now.getMonth() + 1);
+         }
+         
+         if(typeof loadLiveChatSidebar === 'function') {
+             loadLiveChatSidebar();
+         }
+         
+         if (typeof renderHashtags === 'function') {
+             setTimeout(() => renderHashtags(), 50);
+         }
+
+         const urlParams = new URLSearchParams(window.location.search);
+         const tabParams = urlParams.get('tab');
+         
+         if (tabParams && tabParams !== 'feed') {
+             if(typeof loadTabContent === 'function') {
+                 loadTabContent(tabParams, null);
+             }
+         }
+     }
+
+     if (document.readyState === 'loading') {
+         document.addEventListener('DOMContentLoaded', initCommunity);
+     } else {
+         initCommunity();
+     }
+	 
+	 function openReportModal(targetType, targetId) {
+	     if (typeof IS_LOGGED_IN !== 'undefined' && !IS_LOGGED_IN) {
+	         showLoginModal();
+	         return;
+	     }
+	     document.getElementById('reportTargetType').value = targetType;
+	     document.getElementById('reportTargetId').value = targetId;
+	     document.getElementById('reportReasonSelect').value = ''; // 셀렉트박스 초기화
+	     
+	     document.getElementById('commonReportModal').classList.add('active');
+	 }
+
+	 function closeReportModal() {
+	     document.getElementById('commonReportModal').classList.remove('active');
+	 }
+
+	 function submitReport() {
+	     const targetType = document.getElementById('reportTargetType').value;
+	     const targetId = document.getElementById('reportTargetId').value;
+	     const reason = document.getElementById('reportReasonSelect').value;
+
+	     if (!reason) {
+	         alert("신고 사유를 선택해주세요.");
+	         return;
+	     }
+
+	     const requestData = {
+	         targetType: targetType,
+	         targetId: targetId,
+	         reason: reason
+	     };
+
+	     fetch(`${pageContext.request.contextPath}/api/report/submit`, {
+	         method: 'POST',
+	         headers: { 'Content-Type': 'application/json', 'X-Requested-With': 'Fetch' },
+	         body: JSON.stringify(requestData)
+	     })
+	     .then(res => res.json())
+	     .then(data => {
+	         if(data.status === 'success') {
+	             alert("신고가 정상적으로 접수되었습니다.");
+	             closeReportModal();
+	         } else {
+	             alert("신고 접수 실패: " + data.message);
+	         }
+	     })
+	     .catch(err => {
+	         console.error(err);
+	         alert("신고 처리 중 오류가 발생했습니다.");
+	     });
+	 }
+	 
+	 function editPost(postId) {
+	     fetch(`${pageContext.request.contextPath}/community/api/feed/` + postId)
+	     .then(res => {
+	         if (!res.ok) throw new Error("데이터 로딩 실패");
+	         return res.json();
+	     })
+	     .then(data => {
+	         document.querySelector('.lounge-modal-header h3').innerText = '피드 수정하기 ✏️';
+	         
+	         document.getElementById('loungeCategory').style.display = 'none'; 
+	         document.getElementById('loungeTitle').style.display = 'none';   
+	         
+	         const contentArea = document.getElementById('loungeTextarea');
+	         contentArea.value = data.content;
+	         
+	         const previewArea = document.getElementById('photoPreviewArea');
+	         previewArea.innerHTML = ''; 
+	         
+	         if (data.imageUrl) {
+	             const images = data.imageUrl.split(',');
+	             images.forEach(imgName => {
+	                 const thumbWrap = document.createElement('div');
+	                 thumbWrap.className = 'thumb-wrap';
+	                 thumbWrap.innerHTML = `
+	                     <img src="${pageContext.request.contextPath}/uploads/feed/\${imgName}" alt="기존 이미지">
+	                     <p style="font-size:10px; color:gray; margin:0;">기존사진</p>
+	                 `;
+	                 previewArea.appendChild(thumbWrap);
+	             });
+	         }
+	         
+	         const submitBtn = document.querySelector('.btn-submit-lounge');
+	         submitBtn.innerText = '수정 완료';
+	         submitBtn.setAttribute('data-mode', 'edit-feed');
+	         submitBtn.setAttribute('data-post-id', postId);
+
+	         document.getElementById('loungeWriteModal').classList.add('active');
+	     })
+	     .catch(err => {
+	         console.error(err);
+	         alert("게시글 정보를 불러오는 데 실패했습니다. 🥲");
+	     });
+	 }
+	 
+	 function loadUserProfile(memberId) {
+	     if (!memberId || memberId === '') return;
+
+	     document.querySelectorAll('.side-nav li').forEach(li => li.classList.remove('active'));
+
+	     const contentArea = document.getElementById('dynamic-content');
+	     contentArea.innerHTML = '<div style="text-align:center; padding: 100px 20px; color:var(--sky-blue); font-size: 18px; font-weight:800;">여행자의 발자취를 불러오는 중... ✈️</div>';
+
+	     const url = '${pageContext.request.contextPath}/community/fragment/profile?memberId=' + memberId;
+	     
+	     fetch(url, { headers: { 'X-Requested-With': 'Fetch' } })
+	     .then(res => {
+	         if(!res.ok) throw new Error("네트워크 응답 에러");
+	         return res.text();
+	     })
+	     .then(html => {
+	         contentArea.innerHTML = html;
+	         
+	         if (typeof setupInfiniteScroll === 'function') setupInfiniteScroll(); 
+	         if (typeof renderHashtags === 'function') setTimeout(() => renderHashtags(), 50);
+	         
+	         window.scrollTo({ top: 0, behavior: 'smooth' });
+	         history.pushState(null, null, '?tab=profile&memberId=' + memberId);
+	     })
+	     .catch(err => {
+	         console.error(err);
+	         contentArea.innerHTML = '<div style="text-align:center; padding: 50px; color:#FF6B6B;">프로필을 불러오는데 실패했습니다. 😢</div>';
+	     });
+	 }
+
+	 function initCommunity() {
+	     if (typeof setupInfiniteScroll === 'function') setupInfiniteScroll(); 
+	     
+	     const now = new Date();
+	     if(typeof loadMiniFestivalSidebar === 'function') {
+	         loadMiniFestivalSidebar(now.getFullYear(), now.getMonth() + 1);
+	     }
+	     
+	     if(typeof loadLiveChatSidebar === 'function') {
+	         loadLiveChatSidebar();
+	     }
+	     
+	     if (typeof renderHashtags === 'function') {
+	         setTimeout(() => renderHashtags(), 50);
+	     }
+
+	     const urlParams = new URLSearchParams(window.location.search);
+	     const tabParams = urlParams.get('tab');
+	     const memberIdParam = urlParams.get('memberId');
+	     
+	     if (tabParams === 'profile' && memberIdParam) {
+	         loadUserProfile(memberIdParam);
+	     } else if (tabParams && tabParams !== 'feed') {
+	         if(typeof loadTabContent === 'function') {
+	             loadTabContent(tabParams, null);
+	         }
+	     }
+	 }
+
+	 if (document.readyState === 'loading') {
+	     document.addEventListener('DOMContentLoaded', initCommunity);
+	 } else {
+	     initCommunity();
+	 }
+	 
+	 
  
   </script>
   

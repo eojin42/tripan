@@ -134,6 +134,10 @@ window.searchMates = function() {
             let statusToggleButton = isMyPost ? (mate.status === 'OPEN' 
                 ? `<button class="btn-status-toggle" onclick="event.stopPropagation(); window.toggleMateStatus(\${mate.mateId}, 'CLOSED')">마감하기</button>`
                 : `<button class="btn-status-toggle closed" onclick="event.stopPropagation(); window.toggleMateStatus(\${mate.mateId}, 'OPEN')">모집재개</button>`) : '';
+				
+			let mateKebabMenu = isMyPost 
+			    ? `<button class="kebab-item danger" onclick="event.stopPropagation(); window.deleteMatePost(${mate.mateId})">🗑️ 삭제하기</button>`
+			    : `<button class="kebab-item danger" onclick="event.stopPropagation(); openReportModal('MATE', ${mate.mateId})">🚨 신고하기</button>`;
 
             html += `
             <div class="mate-card" id="mate-card-\${mate.mateId}">
@@ -144,9 +148,16 @@ window.searchMates = function() {
                   <div class="mate-meta"><span>🗓️ \${mate.startDate} ~ \${mate.endDate}</span><span style="margin-left:8px;">🙋 \${mate.targetCount}명 모집</span></div>
                   <div class="mate-tags">\${tagsHtml}</div>
                 </div>
-                <div class="mate-action">
+				<div class="mate-action">
                   <div style="display:flex; justify-content:flex-end; align-items:center; gap:6px; width:100%; margin-bottom:8px;">
                     \${statusToggleButton}
+                    
+                    <div style="position: relative;">
+                        <button class="btn-kebab" onclick="event.stopPropagation(); window.toggleDropdown(this, event)" style="background:none; border:none; font-size:18px; cursor:pointer; padding:0 4px; color:var(--text-gray);">⋮</button>
+                        <div class="kebab-menu-list" style="display: none; position: absolute; right: 0; top: 100%; background: white; border: 1px solid var(--border-color); border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); min-width: 100px; z-index: 99999;">
+                            \${mateKebabMenu}
+                        </div>
+                    </div>
                     <button class="btn-collapse" onclick="event.stopPropagation(); window.toggleMateDetail(\${mate.mateId})" title="접기">▲</button>
                   </div>
                   <div class="mate-user">
@@ -235,9 +246,9 @@ window.loadMateComments = function(mateId, page) {
         data.comments.forEach(comment => {
             let profileImg = comment.profilePhoto ? '${pageContext.request.contextPath}/uploads/profile/' + comment.profilePhoto : '${pageContext.request.contextPath}/dist/images/default.png';
             let isMyComment = (CURRENT_USER_ID !== '' && CURRENT_USER_ID == comment.memberId);
-            let kebabMenu = isMyComment 
-                ? `<button class="kebab-item danger" onclick="window.deleteMateComment(\${comment.commentId}, \${mateId})">🗑️ 삭제하기</button>`
-                : `<button class="kebab-item danger" onclick="alert('해당 댓글을 신고합니다.')">🚨 신고하기</button>`;
+			let kebabMenu = isMyComment 
+			    ? `<button class="kebab-item danger" onclick="window.deleteMateComment(\${comment.commentId}, \${mateId})">🗑️ 삭제하기</button>`
+			    : `<button class="kebab-item danger" onclick="openReportModal('MATE_COMMENT', \${comment.commentId})">🚨 신고하기</button>`;
 
             html += `
             <div style="display: flex; flex-direction: column; gap: 10px; border-bottom: 1px dashed var(--border-color); padding-bottom: 12px; margin-bottom: 12px;">
@@ -266,9 +277,9 @@ window.loadMateComments = function(mateId, page) {
             (data.childComments || []).filter(c => c.parentId === comment.commentId).forEach(child => {
                 let cProfileImg = child.profilePhoto ? '${pageContext.request.contextPath}/uploads/profile/' + child.profilePhoto : '${pageContext.request.contextPath}/dist/images/default.png';
                 let isMyChild = (CURRENT_USER_ID !== '' && CURRENT_USER_ID == child.memberId);
-                let childKebab = isMyChild 
-                    ? `<button class="kebab-item danger" onclick="window.deleteMateComment(\${child.commentId}, \${mateId})">🗑️ 삭제하기</button>`
-                    : `<button class="kebab-item danger" onclick="alert('해당 댓글을 신고합니다.')">🚨 신고하기</button>`;
+				let childKebab = isMyChild 
+				    ? `<button class="kebab-item danger" onclick="window.deleteMateComment(\${child.commentId}, \${mateId})">🗑️ 삭제하기</button>`
+				    : `<button class="kebab-item danger" onclick="openReportModal('MATE_COMMENT', \${child.commentId})">🚨 신고하기</button>`;
 
                 html += `
                 <div style="display: flex; gap: 8px; margin-left: 36px; margin-top: 4px; padding: 10px 14px; background: rgba(137, 207, 240, 0.05); border-radius: 12px;">

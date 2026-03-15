@@ -5,6 +5,7 @@ import org.apache.ibatis.annotations.Param;
 
 import com.tripan.app.domain.dto.CommunityFeedCommentDto;
 import com.tripan.app.domain.dto.CommunityFeedListDto;
+import com.tripan.app.domain.dto.MemberDto;
 
 import java.util.List;
 import java.util.Map;
@@ -38,5 +39,16 @@ public interface CommunityFeedMapper {
     
     Long getFeedWriterId(Long postId);
     int deleteFeedPost(Long postId);
+    
+    int countMyFeeds(Long memberId);
+    
+    CommunityFeedListDto selectFeedById(@Param("postId") Long postId);
+
+    int updateFeedPost(Map<String, Object> paramMap);
+    
+    MemberDto getMemberInfo(Long memberId);
+
+    List<CommunityFeedListDto> getUserFeedList(Map<String, Object> params);
+
     
 }

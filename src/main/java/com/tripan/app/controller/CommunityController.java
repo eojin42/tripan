@@ -16,8 +16,8 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.bind.annotation.RestController;
 
-import com.tripan.app.config.WebSocketEventListener;
 import com.tripan.app.domain.dto.CommunityChatRoomDto;
 import com.tripan.app.domain.dto.CommunityFeedCommentDto;
 import com.tripan.app.domain.dto.CommunityFeedListDto;
@@ -27,8 +27,8 @@ import com.tripan.app.domain.dto.CommunityFreeboardCommentDto;
 import com.tripan.app.domain.dto.CommunityMateCommentDto;
 import com.tripan.app.domain.dto.CommunityMateDto;
 import com.tripan.app.domain.dto.MemberDto;
-import com.tripan.app.domain.dto.SessionInfo;
 import com.tripan.app.mapper.CommunityMateCommentMapper;
+import com.tripan.app.repository.FollowRepository;
 import com.tripan.app.service.CommunityChatService;
 import com.tripan.app.service.CommunityFeedService;
 import com.tripan.app.service.CommunityFreeboardService;
@@ -45,19 +45,36 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class CommunityController {
 	
+    @Autowired
+    private FollowRepository followRepository;
+    
 	private final CommunityFreeboardService freeboardService;
 	private final CommunityChatService chatService;
 	private final CommunityMateService mateService;
     private final CommunityMateCommentMapper mateCommentMapper;
     private final CommunityFeedService feedService;
 
+
     @GetMapping({"", "/", "/feed"})
     public String handleCommunityFeed(Model model, HttpSession session) {
-    	MemberDto loginUser = (MemberDto) session.getAttribute("loginUser");
-        Long loginId = (loginUser != null) ? loginUser.getMemberId() : -1L;
+        MemberDto loginUser = (MemberDto) session.getAttribute("loginUser");
+        
+        if (loginUser != null) {
+            Long myId = loginUser.getMemberId();
+            
+            int followerCount = followRepository.countByFollowingId(myId);
+            int followingCount = followRepository.countByFollowerId(myId);
+            int postCount = feedService.getMyFeedCount(myId);
+            
+            model.addAttribute("followerCount", followerCount);
+            model.addAttribute("followingCount", followingCount);
+            model.addAttribute("postCount", postCount);
+        }
 
+        Long loginId = (loginUser != null) ? loginUser.getMemberId() : -1L;
         List<CommunityFeedListDto> feedList = feedService.getFeedList(loginId); 
         model.addAttribute("feedList", feedList);
+        
         return "community/feed";
     }
 
@@ -72,7 +89,9 @@ public class CommunityController {
     @GetMapping("/fragment/{tabType}")
     public String handleFragment(@PathVariable("tabType") String tabType, 
                                  @RequestParam(value = "category", required = false, defaultValue = "all") String category,
+                                 @RequestParam(value = "memberId", required = false) Long targetMemberId, // 🌟 1. 프로필 조회를 위해 파라미터 추가!
                                  HttpServletRequest request, Model model, HttpSession session) {
+        
         String requestedWith = request.getHeader("X-Requested-With");
         
         if ("Fetch".equals(requestedWith) || "XMLHttpRequest".equals(requestedWith)) {
@@ -91,6 +110,36 @@ public class CommunityController {
                 
                 List<CommunityFeedListDto> feedList = feedService.getFeedList(loginId);
                 model.addAttribute("feedList", feedList);            	
+            
+            } else if ("profile".equals(tabType)) {
+                if (targetMemberId == null) return "error/NotFound";
+
+                MemberDto loginUser = (MemberDto) session.getAttribute("loginUser");
+                Long loginId = (loginUser != null) ? loginUser.getMemberId() : -1L;
+
+                MemberDto targetUser = feedService.getMemberInfo(targetMemberId); 
+                
+                int followerCount = followRepository.countByFollowingId(targetMemberId);
+                int followingCount = followRepository.countByFollowerId(targetMemberId);
+                int postCount = feedService.getMyFeedCount(targetMemberId);
+                
+                List<CommunityFeedListDto> userFeedList = feedService.getUserFeedList(targetMemberId, loginId);
+                
+                boolean isFollowing = false;
+                if (loginUser != null && !loginId.equals(targetMemberId)) {
+                     // TODO: 나중에 팔로우 여부 확인하는 서비스(예: followService.isFollowing)가 있다면 여기에 연결!
+                }
+
+                // 모델에 싹 담아주기
+                model.addAttribute("targetUser", targetUser);
+                model.addAttribute("followerCount", followerCount);
+                model.addAttribute("followingCount", followingCount);
+                model.addAttribute("postCount", postCount);
+                model.addAttribute("feedList", userFeedList);
+                model.addAttribute("isMyProfile", loginId.equals(targetMemberId));
+                model.addAttribute("isFollowing", isFollowing);
+
+                return "community/fragment/profile/profile"; 
             }
             
             return "community/fragment/" + tabType + "_list"; 
@@ -104,7 +153,7 @@ public class CommunityController {
             return "redirect:/community/feed?tab=" + tabType;
         }
     }
-    
+
     @PostMapping("/api/feed/write")
     @ResponseBody 
     public ResponseEntity<Map<String, Object>> writeFeed(
@@ -417,7 +466,7 @@ public class CommunityController {
     }
     
     /**
-     * 🗑️ 게시글 삭제 
+     * 게시글 삭제 
      */
     @PostMapping("/api/feed/delete/{postId}")
     @ResponseBody
@@ -441,5 +490,193 @@ public class CommunityController {
             return ResponseEntity.status(500).body(Map.of("status", "error", "message", "서버 오류가 발생했습니다."));
         }
     }
+    
+    /**
+     * 자유게시판 글쓰기 
+     */
+    @PostMapping("/api/freeboard/write")
+    @ResponseBody
+    public ResponseEntity<Map<String, Object>> writeFreeboardPost(
+            @ModelAttribute CommunityFreeBoardDto dto, // FormData로 넘어오므로 @ModelAttribute 사용
+            HttpSession session) {
+        
+        Map<String, Object> response = new HashMap<>();
+        
+        MemberDto loginUser = (MemberDto) session.getAttribute("loginUser");
+        if (loginUser == null) {
+            response.put("status", "error");
+            response.put("message", "로그인이 필요합니다.");
+            return ResponseEntity.status(401).body(response);
+        }
 
+        try {
+            dto.setMemberId(loginUser.getMemberId());
+            
+            freeboardService.registerBoard(dto);
+            
+            response.put("status", "success");
+            response.put("message", "게시글이 성공적으로 등록되었습니다!");
+            return ResponseEntity.ok(response);
+            
+        } catch (Exception e) {
+            log.error("자유게시판 글 등록 실패", e);
+            response.put("status", "error");
+            response.put("message", "서버 오류가 발생했습니다.");
+            return ResponseEntity.status(500).body(response);
+        }
+    }
+    
+    /**
+     * 자유게시판 게시글 삭제 API
+     */
+    @PostMapping("/api/freeboard/delete/{boardId}")
+    @ResponseBody
+    public ResponseEntity<Map<String, Object>> deleteFreeboardPost(@PathVariable("boardId") Long boardId, HttpSession session) {
+        
+        MemberDto loginUser = (MemberDto) session.getAttribute("loginUser");
+        if (loginUser == null) {
+            return ResponseEntity.status(401).body(Map.of("status", "error", "message", "로그인이 필요합니다."));
+        }
+
+        try {
+            boolean isDeleted = freeboardService.deleteBoard(boardId, loginUser.getMemberId());
+            
+            if (isDeleted) {
+                return ResponseEntity.ok(Map.of("status", "success", "message", "게시글이 삭제되었습니다."));
+            } else {
+                return ResponseEntity.status(403).body(Map.of("status", "error", "message", "삭제 권한이 없거나 이미 삭제된 게시글입니다."));
+            }
+        } catch (Exception e) {
+            log.error("자유게시판 게시글 삭제 중 에러 발생 (게시글 ID: {})", boardId, e);
+            return ResponseEntity.status(500).body(Map.of("status", "error", "message", "서버 오류가 발생했습니다."));
+        }
+    }
+
+    @PostMapping("/api/freeboard/comment/delete/{commentId}")
+    @ResponseBody
+    public ResponseEntity<Map<String, Object>> deleteFreeboardComment(
+            @PathVariable("commentId") Long commentId, HttpSession session) {
+        
+        Map<String, Object> response = new HashMap<>();
+        
+        MemberDto loginUser = (MemberDto) session.getAttribute("loginUser");
+        if (loginUser == null) {
+            response.put("status", "error");
+            response.put("message", "로그인이 필요합니다.");
+            return ResponseEntity.status(401).body(response);
+        }
+
+        try {
+            boolean isDeleted = freeboardService.deleteComment(commentId, loginUser.getMemberId());
+            
+            if (isDeleted) {
+                response.put("status", "success");
+                response.put("message", "댓글이 삭제되었습니다.");
+                return ResponseEntity.ok(response);
+            } else {
+                response.put("status", "error");
+                response.put("message", "삭제 권한이 없거나 이미 삭제된 댓글입니다.");
+                return ResponseEntity.status(403).body(response);
+            }
+        } catch (Exception e) {
+            log.error("자유게시판 댓글 삭제 중 에러 발생 (댓글 ID: {})", commentId, e);
+            response.put("status", "error");
+            response.put("message", "서버 오류가 발생했습니다.");
+            return ResponseEntity.status(500).body(response);
+        }
+    }
+    
+    /**
+     * 🌟 자유게시판 글 1개 조회 
+     */
+    @GetMapping("/api/freeboard/{boardId}")
+    @ResponseBody
+    public ResponseEntity<CommunityFreeBoardDto> getFreeboardPost(@PathVariable("boardId") Long boardId) {
+        // 조회수 증가 없이(false) 데이터만 가져옵니다.
+        CommunityFreeBoardDto board = freeboardService.getBoardDetail(boardId, false);
+        return ResponseEntity.ok(board);
+    }
+
+    /**
+     * 🌟 자유게시판 게시글 수정 API
+     */
+    @PostMapping("/api/freeboard/update")
+    @ResponseBody
+    public ResponseEntity<Map<String, Object>> updateFreeboardPost(
+            @ModelAttribute CommunityFreeBoardDto dto, 
+            HttpSession session) {
+        
+        Map<String, Object> response = new HashMap<>();
+        MemberDto loginUser = (MemberDto) session.getAttribute("loginUser");
+        
+        if (loginUser == null) {
+            response.put("status", "error");
+            response.put("message", "로그인이 필요합니다.");
+            return ResponseEntity.status(401).body(response);
+        }
+
+        try {
+            boolean isUpdated = freeboardService.updateBoard(dto, loginUser.getMemberId());
+            if(isUpdated) {
+                response.put("status", "success");
+                response.put("message", "게시글이 성공적으로 수정되었습니다!");
+                return ResponseEntity.ok(response);
+            } else {
+                response.put("status", "error");
+                response.put("message", "수정 권한이 없습니다.");
+                return ResponseEntity.status(403).body(response);
+            }
+        } catch (Exception e) {
+            log.error("자유게시판 글 수정 실패", e);
+            response.put("status", "error");
+            response.put("message", "서버 오류가 발생했습니다.");
+            return ResponseEntity.status(500).body(response);
+        }
+    }
+    
+    @GetMapping("/api/feed/{postId}")
+    @ResponseBody
+    public ResponseEntity<?> getFeedDetailForEdit(@PathVariable("postId") Long postId) {
+        try {
+            CommunityFeedListDto feed = feedService.getFeedById(postId);
+            if (feed == null) {
+                return ResponseEntity.status(404).body(Map.of("message", "존재하지 않는 게시글입니다."));
+            }
+            return ResponseEntity.ok(feed);
+        } catch (Exception e) {
+            log.error("피드 조회 실패", e);
+            return ResponseEntity.status(500).build();
+        }
+    }
+
+    @PostMapping("/api/feed/update")
+    @ResponseBody
+    public ResponseEntity<Map<String, Object>> updateFeedPost(
+            @ModelAttribute CommunityFeedWriteRequestDto requestDTO, 
+            HttpSession session) {
+        
+        Map<String, Object> response = new HashMap<>();
+        MemberDto loginUser = (MemberDto) session.getAttribute("loginUser");
+
+        if (loginUser == null) {
+            response.put("status", "error");
+            response.put("message", "로그인이 필요합니다.");
+            return ResponseEntity.status(401).body(response);
+        }
+
+        try {
+            feedService.updateFeed(requestDTO, loginUser.getMemberId());
+            
+            response.put("status", "success");
+            response.put("message", "피드가 성공적으로 수정되었습니다! ✨");
+            return ResponseEntity.ok(response);
+            
+        } catch (Exception e) {
+            log.error("피드 수정 실패", e);
+            response.put("status", "error");
+            response.put("message", "수정 중 서버 오류가 발생했습니다.");
+            return ResponseEntity.status(500).body(response);
+        }
+    }
+    
 }
