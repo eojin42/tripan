@@ -143,13 +143,15 @@
   </div>
 
   <div class="c-search-area">
-    <div class="search-row active" id="headerRegion" onclick="switchView('region')">
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#718096" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
-      <div class="chip-container" id="chipContainer">
-        <span class="placeholder-text" id="regionPlaceholder">여행지 검색 (예: 제주, 강릉)</span>
-      </div>
-      <div style="color:#CBD5E0; cursor: pointer; margin-left:8px;" onclick="clearRegions(event)">✕</div>
-    </div>
+    <c:if test="${param.hideRegion != 'true'}">
+        <div class="search-row active" id="headerRegion" onclick="switchView('region')">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#718096" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+          <div class="chip-container" id="chipContainer">
+            <span class="placeholder-text" id="regionPlaceholder">여행지 검색 (예: 제주, 강릉)</span>
+          </div>
+          <div style="color:#CBD5E0; cursor: pointer; margin-left:8px;" onclick="clearRegions(event)">✕</div>
+        </div>
+    </c:if>
 
     <div class="filter-row">
       <div class="filter-tab" id="headerDate" onclick="switchView('date')">
@@ -162,27 +164,29 @@
       </div>
     </div>
   </div>
-
+    
   <div class="c-modal-body">
-    <div id="viewRegion" class="view-section active">
-      <div id="subRegionContainer">
-        <span class="section-title" id="subRegionTitle" style="color: var(--point-blue);">상세 지역</span>
-        <div class="region-grid" id="subRegionGrid"></div>
-      </div>
-      <span class="section-title">주요 도시</span>
-      <div class="region-grid" id="majorRegionGrid">
-        <div class="region-btn" id="btn-nationwide" onclick="selectNationwide()">전국</div>
-        <div class="region-btn" onclick="showSubRegions('서울')">서울</div>
-        <div class="region-btn" onclick="showSubRegions('제주')">제주</div>
-        <div class="region-btn" onclick="showSubRegions('부산')">부산</div>
-        <div class="region-btn" onclick="showSubRegions('강원')">강원</div>
-        <div class="region-btn" onclick="showSubRegions('경기')">경기</div>
-        <div class="region-btn" onclick="showSubRegions('인천')">인천</div>
-        <div class="region-btn" onclick="showSubRegions('경상')">경상</div>
-        <div class="region-btn" onclick="showSubRegions('전라')">전라</div>
-        <div class="region-btn" onclick="showSubRegions('충청')">충청</div>
-      </div>
-    </div>
+    <c:if test="${param.hideRegion != 'true'}">
+        <div id="viewRegion" class="view-section active">
+          <div id="subRegionContainer">
+            <span class="section-title" id="subRegionTitle" style="color: var(--point-blue);">상세 지역</span>
+            <div class="region-grid" id="subRegionGrid"></div>
+          </div>
+          <span class="section-title">주요 도시</span>
+          <div class="region-grid" id="majorRegionGrid">
+            <div class="region-btn" id="btn-nationwide" onclick="selectNationwide()">전국</div>
+	        <div class="region-btn" onclick="showSubRegions('서울')">서울</div>
+	        <div class="region-btn" onclick="showSubRegions('제주')">제주</div>
+	        <div class="region-btn" onclick="showSubRegions('부산')">부산</div>
+	        <div class="region-btn" onclick="showSubRegions('강원')">강원</div>
+	        <div class="region-btn" onclick="showSubRegions('경기')">경기</div>
+	        <div class="region-btn" onclick="showSubRegions('인천')">인천</div>
+	        <div class="region-btn" onclick="showSubRegions('경상')">경상</div>
+	        <div class="region-btn" onclick="showSubRegions('전라')">전라</div>
+	        <div class="region-btn" onclick="showSubRegions('충청')">충청</div>
+	        </div>
+        </div>
+    </c:if>
 
     <div id="viewDate" class="view-section">
       <div class="calendar-container" id="calendarContainer"></div>
@@ -299,10 +303,16 @@
       renderCalendar();
     }
     
-    // ✅ 달력 열릴 때 현재 선택된 날짜 표시
     updateCalendarUI();
     
-    switchView(viewType || 'region');
+    let targetView = viewType || 'region';
+    <c:if test="${param.hideRegion == 'true'}">
+        if (targetView === 'region') {
+            targetView = 'date';
+        }
+    </c:if>
+    
+    switchView(targetView);
   }
 
   function closeModal() {
@@ -312,16 +322,20 @@
   }
 
   function switchView(viewName) {
-    document.getElementById('headerRegion').classList.remove('active');
+    const headerRegion = document.getElementById('headerRegion');
+    const viewRegion = document.getElementById('viewRegion');
+
+    if(headerRegion) headerRegion.classList.remove('active'); // null 체크
     document.getElementById('headerDate').classList.remove('active');
     document.getElementById('headerGuest').classList.remove('active');
 
-    if(viewName === 'region') document.getElementById('headerRegion').classList.add('active');
+    if(viewName === 'region' && headerRegion) headerRegion.classList.add('active');
     else if(viewName === 'date') document.getElementById('headerDate').classList.add('active');
     else if(viewName === 'guest') document.getElementById('headerGuest').classList.add('active');
 
     document.querySelectorAll('.view-section').forEach(el => el.classList.remove('active'));
-    if(viewName === 'region') document.getElementById('viewRegion').classList.add('active');
+    
+    if(viewName === 'region' && viewRegion) viewRegion.classList.add('active');
     else if(viewName === 'date') document.getElementById('viewDate').classList.add('active');
     else if(viewName === 'guest') document.getElementById('viewGuest').classList.add('active');
   }
@@ -447,16 +461,22 @@
       
       let daysInMonth = new Date(year, month + 1, 0).getDate();
       for(let d=1; d<=daysInMonth; d++) {
-        let mStr = String(month+1).padStart(2,'0');
-        let dStr = String(d).padStart(2,'0');
-        let dateStr = `\${year}-\${mStr}-\${dStr}`;
-        
-        if (dateStr < todayStr) {
-            html += `<div class="day-cell disabled" style="color:#CBD5E0; cursor:not-allowed;">\${d}</div>`;
-        } else {
-            html += `<div class="day-cell" data-date="\${dateStr}" onclick="selectDate(this)">\${d}</div>`;
-        }
-      }
+         let mStr = String(month+1).padStart(2,'0');
+         let dStr = String(d).padStart(2,'0');
+         let dateStr = `\${year}-\${mStr}-\${dStr}`;
+         
+         // 예약 마감된 날짜인지 확인 (detail에서만 동작)
+         let isBooked = window.disabledDates && window.disabledDates.includes(dateStr);
+
+         if (dateStr < todayStr) {
+             html += `<div class="day-cell disabled" style="color:#CBD5E0; cursor:not-allowed;">\${d}</div>`;
+         } else if (isBooked) {
+             // 예약 마감 날짜 디자인 (취소선)
+             html += `<div class="day-cell disabled" style="color:#A0AEC0; background:#F7FAFC; cursor:not-allowed; text-decoration:line-through;" title="예약 마감">\${d}</div>`;
+         } else {
+             html += `<div class="day-cell" data-date="\${dateStr}" onclick="selectDate(this)">\${d}</div>`;
+         }
+       }
       html += `</div></div>`;
     }
     container.innerHTML = html;
@@ -466,10 +486,29 @@
     const date = el.dataset.date;
     if (selectedDates.length === 2) selectedDates = []; 
     
-    if (selectedDates.length === 0) selectedDates.push(date);
-    else {
-      if(date < selectedDates[0]) selectedDates.unshift(date);
-      else selectedDates.push(date);
+    if (selectedDates.length === 0) {
+        selectedDates.push(date);
+    } else {
+        const start = selectedDates[0] < date ? selectedDates[0] : date;
+        const end = selectedDates[0] < date ? date : selectedDates[0];
+
+        // 체크인 ~ 체크아웃 사이에 예약 마감된 날짜가 껴있는지 검사
+        let hasBookedInBetween = false;
+        if (window.disabledDates) {
+            for (let d of window.disabledDates) {
+                if (d >= start && d < end) {
+                    hasBookedInBetween = true;
+                    break;
+                }
+            }
+        }
+
+        if (hasBookedInBetween) {
+            alert("선택하신 기간 내에 예약이 마감된 날짜가 포함되어 있습니다.");
+            selectedDates = [date]; // 방금 클릭한 날짜로 초기화
+        } else {
+            selectedDates = [start, end];
+        }
     }
     
     updateCalendarUI();
@@ -565,7 +604,7 @@
     // 기본 이동 경로는 list 페이지!
     let url = '${pageContext.request.contextPath}/accommodation/list';
     
-    // 🌟 [추가됨] 만약 현재 위치가 detail 페이지이고, '지역' 필터를 건드리지 않았다면?
+    // 만약 현재 위치가 detail 페이지이고, '지역' 필터를 건드리지 않았다면?
     // -> 리스트로 튕기지 않고 현재 상세 페이지를 유지하면서 날짜/인원만 재계산!
     if (window.location.pathname.includes('/detail/') && !hasRegion) {
         url = window.location.pathname; 

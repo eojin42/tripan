@@ -29,13 +29,13 @@
         WHERE 1=1
         
         <if test="checkin != null and checkin != '' and checkout != null and checkout != ''">
-            AND NOT EXISTS (
-                SELECT 1 
+            AND r.ROOM_COUNT &gt; (
+                SELECT COUNT(*) 
                 FROM RESERVATION res 
                 WHERE res.ROOM_ID = r.ROOM_ID 
                   AND res.STATUS = 'SUCCESS'
-                  AND res.CHECK_IN_DATE &lt; TO_DATE(#{checkout}, 'YYYY-MM-DD')
-                  AND res.CHECK_OUT_DATE &gt; TO_DATE(#{checkin}, 'YYYY-MM-DD')
+                  AND TRUNC(res.CHECK_IN_DATE) &lt; TO_DATE(#{checkout}, 'YYYY-MM-DD')
+                  AND TRUNC(res.CHECK_OUT_DATE) &gt; TO_DATE(#{checkin}, 'YYYY-MM-DD')
             )
         </if>
         
@@ -136,6 +136,7 @@
             r.MAX_CAPACITY as maxCapacity,
             r.AMOUNT as amount,
             r.ROOMINTRO as roomIntro,
+            r.ROOM_COUNT as roomCount,
             
             (SELECT MIN(ri.IMAGE_URL) 
              FROM ROOM_IMAGE ri 
@@ -148,11 +149,17 @@
     
     <select id="findRoomById" resultType="com.tripan.app.domain.dto.RoomDto">
 	    SELECT 
-	        ROOM_ID as roomId,
-	        ROOM_NAME as roomName,
-	        ROOMBASECOUNT as roomBaseCount, AMOUNT as amount
-	    FROM ROOM
-	    WHERE ROOM_ID = #{roomId}
+            r.ROOM_ID as roomId,
+            r.ROOM_NAME as roomName,
+            r.ROOMBASECOUNT as roomBaseCount,
+            r.MAX_CAPACITY as maxCapacity,
+            r.AMOUNT as amount,
+            r.ROOMINTRO as roomIntro,
+            r.ROOM_COUNT as roomCount,
+            p.PLACE_NAME as placeName
+        FROM ROOM r
+        JOIN PLACE p ON r.PLACE_ID = p.PLACE_ID
+        WHERE r.ROOM_ID = #{roomId}
 	</select>
 	
 	
@@ -161,9 +168,14 @@
         DELETE FROM ROOM_LOCK WHERE EXPIRE_AT &lt; SYSDATE
     </delete>
 
-    <select id="getRoomLockSession" resultType="string">
-        SELECT SESSION_ID FROM ROOM_LOCK
-        WHERE ROOM_ID = #{roomId} AND CHECKIN_DATE = #{checkin}
+    <select id="countActiveLocks" resultType="int">
+        SELECT COUNT(*) FROM ROOM_LOCK
+        WHERE ROOM_ID = #{roomId} AND CHECKIN_DATE = #{checkin} AND SESSION_ID != #{sessionId}
+    </select>
+
+    <select id="checkMyLock" resultType="int">
+        SELECT COUNT(*) FROM ROOM_LOCK
+        WHERE ROOM_ID = #{roomId} AND CHECKIN_DATE = #{checkin} AND SESSION_ID = #{sessionId}
     </select>
 
     <insert id="insertRoomLock">
@@ -174,7 +186,7 @@
     <update id="updateLockTime">
         UPDATE ROOM_LOCK 
         SET EXPIRE_AT = SYSDATE + (5/(24*60))
-        WHERE ROOM_ID = #{roomId} AND CHECKIN_DATE = #{checkin}
+        WHERE ROOM_ID = #{roomId} AND CHECKIN_DATE = #{checkin} AND SESSION_ID = #{sessionId}
     </update>
 
     <delete id="deleteRoomLock">
@@ -199,7 +211,7 @@
             STATUS, REQUEST, AMOUNT, COMMISSION_RATE, PARTNER_COUPON_FEE
         ) VALUES (
             #{reservationId}, #{roomId}, #{memberId}, 1,  TO_DATE(#{checkin}, 'YYYY-MM-DD'), TO_DATE(#{checkout}, 'YYYY-MM-DD'), 
-            (#{adult} + #{child}), 'SUCCESS', '요청사항 없음', #{amount}, 10, 0
+            (#{adult} + #{child}), 'SUCCESS', #{request}, #{amount}, 10, 0
         )
     </insert>
 
@@ -232,4 +244,32 @@
     <delete id="deleteBookmark">
         DELETE FROM BOOKMARK WHERE PLACE_ID = #{placeId} AND MEMBER_ID = #{memberId}
     </delete>
+    
+    
+    <!-- 예약 필터링 기능 -->
+    <select id="checkRoomBookingCount" resultType="int">
+        SELECT COUNT(*)
+        FROM RESERVATION
+        WHERE ROOM_ID = #{roomId}
+          AND STATUS = 'SUCCESS'
+          AND TRUNC(CHECK_IN_DATE) &lt; TO_DATE(#{checkout}, 'YYYY-MM-DD')
+          AND TRUNC(CHECK_OUT_DATE) &gt; TO_DATE(#{checkin}, 'YYYY-MM-DD')
+    </select>
+    
+    <select id="getTotalRoomCountByPlace" resultType="int">
+        SELECT NVL(SUM(ROOM_COUNT), 0) 
+        FROM ROOM 
+        WHERE PLACE_ID = #{placeId}
+    </select>
+
+    <select id="selectFutureReservationsByPlace" resultType="map">
+        SELECT 
+            TO_CHAR(res.CHECK_IN_DATE, 'YYYY-MM-DD') as "checkIn",
+            TO_CHAR(res.CHECK_OUT_DATE, 'YYYY-MM-DD') as "checkOut"
+        FROM RESERVATION res
+        JOIN ROOM r ON res.ROOM_ID = r.ROOM_ID
+        WHERE r.PLACE_ID = #{placeId}
+          AND res.STATUS = 'SUCCESS'
+          AND res.CHECK_OUT_DATE > SYSDATE
+    </select>
 </mapper>
