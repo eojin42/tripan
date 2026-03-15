@@ -204,7 +204,7 @@
   
 </style>
 
-
+<c:if test="${empty targetUser or isMyProfile}">
 	<article class="glass-card composer-card" style="padding: 24px; margin-bottom: 24px;">
 	  <div style="display: flex; flex-direction: column; width: 100%;">
 	    <textarea id="inlineTextarea" placeholder="${not empty sessionScope.loginUser ? sessionScope.loginUser.nickname : '여행자'}님, 어떤 여행을 다녀오셨나요?" 
@@ -246,7 +246,7 @@
 	    </button>
 	  </div>
 	</article>
-	
+</c:if>	
 <div id="feedListContainer" style="display: flex; flex-direction: column; gap: 24px;">
  <c:forEach var="feed" items="${feedList}" varStatus="status">
   <article class="glass-card feed-card" data-post-id="${feed.postId}" style="${status.index >= 5 ? 'display: none;' : ''}">

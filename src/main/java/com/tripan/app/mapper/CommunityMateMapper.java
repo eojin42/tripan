@@ -18,4 +18,6 @@ public interface CommunityMateMapper {
     void insertMate(CommunityMateDto dto);
     CommunityMateDto selectMateById(Long mateId);
     void updateMateStatus(@Param("mateId") Long mateId, @Param("status") String status);
+    
+    List<CommunityMateDto> getUserMateList(Long memberId);
 }

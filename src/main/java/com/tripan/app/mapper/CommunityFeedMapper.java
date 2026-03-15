@@ -5,6 +5,8 @@ import org.apache.ibatis.annotations.Param;
 
 import com.tripan.app.domain.dto.CommunityFeedCommentDto;
 import com.tripan.app.domain.dto.CommunityFeedListDto;
+import com.tripan.app.domain.dto.CommunityFreeBoardDto;
+import com.tripan.app.domain.dto.CommunityUserActivityDto;
 import com.tripan.app.domain.dto.MemberDto;
 
 import java.util.List;
@@ -49,6 +51,8 @@ public interface CommunityFeedMapper {
     MemberDto getMemberInfo(Long memberId);
 
     List<CommunityFeedListDto> getUserFeedList(Map<String, Object> params);
+
+    List<CommunityUserActivityDto> getUserActivityList(Long memberId);
 
     
 }

@@ -89,4 +89,9 @@ public class CommunityMateServiceImpl implements CommunityMateService {
         }
         return false;
     }
+
+    @Override
+    public List<CommunityMateDto> getUserMateList(Long memberId) {
+        return mateMapper.getUserMateList(memberId);
+    }
 }

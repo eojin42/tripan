@@ -41,5 +41,6 @@ public interface CommunityFreeBoardMapper {
     void decreaseReplyCount(Long boardId);
     
     int updateBoard(CommunityFreeBoardDto dto);
+    List<CommunityFreeBoardDto> getUserBoardList(Long memberId);
 }
     
