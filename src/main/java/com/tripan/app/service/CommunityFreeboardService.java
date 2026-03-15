@@ -22,5 +22,9 @@ public interface CommunityFreeboardService {
     
     int checkLikeStatus(Long boardId, Long memberId); 
     
+    boolean deleteBoard(Long boardId, Long currentMemberId);
+    boolean deleteComment(Long commentId, Long currentMemberId);
+    
+    boolean updateBoard(CommunityFreeBoardDto dto, Long currentMemberId);
     
 }

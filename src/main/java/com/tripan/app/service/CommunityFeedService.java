@@ -8,6 +8,7 @@ import org.springframework.stereotype.Service;
 import com.tripan.app.domain.dto.CommunityFeedCommentDto;
 import com.tripan.app.domain.dto.CommunityFeedListDto;
 import com.tripan.app.domain.dto.CommunityFeedWriteRequestDto;
+import com.tripan.app.domain.dto.MemberDto;
 
 public interface CommunityFeedService {
 	
@@ -21,5 +22,14 @@ public interface CommunityFeedService {
     
     boolean deleteFeedComment(Long commentId, Long memberId);
     boolean deleteFeed(Long postId, Long memberId);
+    
+    int getMyFeedCount(Long memberId);
+    
+    CommunityFeedListDto getFeedById(Long postId);
+	void updateFeed(CommunityFeedWriteRequestDto dto, Long memberId) throws Exception;
+	
+	MemberDto getMemberInfo(Long memberId);
+	List<CommunityFeedListDto> getUserFeedList(Long targetMemberId, Long loginMemberId);
+	
 	
 }
