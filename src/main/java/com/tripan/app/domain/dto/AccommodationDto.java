@@ -17,4 +17,5 @@ public class AccommodationDto {
     private Double longitude;
     
     private int isBookmarked;
+    
 }

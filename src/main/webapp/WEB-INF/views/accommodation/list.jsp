@@ -48,6 +48,29 @@
 
   .btn-filter-icon { position: absolute; right: 0; top: 50%; transform: translateY(-50%); width: 48px; height: 48px; border-radius: 50%; border: 1px solid #E2E8F0; display: flex; align-items: center; justify-content: center; cursor: pointer; background: white; transition: all 0.2s; }
   .btn-filter-icon:hover { background: #F7FAFC; border-color: var(--text-black); }
+  
+  /* --- 🌟 정렬 버튼 & 래퍼 --- */
+  .list-header-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+  .list-header-row .category-nav { margin-bottom: 0; padding-bottom: 0; flex: 1; }
+  
+  .sort-trigger { display: flex; align-items: center; gap: 4px; font-size: 14px; font-weight: 700; color: var(--text-black); cursor: pointer; padding: 8px 0 8px 16px; flex-shrink: 0; }
+  
+  /* --- 🌟 정렬 모달 --- */
+  .sort-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 9990; opacity: 0; visibility: hidden; transition: all 0.3s; }
+  .sort-overlay.open { opacity: 1; visibility: visible; }
+  
+  .sort-modal { position: fixed; bottom: 0; left: 50%; width: 100%; max-width: 500px; background: white; border-radius: 20px 20px 0 0; z-index: 9999; transform: translate(-50%, 100%); transition: transform 0.3s ease-out; display: flex; flex-direction: column; padding-bottom: env(safe-area-inset-bottom); }
+  .sort-modal.open { transform: translate(-50%, 0); }
+  
+  .sort-header { padding: 24px; text-align: center; font-size: 16px; font-weight: 800; border-bottom: 1px solid #E2E8F0; position: relative; }
+  .sort-close { position: absolute; right: 24px; top: 50%; transform: translateY(-50%); cursor: pointer; font-size: 20px; color: var(--text-gray); }
+  
+  .sort-body { padding: 12px 0; }
+  .sort-item { padding: 18px 24px; font-size: 15px; color: var(--text-dark); cursor: pointer; display: flex; justify-content: space-between; align-items: center; transition: background 0.2s; }
+  .sort-item:hover { background: #F8F9FA; }
+  .sort-item.active { font-weight: 800; color: var(--text-black); }
+  .sort-item .chk { display: none; color: var(--text-black); font-weight: 900; }
+  .sort-item.active .chk { display: inline; }
 
   /* --- 🌟 카테고리 알약(Pill) 디자인 --- */
   .category-nav { 
@@ -218,14 +241,22 @@
   <div class="content-wrapper">
       
       <div class="left-panel">
-          <div class="category-nav">
-            <div class="cat-item active"><span>모든 스테이</span></div>
-            <div class="cat-item"><span>봄꽃여행</span></div>
-            <div class="cat-item"><span>프로모션</span></div>
-            <div class="cat-item"><span>신규 오픈</span></div>
-            <div class="cat-item"><span>마감임박할인</span></div>
-            <div class="cat-item"><span>단독 소개</span></div>
+          <div class="list-header-row">
+              <div class="category-nav">
+                <div class="cat-item active"><span>모든 스테이</span></div>
+                <div class="cat-item"><span>봄꽃여행</span></div>
+                <div class="cat-item"><span>프로모션</span></div>
+                <div class="cat-item"><span>신규 오픈</span></div>
+                <div class="cat-item"><span>마감임박할인</span></div>
+                <div class="cat-item"><span>단독 소개</span></div>
+              </div>
+              
+              <div class="sort-trigger" onclick="openSortModal()">
+                  <span id="sortBtnText">기본순</span>
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"></polyline></svg>
+              </div>
           </div>
+          
           <div class="accommodation-grid" id="accommodation-list-container"></div>
       </div>
       
@@ -235,6 +266,34 @@
       </div>
   </div>
 
+
+    <div class="sort-overlay" id="sortOverlay" onclick="closeSortModal()"></div>
+	<div class="sort-modal" id="sortModal">
+	    <div class="sort-header">
+	        정렬
+	        <span class="sort-close" onclick="closeSortModal()">✕</span>
+	    </div>
+	    <div class="sort-body">
+	        <div class="sort-item active" id="sort-DEFAULT" onclick="handleSortClick('DEFAULT', '기본순')">
+	            기본순 <span class="chk">✓</span>
+	        </div>
+	        <div class="sort-item" id="sort-POPULAR" onclick="handleSortClick('POPULAR', '인기순')">
+	            인기순 <span class="chk">✓</span>
+	        </div>
+	        <div class="sort-item" id="sort-NEW" onclick="handleSortClick('NEW', '신규 오픈순')">
+	            신규 오픈순 <span class="chk">✓</span>
+	        </div>
+	        <div class="sort-item" id="sort-PRICE_ASC" onclick="handleSortClick('PRICE_ASC', '낮은 가격순')">
+	            낮은 가격순 <span class="chk">✓</span>
+	        </div>
+	        <div class="sort-item" id="sort-PRICE_DESC" onclick="handleSortClick('PRICE_DESC', '높은 가격순')">
+	            높은 가격순 <span class="chk">✓</span>
+	        </div>
+	        <div class="sort-item" id="sort-DISTANCE" onclick="handleSortClick('DISTANCE', '가까운 거리순')">
+	            가까운 거리순 <span class="chk">✓</span>
+	        </div>
+	    </div>
+	</div>
 </main>
 
 <button class="btn-floating-map" onclick="toggleMapView()">
@@ -254,6 +313,10 @@
   let mapInstance = null;
   let markers = [];
   let currentList = []; 
+  
+  let currentSortOption = 'DEFAULT'; 
+  let userLat = null;
+  let userLng = null;
 
   window.renderAccommodations = function(list, isAppend) {
     const container = document.getElementById('accommodation-list-container');
@@ -319,13 +382,17 @@
 	      adult: parseInt(urlParams.get('adult')) || 0,
 	      child: parseInt(urlParams.get('child')) || 0,
 	      
+	      
 	      // 🌟 [추가됨] 필터 모달의 값들을 안전하게 가져오기 (없으면 기본값)
 	      minPrice: window.filterState ? window.filterState.minPrice : 0,
 	      maxPrice: window.filterState ? window.filterState.maxPrice : 500000,
 	      accTypes: window.filterState ? window.filterState.accTypes : [],
 	      accFacilities: window.filterState ? window.filterState.accFacilities : [],
 	      roomFacilities: window.filterState ? window.filterState.roomFacilities : [],
-	      
+   		  sort: currentSortOption,
+          userLat: userLat,
+          userLng: userLng,
+	    	
 	      offset: currentOffset,
 	      size: PAGE_SIZE // 🚨 이제 정상적으로 페이징 개수(9개)가 날아갑니다!
 	    };
@@ -479,6 +546,54 @@
           mapInstance.panTo(moveLatLon);
       }
   };
+  
+  // 정렬 관련 스크립트
+  //🌟 정렬 모달 제어 함수
+  function openSortModal() {
+      document.getElementById('sortOverlay').classList.add('open');
+      document.getElementById('sortModal').classList.add('open');
+  }
+
+  function closeSortModal() {
+      document.getElementById('sortOverlay').classList.remove('open');
+      document.getElementById('sortModal').classList.remove('open');
+  }
+  
+  function handleSortClick(sortCode, text) {
+      if (sortCode === 'DISTANCE') {
+          if (navigator.geolocation) {
+              navigator.geolocation.getCurrentPosition(
+                  (position) => {
+                      userLat = position.coords.latitude;
+                      userLng = position.coords.longitude;
+                      applySort(sortCode, text);
+                  },
+                  (error) => {
+                      alert("위치 정보 접근 권한을 허용해야 가까운 거리순을 이용할 수 있습니다.");
+                  }
+              );
+          } else {
+              alert("현재 브라우저에서는 위치 정보를 지원하지 않습니다.");
+          }
+      } else {
+          // 다른 정렬은 위치가 필요 없음
+          applySort(sortCode, text);
+      }
+  }
+  
+  function applySort(sortCode, text) {
+      currentSortOption = sortCode;
+      document.getElementById('sortBtnText').innerText = text;
+      
+      // 모달 내 체크 표시(V) UI 업데이트
+      document.querySelectorAll('.sort-item').forEach(el => el.classList.remove('active'));
+      document.getElementById('sort-' + sortCode).classList.add('active');
+      
+      closeSortModal();
+      
+      // 정렬 기준이 바뀌었으므로 리스트 초기화 후 새로 불러오기
+      fetchAccommodations(true);
+  }
 
 </script>
 
