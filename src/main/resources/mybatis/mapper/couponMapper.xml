@@ -1,0 +1,272 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.tripan.app.admin.mapper.CouponMapper">
+
+    <!-- ── KPI ── -->
+    <select id="selectKpi" resultType="com.tripan.app.admin.domain.dto.CouponDto$KpiResponse">
+        SELECT
+            c.total,
+            c.platform,
+            c.partner,
+            c.waiting,
+            m.issuedThisMonth,
+            m.usedThisMonth
+        FROM (
+            SELECT
+                COUNT(*)                                                 AS total,
+                SUM(CASE WHEN partner_id IS NULL     THEN 1 ELSE 0 END) AS platform,
+                SUM(CASE WHEN partner_id IS NOT NULL THEN 1 ELSE 0 END) AS partner,
+                SUM(CASE WHEN status = 'WAITING'     THEN 1 ELSE 0 END) AS waiting
+            FROM coupon
+        ) c,
+        (
+            SELECT
+                COUNT(*)                                          AS issuedThisMonth,
+                SUM(CASE WHEN status = 'USED' THEN 1 ELSE 0 END) AS usedThisMonth
+            FROM member_coupon
+            WHERE TO_CHAR(issued_at, 'YYYY-MM') = TO_CHAR(SYSDATE, 'YYYY-MM')
+        ) m
+    </select>
+
+    <!-- ── 공통 WHERE 조건 ── -->
+    <sql id="couponWhere">
+        <where>
+            <if test="discountType != null and discountType != 'ALL'">
+                AND c.discount_type = #{discountType}
+            </if>
+            <if test="status != null and status != 'ALL'">
+                AND c.status = #{status}
+            </if>
+            <if test="issuer != null and issuer == 'PLATFORM'">
+                AND c.partner_id IS NULL
+            </if>
+            <if test="issuer != null and issuer == 'PARTNER'">
+                AND c.partner_id IS NOT NULL
+            </if>
+            <if test="keyword != null and keyword != ''">
+                AND c.coupon_name LIKE '%' || #{keyword} || '%'
+            </if>
+        </where>
+    </sql>
+
+    <!-- ── 쿠폰 목록 ── -->
+    <select id="selectCouponList" resultType="com.tripan.app.admin.domain.dto.CouponDto$ListItem">
+        SELECT
+            t.couponId, t.partnerId, t.partnerName, t.couponName,
+            t.discountAmount, t.discountType, t.maxDiscountAmount, t.minOrderAmount,
+            t.platformShare, t.partnerShare, t.validFrom, t.validUntil,
+            t.status, t.createdAt,
+            (SELECT COUNT(*) FROM member_coupon mc WHERE mc.member_coupon_id = t.couponId) AS issuedCount
+        FROM (
+            SELECT ROWNUM AS rn,
+                c.coupon_id             AS couponId,
+                c.partner_id            AS partnerId,
+                p.partner_name          AS partnerName,
+                c.coupon_name           AS couponName,
+                c.discount_amount       AS discountAmount,
+                c.discount_type         AS discountType,
+                c.max_discount_amount   AS maxDiscountAmount,
+                c.min_order_amount      AS minOrderAmount,
+                c.platform_share        AS platformShare,
+                c.partner_share         AS partnerShare,
+                TO_CHAR(c.valid_from,  'YYYY-MM-DD') AS validFrom,
+                TO_CHAR(c.valid_until, 'YYYY-MM-DD') AS validUntil,
+                c.status,
+                TO_CHAR(c.created_at, 'YYYY-MM-DD') AS createdAt
+            FROM coupon c
+            LEFT JOIN partner p ON c.partner_id = p.partner_id
+            <include refid="couponWhere"/>
+            ORDER BY c.created_at DESC
+        ) t
+        WHERE t.rn BETWEEN #{startRow} AND #{endRow}
+    </select>
+
+    <!-- ── 쿠폰 건수 ── -->
+    <select id="selectCouponCount" resultType="int">
+        SELECT COUNT(*)
+        FROM coupon c
+        <include refid="couponWhere"/>
+    </select>
+
+    <!-- ── 승인 대기 목록 ── -->
+    <select id="selectPendingList" resultType="com.tripan.app.admin.domain.dto.CouponDto$ListItem">
+        SELECT
+            c.coupon_id             AS couponId,
+            c.partner_id            AS partnerId,
+            p.partner_name          AS partnerName,
+            c.coupon_name           AS couponName,
+            c.discount_amount       AS discountAmount,
+            c.discount_type         AS discountType,
+            c.max_discount_amount   AS maxDiscountAmount,
+            c.min_order_amount      AS minOrderAmount,
+            c.platform_share        AS platformShare,
+            c.partner_share         AS partnerShare,
+            TO_CHAR(c.valid_from,  'YYYY-MM-DD') AS validFrom,
+            TO_CHAR(c.valid_until, 'YYYY-MM-DD') AS validUntil,
+            c.status,
+            0                                    AS issuedCount,
+            TO_CHAR(c.created_at, 'YYYY-MM-DD') AS createdAt
+        FROM coupon c
+        LEFT JOIN partner p ON c.partner_id = p.partner_id
+        WHERE c.status = 'WAITING'
+        ORDER BY c.created_at ASC
+    </select>
+
+    <!-- ── 단건 조회 ── -->
+    <select id="selectCouponById" resultType="com.tripan.app.admin.domain.dto.CouponDto$ListItem">
+        SELECT
+            c.coupon_id             AS couponId,
+            c.partner_id            AS partnerId,
+            p.partner_name          AS partnerName,
+            c.coupon_name           AS couponName,
+            c.discount_amount       AS discountAmount,
+            c.discount_type         AS discountType,
+            c.max_discount_amount   AS maxDiscountAmount,
+            c.min_order_amount      AS minOrderAmount,
+            c.platform_share        AS platformShare,
+            c.partner_share         AS partnerShare,
+            TO_CHAR(c.valid_from,  'YYYY-MM-DD') AS validFrom,
+            TO_CHAR(c.valid_until, 'YYYY-MM-DD') AS validUntil,
+            c.status,
+            (SELECT COUNT(*) FROM member_coupon mc WHERE mc.member_coupon_id = c.coupon_id) AS issuedCount,
+            TO_CHAR(c.created_at, 'YYYY-MM-DD') AS createdAt
+        FROM coupon c
+        LEFT JOIN partner p ON c.partner_id = p.partner_id
+        WHERE c.coupon_id = #{couponId}
+    </select>
+
+    <!-- ── 등록 ── -->
+    <insert id="insertCoupon">
+        INSERT INTO coupon (
+            coupon_id,
+            <if test="partnerId != null">partner_id,</if>
+            coupon_name,
+            discount_amount,
+            discount_type,
+            <if test="maxDiscountAmount != null">max_discount_amount,</if>
+            <if test="minOrderAmount != null">min_order_amount,</if>
+            platform_share,
+            partner_share,
+            valid_from,
+            valid_until,
+            status,
+            created_at
+        ) VALUES (
+            coupon_seq.NEXTVAL,
+            <if test="partnerId != null">#{partnerId},</if>
+            #{couponName},
+            #{discountAmount},
+            #{discountType},
+            <if test="maxDiscountAmount != null">#{maxDiscountAmount},</if>
+            <if test="minOrderAmount != null">#{minOrderAmount},</if>
+            #{platformShare},
+            100 - #{platformShare},
+            #{validFrom},
+            #{validUntil},
+            'ACTIVE',
+            SYSDATE
+        )
+    </insert>
+
+    <!-- ── 수정 ── -->
+    <update id="updateCoupon">
+        UPDATE coupon SET
+            coupon_name         = #{req.couponName},
+            discount_amount     = #{req.discountAmount},
+            discount_type       = #{req.discountType},
+            max_discount_amount = #{req.maxDiscountAmount, jdbcType=NUMERIC},
+            min_order_amount    = #{req.minOrderAmount,    jdbcType=NUMERIC},
+            platform_share      = #{req.platformShare},
+            partner_share       = 100 - #{req.platformShare},
+            valid_from          = #{req.validFrom},
+            valid_until         = #{req.validUntil}
+        WHERE coupon_id = #{couponId}
+    </update>
+
+    <!-- ── 승인/반려 상태 변경 ── -->
+    <update id="updateCouponStatus">
+        UPDATE coupon SET
+            status        = #{status},
+            reject_reason = #{memo, jdbcType=VARCHAR}
+        WHERE coupon_id = #{couponId}
+    </update>
+
+    <!-- ── 삭제 ── -->
+    <delete id="deleteCoupons">
+        DELETE FROM coupon
+        WHERE coupon_id IN
+        <foreach collection="couponIds" item="id" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+    </delete>
+
+    <!-- ── 회원 발급 현황 ── -->
+    <select id="selectIssuedList" resultType="com.tripan.app.admin.domain.dto.CouponDto$IssuedItem">
+        SELECT *
+        FROM (
+            SELECT ROWNUM AS rn, t.*
+            FROM (
+                SELECT
+                    mc.member_coupon_id                  AS memberCouponId,
+                    mc.coupon_id                         AS couponId,
+                    c.coupon_name                        AS couponName,
+                    c.partner_id                         AS partnerId,
+                    p.partner_name                       AS partnerName,
+                    mc.member_id                         AS memberId,
+                    c.discount_type                      AS discountType,
+                    c.discount_amount                    AS discountAmount,
+                    TO_CHAR(mc.issued_at,  'YYYY-MM-DD') AS issuedAt,
+                    TO_CHAR(c.valid_until, 'YYYY-MM-DD') AS validUntil,
+                    mc.status
+                FROM member_coupon mc
+                JOIN coupon c       ON mc.member_coupon_id  = c.coupon_id
+                LEFT JOIN partner p ON c.partner_id  = p.partner_id
+                <where>
+                    <if test="status != null and status != 'ALL'">
+                        AND mc.status = #{status}
+                    </if>
+                    <if test="couponKeyword != null and couponKeyword != ''">
+                        AND c.coupon_name LIKE '%' || #{couponKeyword} || '%'
+                    </if>
+                    <if test="memberKeyword != null and memberKeyword != ''">
+                        AND mc.member_id = #{memberKeyword}
+                    </if>
+                </where>
+                ORDER BY mc.issued_at DESC
+            ) t
+            WHERE ROWNUM &lt;= #{endRow}
+        )
+        WHERE rn &gt;= #{startRow}
+    </select>
+
+    <!-- ── 발급 건수 ── -->
+    <select id="selectIssuedCount" resultType="int">
+        SELECT COUNT(*)
+        FROM member_coupon mc
+        JOIN coupon c ON mc.member_coupon_id = c.coupon_id
+        <where>
+            <if test="status != null and status != 'ALL'">
+                AND mc.status = #{status}
+            </if>
+            <if test="couponKeyword != null and couponKeyword != ''">
+                AND c.coupon_name LIKE '%' || #{couponKeyword} || '%'
+            </if>
+            <if test="memberKeyword != null and memberKeyword != ''">
+                AND mc.member_id = #{memberKeyword}
+            </if>
+        </where>
+    </select>
+
+    <!-- ── 파트너 옵션 ── -->
+    <select id="selectPartnerOptions" resultType="com.tripan.app.admin.domain.dto.CouponDto$PartnerOption">
+        SELECT
+            partner_id   AS partnerId,
+            partner_name AS partnerName
+        FROM partner
+        WHERE status = 'ACTIVE'
+        ORDER BY partner_name
+    </select>
+
+</mapper>
