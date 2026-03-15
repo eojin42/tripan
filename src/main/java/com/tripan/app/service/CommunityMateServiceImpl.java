@@ -1,17 +1,20 @@
 package com.tripan.app.service;
 
-import com.tripan.app.domain.dto.CommunityMateDto;
-import com.tripan.app.domain.dto.CommunityMateCommentDto;
-import com.tripan.app.mapper.CommunityMateMapper;
-import com.tripan.app.mapper.CommunityMateCommentMapper;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import com.tripan.app.domain.dto.CommunityMateCommentDto;
+import com.tripan.app.domain.dto.CommunityMateDto;
+import com.tripan.app.mapper.CommunityMateCommentMapper;
+import com.tripan.app.mapper.CommunityMateMapper;
+
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 @Service
@@ -36,8 +39,12 @@ public class CommunityMateServiceImpl implements CommunityMateService {
     }
 
     @Override
-    public CommunityMateDto getMateDetail(Long mateId) {
-        return mateMapper.selectMateById(mateId);
+    @Transactional
+    public CommunityMateDto getMateDetail(Long mateId, boolean updateView) {
+        if (updateView) {
+            mateMapper.updateMateViewCount(mateId); 
+        }
+        return mateMapper.selectMateById(mateId); 
     }
 
     @Override
@@ -67,17 +74,7 @@ public class CommunityMateServiceImpl implements CommunityMateService {
         
         return response;
     }
-    
-    @Override
-    @Transactional
-    public boolean deleteMateComment(Long commentId, Long memberId) {
-        Long ownerId = mateCommentMapper.selectCommentOwner(commentId);
-        if (ownerId != null && ownerId.equals(memberId)) {
-            mateCommentMapper.deleteCommentAndChildren(commentId);
-            return true;
-        }
-        return false;
-    }
+
     
     @Override
     @Transactional
@@ -94,4 +91,48 @@ public class CommunityMateServiceImpl implements CommunityMateService {
     public List<CommunityMateDto> getUserMateList(Long memberId) {
         return mateMapper.getUserMateList(memberId);
     }
+
+    @Override
+    public void updateMateStatus(Long mateId, String status) {
+        mateMapper.updateMateStatus(mateId, status); 
+    }
+
+    @Override
+    public void deleteMatePost(Long mateId, Long memberId) {
+        mateMapper.deleteMatePost(mateId); 
+    }
+    
+    @Override
+    public List<CommunityMateCommentDto> getMateComments(Long mateId) {
+        List<CommunityMateCommentDto> parents = mateCommentMapper.selectComments(mateId, 0, 100);
+        
+        List<CommunityMateCommentDto> children = mateCommentMapper.selectChildComments(mateId);
+        
+        List<CommunityMateCommentDto> allComments = new ArrayList<>();
+        if(parents != null) allComments.addAll(parents);
+        if(children != null) allComments.addAll(children);
+        
+        return allComments;
+    }
+
+    @Override
+    public void addMateComment(CommunityMateCommentDto commentDto) {
+        mateCommentMapper.insertComment(commentDto);
+    }
+
+    @Override
+    @Transactional
+    public boolean deleteMateComment(Long commentId, Long memberId) {
+        Long ownerId = mateCommentMapper.selectCommentOwner(commentId);
+        
+        if (ownerId != null && ownerId.equals(memberId)) {
+            mateCommentMapper.deleteCommentAndChildren(commentId);
+            return true;
+        }
+        return false; 
+    }
+    
+    
+    
+    
 }

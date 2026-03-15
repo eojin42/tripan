@@ -136,8 +136,8 @@ window.searchMates = function() {
                 : `<button class="btn-status-toggle closed" onclick="event.stopPropagation(); window.toggleMateStatus(\${mate.mateId}, 'OPEN')">모집재개</button>`) : '';
 				
 			let mateKebabMenu = isMyPost 
-			    ? `<button class="kebab-item danger" onclick="event.stopPropagation(); window.deleteMatePost(${mate.mateId})">🗑️ 삭제하기</button>`
-			    : `<button class="kebab-item danger" onclick="event.stopPropagation(); openReportModal('MATE', ${mate.mateId})">🚨 신고하기</button>`;
+			    ? `<button class="kebab-item danger" onclick="event.stopPropagation(); window.deleteMatePost(\${mate.mateId})">🗑️ 삭제하기</button>`
+			    : `<button class="kebab-item danger" onclick="event.stopPropagation(); openReportModal('MATE', \${mate.mateId})">🚨 신고하기</button>`;
 
             html += `
             <div class="mate-card" id="mate-card-\${mate.mateId}">
@@ -167,21 +167,39 @@ window.searchMates = function() {
               </div>
 
               <div class="mate-detail-area" id="mate-detail-\${mate.mateId}">
-                <div style="background: rgba(137, 207, 240, 0.05); padding: 20px; border-radius: 12px; font-size: 14px; line-height: 1.6; color: var(--text-dark); margin-bottom: 24px; border: 1px solid rgba(137,207,240,0.2); white-space: pre-wrap; word-break: break-all;">\${mate.content}</div>
+				
+                  <div style="background: linear-gradient(145deg, #F8FAFC, #F0F8FF); border: 1px solid rgba(137,207,240,0.3); border-radius: 16px; padding: 20px; margin-bottom: 24px; display: flex; gap: 32px; flex-wrap: wrap; box-shadow: inset 0 2px 4px rgba(255,255,255,0.8);">
+                      <div>
+                          <span style="font-size: 12px; color: var(--sky-blue); font-weight: 800; display: block; margin-bottom: 6px;">📍 여행 지역</span>
+                          <span style="font-size: 16px; font-weight: 900; color: var(--text-black);">\${mate.sidoName || '전체'}</span>
+                      </div>
+                      <div>
+                          <span style="font-size: 12px; color: var(--sky-blue); font-weight: 800; display: block; margin-bottom: 6px;">📅 여행 일정</span>
+                          <span style="font-size: 16px; font-weight: 900; color: var(--text-black);">\${mate.startDate} ~ \${mate.endDate}</span>
+                      </div>
+                      <div>
+                          <span style="font-size: 12px; color: var(--sky-blue); font-weight: 800; display: block; margin-bottom: 6px;">👥 모집 인원</span>
+                          <span style="font-size: 16px; font-weight: 900; color: var(--text-black);">\${mate.targetCount}명</span>
+                      </div>
+                  </div>
+                  
+                  <div style="font-size: 15px; line-height: 1.6; color: var(--text-dark); white-space: pre-wrap; margin-bottom: 24px; padding: 0 5px;">\${mate.content}</div>
 
-                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 12px;">
-                    <h4 style="margin: 0; font-size: 15px; color:var(--text-black);">💬 댓글 <span id="comment-count-\${mate.mateId}" style="color:var(--sky-blue);">0</span></h4>
-                    <button class="btn-apply" onclick="window.startPrivateChat(\${mate.memberId}, '\${mate.nickname}')">✉️ 작성자에게 톡 보내기</button>
-                </div>
+                  <hr style="border: 0; border-top: 1px dashed var(--border-color); margin-bottom: 20px;">
 
-                <div class="comment-list" id="comment-list-\${mate.mateId}" style="display: flex; flex-direction: column; gap: 12px; margin-bottom: 16px;"></div>
+                  <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 16px;">
+                      <h4 style="margin: 0; font-size: 15px; color:var(--text-black); font-weight: 800;">💬 댓글 <span id="comment-count-\${mate.mateId}" style="color:var(--sky-blue);">0</span></h4>
+                      <button class="btn-apply" onclick="window.startPrivateChat(\${mate.memberId}, '\${mate.nickname}')">✉️ 작성자에게 톡 보내기</button>
+                  </div>
 
-                <div style="display: flex; gap: 8px;">
-                    <input type="text" id="comment-input-\${mate.mateId}" class="lounge-input-style" placeholder="동행에 대해 궁금한 점을 남겨보세요!" style="flex: 1; padding: 10px 14px;">
-                    <button class="btn-submit-lounge" style="padding: 10px 24px; border-radius: 8px;" onclick="window.submitMateComment(\${mate.mateId})">등록</button>
-                </div>
-              </div>
-            </div>`;
+                  <div class="comment-list" id="comment-list-\${mate.mateId}" style="display: flex; flex-direction: column; gap: 12px; margin-bottom: 16px;"></div>
+
+                  <div style="display: flex; gap: 8px;">
+                      <input type="text" id="comment-input-\${mate.mateId}" class="lounge-input-style" placeholder="동행에 대해 궁금한 점을 남겨보세요!" style="flex: 1; padding: 10px 14px; border-radius: 20px;">
+                      <button class="btn-submit-lounge" style="padding: 10px 24px; border-radius: 20px;" onclick="window.submitMateComment(\${mate.mateId})">등록</button>
+                  </div>
+
+              </div> </div>`; 
         });
         container.innerHTML = html;
     }).catch(err => {
@@ -339,12 +357,36 @@ document.addEventListener('click', function(e) {
 });
 
 window.toggleMateStatus = function(mateId, targetStatus) {
-    let msg = targetStatus === 'CLOSED' ? '모집을 마감하시겠습니까?' : '모집을 다시 시작하시겠습니까?';
-    if(!confirm(msg)) return;
-    fetch('${pageContext.request.contextPath}/community/api/mate/' + mateId + '/status?status=' + targetStatus, { method: 'POST', headers: { 'X-Requested-With': 'Fetch' } })
-    .then(res => res.json()).then(result => { if(result.status === 'success') window.searchMates(); else alert(result.message); })
-    .catch(err => console.error('상태 변경 에러:', err));
-};
+    if (!confirm(targetStatus === 'CLOSED' ? '동행 모집을 마감하시겠습니까?' : '동행 모집을 다시 시작하시겠습니까?')) return;
+    
+    const formData = new URLSearchParams();
+    formData.append('status', targetStatus);
+
+    fetch(`${pageContext.request.contextPath}/community/api/mate/status/` + mateId, {
+        method: 'POST',
+        body: formData,
+        headers: { 
+            'X-Requested-With': 'Fetch',
+            'Content-Type': 'application/x-www-form-urlencoded'
+        }
+    })
+    .then(res => {
+        if(res.status === 401) { showLoginModal(); throw new Error('Unauthorized'); }
+        return res.json();
+    })
+    .then(data => {
+        if(data.status === 'success') {
+            if (document.getElementById('mateListContainer') && typeof window.searchMates === 'function') {
+                window.searchMates();
+            } else if (typeof refreshBackgroundProfile === 'function') {
+                refreshBackgroundProfile(false); 
+            }
+        } else {
+            alert(data.message);
+        }
+    })
+    .catch(err => { if(err.message !== 'Unauthorized') console.error(err); });
+}
 
 window.startPrivateChat = function(targetMemberId, targetNickname) {
     if (typeof IS_LOGGED_IN !== 'undefined' && !IS_LOGGED_IN) { showLoginModal(); return; }

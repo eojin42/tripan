@@ -60,16 +60,43 @@
     </insert>
 
     <select id="selectMateById" resultType="com.tripan.app.domain.dto.CommunityMateDto">
-        SELECT m.*, u.nickname, u.profile_image as profilePhoto, r.sido_name as sidoName
+        SELECT 
+            m.mate_id as mateId,
+            m.member_id as memberId,
+            m.region_id as regionId,
+            m.trip_id as tripId,
+            m.target_count as targetCount,
+            TO_CHAR(m.start_date, 'YYYY-MM-DD') as startDate,
+            TO_CHAR(m.end_date, 'YYYY-MM-DD') as endDate,
+            m.title,
+            m.content,
+            m.tags,
+            m.status,
+            m.view_count as viewCount,
+            TO_CHAR(m.created_at, 'YYYY-MM-DD HH24:MI') as createdAt,
+            u.nickname,
+            u.profile_image as profilePhoto,
+            r.sido_name as sidoName
         FROM travel_mate m
         JOIN member2 u ON m.member_id = u.member_id
         JOIN region r ON m.region_id = r.region_id
         WHERE m.mate_id = #{mateId}
     </select>
     
+    <update id="updateMateViewCount">
+        UPDATE travel_mate 
+        SET view_count = view_count + 1 
+        WHERE mate_id = #{mateId}
+    </update>
+    
     <update id="updateMateStatus">
         UPDATE travel_mate SET status = #{status} WHERE mate_id = #{mateId}
     </update>
+    
+    <delete id="deleteMatePost">
+        DELETE FROM travel_mate 
+        WHERE mate_id = #{mateId}
+    </delete>
     
 	<select id="getUserMateList" parameterType="long" resultType="com.tripan.app.domain.dto.CommunityMateDto">
 	    SELECT 

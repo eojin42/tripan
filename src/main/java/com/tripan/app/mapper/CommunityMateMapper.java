@@ -20,4 +20,7 @@ public interface CommunityMateMapper {
     void updateMateStatus(@Param("mateId") Long mateId, @Param("status") String status);
     
     List<CommunityMateDto> getUserMateList(Long memberId);
+    void updateMateViewCount(Long mateId);
+
+    void deleteMatePost(Long mateId);
 }

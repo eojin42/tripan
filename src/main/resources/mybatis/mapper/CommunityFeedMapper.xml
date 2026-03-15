@@ -15,7 +15,7 @@
 	            repost_count,
 	            created_at
 	        ) VALUES (
-	            FEED_POST_SEQ.NEXTVAL, #{memberId},
+	            FEED_POST_SEQ.NEXTVAL, #{memberId},	
 	            #{tripId, jdbcType=NUMERIC}, #{content},
 	            #{imageUrl, jdbcType=VARCHAR},
 	            0,
@@ -174,9 +174,9 @@
 	    WHERE F.member_id = #{targetMemberId}  ORDER BY F.post_id DESC
 	</select>
 	
-	<select id="getUserActivityList" parameterType="long" resultType="com.tripan.app.domain.dto.CommunityUserActivityDto">
+<select id="getUserActivityList" parameterType="long" resultType="com.tripan.app.domain.dto.CommunityUserActivityDto">
 	    
-	    SELECT 'COMMENT_FEED' as activityType, '💬' as icon, '[피드]' as metaInfo,
+	    SELECT 'COMMENT_FEED' as activityType, '💬' as icon, '[Feed]' as metaInfo,
 	        (SELECT nickname FROM member2 WHERE member_id = fp.member_id) || ' 님의 피드에 댓글을 남겼습니다.' as targetTitle,
 	        pc.content as content,
 	        TO_CHAR(pc.created_at, 'YYYY-MM-DD HH24:MI') as createdAt,
@@ -187,7 +187,7 @@
 	
 	    UNION ALL
 	
-	    SELECT 'COMMENT_LOUNGE', '💬', '[라운지]',
+	    SELECT 'COMMENT_LOUNGE', '💬', '[Lounge]',
 	        '"' || fb.title || '" 글에 답변을 남겼습니다.',
 	        fc.content,
 	        TO_CHAR(fc.created_at, 'YYYY-MM-DD HH24:MI'),
@@ -198,7 +198,7 @@
 	
 	    UNION ALL
 	
-	    SELECT 'COMMENT_MATE', '💬', '[동행]',
+	    SELECT 'COMMENT_MATE', '💬', '[Travel Mate]',
 	        '"' || tm.title || '" 글에 댓글을 남겼습니다.',
 	        tmc.content,
 	        TO_CHAR(tmc.created_at, 'YYYY-MM-DD HH24:MI'),
@@ -209,7 +209,7 @@
 	
 	    UNION ALL
 	
-	    SELECT 'LIKE_FEED', '❤️', '[피드]',
+	    SELECT 'LIKE_FEED', '❤️', '[Feed]',
 	        (SELECT nickname FROM member2 WHERE member_id = fp.member_id) || ' 님의 피드를 좋아합니다.',
 	        NULL, 
 	        TO_CHAR(l.created_at, 'YYYY-MM-DD HH24:MI'),
@@ -220,7 +220,7 @@
 	
 	    UNION ALL
 	
-	    SELECT 'LIKE_LOUNGE', '❤️', '[라운지]',
+	    SELECT 'LIKE_LOUNGE', '❤️', '[Lounge]',
 	        '"' || fb.title || '" 글을 좋아합니다.',
 	        NULL,
 	        TO_CHAR(l.created_at, 'YYYY-MM-DD HH24:MI'),
@@ -231,7 +231,7 @@
 	
 	    UNION ALL
 	
-	    SELECT 'WRITE_LOUNGE', '📝', '[라운지]',
+	    SELECT 'WRITE_LOUNGE', '📝', '[Lounge]',
 	        '새로운 라운지 글을 작성했습니다.',
 	        fb.title,
 	        TO_CHAR(fb.created_at, 'YYYY-MM-DD HH24:MI'),
@@ -241,7 +241,7 @@
 	
 	    UNION ALL
 	
-	    SELECT 'WRITE_MATE', '📝', '[동행]',
+	    SELECT 'WRITE_MATE', '📝', '[Travel Mate]',
 	        '새로운 동행 모집글을 작성했습니다.',
 	        tm.title,
 	        TO_CHAR(tm.created_at, 'YYYY-MM-DD HH24:MI'),
@@ -250,6 +250,21 @@
 	    WHERE tm.member_id = #{memberId}
 	
 	    ORDER BY 6 DESC
+	</select>
+	
+	<select id="getFeedDetailFull" parameterType="map" resultType="com.tripan.app.domain.dto.CommunityFeedListDto">
+	    SELECT 
+	        F.post_id, F.member_id,
+	        DBMS_LOB.SUBSTR(F.content, 4000, 1) as content,
+	        F.image_url, F.like_count,
+	        TO_CHAR(F.created_at, 'YYYY-MM-DD HH24:MI') as created_at,
+	        M.nickname, M.profile_image, 
+	        T.trip_id, T.trip_name, NVL(T.total_budget, 0) as total_budget,
+	        (SELECT COUNT(*) FROM follow WHERE follower_id = #{loginMemberId} AND following_id = F.member_id) as is_following
+	    FROM feed_post F
+	    LEFT JOIN member2 M ON F.member_id = M.member_id
+	    LEFT JOIN trip T ON F.trip_id = T.trip_id
+	    WHERE F.post_id = #{postId} AND F.del_yn = 'N'
 	</select>
 	
 	

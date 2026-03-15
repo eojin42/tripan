@@ -227,6 +227,15 @@ public class CommunityFeedServiceImpl implements CommunityFeedService {
     public List<CommunityUserActivityDto> getUserActivityList(Long memberId) {
         return feedMapper.getUserActivityList(memberId);
     }
+    
+    @Override
+    public CommunityFeedListDto getFeedDetailFull(Long postId, Long loginMemberId) {
+        Map<String, Object> params = new HashMap<>();
+        params.put("postId", postId);
+        params.put("loginMemberId", loginMemberId); // 로그인 안 했으면 -1L이 들어감
+        
+        return feedMapper.getFeedDetailFull(params);
+    }
 
     
     
