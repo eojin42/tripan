@@ -92,6 +92,10 @@
     .btn-row-restore:hover { background: #DCFCE7; }
 
     .filter-row .btn { display: inline-flex; align-items: center; gap: 6px; }
+    .btn-reset { background: var(--bg); color: var(--muted); border: 1.5px solid var(--border); border-radius: 10px; height: 38px; padding: 0 14px; font-size: 13px; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; gap: 5px; transition: all 0.15s; }
+    .btn-reset:hover { background: #F1F5F9; color: var(--text); border-color: #94A3B8; }
+    .btn-reset svg { transition: transform 0.35s cubic-bezier(0.34,1.56,0.64,1); }
+    .btn-reset:hover svg { transform: rotate(-180deg); }
   </style>
 </head>
 <body>
@@ -165,6 +169,10 @@
             </select>
           </div>
 
+          <button class="btn-reset" onclick="resetFilter()" title="검색 초기화">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-3.51"/></svg>
+            초기화
+          </button>
           <button class="btn btn-primary" onclick="searchDormant()">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
             검색
@@ -358,6 +366,14 @@ let currentPage   = 1;
 const rowsPerPage = 10;
 let hasSearched   = false;
 let deleteTarget  = null; // 단건 파기 대상 이메일
+
+/* 검색 초기화 */
+function resetFilter() {
+  document.getElementById('searchCategory').value = 'id';
+  document.getElementById('searchInput').value    = '';
+  document.getElementById('filterDeadline').value = 'ALL';
+  searchDormant();
+}
 
 /* 검색 & 필터 */
 function searchDormant() {

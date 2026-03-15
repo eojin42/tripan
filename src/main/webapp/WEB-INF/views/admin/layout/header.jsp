@@ -1,7 +1,15 @@
 <%@ page contentType="text/html; charset=UTF-8"%>
 <header class="top-header">
   
-  <div class="header-left" style="display: flex; align-items: center;">
+  <div class="header-left" style="display: flex; align-items: center; gap: 12px;">
+    <%-- 모바일 전용 햄버거 버튼 (768px 이하에서만 표시) --%>
+    <button class="mobile-menu-btn hamburger-btn" onclick="openMobileSidebar()" title="메뉴 열기" style="flex-shrink:0;">
+      <svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round">
+        <line x1="3" y1="12" x2="21" y2="12"></line>
+        <line x1="3" y1="6" x2="21" y2="6"></line>
+        <line x1="3" y1="18" x2="21" y2="18"></line>
+      </svg>
+    </button>
     <a href="${pageContext.request.contextPath}/admin/dashboard" class="brand-logo">
       <div class="logo-text-wrapper">
         <span class="trip">Trip</span><span class="an">an</span> 
