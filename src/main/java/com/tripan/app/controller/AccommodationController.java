@@ -70,14 +70,20 @@ public class AccommodationController {
     }
     
     @GetMapping("detail/{id}")
-    public String detail(@PathVariable("id") Long id, HttpSession session, Model model) {
+    public String detail(@PathVariable("id") Long id, 
+                         @RequestParam(value = "checkin", required = false) String checkin,
+                         @RequestParam(value = "checkout", required = false) String checkout,
+                         HttpSession session, Model model) {
         
-    	MemberDto loginUser = (MemberDto) session.getAttribute("loginUser");
+        MemberDto loginUser = (MemberDto) session.getAttribute("loginUser");
         Long memberId = (loginUser != null) ? loginUser.getMemberId() : null;
 
-        AccommodationDetailDto detail = accommodationService.getAccommodationDetail(id, memberId);
+        AccommodationDetailDto detail = accommodationService.getAccommodationDetail(id, memberId, checkin, checkout);
         model.addAttribute("detail", detail);
 
+        List<String> bookedDates = accommodationService.getFullyBookedDates(id);
+        model.addAttribute("bookedDates", bookedDates);
+        
         return "accommodation/detail";
     }
     
@@ -97,7 +103,7 @@ public class AccommodationController {
         model.addAttribute("child", child);
 
         RoomDto room = accommodationService.findRoomById(roomId);
-        model.addAttribute("roomName", room.getRoomName());
+        model.addAttribute("room", room);
         
         // 숙박 일수(Nights) 계산 로직
         long nights = 1; 
@@ -128,14 +134,15 @@ public class AccommodationController {
     public Map<String, Object> checkLock(@RequestBody Map<String, String> payload, HttpSession session) {
         String roomId = payload.get("roomId");
         String checkin = payload.get("checkin");
+        String checkout = payload.get("checkout");
         String sessionId = session.getId(); 
 
-        boolean isLocked = accommodationService.acquireLock(roomId, checkin, sessionId);
+        boolean isLocked = accommodationService.acquireLock(roomId, checkin, checkout, sessionId);
 
         Map<String, Object> response = new HashMap<>();
         response.put("success", isLocked);
         if (!isLocked) {
-            response.put("message", "현재 다른 사용자가 결제를 진행 중인 객실입니다. 5분 뒤에 다시 시도해 주세요.");
+        	response.put("message", "현재 결제가 몰려 해당 객실의 남은 방이 없습니다. 잠시 후 다시 시도해 주세요.");
         }
         return response;
     }
@@ -158,8 +165,6 @@ public class AccommodationController {
             @RequestBody ReservationRequestDto requestDto, 
             HttpSession session) {
         
-        System.out.println("💳 프론트에서 넘어온 결제 데이터: " + requestDto);
-
         Map<String, Object> response = new HashMap<>();
 
         try {
@@ -172,8 +177,10 @@ public class AccommodationController {
             }
             
             requestDto.setMemberId(loginUser.getMemberId()); 
+            
+            String sessionId = session.getId();
 
-            accommodationService.processReservation(requestDto);
+            accommodationService.processReservation(requestDto, sessionId);
             
             response.put("success", true); 
 

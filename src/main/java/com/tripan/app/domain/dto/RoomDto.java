@@ -6,6 +6,8 @@ import lombok.Setter;
 @Getter
 @Setter
 public class RoomDto {
+	private String placeName;
+	
     private String roomId;
     private String roomName;
     private Integer roomBaseCount; 
@@ -14,4 +16,9 @@ public class RoomDto {
     private String roomIntro;      
     
     private String roomImageUrl;
+    
+    private int roomCount;           
+    private boolean available = true;
+    
+    private int remainingCount;
 }

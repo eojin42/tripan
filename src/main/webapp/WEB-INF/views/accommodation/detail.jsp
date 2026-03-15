@@ -263,15 +263,48 @@
                 <c:set var="totalPrice" value="${finalPrice * calcNights}" />
                 <c:set var="imgUrl" value="${not empty room.roomImageUrl ? room.roomImageUrl : 'https://images.unsplash.com/photo-1611892440504-42a792e24d32?w=600'}" />
 
-                <div class="room-info-card" onclick="selectRoom('${room.roomId}', '${fn:escapeXml(room.roomName)}', '${imgUrl}', '${room.roomBaseCount}', '${room.maxCapacity}', '<fmt:formatNumber value="${finalPrice}"/>', '<fmt:formatNumber value="${totalPrice}"/>')">
-                  <img src="${imgUrl}" class="room-info-img" alt="${room.roomName}">
-                  <div class="room-info-text">
-                    <h4 class="ri-name">${room.roomName}</h4>
-                    <p class="ri-capa">기준 ${room.roomBaseCount}명 / 최대 ${room.maxCapacity}명</p>
-                    <div class="ri-price">₩<fmt:formatNumber value="${finalPrice}" pattern="#,###"/>~ <span style="font-size:13px; font-weight:500; color:#718096;">/박</span></div>
-                  </div>
-                  <button class="btn-select-room">객실 선택</button>
-                </div>
+                <c:set var="isCapacityExceeded" value="${totalReq > room.maxCapacity}" />
+
+				<div class="room-info-card" 
+				     <c:if test="${room.available and !isCapacityExceeded}">
+				        onclick="selectRoom('${room.roomId}', '${fn:escapeXml(room.roomName)}', '${imgUrl}', '${room.roomBaseCount}', '${room.maxCapacity}', '<fmt:formatNumber value="${finalPrice}"/>', '<fmt:formatNumber value="${totalPrice}"/>')"
+				     </c:if>
+				     <c:if test="${!room.available}">
+				        style="opacity: 0.6; cursor: not-allowed; background-color: #f8f9fa;" title="선택하신 날짜에는 예약이 마감된 객실입니다."
+				     </c:if>
+				     <c:if test="${room.available and isCapacityExceeded}">
+				        style="opacity: 0.6; cursor: not-allowed; background-color: #f8f9fa;" title="최대 수용 인원을 초과하여 선택할 수 없습니다."
+				     </c:if>>
+				  
+				  <img src="${imgUrl}" class="room-info-img" alt="${room.roomName}">
+				  <div class="room-info-text">
+				    <h4 class="ri-name">${room.roomName}</h4>
+				    <p class="ri-capa">
+				        기준 ${room.roomBaseCount}명 / 최대 ${room.maxCapacity}명 
+				        <c:choose>
+				            <c:when test="${not empty param.checkin and not empty param.checkout}">
+				                <span style="color:#E53E3E; font-weight:800; margin-left:8px;">(남은 객실: ${room.remainingCount}개)</span>
+				            </c:when>
+				            <c:otherwise>
+				                <span style="color:var(--text-gray); margin-left:8px;">(총 객실: ${room.roomCount}개)</span>
+				            </c:otherwise>
+				        </c:choose>
+				    </p>
+				    <div class="ri-price">₩<fmt:formatNumber value="${finalPrice}" pattern="#,###"/>~ <span style="font-size:13px; font-weight:500; color:#718096;">/박</span></div>
+				  </div>
+				  
+				  <c:choose>
+				    <c:when test="${!room.available}">
+				        <button class="btn-select-room" style="background:#A0AEC0; cursor:not-allowed;" disabled>예약 마감</button>
+				    </c:when>
+				    <c:when test="${isCapacityExceeded}">
+				        <button class="btn-select-room" style="background:#F56565; color:white; cursor:not-allowed;" disabled>인원 초과</button>
+				    </c:when>
+				    <c:otherwise>
+				        <button class="btn-select-room">객실 선택</button>
+				    </c:otherwise>
+				  </c:choose>
+				</div>
               </c:forEach>
             </div>
         </div>
@@ -355,19 +388,47 @@
       <c:set var="totalPrice" value="${finalPrice * calcNights}" />
       <c:set var="imgUrl" value="${not empty room.roomImageUrl ? room.roomImageUrl : 'https://images.unsplash.com/photo-1611892440504-42a792e24d32?w=600'}" />
 
-      <div class="rm-item" id="rm-item-${room.roomId}" onclick="selectRoom('${room.roomId}', '${fn:escapeXml(room.roomName)}', '${imgUrl}', '${room.roomBaseCount}', '${room.maxCapacity}', '<fmt:formatNumber value="${finalPrice}"/>', '<fmt:formatNumber value="${totalPrice}"/>')">
-        <img src="${imgUrl}" alt="${room.roomName}">
-        <div class="rm-item-info">
-          <div class="rm-i-name">${room.roomName}</div>
-          <div class="rm-i-capa">기준 ${room.roomBaseCount}명 (최대 ${room.maxCapacity}명)</div>
-          <div class="rm-i-price">₩<fmt:formatNumber value="${finalPrice}" pattern="#,###"/>~ <span style="font-size:12px; font-weight:500; color:var(--text-gray);">/박</span></div>
-        </div>
-      </div>
+      <div class="rm-item" id="rm-item-${room.roomId}" 
+	     <c:if test="${room.available}">
+	        onclick="selectRoom('${room.roomId}', '${fn:escapeXml(room.roomName)}', '${imgUrl}', '${room.roomBaseCount}', '${room.maxCapacity}', '<fmt:formatNumber value="${finalPrice}"/>', '<fmt:formatNumber value="${totalPrice}"/>')"
+	     </c:if>
+	     <c:if test="${!room.available}">
+	        style="opacity: 0.5; pointer-events: none; background-color: #f8f9fa;"
+	     </c:if>>
+	     
+	  <img src="${imgUrl}" alt="${room.roomName}">
+	  <div class="rm-item-info">
+	    <div class="rm-i-name">${room.roomName}</div>
+	    <div class="rm-i-capa">
+	        기준 ${room.roomBaseCount}명 (최대 ${room.maxCapacity}명)
+	        <c:choose>
+	            <c:when test="${not empty param.checkin and not empty param.checkout}">
+	                <span style="color:#E53E3E; font-weight:800; margin-left:4px;">| 남은 객실: ${room.remainingCount}개</span>
+	            </c:when>
+	            <c:otherwise>
+	                <span style="color:var(--text-gray); margin-left:4px;">| 총 객실: ${room.roomCount}개</span>
+	            </c:otherwise>
+	        </c:choose>
+	    </div>
+	    <div class="rm-i-price">₩<fmt:formatNumber value="${finalPrice}" pattern="#,###"/>~ <span style="font-size:12px; font-weight:500; color:var(--text-gray);">/박</span></div>
+	  </div>
+	  
+	  <c:if test="${!room.available}">
+	      <span style="color:#E53E3E; font-size:14px; font-weight:800; align-self:center; margin-left:auto; padding-right:10px;">마감</span>
+	  </c:if>
+	</div>
     </c:forEach>
   </div>
 </div>
 
 <script type="text/javascript">
+// 마감 날짜 => JS 배열
+window.disabledDates = [
+    <c:forEach var="date" items="${bookedDates}" varStatus="status">
+        '${date}'${!status.last ? ',' : ''}
+    </c:forEach>
+];
+
 //--- 1. 슬라이더 (캐러셀) 자바스크립트 ---
 let currentSlide = 0;
 let slides = [];
@@ -530,7 +591,7 @@ function submitReservation() {
     fetch('${pageContext.request.contextPath}/accommodation/check-lock', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ roomId: currentSelectedRoomId, checkin: checkin })
+        body: JSON.stringify({ roomId: currentSelectedRoomId, checkin: checkin, checkout: checkout })
     })
     .then(res => res.json())
     .then(data => {
@@ -584,5 +645,8 @@ function saveRecentAccom() {
 saveRecentAccom();
 </script>
 
-<jsp:include page="../accommodation/searchModal.jsp" />
+<jsp:include page="../accommodation/searchModal.jsp">
+    <jsp:param name="hideRegion" value="true" />
+</jsp:include>
+
 <jsp:include page="../layout/footer.jsp" />

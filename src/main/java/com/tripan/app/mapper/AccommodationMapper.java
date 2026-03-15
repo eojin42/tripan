@@ -1,6 +1,7 @@
 package com.tripan.app.mapper;
 
 import java.util.List;
+import java.util.Map;
 
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
@@ -25,9 +26,10 @@ public interface AccommodationMapper {
     
     // 동시성 문제 해결 관련
     void deleteExpiredLocks();
-    String getRoomLockSession(@Param("roomId") String roomId, @Param("checkin") String checkin);
+    int countActiveLocks(@Param("roomId") String roomId, @Param("checkin") String checkin, @Param("sessionId") String sessionId);
+    int checkMyLock(@Param("roomId") String roomId, @Param("checkin") String checkin, @Param("sessionId") String sessionId);
     void insertRoomLock(@Param("roomId") String roomId, @Param("checkin") String checkin, @Param("sessionId") String sessionId);
-    void updateLockTime(@Param("roomId") String roomId, @Param("checkin") String checkin);
+    void updateLockTime(@Param("roomId") String roomId, @Param("checkin") String checkin, @Param("sessionId") String sessionId);
     void deleteRoomLock(@Param("roomId") String roomId, @Param("checkin") String checkin, @Param("sessionId") String sessionId);
     
     // 예약, 결제 관련
@@ -41,4 +43,9 @@ public interface AccommodationMapper {
     int checkBookmark(@Param("placeId") Long placeId, @Param("memberId") Long memberId);
     void insertBookmark(@Param("placeId") Long placeId, @Param("memberId") Long memberId);
     void deleteBookmark(@Param("placeId") Long placeId, @Param("memberId") Long memberId);
+    
+    // 예약 필터링
+    int checkRoomBookingCount(@Param("roomId") String roomId, @Param("checkin") String checkin, @Param("checkout") String checkout);
+    int getTotalRoomCountByPlace(Long placeId);
+    List<Map<String, Object>> selectFutureReservationsByPlace(Long placeId);
 }

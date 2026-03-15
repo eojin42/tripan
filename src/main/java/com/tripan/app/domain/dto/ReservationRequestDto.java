@@ -16,9 +16,11 @@ public class ReservationRequestDto {
     private int adult;
     private int child;
     private Long amount;
+    private String request;
     private String payMethod;
     
     private Long memberId; 
     
-    private Long reservationId; 
+    private Long reservationId;
+    
 }
