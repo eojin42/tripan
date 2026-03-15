@@ -157,6 +157,19 @@
     .content-split { flex-direction: column; }
     .sticky-sidebar { width: 100%; position: static; }
   }
+  
+  /* 편의시설 그리드 스타일 추가 */
+  .facility-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; margin-top: 16px; }
+  .facility-item { display: flex; align-items: center; gap: 10px; font-size: 15px; color: var(--text-black); }
+  .facility-item i { font-size: 20px; color: var(--text-gray); width: 24px; text-align: center; }
+  .fac-emoji { font-size: 22px; }
+
+  /* 주변 상권 요약 박스 스타일 */
+  .nearby-summary-box { background: #F8F9FA; padding: 16px 20px; border-radius: 8px; margin-top: 16px; display: flex; align-items: center; gap: 12px; font-size: 14px; font-weight: 600; color: var(--point-blue); border: 1px solid #E6F4FF; }
+  
+  @media (max-width: 768px) {
+    .facility-grid { grid-template-columns: repeat(2, 1fr); }
+  }
 </style>
 
 <div class="detail-page-wrapper">
@@ -246,11 +259,35 @@
         </div>
 
         <div id="sec-intro" class="scroll-section">
-            <h3 class="section-title">온몸으로 자연을 느끼며, 자연스러운 호흡을 되찾는 곳</h3>
-            <p class="intro-text">
-               ${detail.description != null ? detail.description : '자연을 곁에 두고 담백한 풍류와 명상을 즐겼던 선조들의 모습에서 영감을 받아 만들어진 이 공간. 이곳에서 빠르게 지나가는 일상 속 복잡함을 잠시 내려놓고, 자연의 소리에 귀 기울이며 지금 나에게 집중해보세요.'}
-            </p>
+            <h3 class="section-title">${detail.description != null ? detail.description : '숙소에 대한 설명이 없습니다.'}</h3>
         </div>
+        
+        <div id="sec-facilities" class="scroll-section">
+		    <h3 class="section-title">편의시설</h3>
+		    <div class="facility-grid">
+		        <c:if test="${detail.fitness == 1}">
+		            <div class="facility-item"><span class="fac-emoji">🏋️‍♂️</span> 체력단련장</div>
+		        </c:if>
+		        <c:if test="${detail.chkcooking == 1}">
+		            <div class="facility-item"><span class="fac-emoji">🍳</span> 취사 가능</div>
+		        </c:if>
+		        <c:if test="${detail.barbecue == 1}">
+		            <div class="facility-item"><span class="fac-emoji">🍖</span> 바비큐</div>
+		        </c:if>
+		        <c:if test="${detail.beverage == 1}">
+		            <div class="facility-item"><span class="fac-emoji">☕</span> 식음료/조식</div>
+		        </c:if>
+		        <c:if test="${detail.karaoke == 1}">
+		            <div class="facility-item"><span class="fac-emoji">🎤</span> 노래방</div>
+		        </c:if>
+		        <c:if test="${detail.publicpc == 1}">
+		            <div class="facility-item"><span class="fac-emoji">💻</span> 공용 PC</div>
+		        </c:if>
+		        <c:if test="${detail.sauna == 1}">
+		            <div class="facility-item"><span class="fac-emoji">♨️</span> 사우나</div>
+		        </c:if>
+		    </div>
+		</div>
 
         <div id="sec-rooms" class="scroll-section">
             <h3 class="section-title">객실 선택</h3>
@@ -315,15 +352,22 @@
         </div>
 
         <div id="sec-info" class="scroll-section">
-            <h3 class="section-title">위치 및 정보</h3>
-            <p class="intro-text">📍 ${detail.region}</p>
-        </div>
+		    <h3 class="section-title">위치 및 정보</h3>
+		    <p class="intro-text" style="margin-bottom:12px;">📍 ${detail.region}</p>
+		    
+		    <div id="map" style="width:100%; height:350px; border-radius:8px; margin-bottom:16px;"></div>
+		    <div id="nearbySummary" class="nearby-summary-box">
+		        <div class="spinner-border spinner-border-sm text-primary" role="status"></div>
+		        <span>주변 편의시설 정보를 불러오는 중입니다...</span>
+		    </div>
+		</div>
 
         <div id="sec-notice" class="scroll-section">
             <h3 class="section-title">안내사항</h3>
             <p class="intro-text">
                🕒 체크인: ${detail.checkinTime} <br>
                🕛 체크아웃: ${detail.checkoutTime} <br>
+               🚗 주차 : ${detail.parkinglodging} <br>
                ⚠️ 객실 내 흡연 및 반려동물 동반은 엄격히 금지되어 있습니다.
             </p>
         </div>
@@ -420,6 +464,8 @@
     </c:forEach>
   </div>
 </div>
+
+<script src="//dapi.kakao.com/v2/maps/sdk.js?appkey=${kakaoApiKey}&libraries=services"></script>
 
 <script type="text/javascript">
 // 마감 날짜 => JS 배열
@@ -617,6 +663,63 @@ function downloadCoupon() {
     // 백엔드 쿠폰 테이블에 INSERT 처리 후 성공하면 알림을 띄우는 로직이 들어갑니다.
     alert("쿠폰이 발급되었습니다! 예약 결제 시 사용 가능합니다. 🎉");
 }
+
+document.addEventListener("DOMContentLoaded", () => {
+    const lat = ${detail.latitude};
+    const lng = ${detail.longitude};
+    
+    if (lat && lng) {
+        const mapContainer = document.getElementById('map');
+        const locPosition = new kakao.maps.LatLng(lat, lng);
+        
+        const mapOption = { 
+            center: locPosition, 
+            level: 4 // 확대 레벨
+        };
+
+        // 지도 생성 및 마커 표시
+        const map = new kakao.maps.Map(mapContainer, mapOption);
+        const marker = new kakao.maps.Marker({ position: locPosition });
+        marker.setMap(map);
+
+        // 장소 검색 객체 생성
+        const ps = new kakao.maps.services.Places(map); 
+
+        // 검색할 카테고리: 편의점(CS2), 약국(PM9), 대형마트(MT1)
+        const searchCategories = ['CS2', 'PM9', 'MT1'];
+        const categoryNames = { 'CS2': '편의점', 'PM9': '약국', 'MT1': '대형마트' };
+        let results = [];
+        let completedReqs = 0;
+
+        searchCategories.forEach(code => {
+            ps.categorySearch(code, function(data, status, pagination) {
+                if (status === kakao.maps.services.Status.OK) {
+                    if (pagination.totalCount > 0) {
+                        results.push(`\${categoryNames[code]} \${pagination.totalCount}개`);
+                    }
+                }
+                
+                completedReqs++;
+                
+                // 3가지 검색이 모두 끝났을 때 텍스트 렌더링
+                if (completedReqs === searchCategories.length) {
+                    const summaryEl = document.getElementById('nearbySummary');
+                    if (results.length > 0) {
+                        summaryEl.innerHTML = `<i class="bi bi-info-circle-fill"></i> 도보 5분(500m) 거리 내 <strong>\${results.join(', ')}</strong>가 있습니다.`;
+                    } else {
+                        summaryEl.innerHTML = `<i class="bi bi-info-circle"></i> 반경 500m 내에 검색된 주요 편의시설이 없습니다.`;
+                    }
+                }
+            }, {
+                location: locPosition,
+                radius: 500 // 반경 500m
+            });
+        });
+    } else {
+        document.getElementById('map').style.display = 'none';
+        document.getElementById('nearbySummary').style.display = 'none';
+    }
+});
 
 //최근 본 숙소 localStorage 저장
 function saveRecentAccom() {

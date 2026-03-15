@@ -84,6 +84,8 @@ public class AccommodationController {
         List<String> bookedDates = accommodationService.getFullyBookedDates(id);
         model.addAttribute("bookedDates", bookedDates);
         
+        model.addAttribute("kakaoApiKey", kakaoApiKey);
+        
         return "accommodation/detail";
     }
     
