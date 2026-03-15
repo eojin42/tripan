@@ -133,7 +133,7 @@
           </c:when>
           <c:otherwise>
             <c:forEach var="mate" items="${mateList}">
-              <div class="profile-mate-card" onclick="loadTabContent('mate', event)" style="${mate.status == 'CLOSED' ? 'opacity: 0.7;' : 'cursor:pointer;'}">
+              <div class="profile-mate-card" onclick="loadMateDetail(${mate.mateId})" style="${mate.status == 'CLOSED' ? 'opacity: 0.7;' : 'cursor:pointer;'}">
                 <div>
                   <div style="display: flex; gap: 8px; margin-bottom: 8px; align-items: center;">
                     <span class="pm-region" style="${mate.status == 'CLOSED' ? 'background:#A0AEC0;' : ''}">${mate.sidoName}</span>
@@ -189,37 +189,35 @@
       </div>
     </div>
 
-<div id="tab-activity" class="tab-pane">
-    <div class="profile-content-list">
-      <c:choose>
-        <c:when test="${empty activityList}">
-          <div class="glass-card" style="text-align: center; padding: 40px; color: var(--text-gray);">
-            아직 활동 내역이 없습니다. 부지런히 여행자들과 소통해 보세요! 🏃
-          </div>
-        </c:when>
-        <c:otherwise>
-          <c:forEach var="act" items="${activityList}">
-            
-            <div class="activity-item" 
-                 onclick="${act.activityType == 'COMMENT_LOUNGE' ? 'loadBoardDetail(' += act.targetUrlId += ')' : 'alert(\'피드 원본 이동은 준비 중입니다!\')'}">
-              
-              <div class="act-icon">${act.icon}</div>
-              <div class="act-content">
-                <p class="act-meta"><strong>${act.metaInfo}</strong> ${act.targetTitle}</p>
-                <c:if test="${not empty act.content}">
-                  <p class="act-text">"${act.content}"</p>
-                </c:if>
-                <span class="act-date">${act.createdAt}</span>
-              </div>
-            </div>
+	<div id="tab-activity" class="tab-pane">
+	  <div class="profile-content-list">
+	    <c:choose>
+	      <c:when test="${empty activityList}">
+	        <div class="glass-card" style="text-align: center; padding: 40px; color: var(--text-gray);">
+	          아직 활동 내역이 없습니다. 부지런히 여행자들과 소통해 보세요! 🏃
+	        </div>
+	      </c:when>
+	      <c:otherwise>
+	        <c:forEach var="act" items="${activityList}">
+	          
+			<div class="activity-item" 
+			     onclick="${act.activityType.contains('FEED') ? 'openFeedModal(' += act.targetUrlId += ')' : (act.activityType.contains('LOUNGE') ? 'loadBoardDetail(' += act.targetUrlId += ')' : 'loadMateDetail(' += act.targetUrlId += ')')}">
+	            
+	            <div class="act-icon">${act.icon}</div>
+	            <div class="act-content">
+	              <p class="act-meta"><strong>${act.metaInfo}</strong> ${act.targetTitle}</p>
+	              <c:if test="${not empty act.content}">
+	                <p class="act-text">"${act.content}"</p>
+	              </c:if>
+	              <span class="act-date">${act.createdAt}</span>
+	            </div>
+	          </div>
 
-          </c:forEach>
-        </c:otherwise>
-      </c:choose>
-    </div>
-  </div>
-
-</div>
+	        </c:forEach>
+	      </c:otherwise>
+	    </c:choose>
+	  </div>
+	</div>
 
 <script>
   function switchProfileTab(element, tabName) {

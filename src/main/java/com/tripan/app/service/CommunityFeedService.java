@@ -33,6 +33,8 @@ public interface CommunityFeedService {
 	List<CommunityFeedListDto> getUserFeedList(Long targetMemberId, Long loginMemberId);
 	
 	List<CommunityUserActivityDto> getUserActivityList(Long memberId);
+
+	CommunityFeedListDto getFeedDetailFull(Long postId, Long loginMemberId);
 	
 	
 }

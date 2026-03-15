@@ -53,6 +53,8 @@ public interface CommunityFeedMapper {
     List<CommunityFeedListDto> getUserFeedList(Map<String, Object> params);
 
     List<CommunityUserActivityDto> getUserActivityList(Long memberId);
+    
+    CommunityFeedListDto getFeedDetailFull(Map<String, Object> params);
 
     
 }

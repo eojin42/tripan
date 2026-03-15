@@ -16,7 +16,6 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
-import org.springframework.web.bind.annotation.RestController;
 
 import com.tripan.app.domain.dto.CommunityChatRoomDto;
 import com.tripan.app.domain.dto.CommunityFeedCommentDto;
@@ -90,7 +89,7 @@ public class CommunityController {
     @GetMapping("/fragment/{tabType}")
     public String handleFragment(@PathVariable("tabType") String tabType, 
                                  @RequestParam(value = "category", required = false, defaultValue = "all") String category,
-                                 @RequestParam(value = "memberId", required = false) Long targetMemberId, // 🌟 1. 프로필 조회를 위해 파라미터 추가!
+                                 @RequestParam(value = "memberId", required = false) Long targetMemberId,
                                  HttpServletRequest request, Model model, HttpSession session) {
         
         String requestedWith = request.getHeader("X-Requested-With");
@@ -101,6 +100,8 @@ public class CommunityController {
                 List<CommunityFreeBoardDto> list = freeboardService.getBoardList(category);
                 model.addAttribute("boardList", list);
                 log.info("자유게시판 목록 조회 완료: {}건, 카테고리: {}", list.size(), category); 
+                
+                return "community/fragment/freeboard/freeboard_list";
                 
             } else if ("mate".equals(tabType)) {
                 return "community/fragment/mate/mate_list"; 
@@ -224,9 +225,32 @@ public class CommunityController {
             model.addAttribute("comments", comments);
             model.addAttribute("isLiked", isLiked); 
             
-            return "community/fragment/freeboard_detail"; 
+            return "community/fragment/freeboard/freeboard_detail"; 
         }
         return "redirect:/community/freeboard";
+    }
+    
+    @GetMapping("/mate/detail/{mateId}")
+    public String handleMateDetail(@PathVariable("mateId") Long mateId, 
+                                   @RequestParam(value="updateView", defaultValue="true") boolean updateView, 
+                                   HttpServletRequest request, Model model, HttpSession session) {
+        
+        String requestedWith = request.getHeader("X-Requested-With");
+        
+        if ("Fetch".equals(requestedWith) || "XMLHttpRequest".equals(requestedWith)) {
+            
+            CommunityMateDto mate = mateService.getMateDetail(mateId, updateView);
+            
+            MemberDto loginUser = (MemberDto) session.getAttribute("loginUser");
+            Long loginId = (loginUser != null) ? loginUser.getMemberId() : -1L;
+            
+            model.addAttribute("mate", mate);
+            model.addAttribute("loginUserId", loginId);
+            
+            return "community/fragment/mate/mate_detail"; 
+        }
+        
+        return "redirect:/community/feed?tab=mate";
     }
     
     /**
@@ -329,80 +353,6 @@ public class CommunityController {
         return ResponseEntity.ok(list);
     }
     
-
-    @PostMapping("/api/mate/comment/add")
-    @ResponseBody
-    public ResponseEntity<Map<String, Object>> addMateComment(
-            @RequestBody CommunityMateCommentDto dto, 
-            HttpSession session) {
-        
-        Map<String, Object> response = new HashMap<>();
-        MemberDto loginUser = (MemberDto) session.getAttribute("loginUser");
-        
-        if (loginUser == null) {
-            response.put("status", "error");
-            response.put("message", "로그인이 필요합니다.");
-            return ResponseEntity.status(401).body(response);
-        }
-        
-        dto.setMemberId(loginUser.getMemberId()); 
-        mateService.registerMateComment(dto); 
-        
-        response.put("status", "success");
-        response.put("message", "댓글이 등록되었습니다.");
-        return ResponseEntity.ok(response);
-    }
-
-    @GetMapping("/api/mate/{mateId}/comments")
-    @ResponseBody
-    public ResponseEntity<Map<String, Object>> getMateComments(
-            @PathVariable("mateId") Long mateId,
-            @RequestParam(value = "page", defaultValue = "1") int page) {
-        
-        Map<String, Object> response = mateService.getMateComments(mateId, page);
-        return ResponseEntity.ok(response);
-    }
-    
-    @PostMapping("/api/mate/comment/delete/{commentId}")
-    @ResponseBody
-    public ResponseEntity<Map<String, Object>> deleteMateComment(
-            @PathVariable("commentId") Long commentId, HttpSession session) {
-        
-        MemberDto loginUser = (MemberDto) session.getAttribute("loginUser");
-        if (loginUser == null) {
-            return ResponseEntity.status(401).body(Map.of("status", "error", "message", "로그인이 필요합니다."));
-        }
-        
-        boolean isDeleted = mateService.deleteMateComment(commentId, loginUser.getMemberId());
-        
-        if (isDeleted) {
-            return ResponseEntity.ok(Map.of("status", "success", "message", "댓글이 삭제되었습니다."));
-        } else {
-            return ResponseEntity.status(403).body(Map.of("status", "error", "message", "삭제 권한이 없습니다."));
-        }
-    }    
-    
-    @PostMapping("/api/mate/{mateId}/status")
-    @ResponseBody
-    public ResponseEntity<Map<String, Object>> changeMateStatus(
-            @PathVariable("mateId") Long mateId,
-            @RequestParam("status") String status,
-            HttpSession session) {
-        
-        MemberDto loginUser = (MemberDto) session.getAttribute("loginUser");
-        if (loginUser == null) {
-            return ResponseEntity.status(401).body(Map.of("status", "error", "message", "로그인이 필요합니다."));
-        }
-        
-        boolean result = mateService.changeMateStatus(mateId, status, loginUser.getMemberId());
-        
-        if (result) {
-            return ResponseEntity.ok(Map.of("status", "success", "message", "상태가 변경되었습니다."));
-        } else {
-            return ResponseEntity.status(403).body(Map.of("status", "error", "message", "권한이 없습니다."));
-        }
-    }
-    
     @PostMapping("/api/follow/{targetId}")
     @ResponseBody
     public ResponseEntity<?> followToggle(@PathVariable("targetId") Long targetId, HttpSession session) {
@@ -413,9 +363,6 @@ public class CommunityController {
         return ResponseEntity.ok(Map.of("status", result));
     }
     
-    /**
-     * 💬 특정 피드의 댓글 목록 조회 API (비동기)
-     */
     @GetMapping("/api/feed/{postId}/comments")
     @ResponseBody
     public ResponseEntity<List<CommunityFeedCommentDto>> getFeedComments(@PathVariable("postId") Long postId) {
@@ -429,9 +376,6 @@ public class CommunityController {
         }
     }
 
-    /**
-     * 💬 피드 댓글 등록 API (비동기)
-     */
     @PostMapping("/api/feed/comment/add")
     @ResponseBody
     public ResponseEntity<Map<String, Object>> addFeedComment(
@@ -689,6 +633,130 @@ public class CommunityController {
             response.put("message", "수정 중 서버 오류가 발생했습니다.");
             return ResponseEntity.status(500).body(response);
         }
+    }
+    
+    @GetMapping("/api/feed/detail/modal/{postId}")
+    public String getFeedModalDetail(@PathVariable("postId") Long postId, HttpSession session, Model model) {
+        MemberDto loginUser = (MemberDto) session.getAttribute("loginUser");
+        Long loginId = (loginUser != null) ? loginUser.getMemberId() : -1L;
+
+        CommunityFeedListDto feed = feedService.getFeedDetailFull(postId, loginId);
+        
+        if (feed == null) {
+            return "error/NotFound"; 
+        }
+
+        List<CommunityFeedCommentDto> comments = feedService.getFeedComments(postId);
+
+        model.addAttribute("feed", feed);
+        model.addAttribute("comments", comments);
+        model.addAttribute("loginUserId", loginId); 
+
+        return "community/fragment/feed_modal_card"; 
+    }
+    
+    @ResponseBody
+    @PostMapping("/api/mate/status/{mateId}")
+    public Map<String, Object> updateMateStatus(@PathVariable("mateId") Long mateId, 
+                                                @RequestParam("status") String status, 
+                                                HttpSession session) {
+        Map<String, Object> response = new HashMap<>();
+        MemberDto loginUser = (MemberDto) session.getAttribute("loginUser");
+        
+        if (loginUser == null) {
+            response.put("status", "error");
+            response.put("message", "로그인이 필요합니다.");
+            return response;
+        }
+
+        try {
+            mateService.updateMateStatus(mateId, status);
+            response.put("status", "success");
+        } catch (Exception e) {
+            response.put("status", "error");
+            response.put("message", "상태 변경 실패");
+        }
+        return response;
+    }
+
+    @ResponseBody
+    @PostMapping("/api/mate/delete/{mateId}")
+    public Map<String, Object> deleteMatePost(@PathVariable("mateId") Long mateId, HttpSession session) {
+        Map<String, Object> response = new HashMap<>();
+        MemberDto loginUser = (MemberDto) session.getAttribute("loginUser");
+        
+        if (loginUser == null) {
+            response.put("status", "error");
+            return response;
+        }
+
+        try {
+            mateService.deleteMatePost(mateId, loginUser.getMemberId());
+            response.put("status", "success");
+        } catch (Exception e) {
+            response.put("status", "error");
+            response.put("message", "삭제 실패");
+        }
+        return response;
+    }
+    
+    @ResponseBody
+    @GetMapping("/api/mate/{mateId}/comments")
+    public List<CommunityMateCommentDto> getMateComments(@PathVariable("mateId") Long mateId) {
+        return mateService.getMateComments(mateId);
+    }
+
+    @ResponseBody
+    @PostMapping("/api/mate/comment/add")
+    public Map<String, Object> addMateComment(@RequestBody CommunityMateCommentDto commentDto, HttpSession session) {
+        Map<String, Object> response = new HashMap<>();
+        MemberDto loginUser = (MemberDto) session.getAttribute("loginUser");
+        
+        if (loginUser == null) {
+            response.put("status", "error");
+            response.put("message", "로그인이 필요합니다.");
+            return response;
+        }
+        
+        commentDto.setMemberId(loginUser.getMemberId());
+        
+        try {
+            mateService.addMateComment(commentDto);
+            response.put("status", "success");
+        } catch (Exception e) {
+            e.printStackTrace();
+            response.put("status", "error");
+            response.put("message", "댓글 등록에 실패했습니다.");
+        }
+        return response;
+    }
+
+    @ResponseBody
+    @PostMapping("/api/mate/comment/delete/{commentId}")
+    public Map<String, Object> deleteMateComment(@PathVariable("commentId") Long commentId, HttpSession session) {
+        Map<String, Object> response = new HashMap<>();
+        MemberDto loginUser = (MemberDto) session.getAttribute("loginUser");
+        
+        if (loginUser == null) {
+            response.put("status", "error");
+            response.put("message", "로그인이 필요합니다.");
+            return response;
+        }
+        
+        try {
+            boolean isDeleted = mateService.deleteMateComment(commentId, loginUser.getMemberId());
+            if (isDeleted) {
+                response.put("status", "success");
+            } else {
+                response.put("status", "error");
+                response.put("message", "댓글을 삭제할 권한이 없습니다.");
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            response.put("status", "error");
+            response.put("message", "댓글 삭제 중 오류가 발생했습니다.");
+        }
+        return response;
     }
     
 }

@@ -589,47 +589,32 @@
       </div>
     </div>
   
-  <div id="scheduleModal" class="schedule-modal-overlay">
- <div class="schedule-modal-content">
-   <div class="sch-header">
-     <h3>📅 공유할 일정 선택</h3>
-     <button onclick="closeScheduleModal()" style="background:none; border:none; font-size:24px; color:var(--text-gray); cursor:pointer;">✕</button>
-   </div>
-   
-   <div class="sch-body">
-     <div class="sch-list-area">
-       <div class="sch-item" onclick="toggleScheduleSelect(this, '0000000000000000001', '제주도 3박 4일 힐링 여행')">
-         <div>
-           <h4 style="margin: 0 0 6px; font-size: 16px; font-weight: 800; color: var(--text-black);">제주도 3박 4일 힐링 여행</h4>
-           <p style="margin: 0; font-size: 13px; color: var(--text-gray);">2024.05.10 ~ 2024.05.13</p>
-         </div>
-         <div class="check-circle"></div>
-       </div>
-       
-       <div class="sch-item" onclick="toggleScheduleSelect(this, '0000000000000000002', '여수 밤바다 낭만 투어')">
-         <div>
-           <h4 style="margin: 0 0 6px; font-size: 16px; font-weight: 800; color: var(--text-black);">여수 밤바다 낭만 투어</h4>
-           <p style="margin: 0; font-size: 13px; color: var(--text-gray);">2024.06.01 ~ 2024.06.02</p>
-         </div>
-         <div class="check-circle"></div>
-       </div>
-     </div>
-     
-     <div class="sch-preview-area">
-       <h4 style="margin: 0 0 20px; font-size: 15px; font-weight: 800; color: var(--text-black); border-bottom: 2px solid var(--border-color); padding-bottom: 10px;">선택된 일정</h4>
-       <div id="schRightPreview" style="display: flex; flex-direction: column; align-items: center; justify-content: center; flex: 1; color: var(--text-gray); font-size: 14px; text-align: center; gap: 12px;">
-         <span style="font-size: 40px; opacity: 0.3;">🗺️</span>
-         왼쪽 목록에서 공유할<br>일정을 선택해주세요.
+<div id="scheduleModal" class="schedule-modal-overlay">
+    <div class="schedule-modal-content">
+      <div class="sch-header">
+        <h3>📅 공유할 일정 선택</h3>
+        <button onclick="closeScheduleModal()" style="background:none; border:none; font-size:24px; color:var(--text-gray); cursor:pointer;">✕</button>
+      </div>
+      
+      <div class="sch-body">
+        <div class="sch-list-area">
+           </div>
+        
+        <div class="sch-preview-area">
+          <h4 style="margin: 0 0 20px; font-size: 15px; font-weight: 800; color: var(--text-black); border-bottom: 2px solid var(--border-color); padding-bottom: 10px;">선택된 일정</h4>
+          <div id="schRightPreview" style="display: flex; flex-direction: column; align-items: center; justify-content: center; flex: 1; color: var(--text-gray); font-size: 14px; text-align: center; gap: 12px;">
+            <span style="font-size: 40px; opacity: 0.3;">🗺️</span>
+            왼쪽 목록에서 공유할<br>일정을 선택해주세요.
+          </div>
+        </div>
+      </div>
+      
+      <div class="sch-footer">
+        <button class="btn-sch-cancel" onclick="closeScheduleModal()">취소</button>
+        <button class="btn-sch-confirm" onclick="confirmScheduleSelection()">확인</button>
        </div>
      </div>
    </div>
-   
-   <div class="sch-footer">
-     <button class="btn-sch-cancel" onclick="closeScheduleModal()">취소</button>
-     <button class="btn-sch-confirm" onclick="confirmScheduleSelection()">확인</button>
-    </div>
-  </div>
-</div>
 
 <div id="commonReportModal" class="lounge-modal-overlay">
   <div class="lounge-modal-content glass-card" style="max-width: 400px; text-align: center;">
@@ -659,6 +644,11 @@
     </div>
   </div>
 </div>
+
+<div id="feedDetailModalOverlay" class="lounge-modal-overlay">
+      <div id="feedDetailModalContent" class="lounge-modal-content glass-card" style="padding: 0; max-width: 650px; overflow: hidden;">
+      </div>
+  </div>
 
 	  
 	  <jsp:include page="/WEB-INF/views/layout/footer.jsp"/>
@@ -797,6 +787,33 @@
        });
    }
     
+   
+   window.deleteMatePost = function(mateId) {
+       if (!confirm('정말 이 동행 모집글을 삭제하시겠습니까? 삭제 후에는 복구할 수 없습니다.')) return; 
+
+       fetch(`${pageContext.request.contextPath}/community/api/mate/delete/` + mateId, {
+           method: 'POST',
+           headers: { 'X-Requested-With': 'Fetch' } 
+       })
+       .then(res => {
+           if (res.status === 401) { showLoginModal(); throw new Error('Unauthorized'); }
+           return res.json();
+       })
+       .then(data => {
+           if(data.status === 'success') {
+               alert("✨ 동행글이 성공적으로 삭제되었습니다.");
+               
+               if (document.getElementById('mateListContainer') && typeof window.searchMates === 'function') {
+                   window.searchMates(); 
+               } else if (typeof restorePreviousState === 'function') {
+                   restorePreviousState(); 
+               }
+           } else {
+               alert("삭제 실패: " + data.message);
+           }
+       })
+       .catch(err => { if(err.message !== 'Unauthorized') alert("게시글 삭제 중 오류가 발생했습니다. 🥲"); });
+   }
 
 	async function loadMiniFestivalSidebar(year, month) {
 	    const miniList = document.getElementById('mini-festival-list');
@@ -1097,6 +1114,35 @@
 	    });
 	}
 	
+	// 동행글 상세 조회 화면 열기
+	function loadMateDetail(mateId, updateView = true) {
+	    const contentArea = document.getElementById('dynamic-content');
+	    
+	    contentArea.innerHTML = '<div style="text-align:center; padding: 100px; color:var(--sky-blue); font-weight:800;">여행 동행 정보를 불러오는 중... ✈️</div>';
+	
+	    const url = `${pageContext.request.contextPath}/community/mate/detail/` + mateId + "?updateView=" + updateView;
+	
+	    fetch(url, { headers: { 'X-Requested-With': 'Fetch' } })
+	    .then(res => {
+	        if(!res.ok) throw new Error("데이터를 불러오지 못했습니다.");
+	        return res.text();
+	    })
+	    .then(html => {
+	        contentArea.innerHTML = html; 
+	        
+	        if(updateView) {
+	            window.scrollTo({ top: 0, behavior: 'smooth' });
+	        }
+	        
+	        if(typeof window.loadMateComments === 'function') {
+	            window.loadMateComments(mateId, false);
+	        }
+	    })
+	    .catch(err => {
+	        console.error('Error:', err);
+	        contentArea.innerHTML = '<div style="text-align:center; padding: 50px; color:red;">동행글을 불러오는데 실패했습니다. 😢</div>';
+	    });
+	}
 	function submitComment(boardId) {
 	        if (!IS_LOGGED_IN) {
 	            showLoginModal();
@@ -1555,37 +1601,31 @@
 		    if (!isShowing) dropdown.classList.add('show');
 		}
 	  
-	  function deletePost(postId) {
-	      if (!confirm('정말 이 게시글을 삭제하시겠습니까? 삭제 후에는 복구할 수 없습니다.')) {
-	          return; 
-	      }
+		function deletePost(postId) {
+		    if (!confirm('정말 이 게시글을 삭제하시겠습니까? 삭제 후에는 복구할 수 없습니다.')) return; 
 
-	      fetch(`${pageContext.request.contextPath}/community/api/feed/delete/` + postId, {
-	          method: 'POST',
-	          headers: { 'X-Requested-With': 'Fetch' } 
-	      })
-	      .then(res => {
-	          if (res.status === 401) {
-	              showLoginModal();
-	              throw new Error('Unauthorized');
-	          }
-	          return res.json();
-	      })
-	      .then(data => {
-	          if(data.status === 'success') {
-	              alert("✨ 게시글이 삭제되었습니다.");
-	              location.reload(); 
-	          } else {
-	              alert("삭제 실패: " + data.message);
-	          }
-	      })
-	      .catch(err => {
-	          if(err.message !== 'Unauthorized') {
-	              console.error('게시글 삭제 에러:', err);
-	              alert("게시글 삭제 중 오류가 발생했습니다. 🥲");
-	          }
-	      });
-	  }
+		    fetch(`${pageContext.request.contextPath}/community/api/feed/delete/` + postId, {
+		        method: 'POST',
+		        headers: { 'X-Requested-With': 'Fetch' } 
+		    })
+		    .then(res => {
+		        if (res.status === 401) { showLoginModal(); throw new Error('Unauthorized'); }
+		        return res.json();
+		    })
+		    .then(data => {
+		        if(data.status === 'success') {
+		            alert("✨ 게시글이 삭제되었습니다.");
+		            if(typeof closeFeedModal === 'function') closeFeedModal(); // 열려있던 모달창 닫기
+		            
+		            refreshBackgroundProfile(true); 
+		        } else {
+		            alert("삭제 실패: " + data.message);
+		        }
+		    })
+		    .catch(err => {
+		        if(err.message !== 'Unauthorized') { console.error('에러:', err); alert("오류가 발생했습니다."); }
+		    });
+		}
 
 	  function toggleFollow(btn, targetMemberId) {
 		    if (typeof IS_LOGGED_IN !== 'undefined' && !IS_LOGGED_IN) {
@@ -1698,45 +1738,32 @@
 		        }
 		    });
 		}
-		document.addEventListener("DOMContentLoaded", renderHashtags);
 
-		  document.addEventListener("DOMContentLoaded", renderHashtags);
-	  
- function toggleFeedLike(btnElement, postId) {
-	 if (typeof IS_LOGGED_IN !== 'undefined' && !IS_LOGGED_IN) {
-	        showLoginModal();
-	        return;
-	    }
-    const url = `${pageContext.request.contextPath}/community/api/feed/like/` + postId;
-    
-    fetch(url, { 
-        method: 'POST', 
-        headers: { 'X-Requested-With': 'Fetch' } 
-    })
-    .then(res => {
-        if (res.status === 401) { 
-            showLoginModal();
-            return null;
-        }
-        if (!res.ok) throw new Error('서버 에러');
-        return res.json();
-    })
-    .then(data => {
-        if (data) {
-            const countSpan = btnElement.querySelector('.like-cnt');
-            const heartIcon = btnElement.querySelector('.heart-icon');
-            
-            countSpan.innerText = data.count;
-            
-            if (data.status === 'liked') {
-                heartIcon.innerText = '♥';
-            } else {
-                heartIcon.innerText = '♡';
-            }
-        }
-    })
-    .catch(err => console.error("피드 좋아요 처리 중 오류:", err));
-}
+	  document.addEventListener("DOMContentLoaded", renderHashtags);
+  
+	  function toggleFeedLike(btnElement, postId) {
+	      if (typeof IS_LOGGED_IN !== 'undefined' && !IS_LOGGED_IN) { showLoginModal(); return; }
+	      
+	      const url = `${pageContext.request.contextPath}/community/api/feed/like/` + postId;
+	      fetch(url, { method: 'POST', headers: { 'X-Requested-With': 'Fetch' } })
+	      .then(res => {
+	          if (res.status === 401) { showLoginModal(); return null; }
+	          if (!res.ok) throw new Error('서버 에러');
+	          return res.json();
+	      })
+	      .then(data => {
+	          if (data) {
+	              const countSpan = btnElement.querySelector('.like-cnt');
+	              const heartIcon = btnElement.querySelector('.heart-icon');
+	              countSpan.innerText = data.count;
+	              if (data.status === 'liked') heartIcon.innerText = '♥';
+	              else heartIcon.innerText = '♡';
+	              
+	              refreshBackgroundProfile(false); 
+	          }
+	      })
+	      .catch(err => console.error("피드 좋아요 처리 중 오류:", err));
+	  }
  
  function openComment(postId) {
 	 if (typeof IS_LOGGED_IN !== 'undefined' && !IS_LOGGED_IN) {
@@ -1916,13 +1943,17 @@
      if (!confirm('정말 삭제하시겠습니까?\n(원본 댓글인 경우 답글도 함께 화면에서 사라집니다)')) return;
      
      fetch(`${pageContext.request.contextPath}/community/api/feed/comment/delete/` + commentId, {
-         method: 'POST', 
-         headers: { 'X-Requested-With': 'Fetch' }
+         method: 'POST', headers: { 'X-Requested-With': 'Fetch' }
      })
      .then(res => res.json())
      .then(result => {
          if(result.status === 'success') {
              loadFeedComments(postId, false); 
+             if (document.getElementById('feedDetailModalOverlay') && document.getElementById('feedDetailModalOverlay').classList.contains('active')) {
+                 openFeedModal(postId); 
+             }
+             
+             refreshBackgroundProfile(false); 
          } else {
              alert(result.message);
          }
@@ -2264,10 +2295,7 @@
 	     if (!memberId || memberId === '') return;
 
 	     const currentUserId = '${sessionScope.loginUser != null ? sessionScope.loginUser.memberId : ""}';
-	     if (!currentUserId) {
-	         showLoginModal(); 
-	         return; 
-	     }
+	     if (!currentUserId) { showLoginModal(); return; }
 
 	     document.querySelectorAll('.side-nav li').forEach(li => li.classList.remove('active'));
 
@@ -2278,16 +2306,13 @@
 	     
 	     fetch(url, { headers: { 'X-Requested-With': 'Fetch' } })
 	     .then(res => {
-	         if (res.redirected) {
-	             throw new Error("로그인 풀림");
-	         }
+	         if (res.redirected) throw new Error("로그인 풀림");
 	         if(!res.ok) throw new Error("네트워크 응답 에러");
 	         return res.text();
 	     })
 	     .then(html => {
 	         if(html.trim().startsWith("<!DOCTYPE") || html.trim().startsWith("<html")) {
-	              showLoginModal(); 
-	              throw new Error("HTML 응답됨(로그인 필요)");
+	              showLoginModal(); throw new Error("HTML 응답됨");
 	         }
 	         
 	         contentArea.innerHTML = html;
@@ -2297,6 +2322,12 @@
 	         
 	         window.scrollTo({ top: 0, behavior: 'smooth' });
 	         history.pushState(null, null, '?tab=profile&memberId=' + memberId);
+
+	         const savedTab = sessionStorage.getItem('profileTab_' + memberId);
+	         if (savedTab) {
+	             const tabToClick = document.querySelector(`.profile-tab[onclick*="${savedTab}"]`);
+	             if (tabToClick) window.switchProfileTab(tabToClick, savedTab);
+	         }
 	     })
 	     .catch(err => {
 	         console.error(err);
@@ -2316,7 +2347,44 @@
 	     if (targetPane) {
 	         targetPane.classList.add('active');
 	     }
+		 const urlParams = new URLSearchParams(window.location.search);
+		 const currentMemberId = urlParams.get('memberId');
+		 if (currentMemberId) {
+			sessionStorage.setItem('profileTab_' + currentMemberId, tabName);
+		 }
 	 };
+	 
+	 //  피드 상세 모달 열기
+	 function openFeedModal(postId) {
+	     const overlay = document.getElementById('feedDetailModalOverlay');
+	     const content = document.getElementById('feedDetailModalContent');
+	     
+	     content.innerHTML = '<div style="padding:50px; text-align:center; color:var(--sky-blue); font-weight:800;">피드를 불러오는 중... ✈️</div>';
+	     overlay.classList.add('active');
+	     document.body.style.overflow = 'hidden';
+
+	     fetch(`${pageContext.request.contextPath}/community/api/feed/detail/modal/` + postId, {
+	         headers: { 'X-Requested-With': 'Fetch' }
+	     })
+	     .then(res => res.text())
+	     .then(html => {
+	         content.innerHTML = html; 
+	     })
+	     .catch(err => {
+	         console.error(err);
+	         content.innerHTML = '<div style="padding:50px; text-align:center; color:red;">피드를 불러오지 못했습니다. 😢</div>';
+	     });
+	 }
+
+	 function closeFeedModal() {
+	     const overlay = document.getElementById('feedDetailModalOverlay');
+	     overlay.classList.remove('active');
+	     document.body.style.overflow = 'auto'; // 스크롤 복구
+	 }
+
+	 document.getElementById('feedDetailModalOverlay').addEventListener('click', function(e) {
+	     if (e.target === this) closeFeedModal();
+	 });
 
 	 function initCommunity() {
 	     if (typeof setupInfiniteScroll === 'function') setupInfiniteScroll(); 
@@ -2353,8 +2421,288 @@
 	     initCommunity();
 	 }
 	 
+	 // 배경 화면(내 활동 탭 등)을 새로고침 없이 갱신해주는 함수
+	 function refreshBackgroundProfile(isPostDelete = false) {
+	     const urlParams = new URLSearchParams(window.location.search);
+	     if (urlParams.get('tab') === 'profile') {
+	         const activeTabEl = document.querySelector('.profile-tab.active');
+	         let activeInnerTabName = 'feeds';
+	         
+	         if (activeTabEl) {
+	             const match = activeTabEl.getAttribute('onclick').match(/'([^']+)'/);
+	             if (match) activeInnerTabName = match[1];
+	         }
+
+	         if (isPostDelete || activeInnerTabName === 'activity') {
+	             const memberId = urlParams.get('memberId');
+	             fetch(`${pageContext.request.contextPath}/community/fragment/profile?memberId=` + memberId, {
+	                 headers: { 'X-Requested-With': 'Fetch' }
+	             })
+	             .then(res => res.text())
+	             .then(html => {
+	                 document.getElementById('dynamic-content').innerHTML = html;
+	                 
+	                 const tabToClick = document.querySelector(`.profile-tab[onclick*="\${activeInnerTabName}"]`);
+	                 if (tabToClick) switchProfileTab(tabToClick, activeInnerTabName);
+	             });
+	         }
+	     } else {
+	         if (isPostDelete) location.reload();
+	     }
+	 }
 	 
- 
+	 function restorePreviousState() {
+	     const urlParams = new URLSearchParams(window.location.search);
+	     const tab = urlParams.get('tab');
+	     const memberId = urlParams.get('memberId');
+
+	     if (tab === 'profile' && memberId) {
+	         loadUserProfile(memberId);
+	     } else if (tab) {
+	         loadTabContent(tab);
+	     } else {
+	         loadTabContent('feed');
+	     }
+	 }
+	 
+	 window.toggleMateStatus = function(mateId, targetStatus) {
+	 	     if (!confirm(targetStatus === 'CLOSED' ? '동행 모집을 마감하시겠습니까?' : '동행 모집을 다시 시작하시겠습니까?')) return;
+	 	     
+	 	     const formData = new URLSearchParams();
+	 	     formData.append('status', targetStatus);
+
+	 	     fetch(`${pageContext.request.contextPath}/community/api/mate/status/` + mateId, {
+	 	         method: 'POST',
+	 	         body: formData,
+	 	         headers: { 
+	 	             'X-Requested-With': 'Fetch',
+	 	             'Content-Type': 'application/x-www-form-urlencoded'
+	 	         }
+	 	     })
+	 	     .then(res => {
+	 	         if(res.status === 401) { showLoginModal(); throw new Error('Unauthorized'); }
+	 	         return res.json();
+	 	     })
+	 	     .then(data => {
+	 	         if(data.status === 'success') {
+	                  
+	 	             if (document.getElementById('mateListContainer') && typeof window.searchMates === 'function') {
+	 	                 window.searchMates();
+	 	             } else if (typeof loadMateDetail === 'function') {
+	 	                 loadMateDetail(mateId, false); 
+	 	             }
+	                  
+	                  if (typeof refreshBackgroundProfile === 'function') refreshBackgroundProfile(false); 
+
+	 	         } else {
+	 	             alert(data.message);
+	 	         }
+	 	     })
+	 	     .catch(err => { if(err.message !== 'Unauthorized') console.error(err); });
+	 	 };
+
+	 	 window.deleteMatePost = function(mateId) {
+	 	     if (!confirm('정말 이 동행 모집글을 삭제하시겠습니까? 삭제 후에는 복구할 수 없습니다.')) return; 
+
+	 	     fetch(`${pageContext.request.contextPath}/community/api/mate/delete/` + mateId, {
+	 	         method: 'POST',
+	 	         headers: { 'X-Requested-With': 'Fetch' } 
+	 	     })
+	 	     .then(res => {
+	 	         if (res.status === 401) { showLoginModal(); throw new Error('Unauthorized'); }
+	 	         return res.json();
+	 	     })
+	 	     .then(data => {
+	 	         if(data.status === 'success') {
+	 	             alert("✨ 동행글이 성공적으로 삭제되었습니다.");
+	                  
+	 	             if (document.getElementById('mateListContainer') && typeof window.searchMates === 'function') {
+	 	                 window.searchMates(); 
+	 	             } else if (typeof restorePreviousState === 'function') {
+	 	                 restorePreviousState(); 
+	 	             }
+	                  
+	                  if (typeof refreshBackgroundProfile === 'function') refreshBackgroundProfile(true);
+
+	 	         } else {
+	 	             alert("삭제 실패: " + data.message);
+	 	         }
+	 	     })
+	 	     .catch(err => { if(err.message !== 'Unauthorized') alert("게시글 삭제 중 오류가 발생했습니다. 🥲"); });
+	 	 };
+		 
+		 
+	 window.loadMateComments = function(mateId, isInit = false) {
+	      const listContainer = document.getElementById('comment-list-' + mateId);
+	      if (!listContainer) return;
+	
+	      if (!isInit) listContainer.innerHTML = '<div style="text-align:center; font-size:12px; color:#999; padding:10px;">불러오는 중...⏳</div>';
+	
+	      const myId = '${sessionScope.loginUser != null ? sessionScope.loginUser.memberId : ""}';
+	
+	      fetch(`${pageContext.request.contextPath}/community/api/mate/` + mateId + `/comments`)
+	      .then(res => {
+	          if (res.redirected || !res.ok) throw new Error("로그인 풀림");
+	          return res.text();
+	      })
+	      .then(text => {
+	          if(text.trim().startsWith("<!DOCTYPE") || text.trim().startsWith("<html")) {
+	              if(!isInit) showLoginModal();
+	              throw new Error("HTML 응답됨");
+	          }
+	          const comments = JSON.parse(text);
+	          
+	          const countSpan = document.getElementById('comment-count-' + mateId);
+	          if(countSpan) countSpan.innerText = comments ? comments.length : 0;
+	
+	          if (!comments || comments.length === 0) {
+	              listContainer.innerHTML = '<div style="text-align:center; font-size:12px; color:#999; padding:10px;">첫 번째 댓글을 남겨보세요! ✨</div>';
+	              return;
+	          }
+	
+	          let html = '';
+	          const parentComments = comments.filter(c => c.parentId === 0 || c.parentId === null);
+	          const childComments = comments.filter(c => c.parentId !== 0 && c.parentId !== null);
+	
+	          parentComments.forEach(comment => {
+	              let profileImg = comment.profilePhoto ? `${pageContext.request.contextPath}/uploads/profile/\${comment.profilePhoto}` : `${pageContext.request.contextPath}/dist/images/default.png`;
+	              
+	              let isMyComment = (myId !== '' && String(myId) === String(comment.memberId));
+	
+	              let kebabMenu = isMyComment
+	                  ? `<button class="kebab-item danger" onclick="window.deleteMateComment(\${comment.commentId}, \${mateId})">🗑️ 삭제하기</button>`
+	                  : `<button class="kebab-item danger" onclick="openReportModal('MATE_COMMENT', \${comment.commentId})">🚨 신고하기</button>`;
+	
+	              html += `
+	              <div style="display: flex; flex-direction: column; gap: 10px; border-bottom: 1px dashed var(--border-color); padding-bottom: 12px; margin-bottom: 12px;">
+	                  <div style="display: flex; gap: 10px;">
+	                      <img src="\${profileImg}" style="width: 32px; height: 32px; border-radius: 50%; object-fit: cover; border: 1px solid var(--border-color);">
+	                      <div style="flex: 1;">
+	                          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+	                              <span style="font-size: 13px; font-weight: 800; color: var(--text-dark);">@\${comment.nickname || '여행자'}</span>
+	                              <div style="display: flex; align-items: center; gap: 8px;">
+	                                  <span style="font-size: 11px; color: var(--text-gray);">\${comment.createdAt}</span>
+	                                  <span style="font-size: 11px; color: var(--sky-blue); font-weight: 900; cursor: pointer;" onclick="window.toggleMateReplyForm(\${comment.commentId})">↳ 답글</span>
+	
+	                                  <div class="comment-options" style="position: relative;">
+	                                      <button class="btn-kebab" onclick="event.stopPropagation(); const menu = this.nextElementSibling; const isBlock = menu.style.display === 'block'; document.querySelectorAll('.kebab-menu-list').forEach(el => el.style.display = 'none'); if(!isBlock) menu.style.display = 'block';"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="pointer-events: none;"><circle cx="12" cy="5" r="1.5"></circle><circle cx="12" cy="12" r="1.5"></circle><circle cx="12" cy="19" r="1.5"></circle></svg></button>
+	                                      <div class="kebab-menu-list" style="display: none; position: absolute; right: 0; top: 100%; background: white; border: 1px solid var(--border-color); border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); min-width: 110px; z-index: 99999; margin-top: 4px;">
+	                                          \${kebabMenu}
+	                                      </div>
+	                                  </div>
+	                              </div>
+	                          </div>
+	                          <div style="font-size: 13px; color: var(--text-black); line-height: 1.4; white-space: pre-wrap;">\${comment.content}</div>
+	                      </div>
+	                  </div>`;
+	
+	              childComments.filter(child => child.parentId === comment.commentId).forEach(child => {
+	                  let cProfileImg = child.profilePhoto ? `${pageContext.request.contextPath}/uploads/profile/\${child.profilePhoto}` : `${pageContext.request.contextPath}/dist/images/default.png`;
+	                  
+	                  let isMyChild = (myId !== '' && String(myId) === String(child.memberId));
+	
+	                  let childKebab = isMyChild
+	                      ? `<button class="kebab-item danger" onclick="window.deleteMateComment(\${child.commentId}, \${mateId})">🗑️ 삭제하기</button>`
+	                      : `<button class="kebab-item danger" onclick="openReportModal('MATE_COMMENT', \${child.commentId})">🚨 신고하기</button>`;
+	
+	                  html += `
+	                  <div style="display: flex; gap: 8px; margin-left: 36px; margin-top: 4px; padding: 10px 14px; background: rgba(137, 207, 240, 0.05); border-radius: 12px;">
+	                      <span style="color: var(--sky-blue); font-weight: 900; font-size: 14px;">↳</span>
+	                      <img src="\${cProfileImg}" style="width: 28px; height: 28px; border-radius: 50%; object-fit: cover; border: 1px solid white;">
+	                      <div style="flex: 1;">
+	                          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2px;">
+	                              <span style="font-size: 12px; font-weight: 800; color: var(--text-dark);">@\${child.nickname || '여행자'}</span>
+	                              <div style="display: flex; align-items: center; gap: 4px;">
+	                                  <span style="font-size: 10px; color: var(--text-gray);">\${child.createdAt}</span>
+	                                  <div class="comment-options" style="position: relative;">
+	                                      <button class="btn-kebab" onclick="event.stopPropagation(); const menu = this.nextElementSibling; const isBlock = menu.style.display === 'block'; document.querySelectorAll('.kebab-menu-list').forEach(el => el.style.display = 'none'); if(!isBlock) menu.style.display = 'block';"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="pointer-events: none;"><circle cx="12" cy="5" r="1.5"></circle><circle cx="12" cy="12" r="1.5"></circle><circle cx="12" cy="19" r="1.5"></circle></svg></button>
+	                                      <div class="kebab-menu-list" style="display: none; position: absolute; right: 0; top: 100%; background: white; border: 1px solid var(--border-color); border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); min-width: 100px; z-index: 99999; margin-top: 4px;">
+	                                          \${childKebab}
+	                                      </div>
+	                                  </div>
+	                              </div>
+	                          </div>
+	                          <div style="font-size: 12px; color: var(--text-black); line-height: 1.4; white-space: pre-wrap;">\${child.content}</div>
+	                      </div>
+	                  </div>`;
+	              });
+	
+	              html += `
+	                  <div id="mate-reply-form-\${comment.commentId}" style="display: none; gap: 8px; margin-left: 36px; margin-top: 8px;">
+	                      <input type="text" id="mate-reply-input-\${comment.commentId}" placeholder="@\${comment.nickname || '여행자'}님에게 답글 남기기..." style="flex: 1; border: 1px solid var(--border-color); border-radius: 20px; padding: 8px 14px; font-family: 'Pretendard', sans-serif; font-size: 12px; outline: none;">
+	                      <button class="btn-submit-lounge" style="padding: 8px 16px; border-radius: 20px; font-size: 12px;" onclick="window.submitMateComment(\${mateId}, \${comment.commentId})">등록</button>
+	                  </div>
+	              </div>`;
+	          });
+	          listContainer.innerHTML = html;
+	      }).catch(err => {
+	          if(!isInit) listContainer.innerHTML = '<div style="text-align:center; font-size:13px; color:#FF6B6B; padding:10px; cursor:pointer;" onclick="showLoginModal()">세션이 만료되었습니다. 다시 로그인해주세요! 🔒</div>';
+	      });
+	  };
+	
+	  document.addEventListener('click', () => {
+	     document.querySelectorAll('.kebab-menu-list').forEach(d => d.style.display = 'none');
+	  });
+
+ window.submitMateComment = function(mateId, parentId = null) {
+     if (typeof IS_LOGGED_IN !== 'undefined' && !IS_LOGGED_IN) { showLoginModal(); return; }
+
+     const inputId = parentId === null ? 'comment-input-' + mateId : 'mate-reply-input-' + parentId;
+     const inputEl = document.getElementById(inputId);
+     const content = inputEl.value.trim();
+
+     if(content === '') { alert("내용을 입력해주세요!"); inputEl.focus(); return; }
+
+     const data = { mateId: mateId, content: content, parentId: parentId };
+
+     fetch(`${pageContext.request.contextPath}/community/api/mate/comment/add`, {
+         method: 'POST',
+         headers: { 'Content-Type': 'application/json', 'X-Requested-With': 'Fetch' },
+         body: JSON.stringify(data)
+     })
+     .then(res => {
+         if (res.status === 401) { showLoginModal(); throw new Error('Unauthorized'); }
+         return res.json();
+     })
+     .then(result => {
+         if(result.status === 'success') {
+             inputEl.value = '';
+             window.loadMateComments(mateId, false);
+         } else {
+             alert(result.message);
+         }
+     })
+     .catch(err => console.error("댓글 등록 에러:", err));
+ };
+
+ window.toggleMateReplyForm = function(commentId) {
+     const form = document.getElementById('mate-reply-form-' + commentId);
+     if (form.style.display === 'none') {
+         form.style.display = 'flex';
+         document.getElementById('mate-reply-input-' + commentId).focus();
+     } else {
+         form.style.display = 'none';
+     }
+ };
+
+ window.deleteMateComment = function(commentId, mateId) {
+     if (!confirm('정말 삭제하시겠습니까?\n(원본 댓글인 경우 답글도 함께 사라집니다)')) return;
+
+     fetch(`${pageContext.request.contextPath}/community/api/mate/comment/delete/` + commentId, {
+         method: 'POST', headers: { 'X-Requested-With': 'Fetch' }
+     })
+     .then(res => res.json())
+     .then(result => {
+         if(result.status === 'success') {
+             window.loadMateComments(mateId, false);
+             if (typeof refreshBackgroundProfile === 'function') refreshBackgroundProfile(false);
+         } else {
+             alert(result.message);
+         }
+     })
+     .catch(err => alert('삭제 중 오류가 발생했습니다.'));
+ };
+	 
   </script>
   
 </body>

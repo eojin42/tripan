@@ -111,7 +111,7 @@
 
 <div class="detail-container">
   <div class="detail-header">
-    <button class="btn-back" onclick="loadTabContent('freeboard')">❮ 목록으로</button>
+    <button class="btn-back" onclick="restorePreviousState()">❮ 돌아가기</button>
   </div>
 
   <div class="user-profile" style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px;">
