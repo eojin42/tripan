@@ -2263,6 +2263,12 @@
 	 function loadUserProfile(memberId) {
 	     if (!memberId || memberId === '') return;
 
+	     const currentUserId = '${sessionScope.loginUser != null ? sessionScope.loginUser.memberId : ""}';
+	     if (!currentUserId) {
+	         showLoginModal(); 
+	         return; 
+	     }
+
 	     document.querySelectorAll('.side-nav li').forEach(li => li.classList.remove('active'));
 
 	     const contentArea = document.getElementById('dynamic-content');
@@ -2272,10 +2278,18 @@
 	     
 	     fetch(url, { headers: { 'X-Requested-With': 'Fetch' } })
 	     .then(res => {
+	         if (res.redirected) {
+	             throw new Error("로그인 풀림");
+	         }
 	         if(!res.ok) throw new Error("네트워크 응답 에러");
 	         return res.text();
 	     })
 	     .then(html => {
+	         if(html.trim().startsWith("<!DOCTYPE") || html.trim().startsWith("<html")) {
+	              showLoginModal(); 
+	              throw new Error("HTML 응답됨(로그인 필요)");
+	         }
+	         
 	         contentArea.innerHTML = html;
 	         
 	         if (typeof setupInfiniteScroll === 'function') setupInfiniteScroll(); 
@@ -2286,9 +2300,23 @@
 	     })
 	     .catch(err => {
 	         console.error(err);
-	         contentArea.innerHTML = '<div style="text-align:center; padding: 50px; color:#FF6B6B;">프로필을 불러오는데 실패했습니다. 😢</div>';
+	         if (err.message !== "로그인 풀림" && err.message !== "HTML 응답됨(로그인 필요)") {
+	             contentArea.innerHTML = '<div style="text-align:center; padding: 50px; color:#FF6B6B;">프로필을 불러오는데 실패했습니다. 😢</div>';
+	         }
 	     });
 	 }
+	 
+	window.switchProfileTab = function(element, tabName) {
+	     document.querySelectorAll('.profile-tab').forEach(tab => tab.classList.remove('active'));
+	     element.classList.add('active');
+
+	     document.querySelectorAll('.tab-pane').forEach(pane => pane.classList.remove('active'));
+	     
+	     const targetPane = document.getElementById('tab-' + tabName);
+	     if (targetPane) {
+	         targetPane.classList.add('active');
+	     }
+	 };
 
 	 function initCommunity() {
 	     if (typeof setupInfiniteScroll === 'function') setupInfiniteScroll(); 

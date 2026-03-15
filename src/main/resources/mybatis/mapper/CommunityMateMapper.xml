@@ -70,6 +70,30 @@
     <update id="updateMateStatus">
         UPDATE travel_mate SET status = #{status} WHERE mate_id = #{mateId}
     </update>
-
+    
+	<select id="getUserMateList" parameterType="long" resultType="com.tripan.app.domain.dto.CommunityMateDto">
+	    SELECT 
+	        m.mate_id as mateId,
+	        m.member_id as memberId,
+	        m.region_id as regionId,
+	        m.trip_id as tripId,
+	        m.target_count as targetCount,
+	        TO_CHAR(m.start_date, 'YYYY-MM-DD') as startDate,
+	        TO_CHAR(m.end_date, 'YYYY-MM-DD') as endDate,
+	        m.title,
+	        m.content,
+	        m.tags,
+	        m.status,
+	        m.view_count as viewCount,
+	        TO_CHAR(m.created_at, 'YYYY-MM-DD HH24:MI') as createdAt,
+	        u.nickname,
+	        u.profile_image as profilePhoto,
+	        r.sido_name as sidoName
+	    FROM travel_mate m
+	    JOIN member2 u ON m.member_id = u.member_id
+	    LEFT JOIN region r ON m.region_id = r.region_id
+	    WHERE m.member_id = #{memberId}
+	    ORDER BY m.created_at DESC
+	</select>
 
 </mapper>

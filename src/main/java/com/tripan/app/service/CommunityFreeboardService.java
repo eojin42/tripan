@@ -27,4 +27,6 @@ public interface CommunityFreeboardService {
     
     boolean updateBoard(CommunityFreeBoardDto dto, Long currentMemberId);
     
+    List<CommunityFreeBoardDto> getUserBoardList(Long memberId);
+    
 }

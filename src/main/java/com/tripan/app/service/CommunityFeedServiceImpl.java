@@ -15,6 +15,7 @@ import org.springframework.web.multipart.MultipartFile;
 import com.tripan.app.domain.dto.CommunityFeedCommentDto;
 import com.tripan.app.domain.dto.CommunityFeedListDto;
 import com.tripan.app.domain.dto.CommunityFeedWriteRequestDto;
+import com.tripan.app.domain.dto.CommunityUserActivityDto;
 import com.tripan.app.domain.dto.MemberDto;
 import com.tripan.app.mapper.CommunityFeedMapper;
 
@@ -220,6 +221,11 @@ public class CommunityFeedServiceImpl implements CommunityFeedService {
         params.put("loginMemberId", loginMemberId); // 로그인 안 했으면 -1 같은 값이 들어옴
         
         return feedMapper.getUserFeedList(params);
+    }
+    
+    @Override
+    public List<CommunityUserActivityDto> getUserActivityList(Long memberId) {
+        return feedMapper.getUserActivityList(memberId);
     }
 
     

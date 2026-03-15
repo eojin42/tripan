@@ -14,4 +14,6 @@ public interface CommunityMateService {
     Map<String, Object> getMateComments(Long mateId, int page);
     boolean deleteMateComment(Long commentId, Long memberId);
     boolean changeMateStatus(Long mateId, String status, Long memberId);
+    
+    List<CommunityMateDto> getUserMateList(Long memberId);
 }

@@ -26,16 +26,19 @@
   .profile-action-group { display: flex; gap: 12px; }
   .btn-profile-main { background: var(--sky-blue); color: white; border: none; padding: 10px 24px; border-radius: 20px; font-weight: 800; font-size: 14px; cursor: pointer; box-shadow: 0 4px 12px rgba(137, 207, 240, 0.3); transition: 0.2s; }
   .btn-profile-main:hover { transform: translateY(-2px); background: #72bde0; }
+  .btn-profile-main.following { background: #f1f5f9; color: var(--text-gray); box-shadow: none; border: 1px solid var(--border-color); }
+  
   .btn-profile-sub { background: white; color: var(--text-dark); border: 1px solid var(--border-color); padding: 10px 24px; border-radius: 20px; font-weight: 800; font-size: 14px; cursor: pointer; transition: 0.2s; }
   .btn-profile-sub:hover { background: #f1f5f9; }
 
-  .profile-tab-bar { display: flex; gap: 24px; margin-bottom: 24px; border-bottom: 2px solid var(--border-color); padding: 0 12px; overflow-x: auto; white-space: nowrap; }
+  .profile-tab-bar { display: flex; gap: 24px; margin-bottom: 24px; border-bottom: 2px solid var(--border-color); padding: 0 12px; white-space: nowrap; }
   .profile-tab { padding: 12px 4px; font-size: 16px; font-weight: 800; color: var(--text-gray); cursor: pointer; position: relative; transition: 0.2s; }
   .profile-tab:hover { color: var(--text-dark); }
   .profile-tab.active { color: var(--sky-blue); }
   .profile-tab.active::after { content: ''; position: absolute; bottom: -2px; left: 0; width: 100%; height: 3px; background: var(--sky-blue); border-radius: 3px 3px 0 0; }
 
-  .activity-list { display: flex; flex-direction: column; gap: 12px; }
+  .profile-content-list { display: flex; flex-direction: column; gap: 16px; }
+  
   .activity-item { 
     display: flex; gap: 16px; padding: 20px; background: white; border-radius: 16px; 
     border: 1px solid var(--border-color); cursor: pointer; transition: 0.3s; align-items: flex-start;
@@ -43,10 +46,25 @@
   .activity-item:hover { transform: translateY(-2px); border-color: var(--sky-blue); box-shadow: 0 6px 16px rgba(137,207,240,0.15); }
   .act-icon { width: 40px; height: 40px; border-radius: 50%; background: #F0F8FF; display: flex; align-items: center; justify-content: center; font-size: 18px; flex-shrink: 0; }
   .act-content { flex: 1; }
-  .act-meta { font-size: 13px; color: var(--text-gray); margin: 0 0 6px 0; }
+  .act-meta { font-size: 13px; color: var(--text-gray); margin: 0 0 6px 0; display: flex; justify-content: space-between; align-items: center; }
   .act-meta strong { color: var(--sky-blue); }
   .act-text { font-size: 15px; color: var(--text-dark); font-weight: 600; margin: 0 0 8px 0; line-height: 1.5; }
   .act-date { font-size: 12px; color: #A0AEC0; font-weight: 500; }
+  
+  .profile-mate-card {
+    background: var(--glass-bg); padding: 20px; border-radius: 16px; border: 1px solid rgba(255,255,255,0.8); 
+    box-shadow: 0 4px 12px rgba(0,0,0,0.03); transition: all 0.3s ease; display: flex; justify-content: space-between; align-items: center;
+  }
+  .profile-mate-card:hover { transform: translateY(-3px); box-shadow: 0 12px 24px rgba(137, 207, 240, 0.15); border-color: rgba(137,207,240,0.4); }
+  .pm-title { font-size: 16px; font-weight: 800; margin: 0 0 8px 0; color: var(--text-black); }
+  .pm-meta { font-size: 13px; color: var(--text-gray); display: flex; gap: 12px; align-items: center; }
+  .pm-region { font-size: 12px; font-weight: 700; color: white; background: var(--text-dark); padding: 4px 8px; border-radius: 6px; }
+  .pm-status { padding: 4px 8px; border-radius: 6px; font-size: 12px; font-weight: 800; background: #E6FFFA; color: #00A88F; }
+  .pm-status.closed { background: #EDF2F7; color: #A0AEC0; }
+  
+  .tab-pane { display: none; animation: fadeIn 0.3s ease; }
+  .tab-pane.active { display: block; }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 </style>
 
 <div class="profile-hero">
@@ -82,17 +100,17 @@
 </div>
 
 <div class="profile-tab-bar">
-  <div class="profile-tab active" onclick="switchProfileTab(this, 'feeds')">📝 작성한 피드</div>
-  <div class="profile-tab" onclick="switchProfileTab(this, 'mates')">🤝 동행글</div>
-  <div class="profile-tab" onclick="switchProfileTab(this, 'lounge')">💬 라운지글</div>
+  <div class="profile-tab active" onclick="switchProfileTab(this, 'feeds')">📝 feed </div>
+  <div class="profile-tab" onclick="switchProfileTab(this, 'mates')">🤝 travel mate </div>
+  <div class="profile-tab" onclick="switchProfileTab(this, 'lounge')">💬 lounge </div>
   <c:if test="${isMyProfile}">
-    <div class="profile-tab" onclick="switchProfileTab(this, 'activity')">🏃 내 활동</div>
+    <div class="profile-tab" onclick="switchProfileTab(this, 'activity')">🏃 actvity </div>
   </c:if>
 </div>
 
 <div id="profileDynamicContent">
   
-  <div id="tab-feeds" style="display: block;">
+  <div id="tab-feeds" class="tab-pane active">
     <c:choose>
       <c:when test="${empty feedList}">
         <div class="glass-card" style="text-align: center; padding: 60px 20px; color: var(--text-gray); font-weight: 600;">
@@ -105,35 +123,99 @@
     </c:choose>
   </div>
 
-  <div id="tab-activity" style="display: none;">
-    <div class="activity-list">
-      
-      <div class="activity-item" onclick="alert('해당 피드 원본 글로 이동합니다!')">
-        <div class="act-icon">💬</div>
-        <div class="act-content">
-          <p class="act-meta"><strong>[피드]</strong> 길동이 님의 "제주도 3박 4일 일정" 에 댓글을 남겼습니다.</p>
-          <p class="act-text">"와 진짜 풍경 예쁘네요! 맛집 리스트 공유 가능할까요? 😍"</p>
-          <span class="act-date">방금 전</span>
-        </div>
+  <div id="tab-mates" class="tab-pane">
+      <div class="profile-content-list">
+        <c:choose>
+          <c:when test="${empty mateList}">
+            <div class="glass-card" style="text-align: center; padding: 40px; color: var(--text-gray);">
+              아직 작성한 동행 모집글이 없습니다. 🤝
+            </div>
+          </c:when>
+          <c:otherwise>
+            <c:forEach var="mate" items="${mateList}">
+              <div class="profile-mate-card" onclick="loadTabContent('mate', event)" style="${mate.status == 'CLOSED' ? 'opacity: 0.7;' : 'cursor:pointer;'}">
+                <div>
+                  <div style="display: flex; gap: 8px; margin-bottom: 8px; align-items: center;">
+                    <span class="pm-region" style="${mate.status == 'CLOSED' ? 'background:#A0AEC0;' : ''}">${mate.sidoName}</span>
+                    <span class="pm-status ${mate.status == 'CLOSED' ? 'closed' : ''}">
+                      ${mate.status == 'CLOSED' ? '모집완료' : '모집중'}
+                    </span>
+                  </div>
+                  <h3 class="pm-title" style="${mate.status == 'CLOSED' ? 'color:var(--text-gray); text-decoration: line-through;' : ''}">
+                    ${mate.title}
+                  </h3>
+                  <div class="pm-meta">
+                    <span>📅 ${mate.startDate} ~ ${mate.endDate}</span>
+                  </div>
+                </div>
+                <button class="btn-profile-main" style="border-radius: 8px;">상세보기</button>
+              </div>
+            </c:forEach>
+          </c:otherwise>
+        </c:choose>
       </div>
-      
-      <div class="activity-item" onclick="alert('해당 라운지 글로 이동합니다!')">
-        <div class="act-icon">💡</div>
-        <div class="act-content">
-          <p class="act-meta"><strong>[라운지]</strong> "오사카 여행 꿀팁 질문" 글에 답변을 남겼습니다.</p>
-          <p class="act-text">"주유패스는 꼭 사가시는 걸 추천드려요. 뽕 뽑습니다!"</p>
-          <span class="act-date">2시간 전</span>
-        </div>
-      </div>
-      
-      <div class="activity-item" onclick="alert('해당 글로 이동합니다!')">
-        <div class="act-icon" style="background: #FFF5F5; color: #FF6B6B;">❤️</div>
-        <div class="act-content">
-          <p class="act-meta"><strong>[트래블 메이트]</strong> "유럽 한 달 동행 구해요" 글을 좋아합니다.</p>
-          <span class="act-date">어제</span>
-        </div>
-      </div>
+    </div>
 
+    <div id="tab-lounge" class="tab-pane">
+      <div class="profile-content-list">
+        <c:choose>
+          <c:when test="${empty loungeList}">
+            <div class="glass-card" style="text-align: center; padding: 40px; color: var(--text-gray);">
+              아직 작성한 라운지 글이 없습니다. 💬
+            </div>
+          </c:when>
+          <c:otherwise>
+            <c:forEach var="lounge" items="${loungeList}">
+              <div class="activity-item" onclick="loadBoardDetail(${lounge.boardId})">
+                <div class="act-icon">
+                  ${lounge.category == 'tip' ? '💡' : (lounge.category == 'question' ? '🙋‍♂️' : (lounge.category == 'review' ? '📸' : '💬'))}
+                </div>
+                <div class="act-content">
+                  <div class="act-meta">
+                    <strong>
+                      [${lounge.category == 'tip' ? '여행 꿀팁' : (lounge.category == 'question' ? '질문있어요' : (lounge.category == 'review' ? '다녀온 후기' : '기타'))}]
+                    </strong>
+                    <span class="act-date">${lounge.createdAt}</span>
+                  </div>
+                  <p class="act-text">${lounge.title}</p>
+                  <div style="font-size: 12px; color: var(--text-gray); font-weight: 600;">
+                    👀 조회수 ${lounge.viewCount}
+                  </div>
+                </div>
+              </div>
+            </c:forEach>
+          </c:otherwise>
+        </c:choose>
+      </div>
+    </div>
+
+<div id="tab-activity" class="tab-pane">
+    <div class="profile-content-list">
+      <c:choose>
+        <c:when test="${empty activityList}">
+          <div class="glass-card" style="text-align: center; padding: 40px; color: var(--text-gray);">
+            아직 활동 내역이 없습니다. 부지런히 여행자들과 소통해 보세요! 🏃
+          </div>
+        </c:when>
+        <c:otherwise>
+          <c:forEach var="act" items="${activityList}">
+            
+            <div class="activity-item" 
+                 onclick="${act.activityType == 'COMMENT_LOUNGE' ? 'loadBoardDetail(' += act.targetUrlId += ')' : 'alert(\'피드 원본 이동은 준비 중입니다!\')'}">
+              
+              <div class="act-icon">${act.icon}</div>
+              <div class="act-content">
+                <p class="act-meta"><strong>${act.metaInfo}</strong> ${act.targetTitle}</p>
+                <c:if test="${not empty act.content}">
+                  <p class="act-text">"${act.content}"</p>
+                </c:if>
+                <span class="act-date">${act.createdAt}</span>
+              </div>
+            </div>
+
+          </c:forEach>
+        </c:otherwise>
+      </c:choose>
     </div>
   </div>
 
@@ -144,14 +226,7 @@
     document.querySelectorAll('.profile-tab').forEach(tab => tab.classList.remove('active'));
     element.classList.add('active');
 
-    document.getElementById('tab-feeds').style.display = (tabName === 'feeds') ? 'block' : 'none';
-    document.getElementById('tab-activity').style.display = (tabName === 'activity') ? 'block' : 'none';
-    
-    if(tabName === 'mates' || tabName === 'lounge') {
-       document.getElementById('profileDynamicContent').innerHTML = 
-         '<div class="glass-card" style="text-align: center; padding: 60px 20px; color: var(--text-gray); font-weight: 600;">해당 탭의 데이터를 불러오는 중... ⏳</div>';
-    } else if(tabName === 'feeds' || tabName === 'activity') {
-       // 원래 상태로 복구 로직 (생략: 위에서 display로 제어중)
-    }
+    document.querySelectorAll('.tab-pane').forEach(pane => pane.classList.remove('active'));
+    document.getElementById('tab-' + tabName).classList.add('active');
   }
 </script>

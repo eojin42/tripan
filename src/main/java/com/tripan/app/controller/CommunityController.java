@@ -26,6 +26,7 @@ import com.tripan.app.domain.dto.CommunityFreeBoardDto;
 import com.tripan.app.domain.dto.CommunityFreeboardCommentDto;
 import com.tripan.app.domain.dto.CommunityMateCommentDto;
 import com.tripan.app.domain.dto.CommunityMateDto;
+import com.tripan.app.domain.dto.CommunityUserActivityDto;
 import com.tripan.app.domain.dto.MemberDto;
 import com.tripan.app.mapper.CommunityMateCommentMapper;
 import com.tripan.app.repository.FollowRepository;
@@ -124,13 +125,21 @@ public class CommunityController {
                 int postCount = feedService.getMyFeedCount(targetMemberId);
                 
                 List<CommunityFeedListDto> userFeedList = feedService.getUserFeedList(targetMemberId, loginId);
+	            List<CommunityMateDto> userMateList = mateService.getUserMateList(targetMemberId);
+	            List<CommunityFreeBoardDto> userLoungeList = freeboardService.getUserBoardList(targetMemberId);
+	            
+	            List<CommunityUserActivityDto> userActivityList = null;
+	            if (loginId.equals(targetMemberId)) {
+	                userActivityList = feedService.getUserActivityList(targetMemberId); 
+	            }
                 
                 boolean isFollowing = false;
                 if (loginUser != null && !loginId.equals(targetMemberId)) {
-                     // TODO: 나중에 팔로우 여부 확인하는 서비스(예: followService.isFollowing)가 있다면 여기에 연결!
+                    isFollowing = followRepository.existsByFollowerIdAndFollowingId(loginId, targetMemberId);
                 }
+                
+                
 
-                // 모델에 싹 담아주기
                 model.addAttribute("targetUser", targetUser);
                 model.addAttribute("followerCount", followerCount);
                 model.addAttribute("followingCount", followingCount);
@@ -138,6 +147,9 @@ public class CommunityController {
                 model.addAttribute("feedList", userFeedList);
                 model.addAttribute("isMyProfile", loginId.equals(targetMemberId));
                 model.addAttribute("isFollowing", isFollowing);
+                model.addAttribute("mateList", userMateList);
+                model.addAttribute("loungeList", userLoungeList);
+                model.addAttribute("activityList", userActivityList);
 
                 return "community/fragment/profile/profile"; 
             }

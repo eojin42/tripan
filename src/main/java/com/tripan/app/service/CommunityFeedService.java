@@ -8,6 +8,7 @@ import org.springframework.stereotype.Service;
 import com.tripan.app.domain.dto.CommunityFeedCommentDto;
 import com.tripan.app.domain.dto.CommunityFeedListDto;
 import com.tripan.app.domain.dto.CommunityFeedWriteRequestDto;
+import com.tripan.app.domain.dto.CommunityUserActivityDto;
 import com.tripan.app.domain.dto.MemberDto;
 
 public interface CommunityFeedService {
@@ -30,6 +31,8 @@ public interface CommunityFeedService {
 	
 	MemberDto getMemberInfo(Long memberId);
 	List<CommunityFeedListDto> getUserFeedList(Long targetMemberId, Long loginMemberId);
+	
+	List<CommunityUserActivityDto> getUserActivityList(Long memberId);
 	
 	
 }

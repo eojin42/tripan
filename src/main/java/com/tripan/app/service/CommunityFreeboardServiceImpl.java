@@ -1,7 +1,6 @@
 package com.tripan.app.service;
 
 import java.io.File;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -195,5 +194,12 @@ public class CommunityFreeboardServiceImpl implements CommunityFreeboardService 
         int result = freeboardMapper.updateBoard(dto);
         return result > 0;
     }
+
+    @Override
+    public List<CommunityFreeBoardDto> getUserBoardList(Long memberId) {
+        return freeboardMapper.getUserBoardList(memberId);
+    }
+    
+    
     
 }

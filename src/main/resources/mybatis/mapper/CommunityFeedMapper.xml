@@ -174,4 +174,83 @@
 	    WHERE F.member_id = #{targetMemberId}  ORDER BY F.post_id DESC
 	</select>
 	
+	<select id="getUserActivityList" parameterType="long" resultType="com.tripan.app.domain.dto.CommunityUserActivityDto">
+	    
+	    SELECT 'COMMENT_FEED' as activityType, '💬' as icon, '[피드]' as metaInfo,
+	        (SELECT nickname FROM member2 WHERE member_id = fp.member_id) || ' 님의 피드에 댓글을 남겼습니다.' as targetTitle,
+	        pc.content as content,
+	        TO_CHAR(pc.created_at, 'YYYY-MM-DD HH24:MI') as createdAt,
+	        pc.post_id as targetUrlId
+	    FROM post_comment pc
+	    JOIN feed_post fp ON pc.post_id = fp.post_id
+	    WHERE pc.member_id = #{memberId} AND pc.del_yn = 'N'
+	
+	    UNION ALL
+	
+	    SELECT 'COMMENT_LOUNGE', '💬', '[라운지]',
+	        '"' || fb.title || '" 글에 답변을 남겼습니다.',
+	        fc.content,
+	        TO_CHAR(fc.created_at, 'YYYY-MM-DD HH24:MI'),
+	        fc.board_id
+	    FROM freeboard_comment fc
+	    JOIN freeboard fb ON fc.board_id = fb.board_id
+	    WHERE fc.member_id = #{memberId} AND fc.del_yn = 'N'
+	
+	    UNION ALL
+	
+	    SELECT 'COMMENT_MATE', '💬', '[동행]',
+	        '"' || tm.title || '" 글에 댓글을 남겼습니다.',
+	        tmc.content,
+	        TO_CHAR(tmc.created_at, 'YYYY-MM-DD HH24:MI'),
+	        tmc.mate_id
+	    FROM travel_mate_comment tmc
+	    JOIN travel_mate tm ON tmc.mate_id = tm.mate_id
+	    WHERE tmc.member_id = #{memberId}
+	
+	    UNION ALL
+	
+	    SELECT 'LIKE_FEED', '❤️', '[피드]',
+	        (SELECT nickname FROM member2 WHERE member_id = fp.member_id) || ' 님의 피드를 좋아합니다.',
+	        NULL, 
+	        TO_CHAR(l.created_at, 'YYYY-MM-DD HH24:MI'),
+	        l.target_id
+	    FROM likes l
+	    JOIN feed_post fp ON l.target_id = fp.post_id
+	    WHERE l.member_id = #{memberId} AND l.target_type = 'FEED' AND fp.del_yn = 'N'
+	
+	    UNION ALL
+	
+	    SELECT 'LIKE_LOUNGE', '❤️', '[라운지]',
+	        '"' || fb.title || '" 글을 좋아합니다.',
+	        NULL,
+	        TO_CHAR(l.created_at, 'YYYY-MM-DD HH24:MI'),
+	        l.target_id
+	    FROM likes l
+	    JOIN freeboard fb ON l.target_id = fb.board_id
+	    WHERE l.member_id = #{memberId} AND l.target_type = 'FREEBOARD'
+	
+	    UNION ALL
+	
+	    SELECT 'WRITE_LOUNGE', '📝', '[라운지]',
+	        '새로운 라운지 글을 작성했습니다.',
+	        fb.title,
+	        TO_CHAR(fb.created_at, 'YYYY-MM-DD HH24:MI'),
+	        fb.board_id
+	    FROM freeboard fb
+	    WHERE fb.member_id = #{memberId}
+	
+	    UNION ALL
+	
+	    SELECT 'WRITE_MATE', '📝', '[동행]',
+	        '새로운 동행 모집글을 작성했습니다.',
+	        tm.title,
+	        TO_CHAR(tm.created_at, 'YYYY-MM-DD HH24:MI'),
+	        tm.mate_id
+	    FROM travel_mate tm
+	    WHERE tm.member_id = #{memberId}
+	
+	    ORDER BY 6 DESC
+	</select>
+	
+	
 </mapper>
