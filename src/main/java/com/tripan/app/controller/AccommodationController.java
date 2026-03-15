@@ -47,7 +47,6 @@ public class AccommodationController {
     @GetMapping("list")
     public String list(@RequestParam(value = "region", defaultValue = "서울 전체") String region,
     		Model model) {
-        System.out.println(kakaoApiKey);
     	
         model.addAttribute("region", region);
         

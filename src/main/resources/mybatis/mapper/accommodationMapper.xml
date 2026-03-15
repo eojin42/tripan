@@ -96,7 +96,28 @@
 
         GROUP BY p.PLACE_ID, p.PLACE_NAME, p.IMAGE_URL, p.ADDRESS, a.ACCOMMODATION_TYPE, p.LATITUDE, p.LONGITUDE
         
-        ORDER BY p.PLACE_ID DESC
+        ORDER BY 
+        <choose>
+            <when test="sort == 'POPULAR'">
+                (SELECT COUNT(*) FROM BOOKMARK b WHERE b.PLACE_ID = p.PLACE_ID) DESC, p.PLACE_ID DESC
+            </when>
+            <when test="sort == 'PRICE_ASC'">
+                MIN(r.AMOUNT + (GREATEST(0, (#{adult} + #{child}) - r.ROOMBASECOUNT) * 20000)) ASC
+            </when>
+            <when test="sort == 'PRICE_DESC'">
+                MIN(r.AMOUNT + (GREATEST(0, (#{adult} + #{child}) - r.ROOMBASECOUNT) * 20000)) DESC
+            </when>
+            <when test="sort == 'NEW'">
+                MAX(p.CREATEDTIME) DESC
+            </when>
+            <when test="sort == 'DISTANCE' and userLat != null and userLng != null">
+                ((p.LATITUDE - #{userLat}) * (p.LATITUDE - #{userLat}) + (p.LONGITUDE - #{userLng}) * (p.LONGITUDE - #{userLng})) ASC
+            </when>
+            <otherwise>
+                p.PLACE_ID DESC
+            </otherwise>
+        </choose>
+        
         OFFSET #{offset} ROWS FETCH NEXT #{size} ROWS ONLY
     </select>
     
