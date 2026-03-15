@@ -166,7 +166,7 @@
             <span class="term-arrow" id="arr-termInfo">∨</span>
           </div>
           <div id="termInfo" class="term-content">
-            (주)스테이폴리오는 예약 시스템 제공 과정에서 예약자 동의 하에 서비스 이용을 위한 예약자 개인정보를 수집하며, 수집된 개인정보는 제휴 판매자(숙소)에게 제공됩니다.<br>
+            (주)tripan은 예약 시스템 제공 과정에서 예약자 동의 하에 서비스 이용을 위한 예약자 개인정보를 수집하며, 수집된 개인정보는 제휴 판매자(숙소)에게 제공됩니다.<br>
             정보 주체는 개인정보의 수집 및 이용 동의를 거부할 권리가 있으나, 이 경우 상품 및 서비스 예약이 제한됩니다.<br><br>
             <strong>- 제공 받는 자 : ${room.placeName}</strong><br>
             - 제공 목적: 제휴 판매자(숙소)와 이용자(회원)의 예약에 대한 서비스 제공, 계약의 이행(예약확인, 이용자 확인), 민원 처리 등 소비자 분쟁 해결을 위한 기록 보존<br>
@@ -181,19 +181,19 @@
             <span class="term-arrow" id="arr-termAge">∨</span>
           </div>
           <div id="termAge" class="term-content">
-            <strong>스테이 소재지 : 대한민국</strong><br>
+            <strong>숙소 소재지 : 대한민국</strong><br>
             1. 만 19세 미만 미성년자(청소년)의 경우 예약 및 투숙이 불가합니다.<br>
             2. 만 19세 미만 미성년자(청소년)가 투숙을 원하는 경우 보호자(법정대리인)가 필수 동행해야 합니다.<br>
             3. 이용일 당일 미성년자(청소년) 투숙 기준 위반이 확인되는 경우 환불없이 퇴실 조치됩니다.<br><br>
-            <strong>스테이 소재지 : 대한민국 외</strong><br>
-            1. 스테이가 위치한 국가/지역에 따라 미성년자(청소년)로 간주되는 경우 예약 및 투숙이 불가합니다.<br>
+            <strong>숙소 소재지 : 대한민국 외</strong><br>
+            1. 숙소가 위치한 국가/지역에 따라 미성년자(청소년)로 간주되는 경우 예약 및 투숙이 불가합니다.<br>
             2. 미성년자(청소년)가 투숙을 원하는 경우 보호자(법정대리인)가 필수 동행해야 합니다.<br>
             3. 이용일 당일 미성년자(청소년) 투숙 기준 위반이 확인되는 경우 환불없이 퇴실 조치됩니다.
           </div>
 
           <div class="terms-item" onclick="toggleTerm('termRefund')">
             <label style="display:flex; align-items:center; gap:8px; cursor:pointer;" onclick="event.stopPropagation();">
-              <input type="checkbox" class="chk-term"> (필수) 스테이 환불 규정
+              <input type="checkbox" class="chk-term"> (필수) 숙박 환불 규정
             </label>
             <span class="term-arrow" id="arr-termRefund">∨</span>
           </div>

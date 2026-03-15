@@ -18,4 +18,13 @@ public class AccommodationDetailDto extends AccommodationDto{
     private List<RoomDto> rooms;      // 해당 숙소의 객실 리스트
     
     private int isBookmarked;
+    private String parkinglodging;
+    
+    private Integer fitness;
+    private Integer chkcooking;
+    private Integer barbecue;
+    private Integer beverage;
+    private Integer karaoke;
+    private Integer publicpc;
+    private Integer sauna;
 }
