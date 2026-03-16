@@ -227,19 +227,22 @@
     if (tab === 'stay')   loadStays();
     if (tab === 'recent') loadRecent();
   }
-
+  
+  const currentUserId = '${sessionScope.loginUser.memberId}';
+  const RECENT_STORAGE_KEY = currentUserId ? 'tripan_recent_stays_' + currentUserId : 'tripan_recent_stays_guest';
+  
   // ── 최근 본 숙소 (서버 API → 없으면 localStorage fallback) ──
   async function loadRecent() {
-  var area = document.getElementById('recent-grid-area');
-  area.innerHTML = '<div class="spin"></div>';
-  try {
-    var raw = localStorage.getItem('tripan_recent_stays');
-    var list = raw ? JSON.parse(raw) : [];
-    renderRecentList(area, list);
-  } catch(e) {
-    area.innerHTML = renderEmpty('bi-building', '최근 본 숙소가 없어요', '/accommodation/list');
+    var area = document.getElementById('recent-grid-area');
+    area.innerHTML = '<div class="spin"></div>';
+    try {
+      var raw = localStorage.getItem(RECENT_STORAGE_KEY);
+      var list = raw ? JSON.parse(raw) : [];
+      renderRecentList(area, list);
+    } catch(e) {
+      area.innerHTML = renderEmpty('bi-building', '최근 본 숙소가 없어요', '/accommodation/list');
+    }
   }
-}
   
   function renderRecentList(area, list) {
     if (!list || !list.length) {
@@ -266,29 +269,30 @@
 
   function removeRecent(e, id, btn) {
     e.stopPropagation();
-    // 서버 삭제 시도 → 실패해도 로컬에서 제거
     fetch('/mypage/api/recent-accommodations/' + id, { method: 'DELETE' }).catch(function(){});
     try {
-      var raw  = localStorage.getItem('tripan_recent_stays');
+      var raw  = localStorage.getItem(RECENT_STORAGE_KEY);
       var list = raw ? JSON.parse(raw) : [];
       list = list.filter(function(x) { return x.accommodationId != id; });
-      localStorage.setItem('tripan_recent_stays', JSON.stringify(list));
+      localStorage.setItem(RECENT_STORAGE_KEY, JSON.stringify(list));
     } catch(le) {}
+    
     var card = btn.closest('.wish-card');
     card.style.transition = 'all .3s';
     card.style.opacity = '0';
     card.style.transform = 'scale(0.9)';
     setTimeout(function() { card.remove(); }, 300);
   }
-
   function clearRecent() {
-    if (!confirm('최근 본 숙소 기록을 모두 삭제할까요?')) return;
-    fetch('/mypage/api/recent-accommodations', { method: 'DELETE' }).catch(function(){});
-    try { localStorage.removeItem('tripan_recent_stays'); } catch(e) {}
-    document.getElementById('recent-grid-area').innerHTML =
-      renderEmpty('bi-clock-history', '최근 본 숙소가 없어요', '/accommodation/list');
-  }
-
+	    if (!confirm('최근 본 숙소 기록을 모두 삭제할까요?')) return;
+	    fetch('/mypage/api/recent-accommodations', { method: 'DELETE' }).catch(function(){});
+	    try { 
+	      localStorage.removeItem(RECENT_STORAGE_KEY); 
+	    } catch(e) {}
+	    
+	    document.getElementById('recent-grid-area').innerHTML =
+	      renderEmpty('bi-clock-history', '최근 본 숙소가 없어요', '/accommodation/list');
+	  }
   function fmtRelative(v) {
     if (!v) return '';
     var diff = Date.now() - new Date(v).getTime();

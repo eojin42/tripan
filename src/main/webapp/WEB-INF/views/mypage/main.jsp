@@ -274,5 +274,48 @@
 <jsp:include page="/WEB-INF/views/layout/footer.jsp"/>
 
 <script src="${pageContext.request.contextPath}/dist/js/mypage/main.js"></script>
+<script>
+  // JSP 변수를 JS 변수로 전달
+  async function loadRecentAccom() {
+  const area = document.getElementById('recent-accom-area');
+  if (!area) return;
+  const userId = '${sessionScope.loginUser.memberId}'; // 세션에서 아이디 가져오기
+  const storageKey = userId ? 'tripan_recent_stays_' + userId : 'tripan_recent_stays_guest';
+  
+  try {
+    const raw = localStorage.getItem(storageKey);
+    const list = raw ? JSON.parse(raw) : [];
+    if (!list.length) {
+      area.innerHTML = `<div class="empty-state"><i class="bi bi-building"></i><p>최근 본 숙소가 없어요. 맘에 드는 숙소를 찾아보세요!</p></div>`;
+      return;
+    }
+
+    const cards = list.slice(0, 5).map(a => {
+		let imgSrc = a.thumbnailUrl;
+		if (imgSrc && !imgSrc.startsWith('http')) {
+		    imgSrc = ctxPath + imgSrc;
+		      }	
+	 	
+			  const img = imgSrc
+			          ? '<img src="' + escHtml(imgSrc) + '" style="width:100%;height:150px;object-fit:cover;">'
+			          : '<div style="width:100%;height:150px;background:#E6F4FF;display:flex;align-items:center;justify-content:center;"><i class="bi bi-building" style="font-size:32px;color:#89CFF0;"></i></div>';
+			        
+			        return '<div onclick="location.href=\'' + ctxPath + '/accommodation/detail/' + a.accommodationId + '\'" '
+			          + 'style="background:#fff;border-radius:12px;border:1px solid #E2E8F0;cursor:pointer;overflow:hidden;transition:all .2s;"'
+			          + 'onmouseover="this.style.transform=\'translateY(-4px)\';this.style.boxShadow=\'0 8px 24px rgba(137,207,240,.2)\'"'
+			          + 'onmouseout="this.style.transform=\'\';this.style.boxShadow=\'\'">'
+			          + img
+			          + '<div style="padding:10px;background:#F8FAFC;border-top:1px solid #E2E8F0;">'
+			          + '<div style="font-size:13px;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + escHtml(a.accommodationName || a.placeName || '') + '</div>'
+			          + '<div style="font-size:11px;color:#718096;margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + escHtml(a.address || '') + '</div>'
+			          + '</div></div>';
+			      }).join('');
+    area.innerHTML = '<div style="display:grid;grid-template-columns:repeat(5,1fr);gap:12px;">' + cards + '</div>';
+
+  } catch (e) {
+    area.innerHTML = `<div class="empty-state"><i class="bi bi-building"></i><p>최근 본 숙소가 없어요</p></div>`;
+  }
+}
+</script>
 </body>
 </html>
