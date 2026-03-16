@@ -1862,8 +1862,8 @@ function loadFeedComments(postId, isInit = false) {
             let isMyComment = (currentUserId !== '' && currentUserId == comment.memberId);
             
 		 let kebabMenu = isMyComment 
-		     ? `<button class="kebab-item danger" onclick="deleteFeedComment(${comment.commentId}, ${postId})">🗑️ 삭제하기</button>`
-		     : `<button class="kebab-item danger" onclick="openReportModal('FEED_COMMENT', ${comment.commentId})">🚨 신고하기</button>`;
+		     ? `<button class="kebab-item danger" onclick="deleteFeedComment(\${comment.commentId}, \${postId})">🗑️ 삭제하기</button>`
+		     : `<button class="kebab-item danger" onclick="openReportModal('FEED_COMMENT', \${comment.commentId})">🚨 신고하기</button>`;
 
             html += `
             <div style="display: flex; flex-direction: column; gap: 10px; border-bottom: 1px dashed var(--border-color); padding-bottom: 12px; margin-bottom: 12px;">

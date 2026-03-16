@@ -14,6 +14,7 @@ public class CommunityAiController {
     @Value("${tripan.api.google-gemini-api-key}")
     private String geminiApiKey;
 
+    @SuppressWarnings({ "rawtypes", "unchecked" })
     @PostMapping("/roulette") 
     public ResponseEntity<?> getRouletteRecommendation(@RequestBody Map<String, List<String>> requestData) {
         List<String> answers = requestData.get("answers");
