@@ -171,7 +171,7 @@
 	    FROM feed_post F
 	    LEFT JOIN member2 M ON F.member_id = M.member_id
 	    LEFT JOIN trip T ON F.trip_id = T.trip_id
-	    WHERE F.member_id = #{targetMemberId}  ORDER BY F.post_id DESC
+	    WHERE F.member_id = #{targetMemberId}  AND F.del_yn = 'N' ORDER BY F.post_id DESC
 	</select>
 	
 <select id="getUserActivityList" parameterType="long" resultType="com.tripan.app.domain.dto.CommunityUserActivityDto">

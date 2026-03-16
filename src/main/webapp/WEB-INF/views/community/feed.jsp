@@ -734,6 +734,38 @@
 	            
 	        }, 800);
 	    }
+	
+	function initCommunity() {
+        if (typeof setupInfiniteScroll === 'function') setupInfiniteScroll(); 
+        
+        const now = new Date();
+        if (typeof loadMiniFestivalSidebar === 'function') {
+            loadMiniFestivalSidebar(now.getFullYear(), now.getMonth() + 1);
+        }
+        if (typeof loadLiveChatSidebar === 'function') {
+            loadLiveChatSidebar();
+        }
+        
+        if (typeof renderHashtags === 'function') {
+            setTimeout(() => renderHashtags(), 50);
+        }
+
+        const urlParams = new URLSearchParams(window.location.search);
+        const tabParams = urlParams.get('tab');
+        const memberIdParam = urlParams.get('memberId');
+        
+        if (tabParams === 'profile' && memberIdParam) {
+            if (typeof loadUserProfile === 'function') loadUserProfile(memberIdParam);
+        } else if (tabParams && tabParams !== 'feed') {
+            if (typeof loadTabContent === 'function') loadTabContent(tabParams, null);
+        }
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initCommunity);
+    } else {
+        initCommunity();
+    }
 
    function loadTabContent(tabType, event) {
        if(event) event.preventDefault();
@@ -785,34 +817,6 @@
            console.error('Error:', error);
            contentArea.innerHTML = '<div style="text-align:center; padding: 50px; color:red;">데이터를 불러오는데 실패했습니다. 😢</div>';
        });
-   }
-    
-   
-   window.deleteMatePost = function(mateId) {
-       if (!confirm('정말 이 동행 모집글을 삭제하시겠습니까? 삭제 후에는 복구할 수 없습니다.')) return; 
-
-       fetch(`${pageContext.request.contextPath}/community/api/mate/delete/` + mateId, {
-           method: 'POST',
-           headers: { 'X-Requested-With': 'Fetch' } 
-       })
-       .then(res => {
-           if (res.status === 401) { showLoginModal(); throw new Error('Unauthorized'); }
-           return res.json();
-       })
-       .then(data => {
-           if(data.status === 'success') {
-               alert("✨ 동행글이 성공적으로 삭제되었습니다.");
-               
-               if (document.getElementById('mateListContainer') && typeof window.searchMates === 'function') {
-                   window.searchMates(); 
-               } else if (typeof restorePreviousState === 'function') {
-                   restorePreviousState(); 
-               }
-           } else {
-               alert("삭제 실패: " + data.message);
-           }
-       })
-       .catch(err => { if(err.message !== 'Unauthorized') alert("게시글 삭제 중 오류가 발생했습니다. 🥲"); });
    }
 
 	async function loadMiniFestivalSidebar(year, month) {
@@ -2162,38 +2166,6 @@
  function reportFreeboardComment(commentId) {
      openReportModal('FREEBOARD_COMMENT', commentId); // 종류: FREEBOARD_COMMENT
  }
- 
- function initCommunity() {
-         setupInfiniteScroll(); 
-         
-         const now = new Date();
-         if(typeof loadMiniFestivalSidebar === 'function') {
-             loadMiniFestivalSidebar(now.getFullYear(), now.getMonth() + 1);
-         }
-         
-         if(typeof loadLiveChatSidebar === 'function') {
-             loadLiveChatSidebar();
-         }
-         
-         if (typeof renderHashtags === 'function') {
-             setTimeout(() => renderHashtags(), 50);
-         }
-
-         const urlParams = new URLSearchParams(window.location.search);
-         const tabParams = urlParams.get('tab');
-         
-         if (tabParams && tabParams !== 'feed') {
-             if(typeof loadTabContent === 'function') {
-                 loadTabContent(tabParams, null);
-             }
-         }
-     }
-
-     if (document.readyState === 'loading') {
-         document.addEventListener('DOMContentLoaded', initCommunity);
-     } else {
-         initCommunity();
-     }
 	 
 	 function openReportModal(targetType, targetId) {
 	     if (typeof IS_LOGGED_IN !== 'undefined' && !IS_LOGGED_IN) {
@@ -2386,41 +2358,6 @@
 	     if (e.target === this) closeFeedModal();
 	 });
 
-	 function initCommunity() {
-	     if (typeof setupInfiniteScroll === 'function') setupInfiniteScroll(); 
-	     
-	     const now = new Date();
-	     if(typeof loadMiniFestivalSidebar === 'function') {
-	         loadMiniFestivalSidebar(now.getFullYear(), now.getMonth() + 1);
-	     }
-	     
-	     if(typeof loadLiveChatSidebar === 'function') {
-	         loadLiveChatSidebar();
-	     }
-	     
-	     if (typeof renderHashtags === 'function') {
-	         setTimeout(() => renderHashtags(), 50);
-	     }
-
-	     const urlParams = new URLSearchParams(window.location.search);
-	     const tabParams = urlParams.get('tab');
-	     const memberIdParam = urlParams.get('memberId');
-	     
-	     if (tabParams === 'profile' && memberIdParam) {
-	         loadUserProfile(memberIdParam);
-	     } else if (tabParams && tabParams !== 'feed') {
-	         if(typeof loadTabContent === 'function') {
-	             loadTabContent(tabParams, null);
-	         }
-	     }
-	 }
-
-	 if (document.readyState === 'loading') {
-	     document.addEventListener('DOMContentLoaded', initCommunity);
-	 } else {
-	     initCommunity();
-	 }
-	 
 	 // 배경 화면(내 활동 탭 등)을 새로고침 없이 갱신해주는 함수
 	 function refreshBackgroundProfile(isPostDelete = false) {
 	     const urlParams = new URLSearchParams(window.location.search);
