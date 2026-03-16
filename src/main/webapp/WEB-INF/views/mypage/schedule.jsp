@@ -252,7 +252,7 @@
 	                    '</button>' +
 	                    
 	                    (canWriteReview && !isCanceled && isConfirmed ? 
-	                        '<button class="btn-primary" style="flex: 1; padding: 8px; font-size: 13px;" onclick="location.href=\'#\'">리뷰 쓰기</button>' 
+	                    		'<button class="btn-primary" style="flex: 1; padding: 8px; font-size: 13px;" onclick="location.href=\'/accommodation/review/' + b.reservationId + '\'">리뷰 쓰기</button>' 
 	                        : '') +
 	                '</div>' +
 	            '</div>';
