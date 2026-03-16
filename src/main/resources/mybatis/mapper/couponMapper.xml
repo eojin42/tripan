@@ -138,37 +138,41 @@
     </select>
 
     <!-- ── 등록 ── -->
-    <insert id="insertCoupon">
-        INSERT INTO coupon (
-            coupon_id,
-            <if test="partnerId != null">partner_id,</if>
-            coupon_name,
-            discount_amount,
-            discount_type,
-            <if test="maxDiscountAmount != null">max_discount_amount,</if>
-            <if test="minOrderAmount != null">min_order_amount,</if>
-            platform_share,
-            partner_share,
-            valid_from,
-            valid_until,
-            status,
-            created_at
-        ) VALUES (
-            coupon_seq.NEXTVAL,
-            <if test="partnerId != null">#{partnerId},</if>
-            #{couponName},
-            #{discountAmount},
-            #{discountType},
-            <if test="maxDiscountAmount != null">#{maxDiscountAmount},</if>
-            <if test="minOrderAmount != null">#{minOrderAmount},</if>
-            #{platformShare},
-            100 - #{platformShare},
-            #{validFrom},
-            #{validUntil},
-            'ACTIVE',
-            SYSDATE
-        )
-    </insert>
+	<insert id="insertCoupon" >
+	    INSERT INTO coupon (
+	        coupon_id,
+	        <if test="partnerId != null">partner_id,</if>
+	        coupon_name,
+	        discount_amount,
+	        discount_type,
+	        <if test="maxDiscountAmount != null">max_discount_amount,</if>
+	        <if test="minOrderAmount != null">min_order_amount,</if>
+	        platform_share,
+	        partner_share,
+	        valid_from,
+	        valid_until,
+	        status,
+	        issue_condition_type,
+	        <if test="issueConditionValue != null">issue_condition_value,</if>
+	        created_at
+	    ) VALUES (
+	        coupon_seq.NEXTVAL,
+	        <if test="partnerId != null">#{partnerId},</if>
+	        #{couponName},
+	        #{discountAmount},
+	        #{discountType},
+	        <if test="maxDiscountAmount != null">#{maxDiscountAmount},</if>
+	        <if test="minOrderAmount != null">#{minOrderAmount},</if>
+	        #{platformShare},
+	        100 - #{platformShare},
+	        #{validFrom},
+	        #{validUntil},
+	        'ACTIVE',
+	        #{issueCondition},
+	        <if test="issueConditionValue != null">#{issueConditionValue},</if>
+	        SYSDATE
+	    )
+	</insert>
 
     <!-- ── 수정 ── -->
     <update id="updateCoupon">
@@ -267,6 +271,111 @@
         FROM partner
         WHERE status = 'ACTIVE'
         ORDER BY partner_name
+    </select>
+    
+    <!-- 신규가입 쿠폰 조회 -->
+<select id="findByConditionType" parameterType="String" resultType="com.tripan.app.admin.domain.dto.CouponDto$ListItem">
+	SELECT
+        coupon_id           AS couponId,
+        partner_id          AS partnerId,
+        coupon_name         AS couponName,
+        discount_amount     AS discountAmount,
+        discount_type       AS discountType,
+        max_discount_amount AS maxDiscountAmount,
+        min_order_amount     AS minOrderAmount,
+        platform_share      AS platformShare,
+        partner_share       AS partnerShare,
+        valid_from          AS validFrom,
+        valid_until         AS validUntil,
+        status,
+        issue_condition_type  AS issueConditionType,
+        issue_condition_value AS issueConditionValue
+    FROM coupon
+    WHERE issue_condition_type = #{conditionType}
+      AND status = 'ACTIVE'
+</select>
+
+ <!--
+        발급 조건에 맞는 회원 수 미리보기
+        AdminCouponController.previewCount() 에서 사용
+    -->
+    <select id="countMembersByCondition"
+            parameterType="map"
+            resultType="int">
+        SELECT COUNT(*)
+        FROM member
+        WHERE status = 'ACTIVE'
+        <choose>
+            <when test="conditionType == 'NEW_MEMBER'">
+                <if test="conditionValue != null and conditionValue != '0'">
+                    <![CDATA[AND (SYSDATE - created_at) <= #{conditionValue}]]>
+                </if>
+            </when>
+            <when test="conditionType == 'BOOKING_COUNT'">
+                AND (
+                    SELECT COUNT(*)
+                    FROM reservation r
+                    WHERE r.member_id = member.member_id
+                      AND r.status = 'COMPLETED'
+                ) >= #{conditionValue}
+            </when>
+            <when test="conditionType == 'REVIEW_COUNT'">
+                AND (
+                    SELECT COUNT(*)
+                    FROM review rv
+                    WHERE rv.member_id = member.member_id
+                ) >= #{conditionValue}
+            </when>
+            <when test="conditionType == 'AMOUNT_SPENT'">
+                AND (
+                    SELECT NVL(SUM(r.total_price), 0)
+                    FROM reservation r
+                    WHERE r.member_id = member.member_id
+                      AND r.status = 'COMPLETED'
+                ) >= #{conditionValue}
+            </when>
+        </choose>
+    </select>
+ <!--
+        조건에 맞는 회원 ID 목록 조회 (쿠폰 bulk 발급용)
+    -->
+    <select id="findMemberIdsByCondition"
+            parameterType="map"
+            resultType="Long">
+        SELECT member_id
+        FROM member
+        WHERE status = 'ACTIVE'
+        <choose>
+            <when test="conditionType == 'NONE'">
+                <!-- 전체 회원 -->
+            </when>
+            <when test="conditionType == 'NEW_MEMBER'">
+                <if test="conditionValue != null and conditionValue != '0'">
+                    <![CDATA[AND (SYSDATE - created_at) <= #{conditionValue}]]>
+                </if>
+            </when>
+            <when test="conditionType == 'BOOKING_COUNT'">
+                AND (
+                    SELECT COUNT(*) FROM reservation r
+                    WHERE r.member_id = member.member_id
+                      AND r.status = 'COMPLETED'
+                ) >= #{conditionValue}
+            </when>
+            <when test="conditionType == 'REVIEW_COUNT'">
+                AND (
+                    SELECT COUNT(*) FROM review rv
+                    WHERE rv.member_id = member.member_id
+                ) >= #{conditionValue}
+            </when>
+            <when test="conditionType == 'AMOUNT_SPENT'">
+                AND (
+                    SELECT NVL(SUM(r.total_price), 0)
+                    FROM reservation r
+                    WHERE r.member_id = member.member_id
+                      AND r.status = 'COMPLETED'
+                ) >= #{conditionValue}
+            </when>
+        </choose>
     </select>
 
 </mapper>

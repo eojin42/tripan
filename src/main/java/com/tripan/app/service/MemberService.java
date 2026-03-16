@@ -39,5 +39,4 @@ public interface MemberService {
 	
 	public boolean isPasswordCheck(String login_id, String password);
 	
-	
 }

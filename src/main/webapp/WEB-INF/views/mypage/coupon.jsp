@@ -145,52 +145,68 @@
     } catch(e) {}
   }
 
+ 
   async function loadCoupons() {
-    var area = document.getElementById('coupon-list-area');
-    area.innerHTML = '<div class="spin"></div>';
-    try {
-      var url = '/mypage/api/coupons?status=' + currentTab;
-      var res = await fetch(url);
-      if (!res.ok) throw new Error();
-      var list = await res.json();
-      if (!list.length) {
-        area.innerHTML = '<div class="empty-state"><i class="bi bi-ticket-perforated"></i><p>' +
-          (currentTab === 'available' ? '사용 가능한 쿠폰이 없어요' : '사용한 쿠폰이 없어요') +
-          '</p></div>';
-        return;
-      }
-      area.innerHTML = '<div class="coupon-list">' +
-        list.map(function(c) {
-          var now = new Date();
-          var exp = c.expiryDate ? new Date(c.expiryDate) : null;
-          var dday = exp ? Math.ceil((exp - now) / 86400000) : null;
-          var isExpired = exp && exp < now;
-          var ddayClass = isExpired ? 'dday-expired' : (dday !== null && dday <= 3 ? 'dday-urgent' : 'dday-normal');
-          var ddayText  = isExpired ? '만료됨' : (dday !== null ? (dday === 0 ? '오늘 마감' : 'D-' + dday) : '기간 없음');
-          var disc = c.discountType === 'PERCENT' ? (c.discountValue + '%') : (c.discountValue.toLocaleString() + '원');
-          return '<div class="coupon-card' + (isExpired || currentTab === 'used' ? ' expired' : '') + '">' +
-            '<div class="coupon-left">' +
-              '<div class="coupon-discount">' + escHtml(disc) + '</div>' +
-              '<div class="coupon-discount-unit">' + (c.discountType === 'PERCENT' ? '할인' : '할인') + '</div>' +
-            '</div>' +
-            '<div class="coupon-right">' +
-              '<div>' +
-                '<div class="coupon-name">' + escHtml(c.couponName) + '</div>' +
-                '<div class="coupon-meta">' +
-                  (c.minOrderAmount ? '<span><i class="bi bi-info-circle"></i>' + c.minOrderAmount.toLocaleString() + '원 이상 사용 가능</span>' : '') +
-                  (exp ? '<span><i class="bi bi-calendar3"></i>' + fmtDate(c.expiryDate) + ' 까지</span>' : '') +
-                '</div>' +
-              '</div>' +
-              '<span class="coupon-dday ' + ddayClass + '">' + ddayText + '</span>' +
-            '</div>' +
-          '</div>';
-        }).join('') +
-      '</div>';
-    } catch(e) {
-      area.innerHTML = '<div class="empty-state"><i class="bi bi-exclamation-circle"></i><p>쿠폰 정보를 불러올 수 없어요</p></div>';
-    }
-  }
+	  var area = document.getElementById('coupon-list-area');
+	  if (!area) return;
+	  area.innerHTML = '<div class="spin"></div>';
+	  
+	  try {
+	    // 1. currentTab을 대문자로 변환하여 서버에 요청 (AVAILABLE / USED)
+	    var url = '/mypage/api/coupons?status=' + currentTab.toUpperCase();
+	    var res = await fetch(url);
+	    if (!res.ok) throw new Error("Network response was not ok");
+	    
+	    var list = await res.json();
+	    
+	    // 2. 데이터가 없을 때 처리
+	    if (!list || list.length === 0) {
+	      area.innerHTML = '<div class="empty-state"><i class="bi bi-ticket-perforated"></i><p>' +
+	        (currentTab === 'available' ? '사용 가능한 쿠폰이 없어요' : '사용한 쿠폰이 없어요') +
+	        '</p></div>';
+	      return;
+	    }
 
+	    // 3. 목록 렌더링
+	    var html = '<div class="coupon-list">';
+	    html += list.map(function(c) {
+	      var now = new Date();
+	      var exp = c.expiredAt ? new Date(c.expiredAt) : null;
+	      var dday = exp ? Math.ceil((exp - now) / 86400000) : null;
+	      var isExpired = exp && exp < now;
+	      
+	      var ddayClass = isExpired ? 'dday-expired' : (dday !== null && dday <= 3 ? 'dday-urgent' : 'dday-normal');
+	      var ddayText  = isExpired ? '만료됨' : (dday !== null ? (dday === 0 ? '오늘 마감' : 'D-' + dday) : '기간 없음');
+	      
+	      var discValue = c.discountAmount || 0;
+	      var disc = c.discountType === 'PERCENT' ? (discValue + '%') : (discValue.toLocaleString() + '원');
+
+	      return '<div class="coupon-card' + (isExpired || currentTab === 'used' ? ' expired' : '') + '">' +
+	        '<div class="coupon-left">' +
+	          '<div class="coupon-discount">' + escHtml(disc) + '</div>' +
+	          '<div class="coupon-discount-unit">할인</div>' +
+	        '</div>' +
+	        '<div class="coupon-right">' +
+	          '<div>' +
+	            '<div class="coupon-name">' + escHtml(c.couponName) + '</div>' +
+	            '<div class="coupon-meta">' +
+	              (c.minOrderAmount ? '<span><i class="bi bi-info-circle"></i>' + c.minOrderAmount.toLocaleString() + '원 이상 사용 가능</span>' : '') +
+	              (exp ? '<span><i class="bi bi-calendar3"></i>' + fmtDate(c.expiredAt) + ' 까지</span>' : '') +
+	            '</div>' +
+	          '</div>' +
+	          '<span class="coupon-dday ' + ddayClass + '">' + ddayText + '</span>' +
+	        '</div>' +
+	      '</div>';
+	    }).join('');
+	    html += '</div>';
+	    
+	    area.innerHTML = html;
+	  } catch(e) {
+	    console.error("로드 중 에러 발생:", e);
+	    area.innerHTML = '<div class="empty-state"><i class="bi bi-exclamation-circle"></i><p>쿠폰 정보를 불러올 수 없어요</p></div>';
+	  }
+	}
+  
   async function registerCoupon() {
     var code = document.getElementById('coupon-code').value.trim();
     if (!code) { alert('쿠폰 코드를 입력해 주세요'); return; }
