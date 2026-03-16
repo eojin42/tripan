@@ -48,4 +48,6 @@ public class MemberDto {
 	private Long reporterId;
 	private int reportCount;
 	
+	private int rem_point;
+	
 }
