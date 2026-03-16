@@ -454,6 +454,33 @@
 .btn-ai-go { background: var(--grad-main); color: white; border: none; border-radius: 20px; padding: 12px; font-weight: 800; font-size: 15px; cursor: pointer; box-shadow: 0 4px 12px rgba(137, 207, 240, 0.3); transition: 0.2s; }
 .btn-ai-go:hover { transform: translateY(-2px); box-shadow: 0 6px 16px rgba(137, 207, 240, 0.5); }
 
+/* 👥 인스타 스타일 팔로우 목록 모달 탭 & 리스트 */
+.follow-tabs { display: flex; width: 100%; border-bottom: 1px solid var(--border-color); margin-top: 10px; }
+.follow-tab { flex: 1; text-align: center; padding: 12px 0; font-size: 15px; font-weight: 800; color: var(--text-gray); cursor: pointer; transition: 0.2s; border-bottom: 2px solid transparent; }
+.follow-tab.active { color: var(--text-black); border-bottom: 2px solid var(--text-black); }
+.follow-tab:hover:not(.active) { color: var(--sky-blue); }
+
+.follow-item { display: flex; align-items: center; justify-content: space-between; padding: 12px 0; }
+.follow-item-left { display: flex; align-items: center; gap: 12px; cursor: pointer; text-decoration: none; color: inherit; }
+.follow-avatar { width: 46px; height: 46px; border-radius: 50%; object-fit: cover; border: 1px solid var(--border-color); }
+.follow-info { display: flex; flex-direction: column; justify-content: center; }
+.follow-name { font-size: 14px; font-weight: 900; color: var(--text-black); transition: 0.2s; line-height: 1.2; }
+.follow-desc { font-size: 13px; color: var(--text-gray); font-weight: 500; margin-top: 2px; line-height: 1.2; }
+.follow-item-left:hover .follow-name { color: var(--sky-blue); }
+
+.btn-mini-follow { padding: 7px 18px; border-radius: 8px; font-size: 13px; font-weight: 800; cursor: pointer; transition: 0.2s; border: none; }
+.btn-mini-follow.following { background: #f1f5f9; color: var(--text-dark); border: 1px solid var(--border-color); }
+.btn-mini-follow.following:hover { background: #ffe4e4; color: #ff4d4d; border-color: #ff4d4d; } 
+.btn-mini-follow:not(.following) { background: var(--sky-blue); color: white; box-shadow: 0 4px 10px rgba(137, 207, 240, 0.2); }
+.btn-mini-follow:not(.following):hover { background: #72bde0; transform: translateY(-2px); }
+
+.lounge-modal-content.glass-card {
+  background: rgba(255, 255, 255, 0.90) !important; 
+  backdrop-filter: blur(16px) !important; 
+  -webkit-backdrop-filter: blur(16px) !important;
+  border: 1px solid rgba(255, 255, 255, 0.2) !important; 
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.1);
+}
   </style>
   
 </head>
@@ -482,11 +509,17 @@
 		        <div class="profile-name">${sessionScope.loginUser.nickname} 님</div>
 		      </a>
 		      
-			  <div class="profile-stats">
-			    <div class="stat-box">게시물 <strong>${postCount != null ? postCount : 0}</strong></div>
-			    <div class="stat-box">팔로워 <strong>${followerCount != null ? followerCount : 0}</strong></div>
-			    <div class="stat-box">팔로잉 <strong>${followingCount != null ? followingCount : 0}</strong></div>
-			  </div>
+			<div class="profile-stats">
+				<div class="stat-box" style="cursor: pointer;" onclick="loadUserProfile('${sessionScope.loginUser.memberId}')">
+					게시물 <strong>${postCount != null ? postCount : 0}</strong>
+				</div>
+				<div class="stat-box" style="cursor: pointer;" onclick="openFollowModal('follower', '${sessionScope.loginUser.memberId}')">
+					팔로워 <strong>${followerCount != null ? followerCount : 0}</strong>
+				</div>
+				<div class="stat-box" style="cursor: pointer;" onclick="openFollowModal('following', '${sessionScope.loginUser.memberId}')">
+					팔로잉 <strong>${followingCount != null ? followingCount : 0}</strong>
+				</div>
+			</div>
 		    </c:when>
 		    
 		    <%-- 비로그인 상태일 때 --%>
@@ -696,6 +729,29 @@
     </div>
   </div>
 </div>
+
+<div id="followModalOverlay" class="lounge-modal-overlay">
+  <div class="lounge-modal-content glass-card" style="max-width: 420px; padding: 20px 24px; border-radius: 20px;">
+    
+    <div style="position: relative; display: flex; justify-content: center; align-items: center; margin-bottom: 5px;">
+      <h3 id="followModalTitle" style="margin: 0; font-size: 16px; font-weight: 900; color: var(--text-black);">@유저닉네임</h3>
+      <button class="btn-close-modal" onclick="closeFollowModal()" style="position: absolute; right: -10px; top: -10px; width: 32px; height: 32px; font-size: 16px;">✕</button>
+    </div>
+
+    <div class="follow-tabs">
+      <div id="tabFollower" class="follow-tab" onclick="switchFollowTab('follower')">팔로워</div>
+      <div id="tabFollowing" class="follow-tab" onclick="switchFollowTab('following')">팔로잉</div>
+    </div>
+    
+    <div id="followModalList" style="max-height: 400px; min-height: 250px; overflow-y: auto; padding-right: 5px; margin-top: 10px;">
+      <div style="text-align: center; color: var(--text-gray); font-size: 13px; padding: 40px 0;">목록을 불러오는 중... ⏳</div>
+    </div>
+    
+  </div>
+</div>
+
+
+
 	  <jsp:include page="/WEB-INF/views/layout/footer.jsp"/>
 	  <jsp:include page="/WEB-INF/views/member/loginModal.jsp" />
 	  <jsp:include page="/WEB-INF/views/community/fragment/mate/mate_write_modal.jsp" />
@@ -2826,6 +2882,95 @@ window.goToRecommendedFeed = function(keyword) {
     }, 150); 
 }
 
+let currentFollowTargetId = null;
+
+function openFollowModal(type, targetMemberId, targetNickname = '나의 친구들') {
+ if (typeof IS_LOGGED_IN !== 'undefined' && !IS_LOGGED_IN) {
+     showLoginModal();
+     return;
+ }
+
+ currentFollowTargetId = targetMemberId;
+ 
+ document.getElementById('followModalTitle').innerText = targetNickname;
+ 
+ const modal = document.getElementById('followModalOverlay');
+ modal.classList.add('active');
+ document.body.style.overflow = 'hidden'; 
+ 
+ switchFollowTab(type); 
+}
+
+function closeFollowModal() {
+ document.getElementById('followModalOverlay').classList.remove('active');
+ document.body.style.overflow = 'auto'; 
+}
+
+function switchFollowTab(type) {
+ document.getElementById('tabFollower').classList.remove('active');
+ document.getElementById('tabFollowing').classList.remove('active');
+ 
+ if (type === 'follower') {
+     document.getElementById('tabFollower').classList.add('active');
+ } else {
+     document.getElementById('tabFollowing').classList.add('active');
+ }
+
+ const listContainer = document.getElementById('followModalList');
+ listContainer.innerHTML = '<div style="text-align: center; color: var(--text-gray); font-size: 13px; padding: 40px 0;">데이터를 불러오는 중... ✈️</div>';
+
+ fetch(`${pageContext.request.contextPath}/api/feed/follow/list/\${type}/\${currentFollowTargetId}`, {
+     headers: { 'X-Requested-With': 'Fetch' }
+ })
+ .then(res => {
+     if (res.status === 401) { showLoginModal(); throw new Error('Unauthorized'); }
+     return res.json();
+ })
+ .then(data => {
+     if (!data || data.length === 0) {
+         listContainer.innerHTML = `<div style="text-align: center; color: var(--text-gray); font-size: 14px; padding: 40px 0;">목록이 텅 비어있습니다 🥲</div>`;
+         return;
+     }
+
+     let html = '';
+     data.forEach(user => {
+         // 자바에서 넘겨준 문자열 'true'/'false'를 boolean으로 안전하게 처리
+         const isFollowing = user.isFollowing === 'true' || user.isFollowing === true;
+         
+         const btnClass = isFollowing ? 'following' : '';
+         const btnText = isFollowing ? '팔로잉' : '팔로우';
+         
+         const profileSrc = user.profile && user.profile !== 'default.png' 
+             ? `${pageContext.request.contextPath}/uploads/profile/\${user.profile}` 
+             : `${pageContext.request.contextPath}/dist/images/default.png`;
+
+         html += `
+         <div class="follow-item">
+             <div class="follow-item-left" onclick="goToProfile(\${user.id})">
+                 <img src="\${profileSrc}" class="follow-avatar">
+                 <span class="follow-name" style="font-size: 15px;">\${user.nickname}</span>
+             </div>
+             <button class="btn-mini-follow \${btnClass}" onclick="toggleFollow(this, \${user.id})">\${btnText}</button>
+         </div>
+         `;
+     });
+     
+     listContainer.innerHTML = html;
+ })
+ .catch(err => {
+     if(err.message !== 'Unauthorized') {
+         console.error(err);
+         listContainer.innerHTML = `<div style="text-align: center; color: #FF6B6B; font-size: 13px; padding: 40px 0;">데이터를 불러오지 못했습니다.</div>`;
+     }
+ });
+}
+ 
+function goToProfile(memberId) {
+ closeFollowModal();
+ if (typeof loadUserProfile === 'function') {
+     loadUserProfile(memberId);
+ }
+}
  </script>
   
 </body>

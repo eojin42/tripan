@@ -236,6 +236,14 @@ public class CommunityFeedServiceImpl implements CommunityFeedService {
         
         return feedMapper.getFeedDetailFull(params);
     }
+    
+    public List<Map<String, Object>> getFollowList(String type, Long targetMemberId, Long currentUserId) {
+        if ("follower".equals(type)) {
+            return feedMapper.getFollowerList(targetMemberId, currentUserId);
+        } else {
+            return feedMapper.getFollowingList(targetMemberId, currentUserId);
+        }
+    }
 
     
     

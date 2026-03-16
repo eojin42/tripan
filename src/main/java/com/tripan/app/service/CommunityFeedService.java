@@ -36,5 +36,9 @@ public interface CommunityFeedService {
 
 	CommunityFeedListDto getFeedDetailFull(Long postId, Long loginMemberId);
 	
+	List<Map<String, Object>> getFollowList(String type, Long targetMemberId, Long currentUserId);
+	
+	
+	
 	
 }

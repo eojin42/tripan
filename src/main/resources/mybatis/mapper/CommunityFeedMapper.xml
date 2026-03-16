@@ -266,6 +266,30 @@
 	    LEFT JOIN trip T ON F.trip_id = T.trip_id
 	    WHERE F.post_id = #{postId} AND F.del_yn = 'N'
 	</select>
+
+	<select id="getFollowerList" resultType="map">
+	    SELECT 
+	        m.member_id AS "id", 
+	        m.nickname AS "nickname", 
+	        m.profile_image AS "profile",
+	        CASE WHEN (SELECT COUNT(*) FROM follow WHERE follower_id = #{currentUserId} AND following_id = m.member_id) > 0 THEN 'true' ELSE 'false' END AS "isFollowing"
+	    FROM follow f
+	    JOIN member2 m ON f.follower_id = m.member_id
+	    WHERE f.following_id = #{targetMemberId}
+	    ORDER BY f.FOLLOW_AT DESC
+	</select>
+	
+	<select id="getFollowingList" resultType="map">
+	    SELECT 
+	        m.member_id AS "id", 
+	        m.nickname AS "nickname", 
+	        m.profile_image AS "profile",
+	        CASE WHEN (SELECT COUNT(*) FROM follow WHERE follower_id = #{currentUserId} AND following_id = m.member_id) > 0 THEN 'true' ELSE 'false' END AS "isFollowing"
+	    FROM follow f
+	    JOIN member2 m ON f.following_id = m.member_id
+	    WHERE f.follower_id = #{targetMemberId}
+	    ORDER BY f.FOLLOW_AT DESC
+	</select>
 	
 	
 </mapper>
