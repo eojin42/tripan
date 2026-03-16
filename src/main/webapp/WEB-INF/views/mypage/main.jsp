@@ -162,6 +162,129 @@
     .user-pic{width:42px;height:42px;border-radius:50%;flex-shrink:0;background:var(--grad);overflow:hidden;
       display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800;font-size:14px;}
     .user-pic img{width:100%;height:100%;object-fit:cover;}
+    
+    /* 일정 만들기 버튼 전용 스타일 */
+    .btn-plan {
+    background-color: var(--sky-light); /* 아주 연한 하늘색 배경 */
+    color: var(--sky);                /* 메인 하늘색 글자 */
+    border: none;
+    padding: 10px 24px;
+    border-radius: 50px;             /* 알약 모양 */
+    font-weight: 700;
+    font-size: 14px;
+    cursor: pointer;
+    transition: all 0.3s var(--bounce);
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 10px;
+}
+
+.btn-plan:hover {
+    background-color: var(--sky);     /* 호버 시 진한 하늘색으로 */
+    color: white;                     /* 글자는 하얗게 */
+    transform: scale(1.05);           /* 살짝 커지는 효과 */
+    box-shadow: 0 5px 15px rgba(137, 207, 240, 0.3);
+}
+
+/* 다가오는 일정 없음 (가로 배치) */
+/* 다가오는 일정 카드 컨테이너 */
+.upcoming-none-container {
+    display: flex;
+    align-items: center;
+    justify-content: space-between; /* 왼쪽(텍스트)과 오른쪽(버튼) 끝으로 분리 */
+    padding: 24px 30px;
+    background: #fff;
+    border-radius: 20px;
+    border: 1px solid var(--border);
+    margin-bottom: 20px;
+}
+
+/* 다가오는 일정 카드 디자인 */
+.upcoming-card-custom {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: #fff;
+    border-radius: 20px;
+    padding: 24px 30px;
+    border: 1px solid var(--border);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.03);
+}
+
+.upcoming-content-left {
+    display: flex;
+    flex-direction: column; /* 텍스트 세로 정렬 */
+    gap: 8px;
+}
+
+.upcoming-content-left h4 {
+    margin: 0;
+    font-size: 18px;
+    font-weight: 800;
+    color: var(--text);
+}
+
+.upcoming-content-left p {
+    margin: 0;
+    font-size: 14px;
+    color: var(--muted);
+}
+
+/* 이미지 속 그라데이션 버튼 느낌 */
+.btn-upcoming-go {
+    background: var(--grad); /* 기존 핑크-하늘 그라데이션 */
+    color: white;
+    border: none;
+    padding: 14px 28px;
+    border-radius: 14px;
+    font-weight: 700;
+    font-size: 15px;
+    cursor: pointer;
+    box-shadow: 0 4px 15px rgba(137, 207, 240, 0.4);
+    transition: transform 0.2s;
+}
+
+.btn-upcoming-go:hover {
+    transform: translateY(-2px);
+}
+
+.upcoming-info-group {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+}
+
+/* 하늘색 아이콘 박스 */
+.upcoming-icon-box {
+    width: 54px;
+    height: 54px;
+    background: var(--sky-light);
+    color: var(--sky);
+    border-radius: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 26px;
+}
+.upcoming-text-group {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.upcoming-text-group h4 {
+    margin: 0;
+    font-size: 18px;
+    font-weight: 800;
+    color: var(--text);
+}
+
+.upcoming-text-group p {
+    margin: 0;
+    font-size: 14px;
+    color: var(--muted);
+}
 
     @media(max-width:1024px){.mypage-container{grid-template-columns:1fr;}.sidebar{position:relative;top:0;}.summary-grid{grid-template-columns:repeat(2,1fr);}}
     @media(max-width:600px){.accom-grid{grid-template-columns:repeat(2,1fr);}}

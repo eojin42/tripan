@@ -38,17 +38,24 @@ async function loadUpcoming() {
     if (!res.ok) throw new Error(res.status);
     const data = await res.json(); // { tripName, startDate, endDate, dday }
 
-    if (!data || !data.tripName) {
-      area.innerHTML = `
-        <div class="upcoming-none">
-          <div class="upcoming-none-icon"><i class="bi bi-calendar-plus"></i></div>
-          <div class="upcoming-none-text">
-            <h4>다가오는 일정이 없어요</h4>
-            <p>새로운 여행을 계획해볼까요? ✈️</p>
-          </div>
-        </div>`;
-      return;
-    }
+	if (!data || !data.tripName) {
+	  area.innerHTML = `
+	    <div class="upcoming-card-custom">
+	      <div class="upcoming-info-group">
+	        <div class="upcoming-icon-box">
+	          <i class="bi bi-calendar-plus"></i>
+	        </div>
+	        <div class="upcoming-text-group">
+	          <h4>다가오는 일정이 없어요</h4>
+	          <p>새로운 여행을 계획해볼까요? ✈️</p>
+	        </div>
+	      </div>
+	      <button class="btn-upcoming-go" onclick="location.href='${ctxPath}/trip/trip_create'" style="margin:0; padding:12px 24px; border-radius:12px;">
+	        일정 만들기
+	      </button>
+	    </div>`;
+	  return;
+	}
 
 	const today = new Date();
 	today.setHours(0, 0, 0, 0);

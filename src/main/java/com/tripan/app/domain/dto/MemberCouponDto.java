@@ -11,6 +11,7 @@ public class MemberCouponDto {
 	private Long couponId;
 	private String status;
 	private String issuedAt;
+	private String expiredAt;
 	private String couponName;
 	private String discountAmount;
 }
