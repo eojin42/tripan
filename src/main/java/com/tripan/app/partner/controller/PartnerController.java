@@ -19,7 +19,6 @@ public class PartnerController {
 
     @PostMapping("/apply")
     public String submitApply(@ModelAttribute PartnerApplyDto applyDto) {
-        // 🌟 DB 저장 로직 (생략)
         return "redirect:/partner/apply_complete"; 
     }
 
