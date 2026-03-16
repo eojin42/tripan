@@ -169,10 +169,11 @@
             <div class="place-card" draggable="true"
               data-day="${day.dayNumber}"
               data-id="${item.itemId}"
+              data-order="${item.visitOrder}"
               data-name="${fn:escapeXml(item.placeName)}"
               data-memo="${fn:escapeXml(not empty item.memo ? item.memo : '')}"
               data-imgurl="${fn:escapeXml(not empty item.imageUrl ? item.imageUrl : '')}"
-              data-images="[]"
+              data-images="[<c:forEach var='img' items='${item.images}' varStatus='s'>&quot;${fn:escapeXml(img.imageUrl)}&quot;<c:if test='${!s.last}'>,</c:if></c:forEach>]"
               data-address="${fn:escapeXml(not empty item.address ? item.address : '')}"
               data-category="${fn:escapeXml(not empty item.category ? item.category : 'ETC')}"
               data-lat="${not empty item.latitude ? item.latitude : 0}"
@@ -199,7 +200,7 @@
 				      <span class="place-chip memo">📝 메모</span>
 				    </c:if>
 				    <c:if test="${not empty item.imageUrl}">
-				      <span class="place-chip img">🖼 사진</span>
+				      <span class="place-chip img">📷 사진</span>
 				    </c:if>
 				  </div>
 				</div>
@@ -347,7 +348,7 @@
         <div class="rp-tabs">
           <button class="rp-tab active" id="rpTab-suggest" onclick="switchRpTab('suggest',this)">추천 장소</button>
           <button class="rp-tab" id="rpTab-summary" onclick="switchRpTab('summary',this)">일정 요약</button>
-          <button class="rp-tab" id="rpTab-weather" onclick="switchRpTab('weather',this)">날씨</button>
+          <button class="rp-tab" id="rpTab-weather" onclick="switchRpTab('weather',this); loadWeatherIfNeeded();">날씨</button>
         </div>
       </div>
 
@@ -384,60 +385,7 @@
 
       <%-- ── 탭: 날씨 ── --%>
       <div class="rp-pane" id="rpPane-weather">
-        <div class="rp-weather">
-
-          <%-- 오늘(첫날) 메인 카드 --%>
-          <div class="rp-weather-main">
-            <div class="rp-weather-main-icon">🌤</div>
-            <div class="rp-weather-main-info">
-              <div class="rp-weather-main-city">📍 ${not empty tripDto.cities ? tripDto.cities[0] : '여행지'}</div>
-              <div class="rp-weather-main-temp">14°</div>
-              <div class="rp-weather-main-desc">구름 조금, 바람 약함</div>
-            </div>
-            <div class="rp-weather-main-side">
-              <div class="rp-weather-main-hi">최고 17°</div>
-              <div class="rp-weather-main-lo">최저 9°</div>
-              <div class="rp-weather-main-rain">🌧 강수 10%</div>
-            </div>
-          </div>
-
-          <%-- 4일 예보 --%>
-          <div class="rp-weather-forecast">
-
-            <div class="rp-weather-row">
-              <span class="rp-wr-day">3/10 화</span>
-              <span class="rp-wr-icon">🌤</span>
-              <span class="rp-wr-desc">구름 조금</span>
-              <span class="rp-wr-temp">17° <span>/ 9°</span></span>
-              <span class="rp-rain-pill low">☔ 10%</span>
-            </div>
-
-            <div class="rp-weather-row">
-              <span class="rp-wr-day">3/11 수</span>
-              <span class="rp-wr-icon">⛅</span>
-              <span class="rp-wr-desc">흐림</span>
-              <span class="rp-wr-temp">13° <span>/ 8°</span></span>
-              <span class="rp-rain-pill mid">☔ 20%</span>
-            </div>
-
-            <div class="rp-weather-row rp-weather-row--warn">
-              <span class="rp-wr-day">3/12 목</span>
-              <span class="rp-wr-icon">🌧</span>
-              <span class="rp-wr-desc">비 예보</span>
-              <span class="rp-wr-temp">11° <span>/ 7°</span></span>
-              <span class="rp-rain-pill high">☔ 70%</span>
-            </div>
-
-            <div class="rp-weather-row">
-              <span class="rp-wr-day">3/13 금</span>
-              <span class="rp-wr-icon">🌤</span>
-              <span class="rp-wr-desc">맑음</span>
-              <span class="rp-wr-temp">15° <span>/ 10°</span></span>
-              <span class="rp-rain-pill low">☔ 5%</span>
-            </div>
-
-          </div>
-        </div>
+        <%-- 날씨 v2: JS가 이 안에 검색창 + 지도 주입 --%>
       </div>
 
     </div><%-- /edit-recommend-panel --%>
@@ -497,14 +445,24 @@
 
 <%-- ══════════ MODALS ══════════ --%>
 
-<%-- 장소 추가 모달 --%>
+<%-- ✨ 추천 장소 모달 (기존 장소 추가 모달 리브랜딩) --%>
 <div class="modal-overlay" id="addPlaceModal">
   <div class="modal-box" style="width:min(660px,96vw);">
     <div class="modal-box__head">
-      <span class="modal-box__title">📍 장소 추가</span>
+      <span class="modal-box__title">🏢 추천 장소</span>
       <button class="modal-close-btn" onclick="closeModal('addPlaceModal')">✕</button>
     </div>
     <div class="modal-box__body">
+      
+      <%-- 추천 안내 배너 --%>
+      <div class="recommend-banner">
+        <div class="recommend-banner-icon">✈️</div>
+        <div class="recommend-banner-text">
+          <strong>Tripan이 픽한 요즘 뜨는 핫플들을 모아봤어요!</strong>
+          <span>찾으시는 장소가 안 보인다면, <b>상단 지도 검색창</b>에서 바로 추가할 수 있어요</span>
+        </div>
+      </div>
+
       <div class="place-type-tabs">
         <button class="place-type-tab active" onclick="selectPlaceType(this,'all')">🔍 전체</button>
         <button class="place-type-tab" onclick="selectPlaceType(this,'RESTAURANT')">🍽️ 맛집</button>
@@ -515,20 +473,23 @@
         <button class="place-type-tab" onclick="selectPlaceType(this,'SHOPPING')">🛍️ 쇼핑</button>
         <button class="place-type-tab" onclick="selectPlaceType(this,'my')">⭐ 나만의</button>
       </div>
+      
       <div class="search-input-wrap">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-        <input type="text" placeholder="장소명, 주소 검색…" id="placeSearchInput" oninput="searchPlace(this.value)">
+        <input type="text" placeholder="추천 장소 내에서 검색…" id="placeSearchInput" oninput="searchPlace(this.value)">
       </div>
+      
       <div class="place-results" id="placeResults">
-        <div style="text-align:center;padding:28px 20px;color:#A0AEC0;">
-          <div style="font-size:28px;margin-bottom:8px;">🗺️</div>
-          <div style="font-size:13px;">장소를 검색하거나 카테고리를 선택하세요</div>
+        <div style="text-align:center;padding:40px 20px;color:#A0AEC0;">
+          <div style="font-size:32px;margin-bottom:10px;">✨</div>
+          <div style="font-size:14px;font-weight:700;color:#4A5568;margin-bottom:4px;">카테고리를 선택해 보세요!</div>
+          <div style="font-size:12px;">Tripan이 엄선한 멋진 장소들을 추천해 드립니다.</div>
         </div>
       </div>
+
     </div>
   </div>
 </div>
-
 
 <%-- ═══════════════════════════════════════════════════════
      환영 모달 (1회성) - workspace에 첫 진입 시만 표시
@@ -1039,15 +1000,13 @@
     <span class="notif-dd-title">🔔 알림</span>
     <button class="notif-dd-clear" onclick="clearAllNotif()">모두 읽음</button>
   </div>
+  
+  <%-- 🌟 중복 ID 제거 및 깔끔하게 통합 --%>
   <div class="notif-list" id="notifList">
-
-    <%-- 알림 목록 - JS에서 동적 렌더 --%>
-    <div id="notifList">
-      <div style="text-align:center;padding:20px;color:#999;font-size:13px">알림을 불러오는 중...</div>
-    </div>
-
+    <div style="text-align:center;padding:20px;color:#999;font-size:13px">알림을 불러오는 중...</div>
   </div>
 </div>
+
 
 <%-- 토스트 --%>
 <div class="toast-wrap" id="toastWrap"></div>
@@ -1058,9 +1017,16 @@
      전역 변수 주입 (JSP EL)
 ════════════════════════════════════════ --%>
 <script>
-var TRIP_ID     = ${tripId};
-var CTX_PATH    = '${pageContext.request.contextPath}';
+var TRIP_ID      = ${tripId};
+var CTX_PATH     = '${pageContext.request.contextPath}';
 var SHOW_WELCOME = ${showWelcome};
+// 날씨 모듈용 여행 정보
+var TRIP_START_DATE = '${fn:substring(tripDto.startDate,0,10)}';
+var TRIP_END_DATE   = '${fn:substring(tripDto.endDate,0,10)}';
+var TRIP_CITIES     = [];
+<c:forEach var="city" items="${tripDto.cities}">
+  TRIP_CITIES.push('${fn:escapeXml(city)}');
+</c:forEach>
 </script>
 
 <%-- ════════════════════════════════════════
@@ -1072,6 +1038,7 @@ var SHOW_WELCOME = ${showWelcome};
 <script src="${pageContext.request.contextPath}/dist/js/trip/workspace.checklist.js"></script>
 <script src="${pageContext.request.contextPath}/dist/js/trip/workspace.vote.js"></script>
 <script src="${pageContext.request.contextPath}/dist/js/trip/workspace.expense.js"></script>
+<script src="${pageContext.request.contextPath}/dist/js/trip/workspace.weather.js"></script>
 <script src="${pageContext.request.contextPath}/dist/js/trip/workspace.recommend.js"></script>
 <script src="${pageContext.request.contextPath}/dist/js/trip/workspace.summary.js"></script>
 <script src="${pageContext.request.contextPath}/dist/js/trip/workspace.welcome.js"></script>

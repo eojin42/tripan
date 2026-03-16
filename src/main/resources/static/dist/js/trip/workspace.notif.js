@@ -28,7 +28,6 @@ function closeNotif() {
   document.getElementById('notifDropdown').classList.remove('active');
   document.getElementById('notifDim').classList.remove('active');
 }
-
 /* ══════════════════════════════
    알림 목록 로드 & 렌더
    ← JSP 인라인에서 이동
@@ -58,7 +57,7 @@ function loadNotifList() {
               + '<div class="notif-item-info">'
               + '<div class="notif-item-text">' + n.message + '</div>'
               + '<div class="notif-item-time">' + n.timeAgo + '</div>'
-              + '</div>' + dot2 + '</div>';
+              + '</div>' + dot2 + '</div>';ㅁ
           }).join('');
 
       var listEl = document.getElementById('notifList');
