@@ -231,6 +231,31 @@
   .btn-floating-map { position: fixed; bottom: 40px; left: 50%; transform: translateX(-50%); background: #111; color: white; border: none; border-radius: 30px; padding: 12px 24px; font-size: 15px; font-weight: 800; display: flex; align-items: center; gap: 8px; cursor: pointer; z-index: 100; box-shadow: 0 4px 12px rgba(0,0,0,0.3); transition: background 0.2s; }
   .btn-floating-map:hover { background: #333; }
   .list-container.map-mode ~ .btn-floating-map { display: none; }
+  
+  /* --- 🌟 내 위치 버튼 --- */
+  .btn-my-location {
+      position: absolute; 
+      bottom: 24px; 
+      right: 24px; 
+      z-index: 10;
+      background: white; 
+      border: 1px solid #E2E8F0; 
+      border-radius: 50%; 
+      width: 44px; 
+      height: 44px; 
+      display: flex; 
+      align-items: center; 
+      justify-content: center;
+      cursor: pointer; 
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15); 
+      transition: all 0.2s; 
+      color: var(--text-black);
+  }
+  .btn-my-location:hover { 
+      background: #F8F9FA; 
+      transform: translateY(-2px); 
+      color: var(--point-blue);
+  }
 
   @media (max-width: 992px) { 
     .accommodation-grid { grid-template-columns: repeat(2, 1fr); } 
@@ -300,6 +325,14 @@
       
       <div id="map-wrapper">
           <button class="btn-close-map" onclick="toggleMapView()">닫기 ✕</button>
+          
+          <button class="btn-my-location" onclick="moveToMyLocation()" title="내 위치로 이동">
+             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="10"></circle>
+                <circle cx="12" cy="12" r="3"></circle>
+             </svg>
+          </button>
+
           <div id="kakao-map" style="width:100%; height:100%;"></div>
       </div>
   </div>
@@ -637,6 +670,51 @@
       // 정렬 기준이 바뀌었으므로 리스트 초기화 후 새로 불러오기
       fetchAccommodations(true);
   }
+  
+  //내 위치 마커를 저장할 변수
+  let myLocationMarker = null; 
+
+  window.moveToMyLocation = function() {
+      if (!mapInstance) return;
+
+      if (navigator.geolocation) {
+          // 위치 정보 요청
+          navigator.geolocation.getCurrentPosition(
+              function(position) {
+                  // 🌟 전역 변수에 현재 위치 갱신 (정렬 기능과 데이터 공유!)
+                  userLat = position.coords.latitude; 
+                  userLng = position.coords.longitude; 
+                  
+                  const locPosition = new kakao.maps.LatLng(userLat, userLng);
+
+                  // 기존 내 위치 마커가 있다면 위치만 변경, 없다면 새로 생성
+                  if (myLocationMarker) {
+                      myLocationMarker.setPosition(locPosition);
+                  } else {
+                      const imageSrc = 'https://t1.daumcdn.net/localimg/localimages/07/mapapidoc/markerStar.png'; 
+                      const imageSize = new kakao.maps.Size(24, 35); 
+                      const markerImage = new kakao.maps.MarkerImage(imageSrc, imageSize);
+
+                      myLocationMarker = new kakao.maps.Marker({
+                          map: mapInstance,
+                          position: locPosition,
+                          image: markerImage,
+                          title: '내 위치',
+                          zIndex: 50 // 다른 마커보다 위로 올라오게 설정
+                      });
+                  }
+
+                  // 해당 좌표로 지도를 부드럽게 이동
+                  mapInstance.panTo(locPosition);
+              },
+              function(error) {
+                  alert("위치 정보 접근 권한을 허용해야 내 위치 기능을 사용할 수 있습니다.");
+              }
+          );
+      } else {
+          alert("현재 브라우저에서는 위치 정보를 지원하지 않습니다.");
+      }
+  };
 
 </script>
 

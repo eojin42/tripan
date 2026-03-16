@@ -304,4 +304,13 @@
           AND res.STATUS = 'SUCCESS'
           AND res.CHECK_OUT_DATE > SYSDATE
     </select>
+    
+    <!-- 예약 번호로 roomid 조회 -->
+    <select id="getRoomIdbyReservationId" resultType="com.tripan.app.domain.dto.ReservationRequestDto">
+    	SELECT room_id,
+    		TO_CHAR(CHECK_IN_DATE, 'YYYY-MM-DD') as "checkIn",
+            TO_CHAR(CHECK_OUT_DATE, 'YYYY-MM-DD') as "checkOut"
+    	FROM RESERVATION
+    	WHERE reservation_id = #{reservationId}
+    </select>
 </mapper>

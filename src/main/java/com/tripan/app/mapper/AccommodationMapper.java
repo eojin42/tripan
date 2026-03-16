@@ -48,4 +48,7 @@ public interface AccommodationMapper {
     int checkRoomBookingCount(@Param("roomId") String roomId, @Param("checkin") String checkin, @Param("checkout") String checkout);
     int getTotalRoomCountByPlace(Long placeId);
     List<Map<String, Object>> selectFutureReservationsByPlace(Long placeId);
+    
+    // 예약 번호로 방 번호 조회
+    ReservationRequestDto getRoomIdbyReservationId(Long reservationId);
 }

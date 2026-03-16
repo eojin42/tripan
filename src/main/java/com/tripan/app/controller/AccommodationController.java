@@ -221,4 +221,46 @@ public class AccommodationController {
         }
         return response;
     }
+    
+    @GetMapping("review/{reservationId}")
+    public String reviewForm(@PathVariable("reservationId") Long reservationId, 
+                             HttpSession session, 
+                             Model model) {
+        
+
+        MemberDto loginUser = (MemberDto) session.getAttribute("loginUser");
+        if (loginUser == null) {
+            return "redirect:/login";
+        }
+
+        // 2. 서비스 단에서 리뷰 작성 가능 여부 검증
+        // (본인 예약인지, 이용 완료 상태인지, 체크아웃 후 30일 이내인지, 이미 리뷰를 작성했는지 확인)
+        // boolean isEligible = accommodationService.checkReviewEligibility(bookingId, loginUser.getMemberId());
+
+//        if (!isEligible) {
+//            // 검증 실패 시 에러 처리 (예: 알림창을 띄우거나 이전 페이지로 이동)
+//            model.addAttribute("message", "리뷰 작성 기간이 만료되었거나, 잘못된 접근입니다.");
+//            return "common/error"; // 에러 페이지 또는 리다이렉트 처리
+//        }
+        ReservationRequestDto reservationInfo = accommodationService.getRoomIdbyReservationId(reservationId);
+        RoomDto room = accommodationService.findRoomById(reservationInfo.getRoomId());
+        
+        long nights = 1;
+
+	    if (reservationInfo.getCheckin() != null && reservationInfo.getCheckout() != null 
+	         && !reservationInfo.getCheckin().isEmpty() && !reservationInfo.getCheckout().isEmpty()) {
+	         
+	         LocalDate inDate = LocalDate.parse(reservationInfo.getCheckin());
+	         LocalDate outDate = LocalDate.parse(reservationInfo.getCheckout());
+	         
+	         nights = ChronoUnit.DAYS.between(inDate, outDate);
+	    }
+	
+        
+        model.addAttribute("reservationInfo", reservationInfo);
+        model.addAttribute("nights", nights);
+        model.addAttribute("room", room); 
+        
+        return "accommodation/review/review_form"; 
+    }
 }
