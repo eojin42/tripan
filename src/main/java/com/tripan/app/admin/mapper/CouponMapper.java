@@ -1,12 +1,12 @@
 package com.tripan.app.admin.mapper;
 
+import java.util.List;
+import java.util.Map;
+
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 
 import com.tripan.app.admin.domain.dto.CouponDto;
-
-import java.util.List;
-import java.util.Map;
 
 @Mapper
 public interface CouponMapper {
@@ -47,4 +47,9 @@ public interface CouponMapper {
 
     /* ── 엑셀용 전체 조회 ── */
     List<CouponDto.ListItem> selectCouponListForExcel(Map<String, Object> params);
+    
+    List<CouponDto.ListItem> findByConditionType(String conditionType);
+    
+    int countMembersByCondition(Map<String, Object> params);
+    List<Long> findMemberIdsByCondition(Map<String, Object> params);
 }

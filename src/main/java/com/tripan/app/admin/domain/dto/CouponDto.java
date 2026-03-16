@@ -24,6 +24,8 @@ public class CouponDto {
         private String     status;
         private int        issuedCount;
         private String     createdAt;
+        private String     issueConditionType;
+        private String     issueConditionValue;
     }
 
     /** 쿠폰 등록/수정 요청 */
@@ -38,6 +40,8 @@ public class CouponDto {
         private BigDecimal platformShare;
         private LocalDate  validFrom;
         private LocalDate  validUntil;
+        private String     issueCondition;       // 프론트에서 오는 필드명
+        private String     issueConditionValue;
     }
 
     /** 승인/반려 요청 */
@@ -85,6 +89,19 @@ public class CouponDto {
         private String issuedAt;
         private String validUntil;
         private String status;  // UNUSED | USED | CANCELED
+    }
+    
+    /** 발급 예상 인원 응답 */
+    @Data
+    public static class PreviewCountResponse {
+        private int count;
+    }
+    
+    /** 쿠폰 등록 응답 (발급 인원 포함) */
+    @Data
+    public static class RegisterResponse {
+        private Long couponId;
+        private int  issuedCount;
     }
 
     /** 페이지네이션 포함 목록 응답 */
