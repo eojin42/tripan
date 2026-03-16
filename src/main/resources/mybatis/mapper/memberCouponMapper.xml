@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.tripan.app.mapper.MemberCouponMapper">
+
+    <!--
+        member_coupon bulk INSERT (쿠폰 등록 시 대상 회원 일괄 발급)
+        memberId : Long, couponId : Long
+    -->
+    <insert id="insertMemberCoupon" parameterType="map">
+        INSERT INTO member_coupon (member_coupon_id, member_id, coupon_id , status, issued_at, expired_at)
+        VALUES (member_coupon_seq.NEXTVAL,#{memberId}, #{couponId}, 'UNUSED', SYSDATE, #{expiredAt})
+    </insert>
+    
+    <select id="getMyCouponList" resultType="com.tripan.app.domain.dto.MemberCouponDto">
+	    SELECT 
+	        mc.member_coupon_id AS memberCouponId, 
+	        mc.member_id AS memberId, 
+	        mc.coupon_id AS couponId, 
+	        mc.status, 
+	        mc.issued_at AS issuedAt, 
+	        mc.expired_at AS expiredAt,
+	        c.coupon_name AS couponName, 
+	        c.discount_amount AS discountAmount,
+	        c.discount_type AS discountType,
+	        c.min_order_amount AS minOrderAmount
+	    FROM member_coupon mc
+	    JOIN coupon c ON mc.coupon_id = c.coupon_id 
+	    WHERE mc.member_id = #{memberId} AND mc.status = #{status}
+	    ORDER BY mc.issued_at DESC
+    </select>
+  
+</mapper>

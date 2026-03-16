@@ -724,6 +724,9 @@ document.addEventListener("DOMContentLoaded", () => {
 //최근 본 숙소 localStorage 저장
 function saveRecentAccom() {
     try {
+    	const userId = '${sessionScope.loginUser.memberId}';
+    	
+    	const storageKey = userId? 'tripan_recent_stays_' + userId : 'tripan_recent_stays_guest';
         const recent = {
             accommodationId: '${detail.placeId}',
             accommodationName: '${detail.name}',
@@ -732,7 +735,7 @@ function saveRecentAccom() {
             viewedAt: new Date().toISOString()
         };
 
-        const raw = localStorage.getItem('tripan_recent_stays');
+        const raw = localStorage.getItem(storageKey);
         let list = raw ? JSON.parse(raw) : [];
 
         // 중복 제거
@@ -742,7 +745,7 @@ function saveRecentAccom() {
         // 최대 10개만 유지
         if (list.length > 10) list = list.slice(0, 10);
 
-        localStorage.setItem('tripan_recent_stays', JSON.stringify(list));
+        localStorage.setItem(storageKey, JSON.stringify(list));
     } catch(e) {}
 }
 saveRecentAccom();
