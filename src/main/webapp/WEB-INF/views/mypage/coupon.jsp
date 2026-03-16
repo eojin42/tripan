@@ -41,25 +41,50 @@
     .content-area { display:flex;flex-direction:column;gap:24px;padding-top:20px; }
     .page-title { font-size:24px;font-weight:800;margin:0 0 4px; }
     .page-subtitle { font-size:14px;color:var(--text-gray);font-weight:500;margin:0 0 24px; }
-    /* 쿠폰 입력 */
-    .coupon-input-area {
-      background:white;border-radius:20px;padding:20px 24px;
-      border:1px solid var(--border-light);box-shadow:0 4px 16px rgba(0,0,0,.02);
-      display:flex;gap:12px;align-items:center;
+
+    /* 검색 영역 */
+    .search-area {
+	  background:white !important;  
+	  border-radius:20px;padding:16px 20px;
+	  border:1px solid var(--border-light);box-shadow:0 4px 16px rgba(0,0,0,.02);
+	  display:flex;gap:12px;align-items:center;
+	}
+    .search-icon { color:var(--text-gray);font-size:16px;flex-shrink:0; }
+    .search-input {
+	  flex:1;border:none;outline:none;
+	  font-size:14px;font-family:'Pretendard',sans-serif;font-weight:600;
+	  color:#2D3748 !important;
+	  background:white !important;
+	  caret-color:#2D3748 !important;
+	}
+    .search-input::placeholder { color:var(--text-gray);font-weight:500; }
+    .search-clear {
+      background:none;border:none;cursor:pointer;color:var(--text-gray);
+      font-size:16px;padding:2px;display:none;transition:.2s;
     }
-    .coupon-input {
-      flex:1;padding:12px 18px;border:1.5px solid var(--border-light);border-radius:14px;
-      font-size:14px;font-family:'Pretendard',sans-serif;font-weight:600;color:var(--text-black);
-      outline:none;transition:.2s;
-    }
-    .coupon-input:focus { border-color:var(--sky-blue); }
-    .coupon-input::placeholder { color:var(--text-gray); }
-    .btn-register { background:var(--grad-main);color:white;border:none;padding:12px 24px;border-radius:14px;font-size:14px;font-weight:800;cursor:pointer;font-family:inherit;white-space:nowrap;transition:.2s; }
-    .btn-register:hover { opacity:.85; }
-    /* 탭 */
+    .search-clear:hover { color:#718096 !important; }
+    .search-clear.visible { display:block; }
+
+    /* 탭 + 정렬 한 줄 */
+    .toolbar { display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap; }
     .tab-bar { display:flex;gap:8px;background:white;padding:6px;border-radius:16px;border:1px solid var(--border-light);width:fit-content; }
     .tab-btn { padding:9px 20px;border-radius:12px;border:none;background:none;font-size:13px;font-weight:700;color:var(--text-gray);cursor:pointer;transition:all .25s;font-family:inherit; }
     .tab-btn.active { background:var(--grad-main);color:white;box-shadow:0 4px 12px rgba(137,207,240,.3); }
+
+    /* 정렬 셀렉트 */
+    .sort-select {
+      padding:9px 16px;border-radius:12px;border:1.5px solid var(--border-light);
+      font-size:13px;font-family:'Pretendard',sans-serif;font-weight:700;color:var(--text-dark);
+      background:white;cursor:pointer;outline:none;transition:.2s;appearance:none;
+      background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23718096' stroke-width='2.5'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+      background-repeat:no-repeat;background-position:right 12px center;padding-right:32px;
+    }
+    .sort-select:focus { border-color:var(--sky-blue); }
+
+    /* 검색 결과 카운트 */
+    .result-count { font-size:13px;color:var(--text-gray);font-weight:600; }
+    .result-count strong { color:var(--sky-blue); }
+
     /* 쿠폰 카드 */
     .coupon-list { display:flex;flex-direction:column;gap:14px; }
     .coupon-card {
@@ -70,15 +95,15 @@
     .coupon-card:hover { box-shadow:0 8px 24px rgba(137,207,240,.12);border-color:rgba(137,207,240,.3); }
     .coupon-card.expired { opacity:.55;filter:grayscale(.4); }
     .coupon-left {
-      width:110px;flex-shrink:0;background:var(--grad-main);
+      width:140px;flex-shrink:0;background:var(--grad-main);
       display:flex;flex-direction:column;align-items:center;justify-content:center;
-      color:white;padding:20px 10px;gap:4px;position:relative;
+      color:white;padding:20px 12px;gap:4px;position:relative;
     }
     .coupon-left::after {
       content:'';position:absolute;right:-12px;top:50%;transform:translateY(-50%);
       width:24px;height:24px;background:var(--bg-page);border-radius:50%;z-index:1;
     }
-    .coupon-discount { font-size:28px;font-weight:900;line-height:1; }
+    .coupon-discount { font-size:26px;font-weight:900;line-height:1;white-space:nowrap; }
     .coupon-discount-unit { font-size:11px;font-weight:700;opacity:.9; }
     .coupon-right { flex:1;padding:18px 24px;display:flex;align-items:center;justify-content:space-between;gap:16px; }
     .coupon-name { font-size:15px;font-weight:800;margin-bottom:4px; }
@@ -95,7 +120,7 @@
     .spin { width:28px;height:28px;border:3px solid rgba(137,207,240,.2);border-top-color:var(--sky-blue);border-radius:50%;animation:sp .7s linear infinite;margin:30px auto;display:block; }
     @keyframes sp { to { transform:rotate(360deg); } }
     @media(max-width:1024px){ .mypage-container { grid-template-columns:1fr; } .sidebar { position:relative;top:0; } }
-    @media(max-width:600px){ .coupon-left { width:80px; } .coupon-discount { font-size:22px; } }
+    @media(max-width:600px){ .coupon-left { width:100px; } .coupon-discount { font-size:20px; } .toolbar { flex-direction:column;align-items:flex-start; } }
   </style>
 </head>
 <body>
@@ -108,20 +133,36 @@
   <div class="content-area">
     <div>
       <h2 class="page-title">보유 쿠폰함</h2>
-      <p class="page-subtitle">할인 쿠폰을 등록하고 사용 내역을 확인해요</p>
+      <p class="page-subtitle">보유 중인 할인 쿠폰을 확인하고 사용 내역을 관리해요</p>
     </div>
 
-    <!-- 쿠폰 코드 등록 -->
-    <div class="coupon-input-area">
-      <input class="coupon-input" type="text" id="coupon-code" placeholder="쿠폰 코드를 입력해 주세요" maxlength="30">
-      <button class="btn-register" onclick="registerCoupon()"><i class="bi bi-plus-lg"></i> 쿠폰 등록</button>
+    <!-- 검색 -->
+    <div class="search-area">
+      <i class="bi bi-search search-icon"></i>
+      <input class="search-input" type="text" id="coupon-search"
+             placeholder="쿠폰명 또는 숙소명으로 검색"
+             oninput="onSearchInput(this)">
+      <button class="search-clear" id="search-clear-btn" onclick="clearSearch()">
+        <i class="bi bi-x-circle-fill"></i>
+      </button>
     </div>
 
-    <div class="tab-bar">
-      <button class="tab-btn active" onclick="switchTab('available', this)"><i class="bi bi-ticket-perforated"></i> 사용 가능</button>
-      <button class="tab-btn" onclick="switchTab('used', this)"><i class="bi bi-check2-circle"></i> 사용 완료</button>
+    <!-- 탭 + 정렬 -->
+    <div class="toolbar">
+      <div class="tab-bar">
+        <button class="tab-btn active" onclick="switchTab('available', this)"><i class="bi bi-ticket-perforated"></i> 사용 가능</button>
+        <button class="tab-btn" onclick="switchTab('used', this)"><i class="bi bi-check2-circle"></i> 사용 완료</button>
+      </div>
+      <select class="sort-select" id="sort-select" onchange="renderFiltered()">
+        <option value="default">기본순</option>
+        <option value="discount-desc">할인 높은순</option>
+        <option value="discount-asc">할인 낮은순</option>
+        <option value="expire-asc">마감 임박순</option>
+        <option value="latest">최신 등록순</option>
+      </select>
     </div>
 
+    <div id="result-count-area"></div>
     <div id="coupon-list-area"><div class="spin"></div></div>
   </div>
 </main>
@@ -129,6 +170,7 @@
 <jsp:include page="/WEB-INF/views/layout/footer.jsp"/>
 <script>
   var currentTab = 'available';
+  var allCoupons = [];  // 서버에서 받은 원본 데이터 보관
 
   async function loadStats() {
     try {
@@ -145,89 +187,124 @@
     } catch(e) {}
   }
 
- 
   async function loadCoupons() {
-	  var area = document.getElementById('coupon-list-area');
-	  if (!area) return;
-	  area.innerHTML = '<div class="spin"></div>';
-	  
-	  try {
-	    // 1. currentTab을 대문자로 변환하여 서버에 요청 (AVAILABLE / USED)
-	    var url = '/mypage/api/coupons?status=' + currentTab.toUpperCase();
-	    var res = await fetch(url);
-	    if (!res.ok) throw new Error("Network response was not ok");
-	    
-	    var list = await res.json();
-	    
-	    // 2. 데이터가 없을 때 처리
-	    if (!list || list.length === 0) {
-	      area.innerHTML = '<div class="empty-state"><i class="bi bi-ticket-perforated"></i><p>' +
-	        (currentTab === 'available' ? '사용 가능한 쿠폰이 없어요' : '사용한 쿠폰이 없어요') +
-	        '</p></div>';
-	      return;
-	    }
+    var area = document.getElementById('coupon-list-area');
+    if (!area) return;
+    area.innerHTML = '<div class="spin"></div>';
+    document.getElementById('result-count-area').innerHTML = '';
 
-	    // 3. 목록 렌더링
-	    var html = '<div class="coupon-list">';
-	    html += list.map(function(c) {
-	      var now = new Date();
-	      var exp = c.expiredAt ? new Date(c.expiredAt) : null;
-	      var dday = exp ? Math.ceil((exp - now) / 86400000) : null;
-	      var isExpired = exp && exp < now;
-	      
-	      var ddayClass = isExpired ? 'dday-expired' : (dday !== null && dday <= 3 ? 'dday-urgent' : 'dday-normal');
-	      var ddayText  = isExpired ? '만료됨' : (dday !== null ? (dday === 0 ? '오늘 마감' : 'D-' + dday) : '기간 없음');
-	      
-	      var discValue = c.discountAmount || 0;
-	      var disc = c.discountType === 'PERCENT' ? (discValue + '%') : (discValue.toLocaleString() + '원');
-
-	      return '<div class="coupon-card' + (isExpired || currentTab === 'used' ? ' expired' : '') + '">' +
-	        '<div class="coupon-left">' +
-	          '<div class="coupon-discount">' + escHtml(disc) + '</div>' +
-	          '<div class="coupon-discount-unit">할인</div>' +
-	        '</div>' +
-	        '<div class="coupon-right">' +
-	          '<div>' +
-	            '<div class="coupon-name">' + escHtml(c.couponName) + '</div>' +
-	            '<div class="coupon-meta">' +
-	              (c.minOrderAmount ? '<span><i class="bi bi-info-circle"></i>' + c.minOrderAmount.toLocaleString() + '원 이상 사용 가능</span>' : '') +
-	              (exp ? '<span><i class="bi bi-calendar3"></i>' + fmtDate(c.expiredAt) + ' 까지</span>' : '') +
-	            '</div>' +
-	          '</div>' +
-	          '<span class="coupon-dday ' + ddayClass + '">' + ddayText + '</span>' +
-	        '</div>' +
-	      '</div>';
-	    }).join('');
-	    html += '</div>';
-	    
-	    area.innerHTML = html;
-	  } catch(e) {
-	    console.error("로드 중 에러 발생:", e);
-	    area.innerHTML = '<div class="empty-state"><i class="bi bi-exclamation-circle"></i><p>쿠폰 정보를 불러올 수 없어요</p></div>';
-	  }
-	}
-  
-  async function registerCoupon() {
-    var code = document.getElementById('coupon-code').value.trim();
-    if (!code) { alert('쿠폰 코드를 입력해 주세요'); return; }
     try {
-      var res = await fetch('/mypage/api/coupons/register', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ code: code })
-      });
-      var data = await res.json();
-      if (!res.ok) { alert(data.message || '쿠폰 등록에 실패했어요'); return; }
-      alert('쿠폰이 등록되었어요!');
-      document.getElementById('coupon-code').value = '';
-      loadCoupons();
-    } catch(e) { alert('쿠폰 등록에 실패했어요'); }
+      var url = '/mypage/api/coupons?status=' + currentTab.toUpperCase();
+      var res = await fetch(url);
+      if (!res.ok) throw new Error('Network response was not ok');
+      allCoupons = await res.json();
+      renderFiltered();
+    } catch(e) {
+      console.error('로드 중 에러 발생:', e);
+      area.innerHTML = '<div class="empty-state"><i class="bi bi-exclamation-circle"></i><p>쿠폰 정보를 불러올 수 없어요</p></div>';
+    }
+  }
+
+  function renderFiltered() {
+    var area = document.getElementById('coupon-list-area');
+    var keyword = (document.getElementById('coupon-search').value || '').trim().toLowerCase();
+    var sort = document.getElementById('sort-select').value;
+
+    // 1. 검색 필터
+    var filtered = allCoupons.filter(function(c) {
+      if (!keyword) return true;
+      var name = (c.couponName || '').toLowerCase();
+      var hotel = (c.hotelName || '').toLowerCase();  // 숙소명 필드 (API 응답에 있을 경우)
+      return name.includes(keyword) || hotel.includes(keyword);
+    });
+
+    // 2. 정렬
+    filtered = filtered.slice().sort(function(a, b) {
+      if (sort === 'discount-desc') return (b.discountAmount || 0) - (a.discountAmount || 0);
+      if (sort === 'discount-asc')  return (a.discountAmount || 0) - (b.discountAmount || 0);
+      if (sort === 'expire-asc') {
+        var da = a.expiredAt ? new Date(a.expiredAt) : new Date('9999-12-31');
+        var db = b.expiredAt ? new Date(b.expiredAt) : new Date('9999-12-31');
+        return da - db;
+      }
+      if (sort === 'latest') return (b.memberCouponId || 0) - (a.memberCouponId || 0);
+      return 0; // default: 서버 순서 유지
+    });
+
+    // 3. 결과 카운트
+    var countArea = document.getElementById('result-count-area');
+    if (keyword) {
+      countArea.innerHTML = '<p class="result-count"><strong>' + filtered.length + '</strong>개의 쿠폰을 찾았어요</p>';
+    } else {
+      countArea.innerHTML = '';
+    }
+
+    // 4. 빈 결과
+    if (!filtered || filtered.length === 0) {
+      area.innerHTML = '<div class="empty-state"><i class="bi bi-ticket-perforated"></i><p>' +
+        (keyword ? '"' + escHtml(keyword) + '" 검색 결과가 없어요' :
+          (currentTab === 'available' ? '사용 가능한 쿠폰이 없어요' : '사용한 쿠폰이 없어요')) +
+        '</p></div>';
+      return;
+    }
+
+    // 5. 렌더링
+    var html = '<div class="coupon-list">';
+    html += filtered.map(function(c) {
+      var now = new Date();
+      var exp = c.expiredAt ? new Date(c.expiredAt) : null;
+      var dday = exp ? Math.ceil((exp - now) / 86400000) : null;
+      var isExpired = exp && exp < now;
+
+      var ddayClass = isExpired ? 'dday-expired' : (dday !== null && dday <= 3 ? 'dday-urgent' : 'dday-normal');
+      var ddayText  = isExpired ? '만료됨' : (dday !== null ? (dday === 0 ? '오늘 마감' : 'D-' + dday) : '기간 없음');
+
+      var discValue = c.discountAmount || 0;
+      var disc = c.discountType === 'PERCENT' ? (discValue + '%') : (discValue.toLocaleString() + '원');
+
+      return '<div class="coupon-card' + (isExpired || currentTab === 'used' ? ' expired' : '') + '">' +
+        '<div class="coupon-left">' +
+          '<div class="coupon-discount">' + escHtml(disc) + '</div>' +
+          '<div class="coupon-discount-unit">할인</div>' +
+        '</div>' +
+        '<div class="coupon-right">' +
+          '<div>' +
+            '<div class="coupon-name">' + escHtml(c.couponName) + '</div>' +
+            '<div class="coupon-meta">' +
+              (c.hotelName ? '<span><i class="bi bi-building"></i>' + escHtml(c.hotelName) + '</span>' : '') +
+              (c.minOrderAmount ? '<span><i class="bi bi-info-circle"></i>' + c.minOrderAmount.toLocaleString() + '원 이상 사용 가능</span>' : '') +
+              (exp ? '<span><i class="bi bi-calendar3"></i>' + fmtDate(c.expiredAt) + ' 까지</span>' : '') +
+            '</div>' +
+          '</div>' +
+          '<span class="coupon-dday ' + ddayClass + '">' + ddayText + '</span>' +
+        '</div>' +
+      '</div>';
+    }).join('');
+    html += '</div>';
+
+    area.innerHTML = html;
+  }
+
+  function onSearchInput(input) {
+    var btn = document.getElementById('search-clear-btn');
+    if (input.value.length > 0) btn.classList.add('visible');
+    else btn.classList.remove('visible');
+    renderFiltered();
+  }
+
+  function clearSearch() {
+    var input = document.getElementById('coupon-search');
+    input.value = '';
+    document.getElementById('search-clear-btn').classList.remove('visible');
+    renderFiltered();
   }
 
   function switchTab(tab, btn) {
     document.querySelectorAll('.tab-btn').forEach(function(b) { b.classList.remove('active'); });
     btn.classList.add('active');
     currentTab = tab;
+    // 탭 전환 시 검색어 초기화
+    clearSearch();
     loadCoupons();
   }
 
@@ -235,7 +312,10 @@
     if (!v) return '';
     return new Date(v).toLocaleDateString('ko-KR', { year:'numeric', month:'2-digit', day:'2-digit' });
   }
-  function escHtml(s) { if (!s) return ''; return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+  function escHtml(s) {
+    if (!s) return '';
+    return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
 
   document.addEventListener('DOMContentLoaded', function() { loadStats(); loadCoupons(); });
 </script>
