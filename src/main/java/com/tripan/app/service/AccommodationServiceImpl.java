@@ -177,6 +177,17 @@ public class AccommodationServiceImpl implements AccommodationService{
         Collections.sort(fullyBookedDates);
         return fullyBookedDates;
     }
+
+
+	@Override
+	public ReservationRequestDto getRoomIdbyReservationId(Long reservationId) {
+		try {
+			return mapper.getRoomIdbyReservationId(reservationId);
+		} catch (Exception e) {
+			log.info("getRoomIdbyReservationId : ", e);
+		}
+		return null;
+	}
 	
 	
 }

@@ -25,4 +25,6 @@ public interface AccommodationService {
     public boolean toggleBookmark(Long placeId, Long memberId);
     
     public List<String> getFullyBookedDates(Long placeId);
+    
+    public ReservationRequestDto getRoomIdbyReservationId(Long reservationId);
 }
