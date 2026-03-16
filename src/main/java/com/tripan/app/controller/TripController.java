@@ -147,19 +147,28 @@ public class TripController {
             Long tripId = tripService.joinTripViaLink(inviteCode, loginMemberId);
             String nick = getLoginNickname(session);
             
+            // 진짜 처음 들어온 사람일 때만 웹소켓과 알림
             wsPublisher.publish(tripId, "MEMBER_JOINED", loginMemberId,
                     nick != null ? nick : "새 멤버",
                     WorkspaceEventPublisher.payload("nickname", nick != null ? nick : "새 멤버"));
             
-            // 기존에 있던 동행자들에게 보내는 알림
             notificationService.notifyAll(tripId, loginMemberId, nick + "님이 여행에 합류했어요 🎉", "ACCEPT");
-            
-            // 방금 합류한 본인에게 보내는 알림 
             notificationService.notifyOne(tripId, loginMemberId, loginMemberId, "여행 워크스페이스에 합류하셨네요! 환영합니다 ✈️", "SYSTEM");
             
             return "redirect:/trip/" + tripId + "/workspace";
+
+        } catch (IllegalStateException e) {
+            // 방어 로직) 이미 합류한 멤버(방장 포함)가 또 눌렀을 때
+            String msg = e.getMessage();
+            if (msg != null && msg.startsWith("ALREADY_JOINED:")) {
+                String existingTripId = msg.split(":")[1];
+                // 알림 쏘는 로직을 다 무시하고, 조용히 기존 워크스페이스로만 넘겨버림
+                return "redirect:/trip/" + existingTripId + "/workspace"; 
+            }
+            e.printStackTrace();
+            return "redirect:/?error=already_joined";
+            
         } catch (Exception e) {
-            // 에러 원인을 파악하기 위해 로그 추가 (디버깅용)
             e.printStackTrace(); 
             return "redirect:/?error=invalid_invite";
         }
@@ -187,9 +196,7 @@ public class TripController {
         return ResponseEntity.ok(Map.of("success", true));
     }
 
-    // ═══════════════════════════════════════════════════════
-    //  ★ 신규: 초대 거절 (PENDING → 레코드 삭제)
-    // ═══════════════════════════════════════════════════════
+    //  초대 거절 (PENDING → 레코드 삭제)
     @DeleteMapping("/{tripId}/member/{memberId}/decline")
     @ResponseBody
     public ResponseEntity<Map<String, Object>> declineInvite(
@@ -202,9 +209,7 @@ public class TripController {
         }
     }
 
-    // ═══════════════════════════════════════════════════════
-    //  ★ 신규: 동행자 강퇴 (방장 전용)
-    // ═══════════════════════════════════════════════════════
+    // 동행자 강퇴 (방장 전용)
     @DeleteMapping("/{tripId}/member/{memberId}/kick")
     @ResponseBody
     public ResponseEntity<Map<String, Object>> kickMember(
@@ -219,9 +224,7 @@ public class TripController {
         }
     }
 
-    // ═══════════════════════════════════════════════════════
-    //  ★ 신규: 스스로 나가기
-    // ═══════════════════════════════════════════════════════
+    // 스스로 나가기
     @DeleteMapping("/{tripId}/leave")
     @ResponseBody
     public ResponseEntity<Map<String, Object>> leaveTrip(
@@ -249,9 +252,7 @@ public class TripController {
         return tripService.searchTags(keyword);
     }
 
-    // ═══════════════════════════════════════════════════════
-    //  ★ 환영 모달 읽음 처리 (1회성)
-    // ═══════════════════════════════════════════════════════
+    // 환영 모달 읽음 처리 (1회성)
     @PatchMapping("/{tripId}/welcome/done")
     @ResponseBody
     public ResponseEntity<Map<String, Object>> markWelcomeDone(

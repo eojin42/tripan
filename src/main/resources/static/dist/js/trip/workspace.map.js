@@ -254,15 +254,17 @@ function _reorderMarkersForDay(dayNum) {
     
     if (entry && entry.marker) {
       var m = entry.marker;
+      var newOrder = idx + 1;
       m._dayNum = parseInt(dayNum);
-      m._order = idx + 1; // 화면(DOM) 순서 그대로 1번부터 매김!
+      m._order  = newOrder;
 
+      // ── 마커 SVG 이미지 갱신 ──────────────────────────────
       var svg = [
         '<svg xmlns="http://www.w3.org/2000/svg" width="36" height="46" viewBox="0 0 36 46">',
         '<ellipse cx="18" cy="44" rx="6" ry="2.5" fill="rgba(0,0,0,0.15)"/>',
         '<path d="M18 2C10.27 2 4 8.27 4 16c0 10 14 28 14 28S32 26 32 16C32 8.27 25.73 2 18 2z" fill="', color, '"/>',
         '<circle cx="18" cy="16" r="9" fill="white" opacity="0.95"/>',
-        '<text x="18" y="20" text-anchor="middle" font-size="9" font-weight="800" fill="#2D3748">', (idx+1), '</text>',
+        '<text x="18" y="20" text-anchor="middle" font-size="9" font-weight="800" fill="#2D3748">', newOrder, '</text>',
         '</svg>'
       ].join('');
       
@@ -271,6 +273,49 @@ function _reorderMarkersForDay(dayNum) {
         new kakao.maps.Size(36, 46), { offset: new kakao.maps.Point(18, 46) }
       );
       m.setImage(img);
+
+      // ── ✅ InfoWindow content도 번호 동기화 ───────────────
+      // D&D 후 마커 클릭 시 말풍선에 예전 번호가 표시되던 버그 수정
+      var address  = card.getAttribute('data-address') || '';
+      var catRaw   = card.getAttribute('data-category') || 'ETC';
+      var catInfo  = (typeof window.getTripanCategory === 'function')
+                     ? window.getTripanCategory(catRaw)
+                     : { icon: '📍', label: catRaw };
+      var lat = m._lat, lng = m._lng, name = m._name;
+
+      var addrHtml = address
+        ? '<div style="font-size:11px;color:#718096;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:220px;">📍 ' + _escIw(address) + '</div>'
+        : '';
+
+      var newIwContent =
+        '<div style="padding:14px 16px;min-width:200px;max-width:260px;font-family:Pretendard,sans-serif;border-radius:14px;">' +
+          '<div style="display:flex;align-items:center;gap:6px;margin-bottom:6px;">' +
+            '<div style="width:28px;height:28px;border-radius:50%;background:' + color + ';display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800;color:#fff;flex-shrink:0;">' + newOrder + '</div>' +
+            '<div>' +
+              '<div style="font-size:11px;font-weight:700;color:#4A5568;letter-spacing:.3px;">DAY ' + dayNum + '</div>' +
+              '<div style="font-size:13px;font-weight:800;color:#1A202C;line-height:1.3;">' + _escIw(name) + '</div>' +
+            '</div>' +
+          '</div>' +
+          addrHtml +
+          '<div style="display:flex;gap:6px;margin-top:10px;">' +
+            '<span style="font-size:10px;font-weight:700;padding:3px 9px;border-radius:50px;background:rgba(0,0,0,.06);color:#4A5568;">' + catInfo.icon + ' ' + catInfo.label + '</span>' +
+            '<button onclick="mapFlyTo(' + lat + ',' + lng + ')" style="flex:1;padding:5px 8px;border:none;border-radius:8px;background:linear-gradient(135deg,#89CFF0,#B8A9D9);color:#fff;font-size:11px;font-weight:700;cursor:pointer;">🗺️ 지도 중심</button>' +
+          '</div>' +
+        '</div>';
+
+      var newIw = new kakao.maps.InfoWindow({ content: newIwContent, removable: true });
+      // 기존 열려있던 창 닫기
+      if (entry.iw) { try { entry.iw.close(); } catch(e) {} }
+      // 클릭 이벤트 재바인딩
+      kakao.maps.event.removeListener(m, 'click');
+      kakao.maps.event.addListener(m, 'click', (function(marker, iw) {
+        return function() {
+          if (_infowindow) _infowindow.close();
+          iw.open(_map, marker);
+          _infowindow = iw;
+        };
+      })(m, newIw));
+      entry.iw = newIw;
     }
   });
 }

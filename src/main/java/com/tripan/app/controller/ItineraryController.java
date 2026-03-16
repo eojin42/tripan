@@ -63,7 +63,7 @@ public class ItineraryController {
     }
 
     // ── ★ 메모/이미지 저장 + broadcast ───────────────────
-    // 요청 body: { memo: "...", imageBase64List: ["data:image/...", ...] }
+    // 요청 body: { memo, imageBase64List, keepImageUrls }
     @PatchMapping("/{itemId}/memo")
     public ResponseEntity<Map<String, Object>> saveMemo(
             @PathVariable("itemId") Long itemId,
@@ -76,33 +76,35 @@ public class ItineraryController {
             String       memo     = (String) body.get("memo");
             Long         memberId = userDetails.getMember().getMemberId();
 
-            // ★ 다중 이미지: imageBase64List (우선) 또는 구버전 imageBase64 (하위 호환)
+            // 새 업로드 이미지 (base64)
             @SuppressWarnings("unchecked")
-            List<String> b64List  = (List<String>) body.get("imageBase64List");
+            List<String> b64List = (List<String>) body.get("imageBase64List");
             if (b64List == null) {
-                // 구버전 단일 이미지 호환
                 String single = (String) body.get("imageBase64");
-                b64List = (single != null && !single.isBlank())
-                    ? List.of(single) : List.of();
+                b64List = (single != null && !single.isBlank()) ? List.of(single) : List.of();
             }
 
-            List<String> imageUrls = itineraryService.saveMemoAndImages(itemId, memo, b64List, memberId);
+            // ✅ 유지할 기존 이미지 URL 목록 (없으면 전체 삭제 — 기존 동작 유지)
+            @SuppressWarnings("unchecked")
+            List<String> keepImageUrls = (List<String>) body.get("keepImageUrls");
 
-            // WS broadcast: memo + imageUrls 모두 전달 → 동행자 화면에 chip 업데이트
+            List<String> imageUrls = itineraryService.saveMemoAndImages(
+                    itemId, memo, b64List, keepImageUrls, memberId);
+
             Long tripId = itineraryService.getTripIdByItemId(itemId);
             if (tripId != null) {
                 wsPublisher.publish(tripId, "MEMO_UPDATED", itemId,
                         userDetails.getMember().getNickname(),
                         WorkspaceEventPublisher.payload(
-                            "memo",       memo != null ? memo : "",
-                            "imageUrls",  imageUrls,       // ★ 이미지 URL 목록
-                            "imageUrl",   imageUrls.isEmpty() ? "" : imageUrls.get(0)));
+                            "memo",      memo != null ? memo : "",
+                            "imageUrls", imageUrls,
+                            "imageUrl",  imageUrls.isEmpty() ? "" : imageUrls.get(0)));
             }
 
             return ResponseEntity.ok(Map.of(
-                "success",    true,
-                "imageUrls",  imageUrls,
-                "imageUrl",   imageUrls.isEmpty() ? "" : imageUrls.get(0)
+                "success",   true,
+                "imageUrls", imageUrls,
+                "imageUrl",  imageUrls.isEmpty() ? "" : imageUrls.get(0)
             ));
         } catch (Exception e) {
             log.error("[Itinerary] 메모 저장 오류: {}", e.getMessage());

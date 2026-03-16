@@ -16,12 +16,11 @@ window.getTripanCategory = function(cat) {
 };
 
 /* ══════════════════════════════
-   페이지 로딩 시: 서버(JSP)가 만든 못생긴 영어 뱃지 싹 다 교체!
+   페이지 로딩 시
 ══════════════════════════════ */
 document.addEventListener('DOMContentLoaded', function () {
   document.querySelectorAll('.place-card').forEach(function (card) {
     
-    // 1. 영어 뱃지 -> 한글 이모지 뱃지로 강제 성형 수술
     var badge = card.querySelector('.place-type-badge');
     if (badge) {
         var rawText = badge.textContent.trim();
@@ -29,7 +28,6 @@ document.addEventListener('DOMContentLoaded', function () {
         badge.innerHTML = catInfo.icon + ' ' + catInfo.label;
     }
     
-    // 2. 이벤트 바인딩
     _bindCardClickToMap(card); 
     _bindChipClick(card);
     initDrag(card);
@@ -49,30 +47,33 @@ function openAddPlace(day) {
   if (input) { input.value = ''; input.focus(); }
 }
 
-function selectPlaceType(btn, type) {
-  document.querySelectorAll('.place-type-tab').forEach(function (t) { t.classList.remove('active'); });
-  btn.classList.add('active');
-}
-
-var _searchTimer = null;
-
 function searchPlace(q) {
   clearTimeout(_searchTimer);
   var resultWrap = document.getElementById('placeResults');
+  
   if (!q || q.trim().length < 2) {
-    if (resultWrap) resultWrap.innerHTML = '<div style="text-align:center;padding:28px 20px;color:#A0AEC0;"><div style="font-size:28px;margin-bottom:8px;">🔍</div><div style="font-size:13px;">장소명을 2글자 이상 입력하면 검색해요</div></div>';
+    if (resultWrap) resultWrap.innerHTML = '<div style="text-align:center;padding:28px 20px;color:#A0AEC0;"><div style="font-size:28px;margin-bottom:8px;">🔍</div><div style="font-size:13px;">장소명을 2글자 이상 입력하면 추천 장소를 검색해요</div></div>';
     return;
   }
+  
   _searchTimer = setTimeout(function () {
     if (resultWrap) resultWrap.innerHTML = '<div style="text-align:center;padding:20px;color:#A0AEC0;">검색 중...</div>';
     fetch(CTX_PATH + '/api/place/search?keyword=' + encodeURIComponent(q.trim()))
       .then(function (res) { return res.ok ? res.json() : []; })
       .then(function (places) {
         if (!resultWrap) return;
+        
+        // 검색 결과가 없을 때: 지도 검색으로 유도
         if (!places || !places.length) {
-          resultWrap.innerHTML = '<div style="text-align:center;padding:28px 20px;color:#A0AEC0;"><div style="font-size:28px;margin-bottom:8px;">😥</div><div style="font-size:13px;font-weight:600;">검색 결과가 없어요</div><div style="font-size:12px;margin-top:4px;">"' + _esc(q.trim()) + '" 로 등록된 장소가 없습니다</div></div>';
+          resultWrap.innerHTML = 
+            '<div style="text-align:center;padding:32px 20px;color:#A0AEC0;">' +
+              '<div style="font-size:32px;margin-bottom:10px;">😥</div>' +
+              '<div style="font-size:14px;font-weight:800;color:#4A5568;margin-bottom:6px;">추천 목록에 없는 장소예요</div>' +
+              '<div style="font-size:13px;line-height:1.6;">"' + _esc(q.trim()) + '" 장소는 아직 추천 목록에 없습니다.<br>상단 중앙의 <b>카카오 지도 검색창</b>을 이용해 직접 추가해 보세요!</div>' +
+            '</div>';
           return;
         }
+        
         var html = places.map(function (p) {
           var catInfo = window.getTripanCategory(p.categoryName || p.category);
           var pn   = _esc(p.placeName);
@@ -80,7 +81,7 @@ function searchPlace(q) {
           var lat  = p.latitude  || 0;
           var lng  = p.longitude || 0;
           var api  = _esc(p.apiPlaceId || '');
-          var catForSave = catInfo.value; // DB에 넣을 영어 값
+          var catForSave = catInfo.value;
 
           return '<div class="place-result-item" onclick="addPlaceToDay(this,\'' + pn + '\',\'' + pa + '\',' + lat + ',' + lng + ',\'' + api + '\',\'' + catForSave + '\')">'
             + '<div class="place-result-icon">' + catInfo.icon + '</div>'
@@ -179,7 +180,7 @@ function _appendPlaceCard(dayNum, itemId, name, addr, lat, lng, categoryName) {
 
 function initDrag(card) {
   card.setAttribute('ondragstart', 'onCardDragStart(event, this)');
-  card.setAttribute('ondragend',   'onCardDragEnd(event, this)');
+  card.setAttribute('ondragend',   'onCardDragEnd(event, this)');  // ✅ 누락됐던 ondragend 추가
 }
 
 /* ══════════════════════════════
@@ -260,10 +261,29 @@ function removePlace(btn) {
 /* ══════════════════════════════
    드래그앤드롭 (LexoRank) & 마커 완벽 재정렬
 ══════════════════════════════ */
+// 1. 진짜 LexoRank 문자열 생성기
+function getLexoRank(prevOrder, nextOrder) {
+  var p = prevOrder || 'a'; 
+  var n = nextOrder || 'z'; 
+  var result = '';
+  
+  for (var i = 0; i < Math.max(p.length, n.length) + 1; i++) {
+    var pChar = p.charCodeAt(i) || 96;  
+    var nChar = n.charCodeAt(i) || 123; 
+    var mid = Math.floor((pChar + nChar) / 2);
+
+    if (mid === pChar && pChar !== nChar) {
+      result += String.fromCharCode(pChar);
+    } else {
+      result += String.fromCharCode(mid);
+      break;
+    }
+  }
+  return result;
+}
+
 var _dragCard    = null;
 var _dragDayFrom = null;
-
-function toLexoRank(idx) { return String(idx + 1).padStart(6, '0'); }
 
 function onCardDragStart(e, el) {
   _dragCard    = el;
@@ -288,9 +308,11 @@ function onListDragOver(e) {
   e.dataTransfer.dropEffect = 'move';
   var list = e.currentTarget;
   list.classList.add('list-drag-over');
+  
   var after = getDragAfterElement(list, e.clientY);
-  if (after == null)        list.appendChild(_dragCard);
+  if (after == null) list.appendChild(_dragCard);
   else if (after !== _dragCard) list.insertBefore(_dragCard, after);
+  
   refreshPlaceNums(list);
 }
 
@@ -300,23 +322,47 @@ function onListDragLeave(e) {
   }
 }
 
+// 🌟 2. 같은 날짜 안에서 드롭
 function onListDrop(e) {
   e.preventDefault(); e.stopPropagation();
   if (!_dragCard) return;
-  var list  = e.currentTarget;
-  var oldList = _dragCard.closest('.place-list'); 
+  
+  var list = e.currentTarget;
   var dayTo = parseInt(list.dataset.day);
-  
   list.classList.remove('list-drag-over');
-  _dragCard.dataset.day = dayTo;
-  list.appendChild(_dragCard);
   
-  //  출발지, 도착지 숫자 모두 1,2,3...으로 재정렬
+  _dragCard.dataset.day = dayTo;
+  
+  // 🚨 멱살 잡고 맨 밑으로 끌어내리던 범인(list.appendChild) 삭제 완료 🚨
+
+  // 앞뒤 카드 읽어서 진짜 순서(LexoRank) 계산
+  var prevCard = _dragCard.previousElementSibling;
+  var nextCard = _dragCard.nextElementSibling;
+  var prevOrder = prevCard ? prevCard.dataset.order : null;
+  var nextOrder = nextCard ? nextCard.dataset.order : null;
+  
+  var newRank = getLexoRank(prevOrder, nextOrder);
+  _dragCard.dataset.order = newRank;
+
+  var oldList = document.getElementById('places-' + _dragDayFrom);
   if (oldList && oldList !== list) refreshPlaceNums(oldList); 
   refreshPlaceNums(list);
   
-  persistPlaceOrder(list, dayTo);
-  showToast('✅ 일정 순서가 변경됐어요');
+  // 🚀 서버에 딱 1번만 요청 & 마커 연동 복구!
+  fetch(CTX_PATH + '/api/itinerary/' + _dragCard.dataset.id + '/move', {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ dayNumber: dayTo, visitOrder: newRank })
+  }).then(function(r) {
+    if (r.ok) {
+      showToast('✅ 일정 순서가 변경됐어요');
+      // 🗺️ 날려먹었던 마커 연동 부활!
+      if (typeof _reorderMarkersForDay === 'function') {
+        _reorderMarkersForDay(dayTo);
+        if (_dragDayFrom && _dragDayFrom !== dayTo) _reorderMarkersForDay(_dragDayFrom);
+      }
+    }
+  });
 }
 
 function onDropZoneDragOver(e) {
@@ -328,23 +374,42 @@ function onDropZoneDragOver(e) {
 
 function onDropZoneDragLeave(e) { e.currentTarget.classList.remove('dz-active'); }
 
+// 🌟 3. 다른 날짜(빈 공간)로 완전히 넘길 때
 function onDropZoneDrop(e) {
   e.preventDefault(); e.stopPropagation();
   e.currentTarget.classList.remove('dz-active');
   if (!_dragCard) return;
-  var oldList = _dragCard.closest('.place-list'); 
+  
   var dayTo = parseInt(e.currentTarget.dataset.day);
   var list  = document.getElementById('places-' + dayTo);
   if (!list) return;
   
   _dragCard.dataset.day = dayTo;
-  list.appendChild(_dragCard);
+  list.appendChild(_dragCard); // 다른 날짜 빈 공간이니 맨 밑에 붙이는게 맞음
   
+  var prevCard = _dragCard.previousElementSibling;
+  var prevOrder = prevCard ? prevCard.dataset.order : null;
+  var newRank = getLexoRank(prevOrder, null); 
+  _dragCard.dataset.order = newRank;
+
+  var oldList = document.getElementById('places-' + _dragDayFrom);
   if (oldList && oldList !== list) refreshPlaceNums(oldList);
   refreshPlaceNums(list);
   
-  persistPlaceOrder(list, dayTo);
-  showToast('📍 DAY ' + dayTo + '로 이동됐어요');
+  fetch(CTX_PATH + '/api/itinerary/' + _dragCard.dataset.id + '/move', {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ dayNumber: dayTo, visitOrder: newRank })
+  }).then(function(r) {
+    if (r.ok) {
+      showToast('📍 DAY ' + dayTo + '로 이동됐어요');
+      // 🗺️ 마커 연동 부활!
+      if (typeof _reorderMarkersForDay === 'function') {
+        _reorderMarkersForDay(dayTo);
+        if (_dragDayFrom && _dragDayFrom !== dayTo) _reorderMarkersForDay(_dragDayFrom);
+      }
+    }
+  });
 }
 
 function getDragAfterElement(container, y) {
@@ -357,11 +422,11 @@ function getDragAfterElement(container, y) {
   }, { offset: Number.NEGATIVE_INFINITY }).element;
 }
 
+// 🌟 4. 데이터 덮어쓰기(toLexoRank) 삭제 완료 (안전하게 UI 번호만 그림)
 function refreshPlaceNums(list) {
   list.querySelectorAll('.place-card').forEach(function (card, i) {
     var n = card.querySelector('.place-num');
     if (n) n.textContent = i + 1;
-    card.dataset.order = toLexoRank(i);
   });
 }
 
@@ -369,33 +434,6 @@ function renumberPlaces(day) {
   var list = document.getElementById('places-' + day);
   if (list) refreshPlaceNums(list);
 }
-
-function persistPlaceOrder(list, dayTo) {
-  var cards    = Array.from(list.querySelectorAll('.place-card'));
-  var promises = cards.map(function (card, idx) {
-    var itemId     = card.dataset.id;
-    var visitOrder = toLexoRank(idx);
-    if (!itemId) return Promise.resolve();
-    card.dataset.order = visitOrder;
-    return fetch(CTX_PATH + '/api/itinerary/' + itemId + '/move', {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ dayNumber: dayTo, visitOrder: visitOrder })
-    });
-  });
-  
-  Promise.all(promises).then(function () {
-    console.log('[DnD] 순서 저장 완료, dayTo=' + dayTo);
-    if (typeof _reorderMarkersForDay === 'function') {
-      _reorderMarkersForDay(dayTo);
-      // 출발지가 도착지와 다르면, 출발지 지도 핀도 1번부터 다시 매겨줌!
-      if (_dragDayFrom && _dragDayFrom !== dayTo) {
-        _reorderMarkersForDay(_dragDayFrom);
-      }
-    }
-  });
-}
-
 /* ══════════════════════════════════════════════════════════
    메모 & 이미지 — 편집 모달 (📝 버튼)
 ══════════════════════════════════════════════════════════ */
@@ -548,12 +586,17 @@ function saveMemo() {
   var btnTxt = document.getElementById('saveMemoTxt');
   if (btnTxt) btnTxt.textContent = '저장 중…';
 
-  var newImages = _memoImages.filter(function (img) { return img.base64 && !img.existing; });
+  // ✅ BUG FIX: 기존 이미지 중 유지할 URL 목록을 서버에 함께 전달
+  // 이전: newImages(새 업로드)만 전달 → 서버가 기존 이미지 전부 삭제 후 새것만 저장
+  // 이후: keepImageUrls 추가 → 서버가 목록에 없는 것만 삭제, 있는 것은 유지
+  var newImages       = _memoImages.filter(function (img) { return img.base64 && !img.existing; });
+  var keepImageUrls   = _memoImages.filter(function (img) { return img.existing && img.src; })
+                                   .map(function (img) { return img.src; });
   var imageBase64List = newImages.map(function (img) { return img.base64; });
 
   fetch(CTX_PATH + '/api/itinerary/' + itemId + '/memo', {
     method: 'PATCH', headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ memo: memo, imageBase64List: imageBase64List })
+    body: JSON.stringify({ memo: memo, imageBase64List: imageBase64List, keepImageUrls: keepImageUrls })
   })
   .then(function (r) { return r.ok ? r.json() : Promise.reject(r.status); })
   .then(function (data) {

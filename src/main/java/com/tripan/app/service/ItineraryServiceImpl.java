@@ -95,29 +95,50 @@ public class ItineraryServiceImpl implements ItineraryService {
 
     /* ────────────────────────────────────────────────────
        ★ 메모 + 다중 이미지 저장 (최대 3장)
+
+       버그픽스: keepImageUrls 추가
+         - 기존: 무조건 imageRepository.deleteByItemId() → 전체 삭제 후 새것만 INSERT
+                 → 사진 3장 중 1장 X 누르면 나머지 2장도 삭제되는 버그
+         - 변경: keepImageUrls 목록에 없는 것만 삭제, 있는 것은 유지
+                 → 개별 사진 삭제가 정확하게 동작
        ──────────────────────────────────────────────────── */
     @Override
     @Transactional
     public List<String> saveMemoAndImages(Long itemId, String memo,
-                                          List<String> imageBase64List, Long loginMemberId) {
+                                          List<String> imageBase64List,
+                                          List<String> keepImageUrls,
+                                          Long loginMemberId) {
         ItineraryItem item = itemRepository.findById(itemId)
             .orElseThrow(() -> new IllegalArgumentException("장소 아이템 없음: " + itemId));
 
-        // 메모 저장
-        if (memo != null) {
-            item.setMemo(memo.trim());
+        // 1. 메모 저장
+        if (memo != null) item.setMemo(memo.trim());
+
+        // 2. 현재 DB 이미지 목록 조회
+        List<ItineraryImage> currentImages = imageRepository.findByItemId(itemId);
+        List<String> currentUrls = currentImages.stream()
+            .map(ItineraryImage::getImageUrl).toList();
+
+        // 3. keepImageUrls 에 없는 기존 이미지만 삭제
+        if (keepImageUrls != null) {
+            // 선택적 삭제: keepImageUrls 에 없는 것만 제거
+            currentImages.stream()
+                .filter(img -> !keepImageUrls.contains(img.getImageUrl()))
+                .forEach(img -> imageRepository.deleteById(img.getImageId()));
+        } else {
+            // keepImageUrls 가 null → 기존 동작 유지 (전체 삭제)
+            imageRepository.deleteByItemId(itemId);
         }
 
-        // 기존 이미지 삭제 후 새로 저장 (덮어쓰기)
-        // ★ 기존 이미지를 유지하고 싶으면 이 줄을 제거
-        imageRepository.deleteByItemId(itemId);
-
+        // 4. 새 이미지 저장 (base64 → 파일 → DB)
         List<String> savedUrls = new ArrayList<>();
         if (imageBase64List != null) {
-            // 최대 3장까지만 처리
+            // 유지된 이미지 수 + 새 이미지 수가 3장 초과 방지
+            int kept    = (keepImageUrls != null) ? keepImageUrls.size() : 0;
+            int canAdd  = Math.max(0, 3 - kept);
             imageBase64List.stream()
                 .filter(b64 -> b64 != null && !b64.isBlank())
-                .limit(3)
+                .limit(canAdd)
                 .forEach(b64 -> {
                     String url = saveImageFile(b64);
                     if (url != null) {
@@ -131,7 +152,15 @@ public class ItineraryServiceImpl implements ItineraryService {
                 });
         }
 
-        return savedUrls;
+        // 5. 최종 URL 목록: 유지된 기존 + 새로 추가된
+        List<String> finalUrls = new ArrayList<>();
+        if (keepImageUrls != null) {
+            keepImageUrls.stream()
+                .filter(currentUrls::contains) // DB에 실제 존재하는 것만
+                .forEach(finalUrls::add);
+        }
+        finalUrls.addAll(savedUrls);
+        return finalUrls;
     }
 
     /* ── getTripIdByItemId ─────────────────────────────── */

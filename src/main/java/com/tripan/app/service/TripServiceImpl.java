@@ -7,6 +7,7 @@ import java.time.temporal.ChronoUnit;
 import java.util.Base64;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
 
 import org.springframework.beans.factory.annotation.Value;
@@ -303,7 +304,14 @@ public class TripServiceImpl implements TripService {
     public Long joinTripViaLink(String inviteCode, Long memberId) {
         Trip trip = tripRepository.findByInviteCode(inviteCode)
             .orElseThrow(() -> new IllegalArgumentException("유효하지 않은 링크"));
-
+        
+        // 이미 방장이거나 합류한 멤버인지 선제 검사
+        Optional<TripMember> existingMember = tripMemberRepository.findByTripIdAndMemberId(trip.getTripId(), memberId);
+        if (existingMember.isPresent()) {
+            // 이미 방장이거나 기존 멤버라면? -> "ALREADY_JOINED:번호" 형태의 에러를 던져서 컨트롤러가 알림을 스킵하게 함!
+            throw new IllegalStateException("ALREADY_JOINED:" + trip.getTripId());
+        }
+        
         // ★ 이미 멤버인 경우 → 알림/방송 없이 그냥 워크스페이스로 이동만 (중복 방지)
         if (tripMemberRepository.existsByTripIdAndMemberId(trip.getTripId(), memberId)) {
             return trip.getTripId();

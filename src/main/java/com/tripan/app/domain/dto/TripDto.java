@@ -124,4 +124,54 @@ public class TripDto {
         private boolean customPlace;
         private String created_at;
     }
+
+    // ── 날씨 응답 DTO ───────────────────────────────────────
+    // GET /api/weather 응답 (WeatherServiceImpl → WeatherController)
+    @Getter @Setter
+    public static class WeatherResponseDto {
+        private String city;
+        private List<WeatherShortDayDto> shortForecast;   // 단기 D~D+3
+        private List<WeatherMidDayDto>   midForecast;     // 중기 D+4~D+10
+        private boolean farFuture;                        // D+11 이후면 true
+        private boolean hasDistantDays;                   // 일정에 D+11 이후 포함
+        private String  climateNote;                      // 평년 기온 안내 문구
+    }
+
+    @Getter @Setter
+    public static class WeatherShortDayDto {
+        private String date;       // "2025-04-01"
+        private String dayLabel;   // "4/1 화"
+        private List<WeatherHourlyItemDto> hourly;
+        private Integer tmax;
+        private Integer tmin;
+    }
+
+    @Getter @Setter
+    public static class WeatherHourlyItemDto {
+        private String  time;      // "09" (기상청 hh)
+        private Integer temp;      // 기온 °C
+        private String  sky;       // "맑음" / "흐림" 등
+        private Integer rainProb;  // 강수 확률 %
+        private String  rainType;  // "없음" / "비" / "눈" 등
+    }
+
+    @Getter @Setter
+    public static class WeatherMidDayDto {
+        private String  date;      // "2025-04-05"
+        private String  dayLabel;  // "4/5 토"
+        private String  amDesc;    // 오전 날씨
+        private String  pmDesc;    // 오후 날씨
+        private Integer tmax;
+        private Integer tmin;
+        private Integer rainProb;  // 오전/오후 중 높은 값
+    }
+
+    // ── 메모 수정 요청 DTO ───────────────────────────────────
+    // PATCH /api/itinerary/{itemId}/memo 요청 바디
+    @Getter @Setter
+    public static class MemoUpdateDto {
+        private String       memo;
+        private List<String> imageBase64List;  // 새로 업로드할 이미지 (base64)
+        private List<String> keepImageUrls;    // 유지할 기존 이미지 URL 목록
+    }
 }

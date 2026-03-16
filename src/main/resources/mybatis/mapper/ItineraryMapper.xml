@@ -5,13 +5,13 @@
 <mapper namespace="com.tripan.app.mapper.ItineraryMapper">
 
     <resultMap id="ItineraryItemResultMap" type="com.tripan.app.domain.dto.TripDto$ItineraryItemDto">
-    <id property="itemId" column="ITEM_ID"/>
-    <collection property="images" ofType="com.tripan.app.domain.dto.TripDto$ItineraryImageDto">
-        <id property="imageId" column="IMAGE_ID"/>
-        <result property="imageUrl" column="IMAGE_URL"/>
-        <result property="memberId" column="MEMBER_ID"/>
-    </collection>
-	</resultMap>
+        <id property="itemId" column="ITEM_ID"/>
+        <collection property="images" ofType="com.tripan.app.domain.dto.TripDto$ItineraryImageDto">
+            <id property="imageId" column="IMAGE_ID"/>
+            <result property="imageUrl" column="IMAGE_URL"/>
+            <result property="memberId" column="MEMBER_ID"/>
+        </collection>
+    </resultMap>
 
     <select id="selectItemsWithImagesByDayId" resultMap="ItineraryItemResultMap">
         SELECT 
@@ -27,5 +27,31 @@
         WHERE i.day_id = #{dayId}
         ORDER BY i.visit_order ASC
     </select>
+
+    <select id="findImageUrlsByItemId" resultType="String">
+        SELECT image_url
+          FROM itinerary_image
+         WHERE item_id = #{itemId}
+         ORDER BY uploaded_at ASC
+    </select>
+
+    <insert id="insertImage">
+        INSERT INTO itinerary_image (image_id, item_id, image_url, uploaded_at)
+        VALUES (itinerary_image_seq.NEXTVAL, #{itemId}, #{imageUrl}, SYSDATE)
+    </insert>
+
+    <delete id="deleteImagesByItemIdAndUrls">
+        DELETE FROM itinerary_image
+         WHERE item_id = #{itemId}
+           AND image_url IN
+        <foreach item="url" collection="urls" open="(" separator="," close=")">
+            #{url}
+        </foreach>
+    </delete>
+
+    <delete id="deleteAllImagesByItemId">
+        DELETE FROM itinerary_image
+         WHERE item_id = #{itemId}
+    </delete>
 
 </mapper>

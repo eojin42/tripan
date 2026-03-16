@@ -1,6 +1,6 @@
 package com.tripan.app.domain.dto;
 
-import java.time.LocalDateTime; // 🚀 변경: 최신 Java 8+ 날짜 API
+import java.time.LocalDateTime; 
 import lombok.Data;
 
 @Data

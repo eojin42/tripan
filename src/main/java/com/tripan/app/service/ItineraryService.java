@@ -15,10 +15,14 @@ public interface ItineraryService {
 
     /**
      * 메모 + 다중 이미지 저장 (최대 3장)
-     * @return 저장된 이미지 URL 목록 (없으면 빈 리스트)
+     *
+     * @param keepImageUrls 유지할 기존 이미지 URL 목록. null이면 기존 이미지 전부 삭제(구버전 동작).
+     * @return 최종 저장된 이미지 URL 목록 (유지된 기존 + 새로 추가된)
      */
     List<String> saveMemoAndImages(Long itemId, String memo,
-                                   List<String> imageBase64List, Long loginMemberId);
+                                   List<String> imageBase64List,
+                                   List<String> keepImageUrls,
+                                   Long loginMemberId);
 
     Long getTripIdByItemId(Long itemId);
 
