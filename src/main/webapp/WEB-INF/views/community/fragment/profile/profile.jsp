@@ -92,9 +92,15 @@
     </div>
 
     <div class="profile-stats-row">
-      <div class="profile-stat-item">게시물 <strong>${postCount != null ? postCount : 0}</strong></div>
-      <div class="profile-stat-item">팔로워 <strong>${followerCount != null ? followerCount : 0}</strong></div>
-      <div class="profile-stat-item">팔로잉 <strong>${followingCount != null ? followingCount : 0}</strong></div>
+      <div class="profile-stat-item" style="cursor: pointer;" onclick="loadUserProfile('${sessionScope.loginUser.memberId}')">
+		게시물 <strong>${postCount != null ? postCount : 0}</strong>
+	  </div>
+	  <div class="profile-stat-item" style="cursor: pointer;" onclick="openFollowModal('follower', '${sessionScope.loginUser.memberId}')">
+		팔로워 <strong>${followerCount != null ? followerCount : 0}</strong>
+	  </div>
+	  <div class="profile-stat-item" style="cursor: pointer;" onclick="openFollowModal('following', '${sessionScope.loginUser.memberId}')">
+		팔로잉 <strong>${followingCount != null ? followingCount : 0}</strong>
+	  </div>
     </div>
   </div>
 </div>

@@ -14,20 +14,17 @@ public class PartnerController {
 
     @GetMapping("/apply")
     public String applyPage() {
-        return "partner/apply"; 
+        return "partner/apply/apply"; 
     }
 
     @PostMapping("/apply")
     public String submitApply(@ModelAttribute PartnerApplyDto applyDto) {
-        
-        System.out.println("신청한 숙소명: " + applyDto.getPartnerName());
-        System.out.println("담당자 연락처: " + applyDto.getContactPhone());
-
-        return "redirect:/partner/waiting"; 
+        // 🌟 DB 저장 로직 (생략)
+        return "redirect:/partner/apply_complete"; 
     }
 
-    @GetMapping("/waiting")
-    public String waitingPage() {
-        return "partner/waiting";
+    @GetMapping("/apply_complete")
+    public String completePage() {
+        return "partner/apply/apply_complete";
     }
 }
