@@ -46,7 +46,8 @@ public interface PlaceMapper {
                                @Param("cityList") List<String> cityList);
 
     // ── 키워드 검색 ────────────────────────────────────────────
-    List<PlaceDto> searchPlacesByName(@Param("keyword") String keyword);
+    List<PlaceDto> searchPlacesByName(@Param("keyword") String keyword,
+                                       @Param("category") String category);
     
     /** 설명이 없는 장소 50개 조회 */
     List<PlaceDto> findPlacesWithNullDescription();

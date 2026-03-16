@@ -15,10 +15,11 @@ import lombok.Setter;
 @Table(name = "itinerary_image")
 @Getter @Setter
 public class ItineraryImage {
-    @Id
+    
+	@Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "image_id")
-    private Long imageId; 
+    private Long imageId;
 
     @Column(name = "item_id", nullable = false)
     private Long itemId; // 어떤 일정 항목의 이미지인지 (FK)

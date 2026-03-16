@@ -156,23 +156,38 @@ public class PlaceServiceImpl implements PlaceService {
         dto.setCategory(mapContentTypeToCategory(contentTypeId));
 
         // 상세 조회 (전화번호, 개요)
+        // ★ numOfRows=1 + pageNo=1 명시 → 기상청처럼 결과코드 03 방지
         try {
             URI detailUri = buildBaseUri("/detailCommon2")
                     .queryParam("contentId",   contentId)
                     .queryParam("defaultYN",   "Y")
                     .queryParam("overviewYN",  "Y")
+                    .queryParam("numOfRows",   "1")
+                    .queryParam("pageNo",      "1")
                     .build(true).toUri();
 
-            String   detailRes  = new RestTemplate().getForObject(detailUri, String.class);
-            JsonNode detailItem = objectMapper.readTree(detailRes)
+            String body = new RestTemplate().getForObject(detailUri, String.class);
+            if (body == null) return dto;
+
+            JsonNode detailItem = objectMapper.readTree(body)
                     .path("response").path("body").path("items").path("item").get(0);
 
             if (detailItem != null && !detailItem.isMissingNode()) {
-                dto.setPhoneNumber(detailItem.path("tel").asText("").trim());
-                dto.setDescription(detailItem.path("overview").asText("").trim());
+                // 전화번호: 빈 문자열이면 null 저장 (공백 방지)
+                String tel = detailItem.path("tel").asText("").trim();
+                dto.setPhoneNumber(tel.isEmpty() ? null : tel);
+
+                // 설명: 빈 문자열이면 null 저장 → findPlacesWithNullDescription 재처리 가능
+                String overview = detailItem.path("overview").asText("").trim();
+                if (!overview.isEmpty()) {
+                    // HTML 태그 제거 (KTO 응답에 <br> 등 포함)
+                    overview = overview.replaceAll("<[^>]+>", " ").replaceAll("\s+", " ").trim();
+                }
+                dto.setDescription(overview.isEmpty() ? null : overview);
             }
         } catch (Exception e) {
             log.warn("[KTO Sync] 상세 조회 실패 - contentId:{}", contentId);
+            // null 유지 → 나중에 TourApiSyncService가 채워줌
         }
 
         return dto;

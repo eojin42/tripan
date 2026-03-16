@@ -58,17 +58,19 @@ public class TripPlaceApiController {
     }
 
     // ── [통합] 키워드 검색 ────────────────────────────────────────
-    // GET /api/places/search?keyword=제주
+    // GET /api/places/search?keyword=제주&category=RESTAURANT
+    // category 생략 또는 "all" → 전체 검색
     // 반환: { officialPlaces: [...PlaceDto], myPlaces: [...TripPlaceDto] }
     @GetMapping("/search")
     public ResponseEntity<Map<String, Object>> search(
             @RequestParam("keyword") String keyword,
+            @RequestParam(value = "category", defaultValue = "all") String category,
             HttpSession session) {
 
         Long memberId = getLoginMemberId(session);
 
-        // KTO 공식 장소 검색 (place 테이블)
-        List<PlaceDto> officialPlaces = placeMapper.searchPlacesByName(keyword);
+        // KTO 공식 장소 검색 (place 테이블) - category 필터 포함
+        List<PlaceDto> officialPlaces = placeMapper.searchPlacesByName(keyword, category);
 
         // 나만의 장소 검색 (trip_place 테이블, 로그인 시만)
         List<TripPlaceDto> myPlaces = (memberId != null)
