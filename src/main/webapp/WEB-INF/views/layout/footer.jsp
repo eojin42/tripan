@@ -33,11 +33,10 @@
           <a href="#">소셜 여행기 커뮤니티</a>
         </div>
         <div class="footer-links-col">
-          <strong>PARTNERS</strong>
-          <a href="#">입점사(숙소/티켓) 관리자 센터</a>
-          <a href="#">B2B 제휴 및 수수료 안내</a>
-          <a href="#">광고 및 마케팅 문의</a>
-        </div>
+		  <strong>PARTNERS</strong>
+		  <a href="${pageContext.request.contextPath}/partner/apply">입점 및 제휴 신청 및 문의</a>
+		  <a href="${pageContext.request.contextPath}/partner/login">파트너 센터 로그인</a>
+		</div>
         <div class="footer-links-col">
           <strong>SUPPORT</strong>
           <a href="#">고객센터 (FAQ)</a>
