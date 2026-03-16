@@ -56,17 +56,55 @@
   .sort-trigger { display: flex; align-items: center; gap: 4px; font-size: 14px; font-weight: 700; color: var(--text-black); cursor: pointer; padding: 8px 0 8px 16px; flex-shrink: 0; }
   
   /* --- 🌟 정렬 모달 --- */
-  .sort-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 9990; opacity: 0; visibility: hidden; transition: all 0.3s; }
+  .sort-overlay { 
+      position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
+      background: rgba(0,0,0,0.5); z-index: 9990; 
+      opacity: 0; visibility: hidden; transition: all 0.3s; 
+  }
   .sort-overlay.open { opacity: 1; visibility: visible; }
   
-  .sort-modal { position: fixed; bottom: 0; left: 50%; width: 100%; max-width: 500px; background: white; border-radius: 20px 20px 0 0; z-index: 9999; transform: translate(-50%, 100%); transition: transform 0.3s ease-out; display: flex; flex-direction: column; padding-bottom: env(safe-area-inset-bottom); }
-  .sort-modal.open { transform: translate(-50%, 0); }
+  /* --- 🌟 정렬 모달 --- */
+  .sort-overlay { 
+      position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
+      background: rgba(0,0,0,0.5); z-index: 9990; 
+      opacity: 0; visibility: hidden; transition: all 0.3s; 
+  }
+  .sort-overlay.open { opacity: 1; visibility: visible; }
   
-  .sort-header { padding: 24px; text-align: center; font-size: 16px; font-weight: 800; border-bottom: 1px solid #E2E8F0; position: relative; }
-  .sort-close { position: absolute; right: 24px; top: 50%; transform: translateY(-50%); cursor: pointer; font-size: 20px; color: var(--text-gray); }
+  .sort-modal { 
+      position: fixed; top: 50%; left: 50%; 
+      bottom: auto; /* 🌟 기존 bottom 속성을 무효화하는 핵심 코드! */
+      width: 90%; max-width: 400px; 
+      background: white; border-radius: 16px; 
+      z-index: 9999; 
+      transform: translate(-50%, -40%); 
+      opacity: 0; visibility: hidden; 
+      transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1); 
+      display: flex; flex-direction: column; 
+      box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+      padding-bottom: 0;
+  }
   
-  .sort-body { padding: 12px 0; }
-  .sort-item { padding: 18px 24px; font-size: 15px; color: var(--text-dark); cursor: pointer; display: flex; justify-content: space-between; align-items: center; transition: background 0.2s; }
+  .sort-modal.open { 
+      transform: translate(-50%, -50%); 
+      opacity: 1; visibility: visible; 
+  }
+  
+  .sort-header { 
+      padding: 20px 24px; text-align: center; font-size: 16px; 
+      font-weight: 800; border-bottom: 1px solid #E2E8F0; position: relative; 
+  }
+  .sort-close { 
+      position: absolute; right: 24px; top: 50%; transform: translateY(-50%); 
+      cursor: pointer; font-size: 20px; color: var(--text-gray); 
+  }
+  
+  .sort-body { padding: 8px 0; }
+  .sort-item { 
+      padding: 16px 24px; font-size: 15px; color: var(--text-dark); 
+      cursor: pointer; display: flex; justify-content: space-between; 
+      align-items: center; transition: background 0.2s; 
+  }
   .sort-item:hover { background: #F8F9FA; }
   .sort-item.active { font-weight: 800; color: var(--text-black); }
   .sort-item .chk { display: none; color: var(--text-black); font-weight: 900; }
@@ -267,34 +305,35 @@
   </div>
 
 
-    <div class="sort-overlay" id="sortOverlay" onclick="closeSortModal()"></div>
-	<div class="sort-modal" id="sortModal">
-	    <div class="sort-header">
-	        정렬
-	        <span class="sort-close" onclick="closeSortModal()">✕</span>
-	    </div>
-	    <div class="sort-body">
-	        <div class="sort-item active" id="sort-DEFAULT" onclick="handleSortClick('DEFAULT', '기본순')">
-	            기본순 <span class="chk">✓</span>
-	        </div>
-	        <div class="sort-item" id="sort-POPULAR" onclick="handleSortClick('POPULAR', '인기순')">
-	            인기순 <span class="chk">✓</span>
-	        </div>
-	        <div class="sort-item" id="sort-NEW" onclick="handleSortClick('NEW', '신규 오픈순')">
-	            신규 오픈순 <span class="chk">✓</span>
-	        </div>
-	        <div class="sort-item" id="sort-PRICE_ASC" onclick="handleSortClick('PRICE_ASC', '낮은 가격순')">
-	            낮은 가격순 <span class="chk">✓</span>
-	        </div>
-	        <div class="sort-item" id="sort-PRICE_DESC" onclick="handleSortClick('PRICE_DESC', '높은 가격순')">
-	            높은 가격순 <span class="chk">✓</span>
-	        </div>
-	        <div class="sort-item" id="sort-DISTANCE" onclick="handleSortClick('DISTANCE', '가까운 거리순')">
-	            가까운 거리순 <span class="chk">✓</span>
-	        </div>
-	    </div>
-	</div>
 </main>
+
+<div class="sort-overlay" id="sortOverlay" onclick="closeSortModal()"></div>
+<div class="sort-modal" id="sortModal">
+    <div class="sort-header">
+        정렬
+        <span class="sort-close" onclick="closeSortModal()">✕</span>
+    </div>
+    <div class="sort-body">
+        <div class="sort-item active" id="sort-DEFAULT" onclick="handleSortClick('DEFAULT', '기본순')">
+            기본순 <span class="chk">✓</span>
+        </div>
+        <div class="sort-item" id="sort-POPULAR" onclick="handleSortClick('POPULAR', '인기순')">
+            인기순 <span class="chk">✓</span>
+        </div>
+        <div class="sort-item" id="sort-NEW" onclick="handleSortClick('NEW', '신규 오픈순')">
+            신규 오픈순 <span class="chk">✓</span>
+        </div>
+        <div class="sort-item" id="sort-PRICE_ASC" onclick="handleSortClick('PRICE_ASC', '낮은 가격순')">
+            낮은 가격순 <span class="chk">✓</span>
+        </div>
+        <div class="sort-item" id="sort-PRICE_DESC" onclick="handleSortClick('PRICE_DESC', '높은 가격순')">
+            높은 가격순 <span class="chk">✓</span>
+        </div>
+        <div class="sort-item" id="sort-DISTANCE" onclick="handleSortClick('DISTANCE', '가까운 거리순')">
+            가까운 거리순 <span class="chk">✓</span>
+        </div>
+    </div>
+</div>
 
 <button class="btn-floating-map" onclick="toggleMapView()">
   <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"></polygon><line x1="8" y1="2" x2="8" y2="18"></line><line x1="16" y1="6" x2="16" y2="22"></line></svg>
@@ -552,11 +591,15 @@
   function openSortModal() {
       document.getElementById('sortOverlay').classList.add('open');
       document.getElementById('sortModal').classList.add('open');
+      
+      document.body.style.overflow = 'hidden';
   }
 
   function closeSortModal() {
       document.getElementById('sortOverlay').classList.remove('open');
       document.getElementById('sortModal').classList.remove('open');
+      
+      document.body.style.overflow = '';
   }
   
   function handleSortClick(sortCode, text) {
