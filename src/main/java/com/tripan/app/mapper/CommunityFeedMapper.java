@@ -55,6 +55,9 @@ public interface CommunityFeedMapper {
     List<CommunityUserActivityDto> getUserActivityList(Long memberId);
     
     CommunityFeedListDto getFeedDetailFull(Map<String, Object> params);
+    
+    List<Map<String, Object>> getFollowerList(@Param("targetMemberId") Long targetMemberId, @Param("currentUserId") Long currentUserId);
+    List<Map<String, Object>> getFollowingList(@Param("targetMemberId") Long targetMemberId, @Param("currentUserId") Long currentUserId);
 
     
 }

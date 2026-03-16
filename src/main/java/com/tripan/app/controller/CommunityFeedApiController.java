@@ -5,17 +5,17 @@ import java.util.List;
 import java.util.Map;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
-import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.bind.annotation.SessionAttribute;
 
-import com.tripan.app.domain.dto.CommunityFeedListDto;
+import com.tripan.app.admin.domain.entity.Member2;
 import com.tripan.app.domain.dto.CommunityFeedWriteRequestDto;
 import com.tripan.app.domain.dto.MemberDto;
 import com.tripan.app.service.CommunityFeedService;
@@ -53,6 +53,23 @@ public class CommunityFeedApiController {
             response.put("message", "서버 오류가 발생했습니다.");
         }
         return response;
+    }
+    
+    @GetMapping("/follow/list/{type}/{targetMemberId}")
+    public ResponseEntity<?> getFollowList(
+            @PathVariable("type") String type, 
+            @PathVariable("targetMemberId") Long targetMemberId,
+            @SessionAttribute(name = "loginUser", required = false) MemberDto loginUser) {
+        
+        if (loginUser == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("로그인이 필요합니다.");
+        }
+        
+        Long currentUserId = loginUser.getMemberId();
+        
+        List<Map<String, Object>> followList = feedService.getFollowList(type, targetMemberId, currentUserId);
+        
+        return ResponseEntity.ok(followList);
     }
     
 
