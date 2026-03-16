@@ -36,91 +36,76 @@ public class TourApiSyncServiceImpl implements TourApiSyncService {
     private String baseUrl; 
 
     @Override
-    // 병렬 처리를 위해 @Transactional은 제거 (성능 및 DB 커넥션 최적화)
     public String forceSyncPlaceDetails() {
-        // 1. Mapper에서 description IS NULL인 데이터 대량 조회
         List<PlaceDto> emptyPlaces = placeMapper.findPlacesWithNullDescription();
+        if (emptyPlaces.isEmpty()) return "동기화할 대상이 없습니다!";
 
-        if (emptyPlaces.isEmpty()) {
-            return "동기화할 대상이 없습니다!";
-        }
-
-        log.info("🚀 [터보 동기화 시작] 총 {}개의 작업을 병렬로 진행합니다.", emptyPlaces.size());
-
+        log.info("🚀 [터보 동기화] {}개 작업을 시작합니다.", emptyPlaces.size());
         AtomicInteger successCount = new AtomicInteger(0);
-        AtomicInteger errorCount = new AtomicInteger(0);
         AtomicInteger quotaExceeded = new AtomicInteger(0);
+        
+        // 🔥 전체 진행률을 세기 위한 카운터 추가!
+        AtomicInteger processedCount = new AtomicInteger(0);
 
         emptyPlaces.parallelStream().forEach(place -> {
-            // 할당량 초과 시 더 이상 요청 보내지 않음
             if (quotaExceeded.get() > 0) return;
-
-            String contentId = String.valueOf(place.getPlaceId());
+            
+            // 🔥 어떤 ID 작업하는지 확인
+            log.info("🔍 작업 시작 -> ID: {}", place.getPlaceId());
+            
             String finalTel = "";
-            String finalDesc = " "; // 기본값 공백 (오라클 무한루프 방지)
-
+            String finalDesc = " "; // 기본값 공백 (설명이 없어도 공백을 넣어야 다음 조회에서 빠짐)
+            
             try {
-                // 매뉴얼 v4.4 규격: detailCommon2 사용 및 불필요 파라미터 제거
                 URI uri = UriComponentsBuilder.fromUriString(baseUrl + "/detailCommon2")
                         .queryParam("ServiceKey", serviceKey)
                         .queryParam("MobileOS", "ETC")
                         .queryParam("MobileApp", "Tripan")
                         .queryParam("_type", "json")
-                        .queryParam("contentId", contentId)
+                        .queryParam("contentId", place.getPlaceId())
                         .queryParam("numOfRows", "1")
                         .queryParam("pageNo", "1")
-                        .build(true) // 이중 인코딩 방지
-                        .toUri();
+                        .build(true).toUri();
 
                 HttpHeaders headers = new HttpHeaders();
-                headers.set("User-Agent", "Mozilla/5.0"); // 방화벽 통과
-                headers.set("Accept", "application/json");
-                HttpEntity<String> entity = new HttpEntity<>(headers);
+                headers.set("User-Agent", "Mozilla/5.0");
+                ResponseEntity<String> response = restTemplate.exchange(uri, HttpMethod.GET, new HttpEntity<>(headers), String.class);
+                
+                JsonNode item = objectMapper.readTree(response.getBody()).path("response").path("body").path("items").path("item");
 
-                ResponseEntity<String> response = restTemplate.exchange(uri, HttpMethod.GET, entity, String.class);
-                JsonNode root = objectMapper.readTree(response.getBody());
-                JsonNode items = root.path("response").path("body").path("items").path("item");
-
-                if (items != null && items.isArray() && items.size() > 0) {
-                    JsonNode item = items.get(0);
-                    
-                    // 전화번호
-                    String tel = item.path("tel").asText("");
-                    if (!tel.isBlank()) finalTel = tel.replace("<br>", " ").trim();
-
-                    // 설명
-                    String overview = item.path("overview").asText("");
-                    if (!overview.isBlank()) {
-                        finalDesc = overview.replace("<br>", "\n").replace("<br />", "\n");
+                if (item.isArray() && item.size() > 0) {
+                    JsonNode node = item.get(0);
+                    // 전화번호: <br> 제거 및 정리
+                    finalTel = node.path("tel").asText("").replace("<br>", " ").trim();
+                    // 설명: <br>을 개행으로 바꾸고 정리
+                    String ov = node.path("overview").asText("");
+                    if (!ov.isBlank()) {
+                        finalDesc = ov.replace("<br>", "\n").replace("<br />", "\n").trim();
                     }
                     successCount.incrementAndGet();
-                } else {
-                    log.warn("⚠️ [데이터 없음] ID {}: 공백 처리", contentId);
-                    errorCount.incrementAndGet();
                 }
 
+                // 🟢 성공했거나 데이터가 비어있는 경우 모두 DB 업데이트 (공백이라도 박아서 중복 조회 방지)
                 placeMapper.updatePlaceDetails(place.getPlaceId(), finalTel, finalDesc);
 
             } catch (HttpStatusCodeException e) {
                 if (e.getStatusCode().value() == 429) {
-                    log.error("🛑 [할당량 초과] 오늘치 API 한도를 다 썼습니다!");
-                    quotaExceeded.incrementAndGet();
+                    quotaExceeded.incrementAndGet(); // 할당량 초과 시 멈춤
                 } else {
-                    log.error("🚨 [KTO 서버 에러] ID {}: 500/폐기장소 추정. 공백 처리합니다.", contentId);
+                    // 🚨 500 에러(폐기장소) 등은 공백을 박아서 다음 리스트에서 탈출시킴
                     placeMapper.updatePlaceDetails(place.getPlaceId(), "", " ");
-                    errorCount.incrementAndGet();
                 }
             } catch (Exception e) {
-                log.error("🚨 [기타 에러] ID {}: {}", contentId, e.getMessage());
-                errorCount.incrementAndGet();
+                log.error("🚨 ID {} 동기화 실패: {}", place.getPlaceId(), e.getMessage());
+            } finally {
+                // 🔥 여기에 진행률 로그를 넣습니다! (성공하든 에러나든 1개 처리했으면 무조건 카운트 증가)
+                int current = processedCount.incrementAndGet();
+                if (current % 10 == 0) {
+                    log.info("📊 실시간 진행 상황: {}/{} 개 완료!", current, emptyPlaces.size());
+                }
             }
         });
 
-        log.info("🏁 [동기화 종료] 성공: {}, 실패/스킵: {}", successCount.get(), errorCount.get());
-        
-        if (quotaExceeded.get() > 0) {
-            return successCount.get() + "개 성공 후 할당량 초과로 중단되었습니다. 내일 다시 시도하세요!";
-        }
-        return successCount.get() + "개 성공, " + errorCount.get() + "개 실패/스킵 완료!";
+        return (quotaExceeded.get() > 0 ? "할당량 초과로 중단됨! " : "") + successCount.get() + "개 성공!";
     }
 }

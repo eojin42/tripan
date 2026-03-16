@@ -199,8 +199,8 @@
 				    <c:if test="${not empty item.memo}">
 				      <span class="place-chip memo">📝 메모</span>
 				    </c:if>
-				    <c:if test="${not empty item.imageUrl}">
-				      <span class="place-chip img">📷 사진</span>
+				    <c:if test="${not empty item.images && item.images.size() > 0}">
+				      <span class="place-chip img">📷 사진 </span>
 				    </c:if>
 				  </div>
 				</div>

@@ -16,4 +16,8 @@ public interface ItineraryImageRepository extends JpaRepository<ItineraryImage, 
     @Modifying
     @Query("DELETE FROM ItineraryImage i WHERE i.itemId = :itemId")
     void deleteByItemId(@Param("itemId") Long itemId);
+    
+    @Modifying
+    @Query("DELETE FROM ItineraryImage i WHERE i.itemId = :itemId AND i.imageUrl IN :urls")
+    void deleteByItemIdAndImageUrlIn(@Param("itemId") Long itemId, @Param("urls") List<String> urls);
 }

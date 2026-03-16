@@ -1,57 +1,4 @@
-/**
- * workspace.recommend.js  ★ v5 FINAL
- * ─────────────────────────────────────────────────────────────
- *
- * 수정 내역 (이번 버전):
- *
- * [BUG 1] PLACE_TYPE 중복 선언 → SyntaxError
- *   - 원인: recommend.js에서 `var PLACE_TYPE` 폴백 선언 후,
- *            JSP 마지막 <script> 블록의 `const PLACE_TYPE`이 재선언되어 충돌
- *   - 해결: recommend.js의 폴백을 window.PLACE_TYPE으로 변경
- *   - 추가 필요: workspace.jsp 994번 줄
- *       const PLACE_TYPE = { ... }
- *       → window.PLACE_TYPE = { ... }  (window 할당으로 교체)
- *
- * [BUG 2] 지도 → 일정 추가 시 아무것도 안 됨
- *   - 원인 1: addRecToDay()에서 addPlaceToDay(dayNumber, name, ...)로 호출
- *             → schedule.js 시그니처: addPlaceToDay(el, name, addr, lat, lng, apiPlaceId)
- *               el은 사용 안 하지만, 첫 번째 파라미터가 dayNumber면 name="name"이 됨
- *             → currentAddDay(schedule.js 전역)에 dayNumber 주입 후 null로 el 전달
- *   - 원인 2: openDayPicker()에서 팝업이 화면 밖에 숨어서 안 보임
- *             → position:fixed + 중앙 정렬로 강제 설정
- *   - 원인 3: map.js가 window._selectedRecPlace에 set하지만
- *             recommend.js에서 var _selectedRecPlace (로컬)로 별도 관리 → 동기화 안 됨
- *             → Object.defineProperty로 window._selectedRecPlace와 _selectedRecPlace 동기화
- *
- * [BUG 3] 이미지 안 나오는 문제
- *   - 원인: KTO areaBasedList2의 firstimage는 optional → 빈 문자열("")로 저장됨
- *           → PlaceMapper.xml WHERE 조건에 image_url != '' 없음
- *           → JS에서도 빈 문자열 체크 없이 그냥 '' img src로 넣음
- *   - 해결: PlaceMapper.xml에 image_url IS NOT NULL AND image_url != '' 조건 추가 (별도 파일)
- *           + JS에서도 빈 문자열 명시적 체크 후 placeholder 표시
- *
- * [BUG 4] 카테고리 필터 아무것도 안 뜸
- *   - 원인: filterRec()이 loadRecommendCards(category, city) 호출하는데
- *           내부에서 아무 에러 없이 동작하지만 결과가 0건인 경우:
- *           → DB에 해당 카테고리값('TOUR' 등)으로 저장된 데이터가 없거나
- *             KAKAO_CITIES 도시명과 실제 address 컬럼의 도시명이 불일치
- *   - 해결: 카테고리 'all'인 경우 category 조건 제거 확인 + 콘솔 로깅 추가
- *           + 검색 실패 시 토스트로 원인 표시
- *
- * [BUG 5] 무한스크롤 없음
- *   - 해결: IntersectionObserver + offset 파라미터 추가
- *           컨트롤러도 offset 지원하도록 별도 수정 필요 (TripPlaceApiController 수정본)
- *
- * ─────────────────────────────────────────────────────────────
- * workspace.jsp 수정 사항 (1줄만):
- *   994번 줄: const PLACE_TYPE = { OFFICIAL: 'OFFICIAL', CUSTOM: 'CUSTOM' };
- *   →         window.PLACE_TYPE = { OFFICIAL: 'OFFICIAL', CUSTOM: 'CUSTOM' };
- * ─────────────────────────────────────────────────────────────
- */
 
-/* ══════════════════════════
-   [BUG 1] PLACE_TYPE — window 할당 (const 충돌 방지)
-══════════════════════════ */
 if (typeof window.PLACE_TYPE === 'undefined') {
   window.PLACE_TYPE = { OFFICIAL: 'OFFICIAL', CUSTOM: 'CUSTOM' };
 }
@@ -70,9 +17,6 @@ var _searchTimer    = null;
 var _placeType      = 'all';
 var _pendingRpCard  = null;  // 추천패널 + 버튼에서 선택한 장소
 
-/* [BUG 2-3] map.js와 window._selectedRecPlace 완전 동기화
-   map.js의 openDayPickerForMap()이 window._selectedRecPlace를 직접 set하므로
-   로컬 _selectedRecPlace 대신 window._selectedRecPlace를 그대로 참조 */
 window._selectedRecPlace = null;
 
 /* ══════════════════════════
@@ -234,21 +178,59 @@ function _initInfiniteScroll() {
 }
 
 /* ── 로컬 검색 (이미 렌더된 카드 show/hide) ── */
+
+var _rpSearchTimer = null;
+
 function searchRpCards(keyword) {
-  var kw    = keyword.trim();
+  var kw = keyword.trim();
   var clear = document.getElementById('rpSearchClear');
   if (clear) clear.style.display = kw ? 'block' : 'none';
 
-  var grid = document.getElementById('rpCards');
-  if (!grid) return;
-  var upper = kw.toUpperCase();
+  clearTimeout(_rpSearchTimer);
 
-  Array.from(grid.querySelectorAll('.rp-card')).forEach(function (c) {
-    if (!kw) { c.style.display = ''; return; }
-    var nm = (c.getAttribute('data-name')    || '').toUpperCase();
-    var ad = (c.getAttribute('data-address') || '').toUpperCase();
-    c.style.display = (nm.indexOf(upper) !== -1 || ad.indexOf(upper) !== -1) ? '' : 'none';
-  });
+  if (!kw) {
+    // 검색어가 없으면 원래 추천 리스트 다시 로드
+    _rpOffset = 0;
+    _rpHasMore = true;
+    loadRecommendCards(_rpCategory, _getCityParam(), 0);
+    return;
+  }
+
+  var grid = document.getElementById('rpCards');
+  if (grid) grid.innerHTML = '<div style="text-align:center;padding:32px;color:#A0AEC0;"><div style="font-size:32px;margin-bottom:8px;">🔍</div><div>검색 중...</div></div>';
+
+  _rpSearchTimer = setTimeout(function() {
+    fetch(CTX_PATH + '/api/places/search?keyword=' + encodeURIComponent(kw))
+      .then(function(r) { return r.json(); })
+      .then(function(res) {
+         var list = Array.isArray(res) ? res : (res.officialPlaces || []);
+         
+         // 여행지(KAKAO_CITIES)에 해당하는 장소가 맨 위로 오도록 정렬
+         if (typeof KAKAO_CITIES !== 'undefined' && KAKAO_CITIES.length > 0) {
+             list.sort(function(a, b) {
+                 var aMatch = KAKAO_CITIES.some(function(city) { return (a.address || '').includes(city); });
+                 var bMatch = KAKAO_CITIES.some(function(city) { return (b.address || '').includes(city); });
+                 if (aMatch && !bMatch) return -1;
+                 if (!aMatch && bMatch) return 1;
+                 return 0;
+             });
+         }
+
+         if (grid) grid.innerHTML = '';
+         _rpHasMore = false; // 검색 상태에선 무한 스크롤 중지
+
+         var noResult = document.getElementById('rpNoResult');
+         if (list.length === 0) {
+           if (noResult) noResult.style.display = 'block';
+         } else {
+           if (noResult) noResult.style.display = 'none';
+           _appendRpCards(list); // 검색 결과 카드 렌더링
+         }
+      })
+      .catch(function() {
+         if (grid) grid.innerHTML = '<div style="text-align:center;padding:32px;color:#A0AEC0;">검색 실패 😢</div>';
+      });
+  }, 350);
 }
 
 function clearRpSearch() {
@@ -409,8 +391,8 @@ function openPlaceDetailModal(p) {
         (p.phoneNumber ? '<div style="font-size:12px;color:#718096;margin-bottom:8px;">📞 ' + _esc(p.phoneNumber) + '</div>' : '') +
         (p.description
           ? '<div style="font-size:12px;color:#4A5568;line-height:1.75;margin-bottom:18px;' +
-              'padding:12px;background:#F7FAFC;border-radius:12px;max-height:120px;overflow-y:auto;">' +
-              _esc((p.description || '').substring(0, 300)) + (p.description.length > 300 ? '…' : '') +
+              'padding:12px;background:#F7FAFC;border-radius:12px;max-height:160px;overflow-y:auto;">' +
+              _esc(p.description || '') +
             '</div>'
           : '') +
         '<button id="rpDetailAddBtn" '
@@ -420,18 +402,20 @@ function openPlaceDetailModal(p) {
       '</div>' +
     '</div>';
 
-  // 추가 버튼: 안전하게 addEventListener로 처리
-  document.getElementById('rpDetailAddBtn').addEventListener('click', function () {
-    _pendingRpCard = {
-      placeName : p.placeName  || '',
-      address   : p.address    || '',
-      latitude  : p.latitude   || 0,
-      longitude : p.longitude  || 0,
-      placeId   : p.placeId    || null
-    };
-    closePlaceDetailModal();
-    openDayPicker();
-  });
+	// 추가 버튼: 안전하게 addEventListener로 처리
+	  document.getElementById('rpDetailAddBtn').addEventListener('click', function (e) {
+	    e.stopPropagation(); 
+	    _pendingRpCard = {
+	      placeName : p.placeName  || '',
+	      address   : p.address    || '',
+	      latitude  : p.latitude   || 0,
+	      longitude : p.longitude  || 0,
+	      placeId   : p.placeId    || null,
+	      category  : p.category   || 'ETC' 
+	    };
+	    closePlaceDetailModal();
+	    openDayPicker();
+	  });
 
   modal.style.display = 'flex';
 }
@@ -452,7 +436,6 @@ function selectPlaceType(btn, type) {
   if (kw.length >= 2) searchPlace(kw);
   else _loadCategoryPreview(type);
 }
-
 function searchPlace(keyword) {
   clearTimeout(_searchTimer);
   if (!keyword || keyword.length < 2) {
@@ -460,19 +443,53 @@ function searchPlace(keyword) {
     return;
   }
   var results = document.getElementById('placeResults');
-  if (results) results.innerHTML =
-    '<div style="text-align:center;padding:24px;color:#A0AEC0;">🔍 검색 중...</div>';
+  if (results) results.innerHTML = '<div style="text-align:center;padding:24px;color:#A0AEC0;">🔍 검색 중...</div>';
 
   _searchTimer = setTimeout(function () {
     if (_placeType === 'my') { loadMyPlaces(keyword); return; }
 
-    fetch(CTX_PATH + '/api/places/search?keyword=' + encodeURIComponent(keyword))
+    // ✅ 버그 수정: category 파라미터 추가 → 서버에서 1차 필터
+    var catParam = (_placeType && _placeType !== 'all' && _placeType !== 'my') ? _placeType : '';
+    fetch(CTX_PATH + '/api/places/search?keyword=' + encodeURIComponent(keyword)
+          + (catParam ? '&category=' + encodeURIComponent(catParam) : ''))
       .then(function (r) { return r.json(); })
       .then(function (res) {
-        // 구버전: List<TripPlaceDto> 배열 / 신버전: { officialPlaces, myPlaces }
+        
+        // ★ 여행지 우선 정렬 함수
+        var sortFn = function(a, b) {
+            var aMatch = KAKAO_CITIES.some(function(c) { return (a.address || '').includes(c); });
+            var bMatch = KAKAO_CITIES.some(function(c) { return (b.address || '').includes(c); });
+            if (aMatch && !bMatch) return -1;
+            if (!aMatch && bMatch) return 1;
+            return 0;
+        };
+
+        // ✅ 버그 수정: 클라이언트 2차 필터 (서버가 category를 지원 안 해도 안전)
+        var filterByCat = function(list) {
+          if (!catParam || !list) return list;
+          // DB category값 매핑 (탭 value → DB 저장값)
+          var catMap = {
+            'RESTAURANT':    ['RESTAURANT','음식점','맛집'],
+            'ACCOMMODATION': ['ACCOMMODATION','STAY','숙박','숙소'],
+            'TOUR':          ['TOUR','관광','ATTRACTION'],
+            'CULTURE':       ['CULTURE','문화'],
+            'LEISURE':       ['LEISURE','레포츠'],
+            'SHOPPING':      ['SHOPPING','쇼핑'],
+          };
+          var allowed = catMap[catParam] || [catParam];
+          return list.filter(function(p) {
+            var c = (p.category || p.categoryName || '').toUpperCase();
+            return allowed.some(function(a) { return c.includes(a.toUpperCase()); });
+          });
+        };
+
         if (Array.isArray(res)) {
-          renderSearchResults({ officialPlaces: [], myPlaces: res });
+          var filtered = filterByCat(res);
+          filtered.sort(sortFn);
+          renderSearchResults({ officialPlaces: [], myPlaces: filtered });
         } else {
+          if (res.officialPlaces) { res.officialPlaces = filterByCat(res.officialPlaces); res.officialPlaces.sort(sortFn); }
+          if (res.myPlaces)       { res.myPlaces       = filterByCat(res.myPlaces);       res.myPlaces.sort(sortFn); }
           renderSearchResults(res);
         }
       })

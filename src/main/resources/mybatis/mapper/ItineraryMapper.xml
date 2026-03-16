@@ -35,23 +35,4 @@
          ORDER BY uploaded_at ASC
     </select>
 
-    <insert id="insertImage">
-        INSERT INTO itinerary_image (image_id, item_id, image_url, uploaded_at)
-        VALUES (itinerary_image_seq.NEXTVAL, #{itemId}, #{imageUrl}, SYSDATE)
-    </insert>
-
-    <delete id="deleteImagesByItemIdAndUrls">
-        DELETE FROM itinerary_image
-         WHERE item_id = #{itemId}
-           AND image_url IN
-        <foreach item="url" collection="urls" open="(" separator="," close=")">
-            #{url}
-        </foreach>
-    </delete>
-
-    <delete id="deleteAllImagesByItemId">
-        DELETE FROM itinerary_image
-         WHERE item_id = #{itemId}
-    </delete>
-
-</mapper>
+    </mapper>
