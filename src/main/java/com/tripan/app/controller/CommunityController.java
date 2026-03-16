@@ -27,7 +27,6 @@ import com.tripan.app.domain.dto.CommunityMateCommentDto;
 import com.tripan.app.domain.dto.CommunityMateDto;
 import com.tripan.app.domain.dto.CommunityUserActivityDto;
 import com.tripan.app.domain.dto.MemberDto;
-import com.tripan.app.mapper.CommunityMateCommentMapper;
 import com.tripan.app.repository.FollowRepository;
 import com.tripan.app.service.CommunityChatService;
 import com.tripan.app.service.CommunityFeedService;
@@ -44,17 +43,17 @@ import lombok.extern.slf4j.Slf4j;
 @RequiredArgsConstructor
 @Slf4j
 public class CommunityController {
-	
+
     @Autowired
     private FollowRepository followRepository;
-    
-	private final CommunityFreeboardService freeboardService;
-	private final CommunityChatService chatService;
-	private final CommunityMateService mateService;
-    private final CommunityMateCommentMapper mateCommentMapper;
+
+    private final CommunityFreeboardService freeboardService;
+    private final CommunityChatService chatService;
+    private final CommunityMateService mateService;
     private final CommunityFeedService feedService;
 
-
+    //  페이지 및 프래그먼트 라우팅
+    
     @GetMapping({"", "/", "/feed"})
     public String handleCommunityFeed(Model model, HttpSession session) {
         MemberDto loginUser = (MemberDto) session.getAttribute("loginUser");
@@ -80,9 +79,7 @@ public class CommunityController {
 
     @GetMapping("/freeboard")
     public String handleCommunityFreeboard(Model model) {
-
-    	model.addAttribute("activeTab", "freeboard");
-    	
+        model.addAttribute("activeTab", "freeboard");
         return "community/feed"; 
     }
 
@@ -100,7 +97,6 @@ public class CommunityController {
                 List<CommunityFreeBoardDto> list = freeboardService.getBoardList(category);
                 model.addAttribute("boardList", list);
                 log.info("자유게시판 목록 조회 완료: {}건, 카테고리: {}", list.size(), category); 
-                
                 return "community/fragment/freeboard/freeboard_list";
                 
             } else if ("mate".equals(tabType)) {
@@ -111,7 +107,7 @@ public class CommunityController {
                 Long loginId = (loginUser != null) ? loginUser.getMemberId() : -1L;
                 
                 List<CommunityFeedListDto> feedList = feedService.getFeedList(loginId);
-                model.addAttribute("feedList", feedList);            	
+                model.addAttribute("feedList", feedList);                
             
             } else if ("profile".equals(tabType)) {
                 if (targetMemberId == null) return "error/NotFound";
@@ -126,21 +122,19 @@ public class CommunityController {
                 int postCount = feedService.getMyFeedCount(targetMemberId);
                 
                 List<CommunityFeedListDto> userFeedList = feedService.getUserFeedList(targetMemberId, loginId);
-	            List<CommunityMateDto> userMateList = mateService.getUserMateList(targetMemberId);
-	            List<CommunityFreeBoardDto> userLoungeList = freeboardService.getUserBoardList(targetMemberId);
-	            
-	            List<CommunityUserActivityDto> userActivityList = null;
-	            if (loginId.equals(targetMemberId)) {
-	                userActivityList = feedService.getUserActivityList(targetMemberId); 
-	            }
+                List<CommunityMateDto> userMateList = mateService.getUserMateList(targetMemberId);
+                List<CommunityFreeBoardDto> userLoungeList = freeboardService.getUserBoardList(targetMemberId);
+                
+                List<CommunityUserActivityDto> userActivityList = null;
+                if (loginId.equals(targetMemberId)) {
+                    userActivityList = feedService.getUserActivityList(targetMemberId); 
+                }
                 
                 boolean isFollowing = false;
                 if (loginUser != null && !loginId.equals(targetMemberId)) {
                     isFollowing = followRepository.existsByFollowerIdAndFollowingId(loginId, targetMemberId);
                 }
                 
-                
-
                 model.addAttribute("targetUser", targetUser);
                 model.addAttribute("followerCount", followerCount);
                 model.addAttribute("followingCount", followingCount);
@@ -154,10 +148,8 @@ public class CommunityController {
 
                 return "community/fragment/profile/profile"; 
             }
-            
             return "community/fragment/" + tabType + "_list"; 
-        }
-        else {
+        } else {
             if ("freeboard".equals(tabType)) {
                 return "redirect:/community/freeboard";
             } else if ("mate".equals(tabType)) {
@@ -167,15 +159,33 @@ public class CommunityController {
         }
     }
 
+
+    // Feed 관련 
+    
+    @GetMapping("/api/feed/detail/modal/{postId}")
+    public String getFeedModalDetail(@PathVariable("postId") Long postId, HttpSession session, Model model) {
+        MemberDto loginUser = (MemberDto) session.getAttribute("loginUser");
+        Long loginId = (loginUser != null) ? loginUser.getMemberId() : -1L;
+
+        CommunityFeedListDto feed = feedService.getFeedDetailFull(postId, loginId);
+        if (feed == null) return "error/NotFound"; 
+
+        List<CommunityFeedCommentDto> comments = feedService.getFeedComments(postId);
+        model.addAttribute("feed", feed);
+        model.addAttribute("comments", comments);
+        model.addAttribute("loginUserId", loginId); 
+
+        return "community/fragment/feed_modal_card"; 
+    }
+
     @PostMapping("/api/feed/write")
     @ResponseBody 
     public ResponseEntity<Map<String, Object>> writeFeed(
             @ModelAttribute CommunityFeedWriteRequestDto requestDTO, 
             HttpSession session) {
-        
         Map<String, Object> response = new HashMap<>();
-
         MemberDto loginUser = (MemberDto) session.getAttribute("loginUser");
+        
         if (loginUser == null) {
             response.put("status", "error");
             response.put("message", "로그인이 필요합니다.");
@@ -187,7 +197,6 @@ public class CommunityController {
             response.put("status", "success");
             response.put("message", "피드가 성공적으로 등록되었습니다!");
             return ResponseEntity.ok(response);
-            
         } catch (Exception e) {
             log.error("피드 등록 실패", e);
             response.put("status", "error");
@@ -195,401 +204,7 @@ public class CommunityController {
             return ResponseEntity.status(500).body(response);
         }
     }
-    
-    @GetMapping("/api/chat/top-rooms")
-    @ResponseBody
-    public List<CommunityChatRoomDto> getTopChatRooms() {
-        List<CommunityChatRoomDto> topRooms = chatService.getTopChatRooms();
-        log.info("실시간 인기 채팅방 조회 완료: {}건", topRooms.size());
-        return topRooms;
-    }
- 
-    @GetMapping("/freeboard/detail/{boardId}")
-    public String handleFreeboardDetail(@PathVariable("boardId") Long boardId, 
-                                        @RequestParam(value="updateView", defaultValue="true") boolean updateView, // 🌟 추가
-                                        HttpServletRequest request, Model model, HttpSession session) {
-        
-        String requestedWith = request.getHeader("X-Requested-With");
-        if ("Fetch".equals(requestedWith) || "XMLHttpRequest".equals(requestedWith)) {
-            
-            CommunityFreeBoardDto board = freeboardService.getBoardDetail(boardId, updateView);
-            List<CommunityFreeboardCommentDto> comments = freeboardService.getCommentList(boardId);
-            
-            MemberDto loginUser = (MemberDto) session.getAttribute("loginUser");
-            int isLiked = 0;
-            if (loginUser != null) {
-                isLiked = freeboardService.checkLikeStatus(boardId, loginUser.getMemberId());
-            }
-            
-            model.addAttribute("board", board);
-            model.addAttribute("comments", comments);
-            model.addAttribute("isLiked", isLiked); 
-            
-            return "community/fragment/freeboard/freeboard_detail"; 
-        }
-        return "redirect:/community/freeboard";
-    }
-    
-    @GetMapping("/mate/detail/{mateId}")
-    public String handleMateDetail(@PathVariable("mateId") Long mateId, 
-                                   @RequestParam(value="updateView", defaultValue="true") boolean updateView, 
-                                   HttpServletRequest request, Model model, HttpSession session) {
-        
-        String requestedWith = request.getHeader("X-Requested-With");
-        
-        if ("Fetch".equals(requestedWith) || "XMLHttpRequest".equals(requestedWith)) {
-            
-            CommunityMateDto mate = mateService.getMateDetail(mateId, updateView);
-            
-            MemberDto loginUser = (MemberDto) session.getAttribute("loginUser");
-            Long loginId = (loginUser != null) ? loginUser.getMemberId() : -1L;
-            
-            model.addAttribute("mate", mate);
-            model.addAttribute("loginUserId", loginId);
-            
-            return "community/fragment/mate/mate_detail"; 
-        }
-        
-        return "redirect:/community/feed?tab=mate";
-    }
-    
-    /**
-     * 🌟 자유게시판 댓글 등록 (AJAX)
-     */
-    @PostMapping("/freeboard/comment/add")
-    @ResponseBody
-    public ResponseEntity<?> addFreeboardComment(@RequestBody CommunityFreeboardCommentDto commentDto) {
-        try {
-            // 실제 로그인 연동 시 세션에서 memberId를 가져와 세팅해야 함
-            // 임시로 memberId = 1 로 고정 테스트 (나중에 수정 필요)
-            if (commentDto.getMemberId() == null) {
-                commentDto.setMemberId(1L); 
-            }
-            
-            freeboardService.registerComment(commentDto);
-            
-            // 등록 성공 메시지 반환
-            return ResponseEntity.ok(Map.of("status", "success", "message", "댓글이 등록되었습니다."));
-        } catch (Exception e) {
-            log.error("댓글 등록 실패", e);
-            return ResponseEntity.status(500).body(Map.of("status", "error", "message", "등록 중 오류가 발생했습니다."));
-        }
-    }
-    
-    @PostMapping("/api/feed/like/{postId}")
-    @ResponseBody
-    public ResponseEntity<?> handleFeedLike(@PathVariable("postId") Long postId, HttpSession session) {
-        MemberDto loginUser = (MemberDto) session.getAttribute("loginUser");
-        
-        if (loginUser == null) {
-            return ResponseEntity.status(401).build(); 
-        }
 
-        try {
-            Map<String, Object> result = feedService.toggleFeedLike(postId, loginUser.getMemberId());
-            
-            return ResponseEntity.ok(result);
-        } catch (Exception e) {
-            log.error("피드 좋아요 처리 에러", e);
-            return ResponseEntity.status(500).build();
-        }
-    }
-    
-    @PostMapping("/freeboard/like/{boardId}")
-    @ResponseBody
-    public ResponseEntity<?> handlefreeboardLike(@PathVariable("boardId") Long boardId, HttpSession session) {
-        MemberDto loginUser = (MemberDto) session.getAttribute("loginUser");
-        
-        if (loginUser == null) {
-            return ResponseEntity.status(401).build(); 
-        }
-
-        try {
-            Map<String, Object> result = freeboardService.toggleLike(boardId, loginUser.getMemberId());
-            return ResponseEntity.ok(result);
-        } catch (Exception e) {
-            log.error("자유게시판 좋아요 처리 에러", e);
-            return ResponseEntity.status(500).build();
-        }
-    }
-    
-    
-    @GetMapping("/chat/openlounge")
-    public String openlounge(Model model) {
-        
-        return "community/chat/openlounge"; 
-    }
-    
-    @PostMapping("/mate/write")
-    @ResponseBody
-    public ResponseEntity<?> writeMatePost(@RequestBody CommunityMateDto dto, HttpSession session) {
-        try {
-        	MemberDto loginUser = (MemberDto) session.getAttribute("loginUser");
-
-            if (loginUser == null) {
-                return ResponseEntity.status(401).body(Map.of("status", "error", "message", "로그인이 필요합니다."));
-            }
-
-            dto.setMemberId(loginUser.getMemberId());
-
-            mateService.registerMate(dto);
-            return ResponseEntity.ok(Map.of("status", "success", "message", "동행 모집글이 성공적으로 등록되었습니다!"));
-            
-        } catch (Exception e) {
-            log.error("동행 모집글 등록 에러", e);
-            return ResponseEntity.status(500).body(Map.of("status", "error", "message", "서버 오류가 발생했습니다."));
-        }
-    }
-    
-    @GetMapping("/api/mate/list")
-    @ResponseBody
-    public ResponseEntity<List<CommunityMateDto>> getMateList(
-            @RequestParam(value = "regionId", required = false) Long regionId,
-            @RequestParam(value = "startDate", required = false) String startDate,
-            @RequestParam(value = "endDate", required = false) String endDate,
-            @RequestParam(value = "searchTag", required = false) String searchTag) {
-        
-        List<CommunityMateDto> list = mateService.getMateList(regionId, startDate, endDate, searchTag);
-        return ResponseEntity.ok(list);
-    }
-    
-    @PostMapping("/api/follow/{targetId}")
-    @ResponseBody
-    public ResponseEntity<?> followToggle(@PathVariable("targetId") Long targetId, HttpSession session) {
-        MemberDto loginUser = (MemberDto) session.getAttribute("loginUser");
-        if (loginUser == null) return ResponseEntity.status(401).build();
-
-        String result = feedService.toggleFollow(loginUser.getMemberId(), targetId);
-        return ResponseEntity.ok(Map.of("status", result));
-    }
-    
-    @GetMapping("/api/feed/{postId}/comments")
-    @ResponseBody
-    public ResponseEntity<List<CommunityFeedCommentDto>> getFeedComments(@PathVariable("postId") Long postId) {
-        try {
-            // Service를 통해 해당 피드의 댓글 목록을 가져옵니다.
-            List<CommunityFeedCommentDto> comments = feedService.getFeedComments(postId);
-            return ResponseEntity.ok(comments);
-        } catch (Exception e) {
-            log.error("피드 댓글 조회 실패", e);
-            return ResponseEntity.status(500).build();
-        }
-    }
-
-    @PostMapping("/api/feed/comment/add")
-    @ResponseBody
-    public ResponseEntity<Map<String, Object>> addFeedComment(
-            @RequestBody CommunityFeedCommentDto dto, 
-            HttpSession session) {
-        
-        MemberDto loginUser = (MemberDto) session.getAttribute("loginUser");
-        if (loginUser == null) {
-            return ResponseEntity.status(401).body(Map.of("status", "error", "message", "로그인이 필요합니다."));
-        }
-        
-        try {
-            dto.setMemberId(loginUser.getMemberId()); 
-            
-            feedService.insertFeedComment(dto);
-            
-            return ResponseEntity.ok(Map.of("status", "success", "message", "댓글이 등록되었습니다."));
-            
-        } catch (Exception e) {
-            log.error("피드 댓글 등록 실패", e);
-            return ResponseEntity.status(500).body(Map.of("status", "error", "message", "댓글 등록 중 서버 오류가 발생했습니다."));
-        }
-    }
-    
-    @PostMapping("/api/feed/comment/delete/{commentId}")
-    @ResponseBody
-    public ResponseEntity<Map<String, Object>> deleteFeedComment(@PathVariable("commentId") Long commentId, HttpSession session) {
-        MemberDto loginUser = (MemberDto) session.getAttribute("loginUser");
-        if (loginUser == null) {
-            return ResponseEntity.status(401).body(Map.of("status", "error", "message", "로그인이 필요합니다."));
-        }
-        
-        try {
-            boolean isDeleted = feedService.deleteFeedComment(commentId, loginUser.getMemberId());
-            if (isDeleted) {
-                return ResponseEntity.ok(Map.of("status", "success", "message", "댓글이 삭제되었습니다."));
-            } else {
-                return ResponseEntity.status(403).body(Map.of("status", "error", "message", "삭제 권한이 없습니다."));
-            }
-        } catch (Exception e) {
-            log.error("댓글 삭제 에러", e);
-            return ResponseEntity.status(500).body(Map.of("status", "error", "message", "서버 오류가 발생했습니다."));
-        }
-    }
-    
-    /**
-     * 게시글 삭제 
-     */
-    @PostMapping("/api/feed/delete/{postId}")
-    @ResponseBody
-    public ResponseEntity<Map<String, Object>> deleteFeedPost(@PathVariable("postId") Long postId, HttpSession session) {
-        
-        MemberDto loginUser = (MemberDto) session.getAttribute("loginUser");
-        if (loginUser == null) {
-            return ResponseEntity.status(401).body(Map.of("status", "error", "message", "로그인이 필요합니다."));
-        }
-
-        try {
-            boolean isDeleted = feedService.deleteFeed(postId, loginUser.getMemberId());
-            
-            if (isDeleted) {
-                return ResponseEntity.ok(Map.of("status", "success", "message", "게시글이 삭제되었습니다."));
-            } else {
-                return ResponseEntity.status(403).body(Map.of("status", "error", "message", "삭제 권한이 없거나 이미 삭제된 게시글입니다."));
-            }
-        } catch (Exception e) {
-            log.error("게시글 삭제 중 에러 발생 (게시글 ID: {})", postId, e);
-            return ResponseEntity.status(500).body(Map.of("status", "error", "message", "서버 오류가 발생했습니다."));
-        }
-    }
-    
-    /**
-     * 자유게시판 글쓰기 
-     */
-    @PostMapping("/api/freeboard/write")
-    @ResponseBody
-    public ResponseEntity<Map<String, Object>> writeFreeboardPost(
-            @ModelAttribute CommunityFreeBoardDto dto, // FormData로 넘어오므로 @ModelAttribute 사용
-            HttpSession session) {
-        
-        Map<String, Object> response = new HashMap<>();
-        
-        MemberDto loginUser = (MemberDto) session.getAttribute("loginUser");
-        if (loginUser == null) {
-            response.put("status", "error");
-            response.put("message", "로그인이 필요합니다.");
-            return ResponseEntity.status(401).body(response);
-        }
-
-        try {
-            dto.setMemberId(loginUser.getMemberId());
-            
-            freeboardService.registerBoard(dto);
-            
-            response.put("status", "success");
-            response.put("message", "게시글이 성공적으로 등록되었습니다!");
-            return ResponseEntity.ok(response);
-            
-        } catch (Exception e) {
-            log.error("자유게시판 글 등록 실패", e);
-            response.put("status", "error");
-            response.put("message", "서버 오류가 발생했습니다.");
-            return ResponseEntity.status(500).body(response);
-        }
-    }
-    
-    /**
-     * 자유게시판 게시글 삭제 API
-     */
-    @PostMapping("/api/freeboard/delete/{boardId}")
-    @ResponseBody
-    public ResponseEntity<Map<String, Object>> deleteFreeboardPost(@PathVariable("boardId") Long boardId, HttpSession session) {
-        
-        MemberDto loginUser = (MemberDto) session.getAttribute("loginUser");
-        if (loginUser == null) {
-            return ResponseEntity.status(401).body(Map.of("status", "error", "message", "로그인이 필요합니다."));
-        }
-
-        try {
-            boolean isDeleted = freeboardService.deleteBoard(boardId, loginUser.getMemberId());
-            
-            if (isDeleted) {
-                return ResponseEntity.ok(Map.of("status", "success", "message", "게시글이 삭제되었습니다."));
-            } else {
-                return ResponseEntity.status(403).body(Map.of("status", "error", "message", "삭제 권한이 없거나 이미 삭제된 게시글입니다."));
-            }
-        } catch (Exception e) {
-            log.error("자유게시판 게시글 삭제 중 에러 발생 (게시글 ID: {})", boardId, e);
-            return ResponseEntity.status(500).body(Map.of("status", "error", "message", "서버 오류가 발생했습니다."));
-        }
-    }
-
-    @PostMapping("/api/freeboard/comment/delete/{commentId}")
-    @ResponseBody
-    public ResponseEntity<Map<String, Object>> deleteFreeboardComment(
-            @PathVariable("commentId") Long commentId, HttpSession session) {
-        
-        Map<String, Object> response = new HashMap<>();
-        
-        MemberDto loginUser = (MemberDto) session.getAttribute("loginUser");
-        if (loginUser == null) {
-            response.put("status", "error");
-            response.put("message", "로그인이 필요합니다.");
-            return ResponseEntity.status(401).body(response);
-        }
-
-        try {
-            boolean isDeleted = freeboardService.deleteComment(commentId, loginUser.getMemberId());
-            
-            if (isDeleted) {
-                response.put("status", "success");
-                response.put("message", "댓글이 삭제되었습니다.");
-                return ResponseEntity.ok(response);
-            } else {
-                response.put("status", "error");
-                response.put("message", "삭제 권한이 없거나 이미 삭제된 댓글입니다.");
-                return ResponseEntity.status(403).body(response);
-            }
-        } catch (Exception e) {
-            log.error("자유게시판 댓글 삭제 중 에러 발생 (댓글 ID: {})", commentId, e);
-            response.put("status", "error");
-            response.put("message", "서버 오류가 발생했습니다.");
-            return ResponseEntity.status(500).body(response);
-        }
-    }
-    
-    /**
-     * 🌟 자유게시판 글 1개 조회 
-     */
-    @GetMapping("/api/freeboard/{boardId}")
-    @ResponseBody
-    public ResponseEntity<CommunityFreeBoardDto> getFreeboardPost(@PathVariable("boardId") Long boardId) {
-        // 조회수 증가 없이(false) 데이터만 가져옵니다.
-        CommunityFreeBoardDto board = freeboardService.getBoardDetail(boardId, false);
-        return ResponseEntity.ok(board);
-    }
-
-    /**
-     * 🌟 자유게시판 게시글 수정 API
-     */
-    @PostMapping("/api/freeboard/update")
-    @ResponseBody
-    public ResponseEntity<Map<String, Object>> updateFreeboardPost(
-            @ModelAttribute CommunityFreeBoardDto dto, 
-            HttpSession session) {
-        
-        Map<String, Object> response = new HashMap<>();
-        MemberDto loginUser = (MemberDto) session.getAttribute("loginUser");
-        
-        if (loginUser == null) {
-            response.put("status", "error");
-            response.put("message", "로그인이 필요합니다.");
-            return ResponseEntity.status(401).body(response);
-        }
-
-        try {
-            boolean isUpdated = freeboardService.updateBoard(dto, loginUser.getMemberId());
-            if(isUpdated) {
-                response.put("status", "success");
-                response.put("message", "게시글이 성공적으로 수정되었습니다!");
-                return ResponseEntity.ok(response);
-            } else {
-                response.put("status", "error");
-                response.put("message", "수정 권한이 없습니다.");
-                return ResponseEntity.status(403).body(response);
-            }
-        } catch (Exception e) {
-            log.error("자유게시판 글 수정 실패", e);
-            response.put("status", "error");
-            response.put("message", "서버 오류가 발생했습니다.");
-            return ResponseEntity.status(500).body(response);
-        }
-    }
-    
     @GetMapping("/api/feed/{postId}")
     @ResponseBody
     public ResponseEntity<?> getFeedDetailForEdit(@PathVariable("postId") Long postId) {
@@ -610,7 +225,6 @@ public class CommunityController {
     public ResponseEntity<Map<String, Object>> updateFeedPost(
             @ModelAttribute CommunityFeedWriteRequestDto requestDTO, 
             HttpSession session) {
-        
         Map<String, Object> response = new HashMap<>();
         MemberDto loginUser = (MemberDto) session.getAttribute("loginUser");
 
@@ -622,11 +236,9 @@ public class CommunityController {
 
         try {
             feedService.updateFeed(requestDTO, loginUser.getMemberId());
-            
             response.put("status", "success");
             response.put("message", "피드가 성공적으로 수정되었습니다! ✨");
             return ResponseEntity.ok(response);
-            
         } catch (Exception e) {
             log.error("피드 수정 실패", e);
             response.put("status", "error");
@@ -634,129 +246,468 @@ public class CommunityController {
             return ResponseEntity.status(500).body(response);
         }
     }
-    
-    @GetMapping("/api/feed/detail/modal/{postId}")
-    public String getFeedModalDetail(@PathVariable("postId") Long postId, HttpSession session, Model model) {
-        MemberDto loginUser = (MemberDto) session.getAttribute("loginUser");
-        Long loginId = (loginUser != null) ? loginUser.getMemberId() : -1L;
 
-        CommunityFeedListDto feed = feedService.getFeedDetailFull(postId, loginId);
-        
-        if (feed == null) {
-            return "error/NotFound"; 
+    /**
+     * 게시글 삭제 
+     */
+    @PostMapping("/api/feed/delete/{postId}")
+    @ResponseBody
+    public ResponseEntity<Map<String, Object>> deleteFeedPost(@PathVariable("postId") Long postId, HttpSession session) {
+        MemberDto loginUser = (MemberDto) session.getAttribute("loginUser");
+        if (loginUser == null) {
+            return ResponseEntity.status(401).body(Map.of("status", "error", "message", "로그인이 필요합니다."));
         }
 
-        List<CommunityFeedCommentDto> comments = feedService.getFeedComments(postId);
-
-        model.addAttribute("feed", feed);
-        model.addAttribute("comments", comments);
-        model.addAttribute("loginUserId", loginId); 
-
-        return "community/fragment/feed_modal_card"; 
+        try {
+            boolean isDeleted = feedService.deleteFeed(postId, loginUser.getMemberId());
+            if (isDeleted) {
+                return ResponseEntity.ok(Map.of("status", "success", "message", "게시글이 삭제되었습니다."));
+            } else {
+                return ResponseEntity.status(403).body(Map.of("status", "error", "message", "삭제 권한이 없거나 이미 삭제된 게시글입니다."));
+            }
+        } catch (Exception e) {
+            log.error("게시글 삭제 중 에러 발생 (게시글 ID: {})", postId, e);
+            return ResponseEntity.status(500).body(Map.of("status", "error", "message", "서버 오류가 발생했습니다."));
+        }
     }
+
+    @PostMapping("/api/feed/like/{postId}")
+    @ResponseBody
+    public ResponseEntity<?> handleFeedLike(@PathVariable("postId") Long postId, HttpSession session) {
+        MemberDto loginUser = (MemberDto) session.getAttribute("loginUser");
+        if (loginUser == null) {
+            return ResponseEntity.status(401).build(); 
+        }
+        try {
+            Map<String, Object> result = feedService.toggleFeedLike(postId, loginUser.getMemberId());
+            return ResponseEntity.ok(result);
+        } catch (Exception e) {
+            log.error("피드 좋아요 처리 에러", e);
+            return ResponseEntity.status(500).build();
+        }
+    }
+
+    @GetMapping("/api/feed/{postId}/comments")
+    @ResponseBody
+    public ResponseEntity<List<CommunityFeedCommentDto>> getFeedComments(@PathVariable("postId") Long postId) {
+        try {
+            List<CommunityFeedCommentDto> comments = feedService.getFeedComments(postId);
+            return ResponseEntity.ok(comments);
+        } catch (Exception e) {
+            log.error("피드 댓글 조회 실패", e);
+            return ResponseEntity.status(500).build();
+        }
+    }
+
+    @PostMapping("/api/feed/comment/add")
+    @ResponseBody
+    public ResponseEntity<Map<String, Object>> addFeedComment(
+            @RequestBody CommunityFeedCommentDto dto, 
+            HttpSession session) {
+        MemberDto loginUser = (MemberDto) session.getAttribute("loginUser");
+        if (loginUser == null) {
+            return ResponseEntity.status(401).body(Map.of("status", "error", "message", "로그인이 필요합니다."));
+        }
+        try {
+            dto.setMemberId(loginUser.getMemberId()); 
+            feedService.insertFeedComment(dto);
+            return ResponseEntity.ok(Map.of("status", "success", "message", "댓글이 등록되었습니다."));
+        } catch (Exception e) {
+            log.error("피드 댓글 등록 실패", e);
+            return ResponseEntity.status(500).body(Map.of("status", "error", "message", "댓글 등록 중 서버 오류가 발생했습니다."));
+        }
+    }
+
+    @PostMapping("/api/feed/comment/delete/{commentId}")
+    @ResponseBody
+    public ResponseEntity<Map<String, Object>> deleteFeedComment(@PathVariable("commentId") Long commentId, HttpSession session) {
+        MemberDto loginUser = (MemberDto) session.getAttribute("loginUser");
+        if (loginUser == null) {
+            return ResponseEntity.status(401).body(Map.of("status", "error", "message", "로그인이 필요합니다."));
+        }
+        try {
+            boolean isDeleted = feedService.deleteFeedComment(commentId, loginUser.getMemberId());
+            if (isDeleted) {
+                return ResponseEntity.ok(Map.of("status", "success", "message", "댓글이 삭제되었습니다."));
+            } else {
+                return ResponseEntity.status(403).body(Map.of("status", "error", "message", "삭제 권한이 없습니다."));
+            }
+        } catch (Exception e) {
+            log.error("댓글 삭제 에러", e);
+            return ResponseEntity.status(500).body(Map.of("status", "error", "message", "서버 오류가 발생했습니다."));
+        }
+    }
+
+
+    // Freeboard 관련 API
     
+    @GetMapping("/freeboard/detail/{boardId}")
+    public String handleFreeboardDetail(@PathVariable("boardId") Long boardId, 
+                                        @RequestParam(value="updateView", defaultValue="true") boolean updateView, 
+                                        HttpServletRequest request, Model model, HttpSession session) {
+        String requestedWith = request.getHeader("X-Requested-With");
+        if ("Fetch".equals(requestedWith) || "XMLHttpRequest".equals(requestedWith)) {
+            CommunityFreeBoardDto board = freeboardService.getBoardDetail(boardId, updateView);
+            List<CommunityFreeboardCommentDto> comments = freeboardService.getCommentList(boardId);
+            
+            MemberDto loginUser = (MemberDto) session.getAttribute("loginUser");
+            int isLiked = 0;
+            if (loginUser != null) {
+                isLiked = freeboardService.checkLikeStatus(boardId, loginUser.getMemberId());
+            }
+            
+            model.addAttribute("board", board);
+            model.addAttribute("comments", comments);
+            model.addAttribute("isLiked", isLiked); 
+            
+            return "community/fragment/freeboard/freeboard_detail"; 
+        }
+        return "redirect:/community/freeboard";
+    }
+
+    /**
+     * 자유게시판 글 1개 조회 
+     */
+    @GetMapping("/api/freeboard/{boardId}")
+    @ResponseBody
+    public ResponseEntity<CommunityFreeBoardDto> getFreeboardPost(@PathVariable("boardId") Long boardId) {
+        CommunityFreeBoardDto board = freeboardService.getBoardDetail(boardId, false);
+        return ResponseEntity.ok(board);
+    }
+
+    /**
+     * 자유게시판 글쓰기 
+     */
+    @PostMapping("/api/freeboard/write")
+    @ResponseBody
+    public ResponseEntity<Map<String, Object>> writeFreeboardPost(
+            @ModelAttribute CommunityFreeBoardDto dto, 
+            HttpSession session) {
+        Map<String, Object> response = new HashMap<>();
+        MemberDto loginUser = (MemberDto) session.getAttribute("loginUser");
+        
+        if (loginUser == null) {
+            response.put("status", "error");
+            response.put("message", "로그인이 필요합니다.");
+            return ResponseEntity.status(401).body(response);
+        }
+        try {
+            dto.setMemberId(loginUser.getMemberId());
+            freeboardService.registerBoard(dto);
+            response.put("status", "success");
+            response.put("message", "게시글이 성공적으로 등록되었습니다!");
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            log.error("자유게시판 글 등록 실패", e);
+            response.put("status", "error");
+            response.put("message", "서버 오류가 발생했습니다.");
+            return ResponseEntity.status(500).body(response);
+        }
+    }
+
+    /**
+     * 자유게시판 게시글 수정 API
+     */
+    @PostMapping("/api/freeboard/update")
+    @ResponseBody
+    public ResponseEntity<Map<String, Object>> updateFreeboardPost(
+            @ModelAttribute CommunityFreeBoardDto dto, 
+            HttpSession session) {
+        Map<String, Object> response = new HashMap<>();
+        MemberDto loginUser = (MemberDto) session.getAttribute("loginUser");
+        
+        if (loginUser == null) {
+            response.put("status", "error");
+            response.put("message", "로그인이 필요합니다.");
+            return ResponseEntity.status(401).body(response);
+        }
+        try {
+            boolean isUpdated = freeboardService.updateBoard(dto, loginUser.getMemberId());
+            if(isUpdated) {
+                response.put("status", "success");
+                response.put("message", "게시글이 성공적으로 수정되었습니다!");
+                return ResponseEntity.ok(response);
+            } else {
+                response.put("status", "error");
+                response.put("message", "수정 권한이 없습니다.");
+                return ResponseEntity.status(403).body(response);
+            }
+        } catch (Exception e) {
+            log.error("자유게시판 글 수정 실패", e);
+            response.put("status", "error");
+            response.put("message", "서버 오류가 발생했습니다.");
+            return ResponseEntity.status(500).body(response);
+        }
+    }
+
+    /**
+     * 자유게시판 게시글 삭제 API
+     */
+    @PostMapping("/api/freeboard/delete/{boardId}")
+    @ResponseBody
+    public ResponseEntity<Map<String, Object>> deleteFreeboardPost(@PathVariable("boardId") Long boardId, HttpSession session) {
+        MemberDto loginUser = (MemberDto) session.getAttribute("loginUser");
+        if (loginUser == null) {
+            return ResponseEntity.status(401).body(Map.of("status", "error", "message", "로그인이 필요합니다."));
+        }
+        try {
+            boolean isDeleted = freeboardService.deleteBoard(boardId, loginUser.getMemberId());
+            if (isDeleted) {
+                return ResponseEntity.ok(Map.of("status", "success", "message", "게시글이 삭제되었습니다."));
+            } else {
+                return ResponseEntity.status(403).body(Map.of("status", "error", "message", "삭제 권한이 없거나 이미 삭제된 게시글입니다."));
+            }
+        } catch (Exception e) {
+            log.error("자유게시판 게시글 삭제 중 에러 발생 (게시글 ID: {})", boardId, e);
+            return ResponseEntity.status(500).body(Map.of("status", "error", "message", "서버 오류가 발생했습니다."));
+        }
+    }
+
+    @PostMapping("/freeboard/like/{boardId}")
+    @ResponseBody
+    public ResponseEntity<?> handlefreeboardLike(@PathVariable("boardId") Long boardId, HttpSession session) {
+        MemberDto loginUser = (MemberDto) session.getAttribute("loginUser");
+        if (loginUser == null) {
+            return ResponseEntity.status(401).build(); 
+        }
+        try {
+            Map<String, Object> result = freeboardService.toggleLike(boardId, loginUser.getMemberId());
+            return ResponseEntity.ok(result);
+        } catch (Exception e) {
+            log.error("자유게시판 좋아요 처리 에러", e);
+            return ResponseEntity.status(500).build();
+        }
+    }
+
+    /**
+     * 자유게시판 댓글 등록
+     */
+    @PostMapping("/freeboard/comment/add")
+    @ResponseBody
+    public ResponseEntity<?> addFreeboardComment(@RequestBody CommunityFreeboardCommentDto commentDto, HttpSession session) {
+        Map<String, Object> response = new HashMap<>();
+        MemberDto loginUser = (MemberDto) session.getAttribute("loginUser");
+        if (loginUser == null) {
+            response.put("status", "error");
+            response.put("message", "로그인이 필요합니다.");
+            return ResponseEntity.status(401).body(response);
+        }
+        try {
+            commentDto.setMemberId(loginUser.getMemberId()); 
+            freeboardService.registerComment(commentDto);
+            response.put("status", "success");
+            response.put("message", "댓글이 등록되었습니다.");
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            log.error("자유게시판 댓글 등록 실패", e);
+            response.put("status", "error");
+            response.put("message", "등록 중 오류가 발생했습니다.");
+            return ResponseEntity.status(500).body(response);
+        }
+    }
+
+    @PostMapping("/api/freeboard/comment/delete/{commentId}")
+    @ResponseBody
+    public ResponseEntity<Map<String, Object>> deleteFreeboardComment(
+            @PathVariable("commentId") Long commentId, HttpSession session) {
+        Map<String, Object> response = new HashMap<>();
+        MemberDto loginUser = (MemberDto) session.getAttribute("loginUser");
+        if (loginUser == null) {
+            response.put("status", "error");
+            response.put("message", "로그인이 필요합니다.");
+            return ResponseEntity.status(401).body(response);
+        }
+        try {
+            boolean isDeleted = freeboardService.deleteComment(commentId, loginUser.getMemberId());
+            if (isDeleted) {
+                response.put("status", "success");
+                response.put("message", "댓글이 삭제되었습니다.");
+                return ResponseEntity.ok(response);
+            } else {
+                response.put("status", "error");
+                response.put("message", "삭제 권한이 없거나 이미 삭제된 댓글입니다.");
+                return ResponseEntity.status(403).body(response);
+            }
+        } catch (Exception e) {
+            log.error("자유게시판 댓글 삭제 중 에러 발생 (댓글 ID: {})", commentId, e);
+            response.put("status", "error");
+            response.put("message", "서버 오류가 발생했습니다.");
+            return ResponseEntity.status(500).body(response);
+        }
+    }
+
+
+    // 동행 
+    
+    @GetMapping("/mate/detail/{mateId}")
+    public String handleMateDetail(@PathVariable("mateId") Long mateId, 
+                                   @RequestParam(value="updateView", defaultValue="true") boolean updateView, 
+                                   HttpServletRequest request, Model model, HttpSession session) {
+        String requestedWith = request.getHeader("X-Requested-With");
+        if ("Fetch".equals(requestedWith) || "XMLHttpRequest".equals(requestedWith)) {
+            CommunityMateDto mate = mateService.getMateDetail(mateId, updateView);
+            MemberDto loginUser = (MemberDto) session.getAttribute("loginUser");
+            Long loginId = (loginUser != null) ? loginUser.getMemberId() : -1L;
+            
+            model.addAttribute("mate", mate);
+            model.addAttribute("loginUserId", loginId);
+            return "community/fragment/mate/mate_detail"; 
+        }
+        return "redirect:/community/feed?tab=mate";
+    }
+
+    @GetMapping("/api/mate/list")
+    @ResponseBody
+    public ResponseEntity<List<CommunityMateDto>> getMateList(
+            @RequestParam(value = "regionId", required = false) Long regionId,
+            @RequestParam(value = "startDate", required = false) String startDate,
+            @RequestParam(value = "endDate", required = false) String endDate,
+            @RequestParam(value = "searchTag", required = false) String searchTag) {
+        List<CommunityMateDto> list = mateService.getMateList(regionId, startDate, endDate, searchTag);
+        return ResponseEntity.ok(list);
+    }
+
+    @PostMapping("/mate/write")
+    @ResponseBody
+    public ResponseEntity<?> writeMatePost(@RequestBody CommunityMateDto dto, HttpSession session) {
+        try {
+            MemberDto loginUser = (MemberDto) session.getAttribute("loginUser");
+            if (loginUser == null) {
+                return ResponseEntity.status(401).body(Map.of("status", "error", "message", "로그인이 필요합니다."));
+            }
+            dto.setMemberId(loginUser.getMemberId());
+            mateService.registerMate(dto);
+            return ResponseEntity.ok(Map.of("status", "success", "message", "동행 모집글이 성공적으로 등록되었습니다!"));
+        } catch (Exception e) {
+            log.error("동행 모집글 등록 에러", e);
+            return ResponseEntity.status(500).body(Map.of("status", "error", "message", "서버 오류가 발생했습니다."));
+        }
+    }
+
     @ResponseBody
     @PostMapping("/api/mate/status/{mateId}")
-    public Map<String, Object> updateMateStatus(@PathVariable("mateId") Long mateId, 
+    public ResponseEntity<Map<String, Object>> updateMateStatus(@PathVariable("mateId") Long mateId, 
                                                 @RequestParam("status") String status, 
                                                 HttpSession session) {
         Map<String, Object> response = new HashMap<>();
         MemberDto loginUser = (MemberDto) session.getAttribute("loginUser");
-        
         if (loginUser == null) {
             response.put("status", "error");
             response.put("message", "로그인이 필요합니다.");
-            return response;
+            return ResponseEntity.status(401).body(response); 
         }
-
         try {
             mateService.updateMateStatus(mateId, status);
             response.put("status", "success");
+            return ResponseEntity.ok(response);
         } catch (Exception e) {
             response.put("status", "error");
             response.put("message", "상태 변경 실패");
+            return ResponseEntity.status(500).body(response);
         }
-        return response;
     }
 
     @ResponseBody
     @PostMapping("/api/mate/delete/{mateId}")
-    public Map<String, Object> deleteMatePost(@PathVariable("mateId") Long mateId, HttpSession session) {
+    public ResponseEntity<Map<String, Object>> deleteMatePost(@PathVariable("mateId") Long mateId, HttpSession session) {
         Map<String, Object> response = new HashMap<>();
         MemberDto loginUser = (MemberDto) session.getAttribute("loginUser");
-        
         if (loginUser == null) {
             response.put("status", "error");
-            return response;
+            response.put("message", "로그인이 필요합니다.");
+            return ResponseEntity.status(401).body(response);
         }
-
         try {
             mateService.deleteMatePost(mateId, loginUser.getMemberId());
             response.put("status", "success");
+            return ResponseEntity.ok(response);
         } catch (Exception e) {
             response.put("status", "error");
             response.put("message", "삭제 실패");
+            return ResponseEntity.status(500).body(response);
         }
-        return response;
     }
-    
+
     @ResponseBody
     @GetMapping("/api/mate/{mateId}/comments")
-    public List<CommunityMateCommentDto> getMateComments(@PathVariable("mateId") Long mateId) {
-        return mateService.getMateComments(mateId);
+    public ResponseEntity<List<CommunityMateCommentDto>> getMateComments(@PathVariable("mateId") Long mateId) {
+        return ResponseEntity.ok(mateService.getMateComments(mateId)); 
     }
 
     @ResponseBody
     @PostMapping("/api/mate/comment/add")
-    public Map<String, Object> addMateComment(@RequestBody CommunityMateCommentDto commentDto, HttpSession session) {
+    public ResponseEntity<Map<String, Object>> addMateComment(@RequestBody CommunityMateCommentDto commentDto, HttpSession session) {
         Map<String, Object> response = new HashMap<>();
         MemberDto loginUser = (MemberDto) session.getAttribute("loginUser");
-        
         if (loginUser == null) {
             response.put("status", "error");
             response.put("message", "로그인이 필요합니다.");
-            return response;
+            return ResponseEntity.status(401).body(response);
         }
         
         commentDto.setMemberId(loginUser.getMemberId());
-        
         try {
             mateService.addMateComment(commentDto);
             response.put("status", "success");
+            return ResponseEntity.ok(response);
         } catch (Exception e) {
-            e.printStackTrace();
+            log.error("동행글 댓글 등록 에러", e);
             response.put("status", "error");
             response.put("message", "댓글 등록에 실패했습니다.");
+            return ResponseEntity.status(500).body(response);
         }
-        return response;
     }
 
     @ResponseBody
     @PostMapping("/api/mate/comment/delete/{commentId}")
-    public Map<String, Object> deleteMateComment(@PathVariable("commentId") Long commentId, HttpSession session) {
+    public ResponseEntity<Map<String, Object>> deleteMateComment(@PathVariable("commentId") Long commentId, HttpSession session) {
         Map<String, Object> response = new HashMap<>();
         MemberDto loginUser = (MemberDto) session.getAttribute("loginUser");
-        
         if (loginUser == null) {
             response.put("status", "error");
             response.put("message", "로그인이 필요합니다.");
-            return response;
+            return ResponseEntity.status(401).body(response);
         }
-        
         try {
             boolean isDeleted = mateService.deleteMateComment(commentId, loginUser.getMemberId());
             if (isDeleted) {
                 response.put("status", "success");
+                return ResponseEntity.ok(response);
             } else {
                 response.put("status", "error");
                 response.put("message", "댓글을 삭제할 권한이 없습니다.");
+                return ResponseEntity.status(403).body(response);
             }
         } catch (Exception e) {
-            e.printStackTrace();
+            log.error("동행글 댓글 삭제 에러", e);
             response.put("status", "error");
             response.put("message", "댓글 삭제 중 오류가 발생했습니다.");
+            return ResponseEntity.status(500).body(response);
         }
-        return response;
     }
-    
+
+
+    // 채팅 및 기타 API
+    @GetMapping("/chat/openlounge")
+    public String openlounge(Model model) {
+        return "community/chat/openlounge"; 
+    }
+
+    @GetMapping("/api/chat/top-rooms")
+    @ResponseBody
+    public List<CommunityChatRoomDto> getTopChatRooms() {
+        List<CommunityChatRoomDto> topRooms = chatService.getTopChatRooms();
+        log.info("실시간 인기 채팅방 조회 완료: {}건", topRooms.size());
+        return topRooms;
+    }
+
+    @PostMapping("/api/follow/{targetId}")
+    @ResponseBody
+    public ResponseEntity<?> followToggle(@PathVariable("targetId") Long targetId, HttpSession session) {
+        MemberDto loginUser = (MemberDto) session.getAttribute("loginUser");
+        if (loginUser == null) return ResponseEntity.status(401).build();
+
+        String result = feedService.toggleFollow(loginUser.getMemberId(), targetId);
+        return ResponseEntity.ok(Map.of("status", result));
+    }
 }
