@@ -12,15 +12,16 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.tripan.app.admin.domain.entity.Member1;
 import com.tripan.app.admin.domain.entity.Member2;
-import com.tripan.app.domain.entity.MemberStatus;
 import com.tripan.app.common.StorageService;
 import com.tripan.app.domain.dto.MemberDto;
+import com.tripan.app.domain.entity.MemberStatus;
 import com.tripan.app.mail.Mail;
 import com.tripan.app.mail.MailSender;
 import com.tripan.app.mapper.MemberMapper;
 import com.tripan.app.repository.Member2Repository;
 import com.tripan.app.repository.MemberRepository;
 import com.tripan.app.repository.MemberStatusRepository;
+
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -72,6 +73,7 @@ public class MemberServiceImpl implements MemberService {
             member1.setBirthday(dto.getBirthday());
             member1.setFailureCnt(0);
             memberRepository.save(member1);
+            dto.setMemberId(member1.getId());
 
             Member2 member2 = new Member2();
             member2.setMember1(member1);
@@ -412,7 +414,6 @@ public class MemberServiceImpl implements MemberService {
         }
         return false;
     }
-    
 
 	@Override
 	public MemberDto findByNickname(String nickname) {
@@ -420,5 +421,4 @@ public class MemberServiceImpl implements MemberService {
 	}
 
 	
-    
 }

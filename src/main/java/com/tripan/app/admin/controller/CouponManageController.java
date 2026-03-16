@@ -16,5 +16,10 @@ public class CouponManageController {
 		return "admin/coupon/main";
 	}
 	
+	@GetMapping("form")
+	public String couponForm() {
+	    return "admin/coupon/form";
+	}
+	
 	
 }

@@ -213,7 +213,7 @@ public class AccommodationController {
         try {
             boolean isBookmarked = accommodationService.toggleBookmark(placeId, loginUser.getMemberId());
             response.put("success", true);
-            response.put("isBookmarked", isBookmarked); // 뷰단에서 색깔 바꿀 때 사용
+            response.put("isBookmarked", isBookmarked);
         } catch (Exception e) {
             e.printStackTrace();
             response.put("success", false);
@@ -263,4 +263,5 @@ public class AccommodationController {
         
         return "accommodation/review/review_form"; 
     }
+    
 }

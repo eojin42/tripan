@@ -137,13 +137,13 @@
           <p>플랫폼 쿠폰을 직접 등록하고, 파트너사가 신청한 쿠폰을 승인·관리합니다.</p>
         </div>
         <div style="margin-left:auto;">
-          <button class="btn btn-primary" style="display:inline-flex;align-items:center;gap:6px;"
-                  @click="openRegisterModal">
+          <a href="${pageContext.request.contextPath}/admin/coupon/form"
+             class="btn btn-primary" style="display:inline-flex;align-items:center;gap:6px;text-decoration:none;">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
               <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
             </svg>
             쿠폰 직접 등록
-          </button>
+          </a>
         </div>
       </div>
 
@@ -185,9 +185,7 @@
         </button>
       </div>
 
-      <!-- ══════════════════════════════
-           전체 쿠폰 탭
-      ══════════════════════════════ -->
+      <!-- 전체 쿠폰 탭 -->
       <template v-if="activeTab === 'all'">
         <div class="card filter-card fade-up">
           <div class="filter-row">
@@ -300,7 +298,8 @@
                               class="btn btn-sm"
                               style="background:#EFF6FF;color:#1D4ED8;border:1px solid #BFDBFE;"
                               @click="openApproveModal(c)">심사</button>
-                      <button class="btn btn-outline btn-sm" @click="openEditModal(c)">수정</button>
+                      <button class="btn btn-outline btn-sm"
+                              @click="location.href='${pageContext.request.contextPath}/admin/coupon/form?id=' + c.couponId">수정</button>
                       <button class="btn btn-sm"
                               style="background:#FEF2F2;color:#DC2626;border:1px solid #FECACA;"
                               @click="openDeleteConfirm(c)">삭제</button>
@@ -489,144 +488,6 @@
 
     </main>
 
-    <!-- ══════════ 쿠폰 등록/수정 모달 ══════════ -->
-    <div class="modal-overlay" :class="{ open: showFormModal }" @click.self="closeFormModal">
-      <div class="modal-sheet">
-        <div class="ms-head">
-          <h3>{{ editTarget ? '쿠폰 수정' : '쿠폰 직접 등록' }}</h3>
-          <p>{{ editTarget ? '쿠폰 정보를 수정합니다.' : '관리자가 직접 플랫폼 쿠폰을 등록합니다.' }}</p>
-        </div>
-        <div class="ms-body">
-          <div class="fg">
-            <label>쿠폰명 <span style="color:var(--danger);">*</span></label>
-            <input type="text" v-model="form.couponName" placeholder="예) 신규 가입 10% 할인">
-          </div>
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
-            <div class="fg">
-              <label>할인 유형 <span style="color:var(--danger);">*</span></label>
-              <select v-model="form.discountType" @change="form.discountAmount = ''">
-                <option value="FIXED">정액 (원)</option>
-                <option value="PERCENT">정률 (%)</option>
-              </select>
-            </div>
-            <div class="fg">
-              <label>할인 금액/율 <span style="color:var(--danger);">*</span></label>
-              <div style="position:relative;">
-                <input v-if="form.discountType === 'FIXED'"
-                       type="text" inputmode="numeric"
-                       :value="formatNumber(form.discountAmount)"
-                       @input="e => form.discountAmount = parseNumber(e.target.value)"
-                       placeholder="예) 5,000"
-                       style="padding-right:32px;">
-                <input v-else
-                       type="number" v-model="form.discountAmount"
-                       min="1" max="100"
-                       @input="e => { if(e.target.value > 100) form.discountAmount = 100; if(e.target.value < 1 && e.target.value !== '') form.discountAmount = 1; }"
-                       placeholder="예) 10"
-                       style="padding-right:32px;">
-                <span style="position:absolute;right:12px;top:50%;transform:translateY(-50%);font-size:13px;color:var(--muted);font-weight:700;">
-                  {{ form.discountType === 'FIXED' ? '원' : '%' }}
-                </span>
-              </div>
-            </div>
-          </div>
-          <div class="fg" v-if="form.discountType === 'PERCENT'">
-            <label>최대 할인 금액 (원, 선택)</label>
-            <div style="position:relative;">
-              <input type="text" inputmode="numeric"
-                     :value="formatNumber(form.maxDiscountAmount)"
-                     @input="e => form.maxDiscountAmount = parseNumber(e.target.value)"
-                     placeholder="제한 없으면 비워두세요"
-                     style="padding-right:32px;">
-              <span style="position:absolute;right:12px;top:50%;transform:translateY(-50%);font-size:13px;color:var(--muted);font-weight:700;">원</span>
-            </div>
-          </div>
-          <div class="fg">
-            <label>최소 주문 금액 (원, 선택)</label>
-            <div style="position:relative;">
-              <input type="text" inputmode="numeric"
-                     :value="formatNumber(form.minOrderAmount)"
-                     @input="e => form.minOrderAmount = parseNumber(e.target.value)"
-                     placeholder="예) 30,000 (제한 없으면 비워두세요)"
-                     style="padding-right:32px;">
-              <span style="position:absolute;right:12px;top:50%;transform:translateY(-50%);font-size:13px;color:var(--muted);font-weight:700;">원</span>
-            </div>
-            <span style="font-size:12px;color:var(--muted);margin-top:-4px;">입력 시 해당 금액 이상 결제할 때만 쿠폰 사용 가능</span>
-          </div>
-
-          <!-- 파트너사 검색 -->
-          <div class="fg">
-            <label>파트너사 (비우면 플랫폼 쿠폰)</label>
-            <div style="position:relative;">
-              <input type="text" v-model="partnerSearch"
-                     placeholder="파트너사명 검색 (비우면 플랫폼 쿠폰)"
-                     @input="onPartnerSearch"
-                     @focus="showPartnerDropdown = true"
-                     @blur="hidePartnerDropdown"
-                     autocomplete="off">
-              <!-- 검색 드롭다운 -->
-              <div v-if="showPartnerDropdown && filteredPartners.length > 0"
-                   style="position:absolute;top:100%;left:0;right:0;background:#fff;border:1.5px solid var(--border);border-radius:10px;box-shadow:var(--shadow-md);z-index:100;max-height:200px;overflow-y:auto;">
-                <div style="padding:8px 14px;font-size:12px;color:var(--muted);cursor:pointer;border-bottom:1px solid var(--border);"
-                     @mousedown.prevent="selectPartner(null, '')">
-                  플랫폼 쿠폰 (파트너 없음)
-                </div>
-                <div v-for="p in filteredPartners" :key="p.partnerId"
-                     style="padding:10px 14px;font-size:14px;font-weight:600;cursor:pointer;transition:background 0.1s;"
-                     @mousedown.prevent="selectPartner(p.partnerId, p.partnerName)"
-                     @mouseover="$event.target.style.background='var(--bg)'"
-                     @mouseout="$event.target.style.background=''">
-                  {{ p.partnerName }}
-                </div>
-              </div>
-              <!-- 선택된 파트너 표시 -->
-              <div v-if="form.partnerId" style="margin-top:6px;display:inline-flex;align-items:center;gap:6px;padding:4px 10px;background:#F0FDF4;border-radius:20px;font-size:12px;font-weight:700;color:#15803D;">
-                {{ partnerSearch }}
-                <span style="cursor:pointer;font-size:14px;" @click="selectPartner(null, '')">×</span>
-              </div>
-            </div>
-          </div>
-
-          <!-- 부담 비율 -->
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
-            <div class="fg">
-              <label>플랫폼 부담 비율 (%) <span style="color:var(--danger);">*</span></label>
-              <input type="number" v-model="form.platformShare"
-                     min="0" max="100"
-                     :disabled="!form.partnerId"
-                     :style="!form.partnerId ? 'background:var(--bg);color:var(--muted);' : ''"
-                     placeholder="예) 100">
-            </div>
-            <div class="fg">
-              <label>파트너 부담 비율 (%)</label>
-              <input type="number" :value="100 - form.platformShare"
-                     :disabled="!form.partnerId"
-                     :style="!form.partnerId ? 'background:var(--bg);color:var(--muted);' : ''"
-                     @input="e => form.platformShare = 100 - Number(e.target.value)"
-                     placeholder="예) 0">
-            </div>
-          </div>
-          <div v-if="!form.partnerId" style="font-size:12px;color:var(--muted);margin-top:-8px;">
-            플랫폼 쿠폰은 플랫폼 100% 부담으로 자동 설정됩니다.
-          </div>
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
-            <div class="fg">
-              <label>유효기간 시작 <span style="color:var(--danger);">*</span></label>
-              <input type="date" v-model="form.validFrom">
-            </div>
-            <div class="fg">
-              <label>유효기간 만료 <span style="color:var(--danger);">*</span></label>
-              <input type="date" v-model="form.validUntil">
-            </div>
-          </div>
-        </div>
-        <div class="ms-foot">
-          <button class="btn-m btn-m-ghost"   @click="closeFormModal">취소</button>
-          <button class="btn-m btn-m-primary" @click="submitForm">{{ editTarget ? '수정 저장' : '등록' }}</button>
-        </div>
-      </div>
-    </div>
-
     <!-- ══════════ 파트너 쿠폰 승인/반려 모달 ══════════ -->
     <div class="modal-overlay" :class="{ open: showApproveModal }" @click.self="closeApproveModal">
       <div class="modal-sheet" style="max-width:480px;">
@@ -757,46 +618,6 @@
       /* ── 파트너 옵션 ── */
       const partnerOptions = ref([]);
 
-      /* ── 등록/수정 모달 ── */
-      const showFormModal = ref(false);
-      const editTarget    = ref(null);
-      const form = reactive({
-        couponName:'', discountType:'FIXED', discountAmount:'',
-        maxDiscountAmount:'', minOrderAmount:'', platformShare:100, partnerId:'',
-        validFrom:'', validUntil:''
-      });
-
-      /* ── 숫자 포맷 유틸 ── */
-      const formatNumber = (val) => {
-        if (val === '' || val === null || val === undefined) return '';
-        const num = Number(String(val).replace(/,/g, ''));
-        if (isNaN(num)) return '';
-        return num.toLocaleString('ko-KR');
-      };
-      const parseNumber = (val) => {
-        const num = Number(String(val).replace(/,/g, ''));
-        return isNaN(num) ? '' : num;
-      };
-
-      /* ── 파트너 검색 ── */
-      const partnerSearch       = ref('');
-      const showPartnerDropdown = ref(false);
-      const filteredPartners    = computed(() => {
-        if (!partnerSearch.value.trim()) return partnerOptions.value;
-        return partnerOptions.value.filter(p =>
-          p.partnerName.toLowerCase().includes(partnerSearch.value.toLowerCase())
-        );
-      });
-      const onPartnerSearch = () => { showPartnerDropdown.value = true; };
-      const hidePartnerDropdown = () => { setTimeout(() => { showPartnerDropdown.value = false; }, 150); };
-      const selectPartner = (partnerId, partnerName) => {
-        form.partnerId = partnerId || '';
-        partnerSearch.value = partnerName || '';
-        showPartnerDropdown.value = false;
-        // 플랫폼 쿠폰이면 부담비율 100 고정
-        if (!partnerId) form.platformShare = 100;
-      };
-
       /* ── 승인 모달 ── */
       const showApproveModal = ref(false);
       const approveTarget    = ref(null);
@@ -899,39 +720,6 @@
         document.body.removeChild(link);
       };
 
-      /* ── 등록/수정 ── */
-      const openRegisterModal = () => {
-        editTarget.value = null;
-        Object.assign(form, { couponName:'', discountType:'FIXED', discountAmount:'', maxDiscountAmount:'', minOrderAmount:'', platformShare:100, partnerId:'', validFrom:'', validUntil:'' });
-        partnerSearch.value = '';
-        showFormModal.value = true;
-      };
-      const openEditModal = (c) => {
-        editTarget.value = c;
-        Object.assign(form, { couponName: c.couponName, discountType: c.discountType, discountAmount: c.discountAmount, maxDiscountAmount: c.maxDiscountAmount || '', minOrderAmount: c.minOrderAmount || '', platformShare: c.platformShare, partnerId: c.partnerId || '', validFrom: c.validFrom, validUntil: c.validUntil });
-        partnerSearch.value = c.partnerName || '';
-        showFormModal.value = true;
-      };
-      const closeFormModal = () => { showFormModal.value = false; };
-      const submitForm = async () => {
-        if (!form.couponName.trim() || !form.discountAmount || !form.validFrom || !form.validUntil) {
-          alert('쿠폰명, 할인 금액/율, 유효기간은 필수입니다.');
-          return;
-        }
-        try {
-          if (editTarget.value) {
-            await axios.put(`${contextPath}/api/admin/coupon/${editTarget.value.couponId}`, form);
-            alert('쿠폰이 수정되었습니다.');
-          } else {
-            await axios.post(`${contextPath}/api/admin/coupon/register`, form);
-            alert('쿠폰이 등록되었습니다.');
-          }
-          closeFormModal();
-          fetchCoupons(couponPageNo.value);
-          fetchKpi();
-        } catch(e) { console.error('저장 오류', e); alert('처리 중 오류가 발생했습니다.'); }
-      };
-
       /* ── 승인/반려 ── */
       const openApproveModal = (c) => {
         approveTarget.value = c;
@@ -981,14 +769,10 @@
         couponFilter, couponList, couponTotal, couponPageNo, couponPagination, couponSearched,
         selectedIds, isAllChecked, pendingList,
         issuedFilter, issuedList, issuedTotal, issuedPageNo, issuedPagination, issuedSearched,
-        partnerOptions, partnerSearch, showPartnerDropdown, filteredPartners,
-        onPartnerSearch, hidePartnerDropdown, selectPartner,
-        formatNumber, parseNumber,
-        showFormModal, editTarget, form,
+        partnerOptions,
         showApproveModal, approveTarget, approveForm,
         showDeleteModal, deleteTarget,
         fetchCoupons, fetchIssued, toggleCheckAll, downloadExcel,
-        openRegisterModal, openEditModal, closeFormModal, submitForm,
         openApproveModal, closeApproveModal, submitApprove,
         openDeleteConfirm, openBulkDeleteModal, closeDeleteModal, submitDelete,
         resetCouponFilter: () => { couponFilter.discountType = 'ALL'; couponFilter.status = 'ALL'; couponFilter.issuer = 'ALL'; couponFilter.keyword = ''; fetchCoupons(1); },

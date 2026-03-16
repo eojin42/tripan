@@ -21,8 +21,10 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.tripan.app.domain.dto.ConquestMapDto;
+import com.tripan.app.domain.dto.MemberCouponDto;
 import com.tripan.app.domain.dto.MemberDto;
 import com.tripan.app.domain.dto.TripDto;
+import com.tripan.app.service.MemberCouponService;
 import com.tripan.app.service.MyPageService;
 import com.tripan.app.service.MyTripsService;
 
@@ -37,6 +39,7 @@ import lombok.extern.slf4j.Slf4j;
 public class MyPageRestController {
 	private final MyPageService myPageService;
 	private final MyTripsService myTripService;
+	private final MemberCouponService memberCouponService;
 	
 	@GetMapping("summary")
 	public ResponseEntity<?> getSummary(HttpSession session){
@@ -250,7 +253,22 @@ public class MyPageRestController {
         
         return ResponseEntity.ok(upcoming != null ? upcoming : Map.of());
     }
-
+    
+    @GetMapping("coupons")
+    public ResponseEntity<?> getMyCoupons(HttpSession session, @RequestParam("status") String status) {
+        MemberDto loginUser = getLoginUser(session);
+        if (loginUser == null) return unauthorized();
+        
+        try {
+        	String dbStatus = status.equalsIgnoreCase("available") ? "AVAILABLE" : "USED";
+            
+            List<MemberCouponDto> coupons = memberCouponService.getMyCouponList(loginUser.getMemberId(), dbStatus);
+            return ResponseEntity.ok(coupons);
+        } catch (Exception e) {
+            log.error("쿠폰 목록 로드 실패", e);
+            return ResponseEntity.status(500).body(Map.of("message", "쿠폰 정보를 불러오는 중 오류가 발생했습니다."));
+        }
+    }
     
 	private MemberDto getLoginUser(HttpSession session) {
 		return (MemberDto) session.getAttribute("loginUser");
