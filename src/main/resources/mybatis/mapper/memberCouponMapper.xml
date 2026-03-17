@@ -29,5 +29,7 @@
 	    WHERE mc.member_id = #{memberId} AND mc.status = #{status}
 	    ORDER BY mc.issued_at DESC
     </select>
+    
+    
   
 </mapper>

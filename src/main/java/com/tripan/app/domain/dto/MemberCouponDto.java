@@ -1,5 +1,9 @@
 package com.tripan.app.domain.dto;
 
+import java.time.LocalDateTime;
+
+import com.fasterxml.jackson.annotation.JsonFormat;
+
 import lombok.Getter;
 import lombok.Setter;
 
@@ -10,8 +14,10 @@ public class MemberCouponDto {
 	private Long memberId;
 	private Long couponId;
 	private String status;
+	@JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd HH:mm:ss", timezone = "Asia/Seoul")
 	private String issuedAt;
-	private String expiredAt;
+	@JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd HH:mm:ss", timezone = "Asia/Seoul")
+	private LocalDateTime expiredAt;
 	private String couponName;
 	private String discountAmount;
 }

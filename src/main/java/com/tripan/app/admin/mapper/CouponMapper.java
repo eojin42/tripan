@@ -36,7 +36,7 @@ public interface CouponMapper {
                             @Param("memo") String memo);
 
     /* ── 삭제 ── */
-    void deleteCoupons(@Param("couponIds") List<Long> couponIds);
+    void deleteCoupons(Long couponId);
 
     /* ── 회원 발급 현황 ── */
     List<CouponDto.IssuedItem> selectIssuedList(Map<String, Object> params);

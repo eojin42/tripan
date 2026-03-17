@@ -8,6 +8,7 @@ import java.util.Map;
 import org.springframework.stereotype.Service;
 
 import com.tripan.app.admin.domain.dto.CouponDto;
+import com.tripan.app.admin.domain.dto.CouponDto.ListItem;
 import com.tripan.app.admin.mapper.CouponMapper;
 
 import lombok.RequiredArgsConstructor;
@@ -71,7 +72,10 @@ public class CouponServiceImpl implements CouponService{
     /* ── 삭제 ── */
     public void deleteCoupons(List<Long> couponIds) {
         if (couponIds == null || couponIds.isEmpty()) return;
-        couponMapper.deleteCoupons(couponIds);
+        
+        for(Long id : couponIds) {
+        	couponMapper.deleteCoupons(id);
+        }
     }
 
     /* ── 회원 발급 현황 ── */
@@ -119,4 +123,9 @@ public class CouponServiceImpl implements CouponService{
         info.setNextBlockPage(blockEnd + 1);
         return info;
     }
+
+	@Override
+	public ListItem getCouponById(Long couponId) {
+		return couponMapper.selectCouponById(couponId);
+	}
 }
