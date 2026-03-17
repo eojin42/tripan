@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.tripan.app.partner.mapper.PartnerRoomMapper">
+
+    <insert id="insertRoom">
+        INSERT INTO room (
+            room_id, place_id, room_name, roombasecount, 
+            max_capacity, room_count, amount, roomintro, rf_id
+        ) VALUES (
+            #{roomId}, #{placeId}, #{roomName}, #{roombasecount},
+            #{maxCapacity}, #{roomCount}, #{amount}, #{roomintro}, #{rfId}
+        )
+    </insert>
+    
+    <select id="getRoomListByMemberId" resultType="com.tripan.app.partner.domain.dto.PartnerRoomDto">
+        SELECT
+            r.room_id AS roomId,
+            r.place_id AS placeId,
+            r.room_name AS roomName,
+            r.roombasecount AS roombasecount,
+            r.max_capacity AS maxCapacity,
+            r.room_count AS roomCount,
+            r.amount AS amount,
+            r.roomintro AS roomintro
+        FROM room r
+        JOIN place pl ON r.place_id = pl.place_id
+        JOIN partner p ON pl.partner_id = p.partner_id
+        WHERE p.member_id = #{memberId}
+        ORDER BY r.room_id DESC
+    </select>
+	
+	
+</mapper>
