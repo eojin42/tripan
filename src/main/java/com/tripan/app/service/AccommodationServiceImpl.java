@@ -6,13 +6,18 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
+import com.tripan.app.common.StorageService;
 import com.tripan.app.domain.dto.AccommodationDetailDto;
 import com.tripan.app.domain.dto.AccommodationDto;
 import com.tripan.app.domain.dto.AdSearchConditionDto;
 import com.tripan.app.domain.dto.ReservationRequestDto;
+import com.tripan.app.domain.dto.ReviewDto;
+import com.tripan.app.domain.dto.ReviewStatsDto;
 import com.tripan.app.domain.dto.RoomDto;
 import com.tripan.app.mapper.AccommodationMapper;
 
@@ -24,7 +29,10 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class AccommodationServiceImpl implements AccommodationService{
 	private final AccommodationMapper mapper;
+	private final StorageService storageService;
 	
+	@Value("${file.upload-root}/review")
+    private String uploadPath;
 	
 	@Override
 	public List<AccommodationDto> searchAccommodations(AdSearchConditionDto condition) {
@@ -180,14 +188,54 @@ public class AccommodationServiceImpl implements AccommodationService{
 
 
 	@Override
-	public ReservationRequestDto getRoomIdbyReservationId(Long reservationId) {
+	public ReservationRequestDto getReservationInfobyId(Long reservationId) {
 		try {
-			return mapper.getRoomIdbyReservationId(reservationId);
+			return mapper.getReservationInfobyId(reservationId);
 		} catch (Exception e) {
 			log.info("getRoomIdbyReservationId : ", e);
 		}
 		return null;
 	}
 	
+	@Override
+	public boolean checkReviewExistsByReservationId(Long reservationId) {
+        int count = mapper.checkReviewExistsByReservationId(reservationId);
+        return count > 0;
+    }
+
+
+	@Override
+	public void insertReview(ReviewDto dto) {
+		mapper.insertReview(dto);
+
+		if (dto.getUploadFiles() != null && !dto.getUploadFiles().isEmpty()) {
+            for (MultipartFile file : dto.getUploadFiles()) {
+                if (file.isEmpty()) continue; 
+                
+                try {
+                    String saveFilename = storageService.uploadFileToServer(file, uploadPath);
+                    
+                    if (saveFilename != null) {
+                        mapper.insertReviewImage(dto.getReviewId(), saveFilename);
+                    }
+                } catch (Exception e) {
+                    log.error("리뷰 이미지 업로드 실패", e);
+                    throw new RuntimeException("파일 업로드 중 오류가 발생했습니다.");
+                }
+            }
+		}
+	}
+
+
+	@Override
+	public ReviewStatsDto getReviewStats(Long placeId) {
+		return mapper.getReviewStatsByPlaceId(placeId);
+	}
+
+
+	@Override
+	public List<ReviewDto> getReviewList(Long placeId) {
+		return mapper.getReviewListByPlaceId(placeId);
+	}
 	
 }

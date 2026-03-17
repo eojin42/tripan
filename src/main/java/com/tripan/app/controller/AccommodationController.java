@@ -23,6 +23,8 @@ import com.tripan.app.domain.dto.AccommodationDto;
 import com.tripan.app.domain.dto.AdSearchConditionDto;
 import com.tripan.app.domain.dto.MemberDto;
 import com.tripan.app.domain.dto.ReservationRequestDto;
+import com.tripan.app.domain.dto.ReviewDto;
+import com.tripan.app.domain.dto.ReviewStatsDto;
 import com.tripan.app.domain.dto.RoomDto;
 import com.tripan.app.service.AccommodationService;
 
@@ -222,41 +224,61 @@ public class AccommodationController {
         return response;
     }
     
-    @GetMapping("review/{reservationId}")
-    public String reviewForm(@PathVariable("reservationId") Long reservationId, 
-                             HttpSession session, 
-                             Model model) {
+    
+    // 리뷰 섹션
+    
+    @GetMapping("review/write/{reservationId}")
+    public String writeForm(@PathVariable("reservationId") Long reservationId, 
+                            HttpSession session, 
+                            Model model) {
         
-
         MemberDto loginUser = (MemberDto) session.getAttribute("loginUser");
         if (loginUser == null) {
-            return "redirect:/login";
+            return "redirect:/member/login";
         }
 
-        // 2. 서비스 단에서 리뷰 작성 가능 여부 검증
-        // (본인 예약인지, 이용 완료 상태인지, 체크아웃 후 30일 이내인지, 이미 리뷰를 작성했는지 확인)
-        // boolean isEligible = accommodationService.checkReviewEligibility(bookingId, loginUser.getMemberId());
+        ReservationRequestDto reservationInfo = accommodationService.getReservationInfobyId(reservationId);
+        
+        if (reservationInfo == null) {
+            model.addAttribute("message", "존재하지 않는 예약입니다.");
+            return "error/error2";
+        }
 
-//        if (!isEligible) {
-//            // 검증 실패 시 에러 처리 (예: 알림창을 띄우거나 이전 페이지로 이동)
-//            model.addAttribute("message", "리뷰 작성 기간이 만료되었거나, 잘못된 접근입니다.");
-//            return "common/error"; // 에러 페이지 또는 리다이렉트 처리
-//        }
-        ReservationRequestDto reservationInfo = accommodationService.getRoomIdbyReservationId(reservationId);
+        if (!loginUser.getMemberId().equals(reservationInfo.getMemberId())) {
+            model.addAttribute("message", "본인의 예약 내역만 리뷰를 작성할 수 있습니다.");
+            return "error/error2";
+        }
+
+        if (!"SUCCESS".equals(reservationInfo.getStatus())) {
+            model.addAttribute("message", "정상적으로 이용이 완료된 예약만 리뷰 작성이 가능합니다.");
+            return "error/error2";
+        }
+
+        LocalDate outDate = LocalDate.parse(reservationInfo.getCheckout());
+        LocalDate today = LocalDate.now();
+
+        if (!today.isAfter(outDate)) {
+            model.addAttribute("message", "리뷰는 체크아웃 이후에 작성할 수 있습니다.");
+            return "error/error2";
+        }
+
+        long daysSinceCheckout = ChronoUnit.DAYS.between(outDate, today);
+        if (daysSinceCheckout > 30) {
+            model.addAttribute("message", "리뷰 작성 기간(체크아웃 후 30일)이 지났습니다.");
+            return "error/error2";
+        }
+
+        boolean isReviewExists = accommodationService.checkReviewExistsByReservationId(reservationId);
+        if (isReviewExists) {
+            model.addAttribute("message", "이미 해당 예약에 대한 리뷰를 작성하셨습니다.");
+            return "error/error2";
+        }
+
+
         RoomDto room = accommodationService.findRoomById(reservationInfo.getRoomId());
+        long nights = ChronoUnit.DAYS.between(LocalDate.parse(reservationInfo.getCheckin()), outDate);
         
-        long nights = 1;
-
-	    if (reservationInfo.getCheckin() != null && reservationInfo.getCheckout() != null 
-	         && !reservationInfo.getCheckin().isEmpty() && !reservationInfo.getCheckout().isEmpty()) {
-	         
-	         LocalDate inDate = LocalDate.parse(reservationInfo.getCheckin());
-	         LocalDate outDate = LocalDate.parse(reservationInfo.getCheckout());
-	         
-	         nights = ChronoUnit.DAYS.between(inDate, outDate);
-	    }
-	
-        
+        model.addAttribute("mode", "write");
         model.addAttribute("reservationInfo", reservationInfo);
         model.addAttribute("nights", nights);
         model.addAttribute("room", room); 
@@ -264,4 +286,85 @@ public class AccommodationController {
         return "accommodation/review/review_form"; 
     }
     
+    @PostMapping("review/submit")
+    public String submitReview(ReviewDto dto, HttpSession session, Model model) {
+    	
+        MemberDto loginUser = (MemberDto) session.getAttribute("loginUser");
+        
+        if (loginUser == null) {
+            return "redirect:/member/login";
+        }
+
+        dto.setMemberId(loginUser.getMemberId());
+
+        try {
+            accommodationService.insertReview(dto);
+        } catch (Exception e) {
+            e.printStackTrace();
+            model.addAttribute("message", "리뷰 등록 중 오류가 발생했습니다.");
+            return "error/error2";
+        }
+
+        return "redirect:/accommodation/detail/" + dto.getPlaceId();
+    }
+    
+    @GetMapping("review/list/{placeId}")
+    public String reviewList(@PathVariable("placeId") Long placeId, Model model) {
+        
+    	AccommodationDetailDto placeInfo = accommodationService.getAccommodationDetail(placeId, null, null, null);
+    	
+        ReviewStatsDto stats = accommodationService.getReviewStats(placeId);
+        
+        List<ReviewDto> reviewList = accommodationService.getReviewList(placeId);
+        
+        model.addAttribute("placeId", placeId);
+        model.addAttribute("placeInfo", placeInfo);
+        model.addAttribute("stats", stats);
+        model.addAttribute("reviewList", reviewList);
+        
+        return "accommodation/review/review_list"; 
+    }
+    
+    /*
+    @GetMapping("review/update/{reviewId}")
+    public String updateForm(@PathVariable("reviewId") Long reviewId, 
+                             HttpSession session, 
+                             Model model) {
+                             
+        MemberDto loginUser = (MemberDto) session.getAttribute("loginUser");
+        if (loginUser == null) {
+            return "redirect:/member/login";
+        }
+
+        // 기존 리뷰 정보 조회 (에디터 본문, 별점, 예약했던 객실/장소 정보 등)
+        // ReviewDto 안에는 이전 답변에서 설계한 대로 startDate, endDate, placeId 등이 들어있어야 함
+        ReviewDto review = reviewService.getReviewById(reviewId);
+        
+        // 본인 리뷰인지 검증
+        if (review == null || !review.getMemberId().equals(loginUser.getMemberId())) {
+            model.addAttribute("message", "수정 권한이 없거나 존재하지 않는 리뷰입니다.");
+            return "common/error";
+        }
+
+        // 숙박 일수 계산 (리뷰 DTO에 있는 체크인/체크아웃 날짜 활용)
+        long nights = 1;
+        if (review.getStartDate() != null && review.getEndDate() != null) {
+            // DB에 날짜가 문자열로 저장되어 있다면 바로 파싱, Date 타입이라면 변환 필요
+            LocalDate inDate = LocalDate.parse(review.getStartDate()); 
+            LocalDate outDate = LocalDate.parse(review.getEndDate());
+            nights = ChronoUnit.DAYS.between(inDate, outDate);
+        }
+
+        // 수정 폼 상단에 띄워줄 숙소/객실 정보가 필요하다면 추가 조회
+        // RoomDto room = accommodationService.findRoomByPlaceId(review.getPlaceId()); ...
+
+        // JSP에 데이터 전달 (수정 모드)
+        model.addAttribute("mode", "update"); // ★ 핵심: JSP에서 분기 처리할 모드 값
+        model.addAttribute("review", review);
+        model.addAttribute("nights", nights);
+        // model.addAttribute("room", room);
+        
+        return "accommodation/review/review_form"; // 작성 시와 동일한 폼 재활용
+    }
+    */
 }

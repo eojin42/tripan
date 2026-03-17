@@ -7,6 +7,7 @@ import lombok.Setter;
 @Setter
 public class RoomDto {
 	private String placeName;
+	private Long placeId;
 	
     private String roomId;
     private String roomName;
