@@ -351,20 +351,6 @@ public class TripServiceImpl implements TripService {
             Map.of("action", "NEW_MEMBER_JOINED", "memberId", memberId));
     }
 
-    @Override
-    public void leaveTrip(Long tripId, Long memberId) {
-        tripMemberRepository.deleteByTripIdAndMemberId(tripId, memberId);
-        messagingTemplate.convertAndSend("/sub/trip/" + tripId,
-            Map.of("action", "MEMBER_LEFT", "memberId", memberId));
-    }
-
-    @Override
-    public void kickMember(Long tripId, Long targetMemberId) {
-        tripMemberRepository.deleteByTripIdAndMemberId(tripId, targetMemberId);
-        saveNotification(tripId, targetMemberId, null, "여행에서 강퇴됐어요.", "SYSTEM");
-        messagingTemplate.convertAndSend("/sub/trip/" + tripId,
-            Map.of("action", "MEMBER_KICKED", "memberId", targetMemberId));
-    }
 
     @Override
     @Transactional(readOnly = true)

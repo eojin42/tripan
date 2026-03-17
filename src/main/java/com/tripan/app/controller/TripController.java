@@ -196,46 +196,7 @@ public class TripController {
         return ResponseEntity.ok(Map.of("success", true));
     }
 
-    //  초대 거절 (PENDING → 레코드 삭제)
-    @DeleteMapping("/{tripId}/member/{memberId}/decline")
-    @ResponseBody
-    public ResponseEntity<Map<String, Object>> declineInvite(
-    		@PathVariable("tripId") Long tripId, @PathVariable Long memberId) {
-        try {
-            tripService.leaveTrip(tripId, memberId); // 내부적으로 trip_member 레코드 삭제
-            return ResponseEntity.ok(Map.of("success", true));
-        } catch (Exception e) {
-            return ResponseEntity.badRequest().body(Map.of("success", false, "message", e.getMessage()));
-        }
-    }
-
-    // 동행자 강퇴 (방장 전용)
-    @DeleteMapping("/{tripId}/member/{memberId}/kick")
-    @ResponseBody
-    public ResponseEntity<Map<String, Object>> kickMember(
-    		@PathVariable("tripId") Long tripId, @PathVariable Long memberId, HttpSession session) {
-        if (getLoginMemberId(session) == null)
-            return ResponseEntity.status(401).body(Map.of("success", false));
-        try {
-            tripService.kickMember(tripId, memberId);
-            return ResponseEntity.ok(Map.of("success", true));
-        } catch (Exception e) {
-            return ResponseEntity.badRequest().body(Map.of("success", false, "message", e.getMessage()));
-        }
-    }
-
-    // 스스로 나가기
-    @DeleteMapping("/{tripId}/leave")
-    @ResponseBody
-    public ResponseEntity<Map<String, Object>> leaveTrip(
-    		@PathVariable("tripId") Long tripId, HttpSession session) {
-        Long loginId = getLoginMemberId(session);
-        if (loginId == null)
-            return ResponseEntity.status(401).body(Map.of("success", false));
-        tripService.leaveTrip(tripId, loginId);
-        return ResponseEntity.ok(Map.of("success", true));
-    }
-
+  
     @PostMapping("/{tripId}/scrap")
     @ResponseBody
     public ResponseEntity<Map<String, Object>> scrapTrip(

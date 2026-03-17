@@ -322,10 +322,10 @@
 
         <%-- 빈 상태 / JS 동적 렌더 --%>
         <div class="vote-cards-grid" id="voteGrid">
-          <div id="voteEmpty" style="text-align:center;padding:40px 20px;color:#A0AEC0;">
-            <div style="font-size:36px;margin-bottom:10px;">🗳️</div>
-            <div style="font-size:14px;font-weight:600;margin-bottom:4px;">투표가 없어요</div>
-            <div style="font-size:12px;">+ 투표 만들기로 의견을 모아보세요</div>
+          <div class="vote-empty-state">
+            <div style="font-size:40px;margin-bottom:12px;">🗳️</div>
+            <div style="font-size:14px;font-weight:700;color:#4A5568;margin-bottom:6px;">투표가 없어요</div>
+            <div style="font-size:12px;line-height:1.6;">+ 투표 만들기로<br>동행자들의 의견을 모아보세요</div>
           </div>
         </div>
 
@@ -902,13 +902,22 @@
           placeholder="예: Day2 저녁 어디서 먹을까요?" maxlength="100">
       </div>
       <div class="form-group" style="margin-bottom:8px;">
-        <label class="form-label-sm">후보지 <span style="color:#A0AEC0;font-weight:400">(최소 2개)</span></label>
+        <label class="form-label-sm">후보지 <span style="color:#A0AEC0;font-weight:400">(최소 2개, 최대 6개)</span></label>
       </div>
       <div id="voteOptions">
         <input type="text" class="form-input vote-opt-input" placeholder="후보 1" style="margin-bottom:8px">
         <input type="text" class="form-input vote-opt-input" placeholder="후보 2" style="margin-bottom:8px">
       </div>
       <button class="btn-add-vote-opt" onclick="addVoteOption()">+ 후보 추가</button>
+
+      <%-- 마감일시 (선택) --%>
+      <div class="form-group" style="margin-top:14px;margin-bottom:16px;">
+        <label class="form-label-sm">마감일시 <span style="color:#A0AEC0;font-weight:400;">(선택)</span></label>
+        <input type="datetime-local" class="form-input" id="vote-deadline"
+          style="font-family:inherit;"
+          min="${fn:substring(tripDto.startDate,0,10)}T00:00">
+      </div>
+
       <button class="btn-primary" onclick="submitVote()">투표 만들기</button>
     </div>
   </div>
@@ -1017,9 +1026,11 @@
      전역 변수 주입 (JSP EL)
 ════════════════════════════════════════ --%>
 <script>
-var TRIP_ID      = ${tripId};
-var CTX_PATH     = '${pageContext.request.contextPath}';
-var SHOW_WELCOME = ${showWelcome};
+var TRIP_ID          = ${tripId};
+var CTX_PATH         = '${pageContext.request.contextPath}';
+var SHOW_WELCOME     = ${showWelcome};
+/* ★ 현재 로그인 유저 ID — workspace_vote.js에서 myVotedCandidateId 서버 조회에 사용 */
+var LOGIN_MEMBER_ID  = ${loginMemberId != null ? loginMemberId : 'null'};
 // 날씨 모듈용 여행 정보
 var TRIP_START_DATE = '${fn:substring(tripDto.startDate,0,10)}';
 var TRIP_END_DATE   = '${fn:substring(tripDto.endDate,0,10)}';

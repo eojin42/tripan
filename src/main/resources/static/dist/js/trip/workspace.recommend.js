@@ -433,8 +433,15 @@ function selectPlaceType(btn, type) {
   btn.classList.add('active');
   _placeType = type;
   var kw = ((document.getElementById('placeSearchInput') || {}).value || '').trim();
-  if (kw.length >= 2) searchPlace(kw);
-  else _loadCategoryPreview(type);
+  if (type === 'my') {
+    // 나만의 탭: 키워드 유무 상관없이 loadMyPlaces로 처리
+    if (kw.length >= 2) loadMyPlaces(kw);
+    else loadMyPlaces();
+  } else if (kw.length >= 2) {
+    searchPlace(kw);
+  } else {
+    _loadCategoryPreview(type);
+  }
 }
 function searchPlace(keyword) {
   clearTimeout(_searchTimer);
@@ -557,10 +564,24 @@ function _searchItemHtml(p, type) {
    7. 나만의 장소
 ══════════════════════════ */
 function loadMyPlaces(keyword) {
+  var wrap = document.getElementById('placeResults');
+  if (wrap) wrap.innerHTML = '<div style="text-align:center;padding:20px;color:#A0AEC0;">🔍 불러오는 중...</div>';
+
   fetch(CTX_PATH + '/api/places/my')
     .then(function (r) { return r.json(); })
     .then(function (list) {
       if (!Array.isArray(list)) list = [];
+
+      // ★ DOM에서 현재 여행의 NONE(나만의) 카테고리 카드도 합산
+      //   — 카카오 지도에서 방금 추가한 장소가 my API에 아직 없을 때 보완
+      var domPlaces = _collectNoneCategoryFromDom();
+      domPlaces.forEach(function(dp) {
+        var dup = list.some(function(p) {
+          return (p.placeName || '').trim() === dp.placeName.trim();
+        });
+        if (!dup) list.push(dp);
+      });
+
       if (keyword) {
         var kw = keyword.toUpperCase();
         list = list.filter(function (p) {
@@ -569,7 +590,34 @@ function loadMyPlaces(keyword) {
         });
       }
       renderMyPlaceResults(list);
+    })
+    .catch(function() {
+      // API 실패해도 DOM 기반으로만이라도 표시
+      var domPlaces = _collectNoneCategoryFromDom();
+      renderMyPlaceResults(domPlaces);
     });
+}
+
+/** 현재 일정 DOM의 place-card 중 NONE 카테고리(나만의 장소) 수집 */
+function _collectNoneCategoryFromDom() {
+  var result = [];
+  document.querySelectorAll('.place-card').forEach(function(card) {
+    var cat = card.getAttribute('data-category') || '';
+    // NONE 이거나 카테고리가 아예 없는 카드 (카카오 지도로 추가된 장소)
+    if (cat === 'NONE' || cat === '') {
+      var name = card.getAttribute('data-name') || '';
+      if (!name) return;
+      result.push({
+        placeName : name,
+        address   : card.getAttribute('data-address') || '',
+        latitude  : parseFloat(card.getAttribute('data-lat'))  || 0,
+        longitude : parseFloat(card.getAttribute('data-lng'))  || 0,
+        placeId   : card.getAttribute('data-id') || null,
+        category  : 'NONE'
+      });
+    }
+  });
+  return result;
 }
 
 function renderMyPlaceResults(list) {
@@ -582,19 +630,38 @@ function renderMyPlaceResults(list) {
     + '+ 나만의 장소 직접 등록</button></div>';
 
   if (!list || !list.length) {
-    html += '<div style="text-align:center;padding:20px;color:#A0AEC0;font-size:13px;">등록된 장소가 없어요</div>';
+    html += '<div style="text-align:center;padding:20px;color:#A0AEC0;font-size:13px;">'
+      + '<div style="font-size:28px;margin-bottom:8px;">⭐</div>'
+      + '등록된 나만의 장소가 없어요<br>'
+      + '<span style="font-size:11px;color:#CBD5E0;">카카오 지도 검색 후 "나만의 장소"로 추가하거나<br>직접 등록해 보세요</span>'
+      + '</div>';
   } else {
     list.forEach(function (p) {
-      html += '<div style="padding:11px 14px;border-bottom:1px solid #F0F4F8;cursor:pointer;" '
+      var cat = p.category || p.categoryName || 'NONE';
+      var catInfo = (typeof window.getTripanCategory === 'function')
+        ? window.getTripanCategory(cat)
+        : { icon: '⭐', label: '나만의' };
+      html += '<div style="padding:11px 14px;border-bottom:1px solid #F0F4F8;cursor:pointer;display:flex;align-items:center;gap:10px;" '
         + 'data-name="'     + _esc(p.placeName || '') + '" '
         + 'data-address="'  + _esc(p.address   || '') + '" '
         + 'data-lat="'      + (p.latitude  || 0) + '" '
         + 'data-lng="'      + (p.longitude || 0) + '" '
         + 'data-place-id="' + _esc(String(p.placeId || '')) + '" '
+        + 'data-category="' + _esc(cat) + '" '
         + 'onmouseover="this.style.background=\'#F7FAFC\'" onmouseout="this.style.background=\'\'" '
         + 'onclick="selectPlaceResult(this)">'
-        + '<div style="font-size:13px;font-weight:700;margin-bottom:2px;">⭐ ' + _esc(p.placeName || '') + '</div>'
-        + '<div style="font-size:11px;color:#A0AEC0;">' + _esc(p.address || '') + '</div>'
+        + '<div style="width:32px;height:32px;border-radius:8px;background:#FAF5FF;'
+        + 'display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;">'
+        + catInfo.icon + '</div>'
+        + '<div style="min-width:0;flex:1;">'
+        + '<div style="font-size:13px;font-weight:700;margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">'
+        + _esc(p.placeName || '') + '</div>'
+        + '<div style="font-size:11px;color:#A0AEC0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">'
+        + _esc(p.address || '') + '</div>'
+        + '</div>'
+        + '<span style="font-size:10px;font-weight:600;padding:2px 7px;border-radius:50px;'
+        + 'background:#FAF5FF;color:#9B8DBE;white-space:nowrap;flex-shrink:0;">'
+        + catInfo.label + '</span>'
         + '</div>';
     });
   }

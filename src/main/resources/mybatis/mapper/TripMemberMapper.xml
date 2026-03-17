@@ -3,14 +3,14 @@
 <mapper namespace="com.tripan.app.mapper.TripMemberMapper">
 
     <select id="findByTripIdAndMemberId" resultType="com.tripan.app.trip.domain.entity.TripMember">
-       	SELECT 
+        SELECT 
             trip_member_id,
             trip_id,
             member_id,
             role,
             joined_at,
-            invitation_status
-        FROM trip_member
+            invitation_status,
+            is_first_visit  FROM trip_member
         WHERE trip_id = #{tripId} 
           AND member_id = #{memberId}
     </select>

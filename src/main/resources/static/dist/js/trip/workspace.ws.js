@@ -1,20 +1,4 @@
-/* ═══════════════════════════════════════════════════════════════
-   workspace.ws.js  —  Tripan 워크스페이스 실시간 동기화
-
-   수정 내역:
-    [1] MEMO_UPDATED 핸들러 개선
-        - 기존: wsUpdateMemo(itemId, memo) → 메모 텍스트만 DOM에 직접 써넣음
-                → 동행자 화면에 갑자기 메모 내용이 raw 텍스트로 나타남
-        - 변경: wsUpdateMemoFull(itemId, memo, imageUrls) 호출
-                → schedule.js의 함수를 통해 뱃지 방식으로 업데이트
-                → 뱃지 클릭 시 조회 모달로 내용 확인 가능
-
-    [2] wsAddPlace에 chip 이벤트 바인딩 추가
-        - 새 카드 삽입 후 _bindChipClick(card) 호출
-        - data-images 속성 초기화
-
-    [3] wsUpdateMemo(구버전) 유지 — 하위 호환용
-═══════════════════════════════════════════════════════════════ */
+// 동기화
 
 var _stompClient = null;
 var _wsConnected = false;
@@ -87,20 +71,22 @@ function _wsFlushOrders(day) {
   var list = document.getElementById('places-' + day);
   if (!list) return;
 
-  // 현재 DOM 순서를 기반으로 카드를 가져오되, visitOrder 업데이트
-  var cards = Array.from(list.querySelectorAll('.place-card'));
-
-  // orderMap에 있는 카드의 visitOrder 업데이트
-  cards.forEach(function(card) {
-    var newOrder = orderMap[String(card.dataset.id)];
-    if (newOrder !== undefined) {
-      card.dataset.order = newOrder;
-      // day 변경도 반영
-      card.dataset.day = day;
+  // ★ [핵심 수정] 타 섹션에서 넘어온 카드를 처리하기 위해 전체 문서에서 카드를 탐색
+  Object.keys(orderMap).forEach(function(itemId) {
+    var card = document.querySelector('.place-card[data-id="' + itemId + '"]');
+    if (card) {
+      card.dataset.order = orderMap[itemId];
+      card.dataset.day = day; // day 속성 업데이트
+      
+      // 만약 카드가 다른 Day에 있었다면, 현재 Day 리스트로 물리적 이동
+      if (card.parentElement !== list) {
+        list.appendChild(card);
+      }
     }
   });
 
-  // visitOrder 숫자값 기준으로 정렬해서 DOM 재배치
+  // 이제 list 안에 안착한 모든 카드를 순서에 맞게 정렬
+  var cards = Array.from(list.querySelectorAll('.place-card'));
   cards.sort(function(a, b) {
     return parseInt(a.dataset.order || '999999', 10) - parseInt(b.dataset.order || '999999', 10);
   });

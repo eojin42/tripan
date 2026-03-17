@@ -1,11 +1,7 @@
 /**
  * workspace.ui.js
  * ──────────────────────────────────────────────
- * 담당: 뷰 모드 전환 · 리사이저 · 탭 · 모달 · 토스트
- *       + normalizeRow  (Oracle 대문자 키 → camelCase)
- *       + copyInviteLink (단일 정의 — ws.js·expense.js 에서 제거)
- *
- * ⚠️ 로드 순서: 가장 먼저 (다른 JS가 showToast/openModal/normalizeRow 의존)
+ * 담당: 뷰 모드 전환 · 리사이저 · 탭 · 모달 · 토스트 · 방장 권한 · 초대코드 
  * ──────────────────────────────────────────────
  */
 
@@ -235,7 +231,6 @@ function showToast(msg) {
 
 /* ══════════════════════════════
    초대 링크 복사
-   ← ws.js·expense.js 에서 중복 정의 제거 후 여기서만 관리
 ══════════════════════════════ */
 function copyInviteLink() {
   var el = document.getElementById('inviteLinkText');
@@ -260,8 +255,69 @@ function _fallbackCopy(text) {
 }
 
 /* ══════════════════════════════
+   방장 권환 및 강퇴 등
+══════════════════════════════ */
+//  권한 변경 
+function onChangeMemberRole(selectEl, memberId) {
+    const newRole = selectEl.value;
+    
+    fetch(`${CTX_PATH}/api/trip/${TRIP_ID}/members/${memberId}/role`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ role: newRole })
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.success) {
+            if (typeof showToast === 'function') showToast(data.message);
+            // 필요 시 멤버 목록을 다시 불러오는 함수 호출
+        } else {
+            alert('권한 변경 실패: ' + data.message);
+        }
+    })
+    .catch(err => alert('오류가 발생했습니다.'));
+}
+
+//  강퇴 
+function onKickMember(memberId) {
+    if (!confirm('이 멤버를 정말 강퇴하시겠습니까?')) return;
+
+    fetch(`${CTX_PATH}/api/trip/${TRIP_ID}/members/${memberId}/kick`, {
+        method: 'DELETE'
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.success) {
+            alert(data.message);
+            location.reload(); // 가장 깔끔하게 반영하려면 새로고침
+        } else {
+            alert('강퇴 실패: ' + data.message);
+        }
+    })
+    .catch(err => alert('오류가 발생했습니다.'));
+}
+
+//  스스로 나가기
+function onLeaveTrip() {
+    if (!confirm('정말 이 여행에서 나가시겠습니까? 일정과 가계부 접근이 차단됩니다.')) return;
+
+    fetch(`${CTX_PATH}/api/trip/${TRIP_ID}/members/leave`, {
+        method: 'DELETE'
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.success) {
+            alert(data.message);
+            window.location.href = CTX_PATH + '/trip/my-trips'; // 내 여행 목록으로 튕겨내기
+        } else {
+            alert('나가기 실패: ' + data.message);
+        }
+    })
+    .catch(err => alert('오류가 발생했습니다.'));
+}
+
+/* ══════════════════════════════
    Oracle 대문자 키 → camelCase 정규화
-   ← JSP 인라인에서 이동. checklist/vote/notif/expense 전부 사용.
 ══════════════════════════════ */
 function normalizeRow(row) {
   if (!row || typeof row !== 'object') return row;
@@ -270,8 +326,10 @@ function normalizeRow(row) {
     'checklistid':'checklistId', 'tripid':'tripId',       'itemname':'itemName',
     'ischecked':'isChecked',     'checkmanager':'checkManager',
     /* 투표 */
-    'voteid':'voteId',           'candidateid':'candidateId',
-    'candidatename':'candidateName', 'votecount':'voteCount', 'totalvotes':'totalVotes',
+    'voteid':'voteId',             'candidateid':'candidateId',
+    'candidatename':'candidateName','votecount':'voteCount',    'totalvotes':'totalVotes',
+    'myvotedcandidateid':'myVotedCandidateId',
+    'isclosed':'isClosed',         'deadline':'deadline',       'voternames':'voterNames',
     /* 알림 */
     'notificationid':'notificationId', 'receiverid':'receiverId', 'senderid':'senderId',
     'isread':'isRead',           'createdat':'createdAt',  'timeago':'timeAgo',

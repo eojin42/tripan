@@ -2,50 +2,49 @@
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.tripan.app.mapper.VoteMapper">
 
-    <!-- 투표 목록 (후보지 + 득표수 포함) -->
-    <select id="selectVotesByTripId" parameterType="long" resultType="map">
+    <!--
+        투표 목록 조회
+        반환 컬럼:
+          voteId, title, createdAt, deadline, isClosed
+          candidateId, candidateName, voteCount, totalVotes
+          myVotedCandidateId  — 현재 유저가 선택한 후보 ID (NULL = 미투표)
+          voterNames          — 해당 후보에 투표한 닉네임 목록 (쉼표 구분)
+    -->
+    <select id="selectVotesByTripId" resultType="map">
         SELECT
-            v.vote_id                    AS voteId,
+            v.vote_id                                               AS voteId,
             v.title,
-            vc.candidate_id              AS candidateId,
-            vc.candidate_name            AS candidateName,
-            (SELECT COUNT(*) FROM vote_record vr
-             WHERE vr.candidate_id = vc.candidate_id) AS voteCount,
-            (SELECT COUNT(*) FROM vote_record vr2
-             WHERE vr2.vote_id = v.vote_id)           AS totalVotes
+            TO_CHAR(v.created_at, 'YYYY-MM-DD HH24:MI')            AS createdAt,
+            TO_CHAR(v.deadline,   'YYYY-MM-DD HH24:MI')            AS deadline,
+            CASE
+                WHEN v.deadline IS NULL      THEN 0
+                WHEN v.deadline &gt; SYSDATE THEN 0
+                ELSE                              1
+            END                                                     AS isClosed,
+            vc.candidate_id                                         AS candidateId,
+            vc.candidate_name                                       AS candidateName,
+            (SELECT COUNT(*)
+               FROM vote_record vr
+              WHERE vr.candidate_id = vc.candidate_id)             AS voteCount,
+            (SELECT COUNT(*)
+               FROM vote_record vr2
+              WHERE vr2.vote_id = v.vote_id)                       AS totalVotes,
+            /* ★ 새로고침 후에도 내 선택 유지 — memberId 가 NULL 이면 NULL 반환 */
+            (SELECT vr3.candidate_id
+               FROM vote_record vr3
+              WHERE vr3.vote_id   = v.vote_id
+                AND vr3.member_id = #{memberId}
+              FETCH FIRST 1 ROWS ONLY)                             AS myVotedCandidateId,
+            /* ★ 이 후보에 투표한 멤버 닉네임 목록 (쉼표 구분) */
+            (SELECT LISTAGG(m2.nickname, ', ')
+                        WITHIN GROUP (ORDER BY vr4.record_id)
+               FROM vote_record vr4
+               JOIN member2 m2 ON m2.member_id = vr4.member_id
+              WHERE vr4.candidate_id = vc.candidate_id)            AS voterNames
         FROM vote v
         JOIN vote_candidate vc ON vc.vote_id = v.vote_id
         WHERE v.trip_id = #{tripId}
         ORDER BY v.vote_id DESC, vc.candidate_id ASC
     </select>
-
-    <!--
-      투표 생성: Vote 엔티티 파라미터
-      keyProperty="voteId" → INSERT 후 vote.voteId 에 PK 세팅
-    -->
-    <insert id="insertVote" useGeneratedKeys="true" keyProperty="voteId" keyColumn="VOTE_ID">
-        INSERT INTO vote (trip_id, title) VALUES (#{tripId}, #{title})
-    </insert>
-
-    <insert id="insertCandidate" useGeneratedKeys="true" keyProperty="candidateId" keyColumn="CANDIDATE_ID">
-        INSERT INTO vote_candidate (vote_id, candidate_name) VALUES (#{voteId}, #{candidateName})
-    </insert>
-
-    <!-- 투표 기록 존재 여부 -->
-    <select id="existsVoteRecord" resultType="int">
-        SELECT COUNT(*) FROM vote_record
-        WHERE vote_id = #{voteId} AND member_id = #{memberId}
-    </select>
-
-    <!-- 투표하기 -->
-    <insert id="insertVoteRecord">
-        INSERT INTO vote_record (vote_id, candidate_id, member_id)
-        VALUES (#{voteId}, #{candidateId}, #{memberId})
-    </insert>
-
-    <!-- 투표 삭제 (cascade → vote_candidate, vote_record 자동 삭제) -->
-    <delete id="deleteVote">
-        DELETE FROM vote WHERE vote_id = #{voteId} AND trip_id = #{tripId}
-    </delete>
 
 </mapper>

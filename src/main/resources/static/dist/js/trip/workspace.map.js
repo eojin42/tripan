@@ -516,13 +516,36 @@ window.executeMapAdd = function() {
     document.getElementById('customMapAddModal').remove();
     if (_infowindow) _infowindow.close();
 
-    if (typeof addPlaceToDay === 'function') {
-        // 검색용 임시 핀 제거
-        _tempMarkers.forEach(function(m) { m.setMap(null); });
-        _tempMarkers = [];
-        
-        window.currentAddDay = parseInt(day); // 현재 선택된 Day 갱신
-        addPlaceToDay(null, p.name, p.addr, p.lat, p.lng, null, cat); // DB값(cat) 넘김
+    if (typeof addPlaceToDay !== 'function') return;
+
+    // 검색용 임시 핀 제거
+    _tempMarkers.forEach(function(m) { m.setMap(null); });
+    _tempMarkers = [];
+    window.currentAddDay = parseInt(day);
+
+    // ★ 카테고리가 NONE(나만의 장소)이면 /api/places/my 에 먼저 등록해서
+    //   "나만의" 탭에서 바로 검색·재사용 가능하도록 저장
+    if (cat === 'NONE') {
+        fetch(CTX_PATH + '/api/places/my', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                placeName : p.name,
+                address   : p.addr   || '',
+                latitude  : p.lat    || 0,
+                longitude : p.lng    || 0,
+                category  : 'NONE'
+            })
+        })
+        .then(function(r) { return r.ok ? r.json() : null; })
+        .catch(function() { return null; }) // 실패해도 일정 추가는 진행
+        .then(function(saved) {
+            // saved.place.placeId 가 있으면 apiPlaceId 로 넘겨서 중복 방지
+            var pid = (saved && saved.place && saved.place.placeId) ? String(saved.place.placeId) : null;
+            addPlaceToDay(null, p.name, p.addr, p.lat, p.lng, pid, cat);
+        });
+    } else {
+        addPlaceToDay(null, p.name, p.addr, p.lat, p.lng, null, cat);
     }
 };
 

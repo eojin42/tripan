@@ -150,14 +150,16 @@ function _appendPlaceCard(dayNum, itemId, name, addr, lat, lng, categoryName) {
   var card  = document.createElement('div');
   card.className = 'place-card';
   card.draggable = true;
-  card.setAttribute('data-day',    dayNum);
-  card.setAttribute('data-id',     itemId);
-  card.setAttribute('data-name',   name);
-  card.setAttribute('data-memo',   '');
-  card.setAttribute('data-imgurl', '');
-  card.setAttribute('data-images', '[]');
-  card.setAttribute('data-lat',    lat || 0);
-  card.setAttribute('data-lng',    lng || 0);
+  card.setAttribute('data-day',      dayNum);
+  card.setAttribute('data-id',       itemId);
+  card.setAttribute('data-name',     name);
+  card.setAttribute('data-memo',     '');
+  card.setAttribute('data-imgurl',   '');
+  card.setAttribute('data-images',   '[]');
+  card.setAttribute('data-lat',      lat || 0);
+  card.setAttribute('data-lng',      lng || 0);
+  card.setAttribute('data-address',  addr || '');           // ★ 추가
+  card.setAttribute('data-category', categoryName || 'NONE'); // ★ 추가
   
   card.innerHTML =
     '<div class="place-num">' + count + '</div>' +
