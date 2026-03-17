@@ -27,7 +27,7 @@ public class SpringSecurityConfig {
 		String[] excludeUri = {
 				"/", "/index.jsp", 
 				"/member/login", "/member/account", "/member/logout", "/member/nicknameCheck", 
-				"/member/userIdCheck", "/member/complete", "/member/pwdFind", "/member/expired", 
+				"/member/userIdCheck", "/member/complete", "/member/pwdFind", "/member/expired", "/partner/login",
 				"/dist/**",
 				"/guest/main", "/guest/list", 
 				"/uploads/photo/**", "/uploads/feed/**", 

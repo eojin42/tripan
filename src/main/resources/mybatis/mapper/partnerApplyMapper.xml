@@ -25,4 +25,10 @@
         )
     </insert>
     
+    <select id="findPartnerStatusByMemberId" parameterType="long" resultType="string">
+	    SELECT status 
+	    FROM partner 
+	    WHERE member_id = #{memberId}
+	</select>
+    
 </mapper>

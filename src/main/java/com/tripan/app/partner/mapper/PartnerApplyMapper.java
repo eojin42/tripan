@@ -8,6 +8,6 @@ import com.tripan.app.partner.domain.dto.PartnerFileDto;
 public interface PartnerApplyMapper {
     
     void insertPartner(PartnerApplyDto dto);
-    
     void insertPartnerFile(PartnerFileDto fileDto);
+    String findPartnerStatusByMemberId(Long memberId);
 }

@@ -68,6 +68,12 @@ public class LoginSuccessHandler implements AuthenticationSuccessHandler {
     protected void resultRedirectStrategy(HttpServletRequest request, 
             HttpServletResponse response,
             Authentication authentication) throws IOException, ServletException {
+    	
+    	String refererHeader = request.getHeader("Referer");
+    	if (refererHeader != null && refererHeader.contains("/partner/login")) {
+            redirectStrategy.sendRedirect(request, response, "/partner/apply?source=admin");
+            return; 
+        }
 
         SavedRequest savedRequest = requestCache.getRequest(request, response);
 
