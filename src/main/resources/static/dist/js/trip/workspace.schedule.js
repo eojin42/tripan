@@ -126,6 +126,7 @@ function addPlaceToDay(el, name, addr, lat, lng, apiPlaceId, categoryName) {
     if (data.success) {
       _appendPlaceCard(currentAddDay, data.itemId, name, addr || '', lat || 0, lng || 0, cat);
       closeModal('addPlaceModal');
+      if (typeof notifySummaryChanged === 'function') notifySummaryChanged();
       showToast('📍 ' + name + ' 일정이 추가됐어요!');
       
       if (typeof mapAddMarkerExternal === 'function' && lat && lng) {
@@ -250,6 +251,7 @@ function removePlace(btn) {
           if (list) refreshPlaceNums(list);
           if (typeof mapRemoveMarker === 'function') mapRemoveMarker(itemId);
         }, 300);
+        if (typeof notifySummaryChanged === 'function') notifySummaryChanged();
         showToast('🗑 장소 삭제됨');
       } else {
         showToast('⚠️ 삭제 실패');
@@ -261,26 +263,8 @@ function removePlace(btn) {
 /* ══════════════════════════════
    드래그앤드롭 (LexoRank) & 마커 완벽 재정렬
 ══════════════════════════════ */
-// 1. 진짜 LexoRank 문자열 생성기
-function getLexoRank(prevOrder, nextOrder) {
-  var p = prevOrder || 'a'; 
-  var n = nextOrder || 'z'; 
-  var result = '';
-  
-  for (var i = 0; i < Math.max(p.length, n.length) + 1; i++) {
-    var pChar = p.charCodeAt(i) || 96;  
-    var nChar = n.charCodeAt(i) || 123; 
-    var mid = Math.floor((pChar + nChar) / 2);
-
-    if (mid === pChar && pChar !== nChar) {
-      result += String.fromCharCode(pChar);
-    } else {
-      result += String.fromCharCode(mid);
-      break;
-    }
-  }
-  return result;
-}
+// ✅ 순서값 생성: 항상 000001 형식 (DB 기존값과 호환, LexoRank 제거)
+function toRank(idx) { return String(idx + 1).padStart(6, '0'); }
 
 var _dragCard    = null;
 var _dragDayFrom = null;
@@ -308,12 +292,14 @@ function onListDragOver(e) {
   e.dataTransfer.dropEffect = 'move';
   var list = e.currentTarget;
   list.classList.add('list-drag-over');
-  
+
   var after = getDragAfterElement(list, e.clientY);
   if (after == null) list.appendChild(_dragCard);
   else if (after !== _dragCard) list.insertBefore(_dragCard, after);
-  
-  refreshPlaceNums(list);
+
+  // ✅ refreshPlaceNums 제거 — 드래그 중 중간 리스트에서 호출하면
+  // data-day가 아직 안 바뀐 카드들의 dataset.order가 오염됨
+  // 번호 갱신은 드롭 확정(onListDrop/onDropZoneDrop) 시에만 수행
 }
 
 function onListDragLeave(e) {
@@ -322,47 +308,38 @@ function onListDragLeave(e) {
   }
 }
 
-// 🌟 2. 같은 날짜 안에서 드롭
+// ✅ 같은 날짜 안에서 드롭
 function onListDrop(e) {
   e.preventDefault(); e.stopPropagation();
   if (!_dragCard) return;
-  
-  var list = e.currentTarget;
+
+  var list  = e.currentTarget;
   var dayTo = parseInt(list.dataset.day);
   list.classList.remove('list-drag-over');
-  
-  _dragCard.dataset.day = dayTo;
-  
-  // 🚨 멱살 잡고 맨 밑으로 끌어내리던 범인(list.appendChild) 삭제 완료 🚨
 
-  // 앞뒤 카드 읽어서 진짜 순서(LexoRank) 계산
-  var prevCard = _dragCard.previousElementSibling;
-  var nextCard = _dragCard.nextElementSibling;
-  var prevOrder = prevCard ? prevCard.dataset.order : null;
-  var nextOrder = nextCard ? nextCard.dataset.order : null;
-  
-  var newRank = getLexoRank(prevOrder, nextOrder);
-  _dragCard.dataset.order = newRank;
+  // ✅ dataset.day 먼저 확정 후 refreshPlaceNums 호출 (filter 기준이 됨)
+  _dragCard.dataset.day = dayTo;
 
   var oldList = document.getElementById('places-' + _dragDayFrom);
-  if (oldList && oldList !== list) refreshPlaceNums(oldList); 
-  refreshPlaceNums(list);
-  
-  // 🚀 서버에 딱 1번만 요청 & 마커 연동 복구!
-  fetch(CTX_PATH + '/api/itinerary/' + _dragCard.dataset.id + '/move', {
-    method: 'PATCH',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ dayNumber: dayTo, visitOrder: newRank })
-  }).then(function(r) {
-    if (r.ok) {
-      showToast('✅ 일정 순서가 변경됐어요');
-      // 🗺️ 날려먹었던 마커 연동 부활!
-      if (typeof _reorderMarkersForDay === 'function') {
-        _reorderMarkersForDay(dayTo);
-        if (_dragDayFrom && _dragDayFrom !== dayTo) _reorderMarkersForDay(_dragDayFrom);
-      }
-    }
-  });
+
+  // 다른 날 이동: oldList에서 _dragCard가 이미 빠진 상태이므로 바로 refresh
+  if (oldList && oldList !== list) {
+    refreshPlaceNums(oldList);
+    refreshPlaceNums(list);
+    _persistListOrder(list, dayTo);
+    _persistListOrder(oldList, _dragDayFrom);
+  } else {
+    // 같은 날 이동: list 하나만 처리
+    refreshPlaceNums(list);
+    _persistListOrder(list, dayTo);
+  }
+
+  showToast('✅ 일정 순서가 변경됐어요');
+  if (typeof _reorderMarkersForDay === 'function') {
+    _reorderMarkersForDay(dayTo);
+    if (_dragDayFrom && _dragDayFrom !== dayTo) _reorderMarkersForDay(_dragDayFrom);
+  }
+  if (typeof notifySummaryChanged === 'function') notifySummaryChanged();
 }
 
 function onDropZoneDragOver(e) {
@@ -374,42 +351,32 @@ function onDropZoneDragOver(e) {
 
 function onDropZoneDragLeave(e) { e.currentTarget.classList.remove('dz-active'); }
 
-// 🌟 3. 다른 날짜(빈 공간)로 완전히 넘길 때
+// ✅ 다른 날짜(빈 공간)로 완전히 넘길 때
 function onDropZoneDrop(e) {
   e.preventDefault(); e.stopPropagation();
   e.currentTarget.classList.remove('dz-active');
   if (!_dragCard) return;
-  
+
   var dayTo = parseInt(e.currentTarget.dataset.day);
   var list  = document.getElementById('places-' + dayTo);
   if (!list) return;
-  
+
   _dragCard.dataset.day = dayTo;
-  list.appendChild(_dragCard); // 다른 날짜 빈 공간이니 맨 밑에 붙이는게 맞음
-  
-  var prevCard = _dragCard.previousElementSibling;
-  var prevOrder = prevCard ? prevCard.dataset.order : null;
-  var newRank = getLexoRank(prevOrder, null); 
-  _dragCard.dataset.order = newRank;
+  list.appendChild(_dragCard);
 
   var oldList = document.getElementById('places-' + _dragDayFrom);
   if (oldList && oldList !== list) refreshPlaceNums(oldList);
   refreshPlaceNums(list);
-  
-  fetch(CTX_PATH + '/api/itinerary/' + _dragCard.dataset.id + '/move', {
-    method: 'PATCH',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ dayNumber: dayTo, visitOrder: newRank })
-  }).then(function(r) {
-    if (r.ok) {
-      showToast('📍 DAY ' + dayTo + '로 이동됐어요');
-      // 🗺️ 마커 연동 부활!
-      if (typeof _reorderMarkersForDay === 'function') {
-        _reorderMarkersForDay(dayTo);
-        if (_dragDayFrom && _dragDayFrom !== dayTo) _reorderMarkersForDay(_dragDayFrom);
-      }
-    }
-  });
+
+  _persistListOrder(list, dayTo);
+  if (oldList && oldList !== list) _persistListOrder(oldList, _dragDayFrom);
+
+  showToast('📍 DAY ' + dayTo + '로 이동됐어요');
+  if (typeof _reorderMarkersForDay === 'function') {
+    _reorderMarkersForDay(dayTo);
+    if (_dragDayFrom && _dragDayFrom !== dayTo) _reorderMarkersForDay(_dragDayFrom);
+  }
+  if (typeof notifySummaryChanged === 'function') notifySummaryChanged();
 }
 
 function getDragAfterElement(container, y) {
@@ -422,11 +389,35 @@ function getDragAfterElement(container, y) {
   }, { offset: Number.NEGATIVE_INFINITY }).element;
 }
 
-// 🌟 4. 데이터 덮어쓰기(toLexoRank) 삭제 완료 (안전하게 UI 번호만 그림)
+// ✅ UI 번호 갱신 + dataset.order를 000001 형식으로 동기화
 function refreshPlaceNums(list) {
   list.querySelectorAll('.place-card').forEach(function (card, i) {
     var n = card.querySelector('.place-num');
     if (n) n.textContent = i + 1;
+    card.dataset.order = toRank(i); // 항상 000001 형식으로 갱신
+  });
+}
+
+// ✅ 리스트 전체 순서를 서버에 저장 (카드마다 순서대로 PATCH)
+// refreshPlaceNums 호출 이후 dataset.order가 최신 상태가 된 뒤 호출
+function _persistListOrder(list, dayNum) {
+  // data-day가 일치하는 카드만 (다른 날로 이미 이동된 카드 제외)
+  var cards = Array.from(list.querySelectorAll('.place-card'))
+    .filter(function(card) { return parseInt(card.dataset.day) === dayNum; });
+
+  cards.forEach(function(card, idx) {
+    var itemId     = card.dataset.id;
+    var visitOrder = toRank(idx);
+    if (!itemId) return;
+    card.dataset.order = visitOrder;
+    // 기존 /move 엔드포인트 사용 (이미 배포돼 있고 WS broadcast 포함)
+    fetch(CTX_PATH + '/api/itinerary/' + itemId + '/move', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ dayNumber: dayNum, visitOrder: visitOrder })
+    }).catch(function(err) {
+      console.warn('[DnD] 순서 저장 실패 itemId=' + itemId, err);
+    });
   });
 }
 
