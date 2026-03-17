@@ -38,10 +38,4 @@ public interface TripService {
 
     // 받은 초대를 수락하여 정식 동행자로 상태 변경
     void acceptTripInvitation(Long tripId, Long memberId);
-
-    // 참여 중인 여행 방에서 스스로 나가기
-    void leaveTrip(Long tripId, Long memberId);
-
-    // 특정 동행자 강제 퇴장 처리 (방장 전용)
-    void kickMember(Long tripId, Long targetMemberId);
 }
