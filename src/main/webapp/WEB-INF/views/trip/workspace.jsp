@@ -1165,15 +1165,22 @@ var TRIP_META = {
     wsConnect(TRIP_ID, CTX_PATH, MY_NICK);
   });
 </script>
-<%-- ✅ 전역 변수 설정 및 뷰어 권한 철통 통제 (최종 종결판) --%>
+
+<%--  전역 변수 설정 및 뷰어 권한 철통 통제 --%>
 <script>
   var MY_MEMBER_ID = ${myMemberId};
   var MY_ROLE = '${memberRole}';
 
+  //  알림창에 닉네임을 띄우기 위한 닉네임 사전(Dictionary) 생성
+  var MEMBER_DICT = {};
+  <c:forEach var="m" items="${tripDto.members}">
+    MEMBER_DICT['${m.memberId}'] = '${fn:escapeXml(m.nickname)}';
+  </c:forEach>
+
   if (MY_ROLE === 'VIEWER') {
       document.body.classList.add('role-viewer');
       
-      // 🚨 [1단계] 화면에 있는 모든 "추가/수정" 함수 껍데기로 만들기
+      //  화면에 있는 모든 "추가/수정" 함수 껍데기로 만들기
       window.openAddPlace = function() { alert('👀 읽기 전용 모드입니다.'); };
       window.saveMemo = function() { alert('👀 읽기 전용 모드입니다.'); };
       window.submitCheckItem = function() { alert('👀 읽기 전용 모드입니다.'); };
@@ -1182,22 +1189,18 @@ var TRIP_META = {
       window.removePlace = function() { alert('👀 읽기 전용 모드입니다.'); };
       window.toggleCheckOptimistic = function() { alert('👀 읽기 전용 모드입니다.'); };
 
-      // 🚨 [2단계] 마우스 클릭 이벤트 자체를 1순위로 가로채서 파괴하기 (핵심!!!)
+      //  마우스 클릭 이벤트 자체를 1순위로 가로채서 파괴하기
       window.addEventListener('click', function(e) {
-          
-          // 1. 카카오맵 팝업이나 지도 검색창의 버튼을 누르려고 할 때
           var btn = e.target.closest('button');
           if (btn && (btn.classList.contains('map-add-btn') || 
                       btn.classList.contains('btn-add-place') || 
                       btn.classList.contains('rp-add-btn'))) {
               e.preventDefault(); 
-              e.stopPropagation(); // 클릭 이벤트 압수!
+              e.stopPropagation(); 
               alert('👀 읽기 전용 모드에서는 장소를 추가할 수 없습니다.');
               return;
           }
           
-          // 2. 장소 배너(태그)나 검색 결과를 마우스로 클릭할 때
-          // (onclick 속성에 add 어쩌고 하는 함수가 적혀있으면 무조건 클릭을 죽여버립니다)
           var clickEl = e.target.closest('[onclick]');
           if (clickEl) {
               var fnStr = clickEl.getAttribute('onclick') || '';
@@ -1208,14 +1211,14 @@ var TRIP_META = {
                   fnStr.includes('addPlace')) {
                   
                   e.preventDefault(); 
-                  e.stopPropagation(); // 클릭 이벤트 압수!
+                  e.stopPropagation(); 
                   alert('👀 읽기 전용 모드에서는 추천 장소나 지도 장소를 추가할 수 없습니다.');
                   return;
               }
           }
-      }, true); // true 옵션: 브라우저에서 마우스 클릭이 발생하면 남들보다 무조건 제일 먼저 실행됨
+      }, true);
 
-      //  드래그 앤 드롭 및 메모장 타이핑 물리적 마비
+      // 드래그 앤 드롭 및 메모장 타이핑 물리적 마비
       window.addEventListener('DOMContentLoaded', function() {
           var memoArea = document.getElementById('memoText');
           if(memoArea) {
