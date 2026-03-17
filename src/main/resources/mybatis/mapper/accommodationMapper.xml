@@ -188,7 +188,8 @@
             r.AMOUNT as amount,
             r.ROOMINTRO as roomIntro,
             r.ROOM_COUNT as roomCount,
-            p.PLACE_NAME as placeName
+            p.PLACE_NAME as placeName,
+            p.PLACE_ID as placeId
         FROM ROOM r
         JOIN PLACE p ON r.PLACE_ID = p.PLACE_ID
         WHERE r.ROOM_ID = #{roomId}
@@ -305,12 +306,88 @@
           AND res.CHECK_OUT_DATE > SYSDATE
     </select>
     
-    <!-- 예약 번호로 roomid 조회 -->
-    <select id="getRoomIdbyReservationId" resultType="com.tripan.app.domain.dto.ReservationRequestDto">
+    <!-- 예약 번호로 예약 정보 조회 -->
+    <select id="getReservationInfobyId" resultType="com.tripan.app.domain.dto.ReservationRequestDto">
     	SELECT room_id,
-    		TO_CHAR(CHECK_IN_DATE, 'YYYY-MM-DD') as "checkIn",
+    		reservation_id as reservationId,
+    		member_id as memberId,
+    		status,
+     		TO_CHAR(CHECK_IN_DATE, 'YYYY-MM-DD') as "checkIn",
             TO_CHAR(CHECK_OUT_DATE, 'YYYY-MM-DD') as "checkOut"
     	FROM RESERVATION
     	WHERE reservation_id = #{reservationId}
     </select>
+    
+    <!-- 예약 번호로 리뷰 존재 여부 확인 -->
+    <select id="checkReviewExistsByReservationId" resultType="int">
+    	SELECT COUNT(*)
+    	FROM PLACE_REVIEW
+    	WHERE reservation_id = #{reservationId}
+    </select>
+    
+    
+    <!-- 리뷰 관련 -->
+    <insert id="insertReview" parameterType="com.tripan.app.domain.dto.ReviewDto">
+	    <selectKey keyProperty="reviewId" resultType="long" order="BEFORE">
+	        SELECT PLACE_REVIEW_SEQ.NEXTVAL FROM DUAL
+	    </selectKey>
+	    INSERT INTO PLACE_REVIEW (
+	        REVIEW_ID, RESERVATION_ID, MEMBER_ID, PLACE_ID, RATING, CONTENT, 
+	        START_DATE, END_DATE, CREATED_AT
+	    ) VALUES (
+	        #{reviewId}, #{reservationId}, #{memberId}, #{placeId}, #{rating}, #{content}, 
+	        TO_DATE(#{startDate}, 'YYYY-MM-DD'), TO_DATE(#{endDate}, 'YYYY-MM-DD'), SYSDATE
+	    )
+	</insert>
+	
+	<insert id="insertReviewImage">
+	    INSERT INTO REVIEW_IMG (REVIEW_IMG_ID, REVIEW_ID, IMAGE_URL)
+	    VALUES (REVIEW_IMG_SEQ.NEXTVAL, #{reviewId}, #{imageUrl})
+	</insert>
+	
+	<select id="getReviewStatsByPlaceId" resultType="com.tripan.app.domain.dto.ReviewStatsDto">
+	    SELECT 
+	        COUNT(REVIEW_ID) as totalCount,
+	        ROUND(NVL(AVG(RATING), 0), 1) as avgRating,
+	        COUNT(CASE WHEN RATING = 5 THEN 1 END) as count5,
+	        COUNT(CASE WHEN RATING = 4 THEN 1 END) as count4,
+	        COUNT(CASE WHEN RATING = 3 THEN 1 END) as count3,
+	        COUNT(CASE WHEN RATING = 2 THEN 1 END) as count2,
+	        COUNT(CASE WHEN RATING = 1 THEN 1 END) as count1
+	    FROM PLACE_REVIEW
+	    WHERE PLACE_ID = #{placeId}
+	</select>
+	
+	<resultMap id="ReviewListMap" type="com.tripan.app.domain.dto.ReviewDto">
+	    <id property="reviewId" column="REVIEW_ID" />
+	    <result property="placeId" column="PLACE_ID" />
+	    <result property="memberId" column="MEMBER_ID" />
+	    <result property="rating" column="RATING" />
+	    <result property="content" column="CONTENT" />
+	    <result property="createdAt" column="CREATED_AT" />
+	    <result property="memberName" column="MEMBER_NAME" />
+	    <result property="roomName" column="ROOM_NAME" />
+	    
+	    <collection property="imageUrls" ofType="string">
+	        <result column="IMAGE_URL" />
+	    </collection>
+	</resultMap>
+	
+	<select id="getReviewListByPlaceId" resultMap="ReviewListMap">
+	    SELECT 
+	        pr.REVIEW_ID,
+	        pr.PLACE_ID,
+	        pr.MEMBER_ID,
+	        pr.RATING,
+	        pr.CONTENT,
+	        TO_CHAR(pr.CREATED_AT, 'YYYY-MM-DD HH24:MI') as CREATED_AT,
+	        m2.NICKNAME as MEMBER_NAME,   r.ROOM_NAME as ROOM_NAME,
+	        ri.IMAGE_URL
+	    FROM PLACE_REVIEW pr
+	    LEFT JOIN MEMBER2 m2 ON pr.MEMBER_ID = m2.MEMBER_ID   LEFT JOIN RESERVATION res ON pr.RESERVATION_ID = res.RESERVATION_ID
+	    LEFT JOIN ROOM r ON res.ROOM_ID = r.ROOM_ID
+	    LEFT JOIN REVIEW_IMG ri ON pr.REVIEW_ID = ri.REVIEW_ID
+	    WHERE pr.PLACE_ID = #{placeId}
+	    ORDER BY pr.CREATED_AT DESC
+	</select>
 </mapper>

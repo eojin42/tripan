@@ -10,6 +10,8 @@ import com.tripan.app.domain.dto.AccommodationDetailDto;
 import com.tripan.app.domain.dto.AccommodationDto;
 import com.tripan.app.domain.dto.AdSearchConditionDto;
 import com.tripan.app.domain.dto.ReservationRequestDto;
+import com.tripan.app.domain.dto.ReviewDto;
+import com.tripan.app.domain.dto.ReviewStatsDto;
 import com.tripan.app.domain.dto.RoomDto;
 
 @Mapper
@@ -50,5 +52,15 @@ public interface AccommodationMapper {
     List<Map<String, Object>> selectFutureReservationsByPlace(Long placeId);
     
     // 예약 번호로 방 번호 조회
-    ReservationRequestDto getRoomIdbyReservationId(Long reservationId);
+    ReservationRequestDto getReservationInfobyId(Long reservationId);
+    
+    // 예약 번호로 리뷰 존재 여부 확인
+    int checkReviewExistsByReservationId(Long reservationId);
+    
+    // 리뷰 관련
+    void insertReview(ReviewDto dto); 
+    void insertReviewImage(@Param("reviewId") Long reviewId, @Param("imageUrl") String imageUrl); 
+    
+    ReviewStatsDto getReviewStatsByPlaceId(Long placeId);
+    List<ReviewDto> getReviewListByPlaceId(Long placeId);
 }

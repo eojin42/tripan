@@ -18,8 +18,9 @@ public class ReservationRequestDto {
     private Long amount;
     private String request;
     private String payMethod;
+    private String status;
     
-    private Long memberId; 
+    private Long memberId;
     
     private Long reservationId;
     
