@@ -7,20 +7,12 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Tripan Partner — 심사 현황</title>
   
-  <c:choose>
-      <c:when test="${entryPoint == 'MAIN'}">
-          <jsp:include page="/WEB-INF/views/layout/headerResources.jsp" />
-      </c:when>
-      <c:otherwise>
-          <jsp:include page="/WEB-INF/views/partner/layout/headerResources.jsp" />
-      </c:otherwise>
-  </c:choose>
+  <jsp:include page="/WEB-INF/views/layout/headerResources.jsp" />
 
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Sora:wght@600;700;800&family=Noto+Sans+KR:wght@400;500;700;900&display=swap" rel="stylesheet">
   
   <style>
-    /* 대기 화면 전용 추가 CSS */
     :root {
       --bg: #F0F2F8; --surface: #FFFFFF; --text: #0D1117; --muted: #8B92A5; --border: rgba(0,0,0,0.07);
       --primary: #3B6EF8; --primary-10: rgba(59,110,248,0.10);
@@ -71,14 +63,7 @@
 </head>
 <body>
 
-<c:choose>
-    <c:when test="${entryPoint == 'MAIN'}">
-        <jsp:include page="/WEB-INF/views/layout/header.jsp" />
-    </c:when>
-    <c:otherwise>
-        <jsp:include page="/WEB-INF/views/partner/layout/header.jsp" />
-    </c:otherwise>
-</c:choose>
+ <jsp:include page="/WEB-INF/views/layout/header.jsp" />
 
 <div class="waiting-body-wrap">
   <div class="waiting-container">
@@ -146,16 +131,7 @@
     </div>
   </div>
 </div>
-
-<c:choose>
-    <c:when test="${entryPoint == 'MAIN'}">
-        <jsp:include page="/WEB-INF/views/layout/footer.jsp" />
-        <jsp:include page="/WEB-INF/views/layout/footerResources.jsp" />
-    </c:when>
-    <c:otherwise>
-        <jsp:include page="/WEB-INF/views/partner/layout/footer.jsp" />
-    </c:otherwise>
-</c:choose>
-
+       <jsp:include page="/WEB-INF/views/layout/footer.jsp" />
+       <jsp:include page="/WEB-INF/views/layout/footerResources.jsp" />
 </body>
 </html>
