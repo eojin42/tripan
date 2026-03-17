@@ -4,6 +4,7 @@ import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
@@ -22,7 +23,9 @@ import org.springframework.web.bind.annotation.ResponseBody;
 import com.tripan.app.domain.dto.TripCreateDto;
 import com.tripan.app.domain.dto.TripDto;
 import com.tripan.app.service.NotificationService;
+import com.tripan.app.service.TripMemberService;
 import com.tripan.app.service.TripService;
+import com.tripan.app.trip.domain.entity.TripMember;
 import com.tripan.app.trip.repository.TripMemberRepository;
 import com.tripan.app.websocket.WorkspaceEventPublisher;
 
@@ -38,9 +41,10 @@ public class TripController {
     private final WorkspaceEventPublisher wsPublisher;
     private final NotificationService notificationService;
     private final TripMemberRepository tripMemberRepository;
+    private final TripMemberService tripMemberService;
     
     @Value("${tripan.api.kakao-map-api-key}")
-    private String kakaoMapKey; // yml에서 읽어옴 
+    private String kakaoMapKey;
 
     @GetMapping("/trip_create")
     public String create(Model model) {
@@ -52,7 +56,19 @@ public class TripController {
             @PathVariable("tripId") Long tripId,
             HttpSession session, Model model) {
 
-        if (getLoginMemberId(session) == null) return "redirect:/member/login";
+        Long loginMemberIdForWelcome = getLoginMemberId(session);
+        if (loginMemberIdForWelcome == null) return "redirect:/member/login";
+
+        // 멤버가 아니거나 강퇴/나간 상태면 즉시 튕겨내기
+        Optional<TripMember> myMemberInfo = tripMemberRepository.findByTripIdAndMemberId(tripId, loginMemberIdForWelcome);
+        
+        if (!myMemberInfo.isPresent() || 
+            "DECLINED".equals(myMemberInfo.get().getInvitationStatus()) || 
+            "KICKED".equals(myMemberInfo.get().getInvitationStatus())) { // 👈 KICKED 조건 추가!
+            
+            session.setAttribute("toastMsg", "접근 권한이 없거나 강퇴된 여행입니다.");
+            return "redirect:/trip/my_trips"; 
+        }
 
         TripDto tripDto = tripService.getTripDetails(tripId);
         long nights = ChronoUnit.DAYS.between(
@@ -68,22 +84,15 @@ public class TripController {
         String nick = getLoginNickname(session);
         model.addAttribute("loginNickname", nick != null ? nick : "");
 
-        // ★ 환영 모달: 현재 유저의 isFirstVisit 확인
-        Long loginMemberIdForWelcome = getLoginMemberId(session);
-        boolean showWelcome = false;
-        if (loginMemberIdForWelcome != null) {
-            showWelcome = tripMemberRepository
-                .findByTripIdAndMemberId(tripId, loginMemberIdForWelcome)
-                .map(m -> Integer.valueOf(1).equals(m.getIsFirstVisit()))
-                .orElse(false);
-        }
+        // 환영 모달: 현재 유저의 isFirstVisit 확인
+        boolean showWelcome = Integer.valueOf(1).equals(myMemberInfo.get().getIsFirstVisit());
         model.addAttribute("showWelcome",  showWelcome);
-        // OWNER(생성자) 여부 판별
-        boolean isOwner = tripMemberRepository
-            .findByTripIdAndMemberId(tripId, loginMemberIdForWelcome)
-            .map(m -> "OWNER".equals(m.getRole()))
-            .orElse(false);
-        model.addAttribute("isOwner", isOwner);
+        
+        // 🚨 2. 내 권한(OWNER, EDITOR, VIEWER)을 JSP로 넘기기
+        String myRole = myMemberInfo.get().getRole();
+        model.addAttribute("myMemberId", loginMemberIdForWelcome);
+        model.addAttribute("memberRole", myRole);
+        model.addAttribute("isOwner", "OWNER".equals(myRole));
 
         return "trip/workspace";
     }
@@ -147,7 +156,6 @@ public class TripController {
             Long tripId = tripService.joinTripViaLink(inviteCode, loginMemberId);
             String nick = getLoginNickname(session);
             
-            // 진짜 처음 들어온 사람일 때만 웹소켓과 알림
             wsPublisher.publish(tripId, "MEMBER_JOINED", loginMemberId,
                     nick != null ? nick : "새 멤버",
                     WorkspaceEventPublisher.payload("nickname", nick != null ? nick : "새 멤버"));
@@ -158,19 +166,18 @@ public class TripController {
             return "redirect:/trip/" + tripId + "/workspace";
 
         } catch (IllegalStateException e) {
-            // 방어 로직) 이미 합류한 멤버(방장 포함)가 또 눌렀을 때
             String msg = e.getMessage();
             if (msg != null && msg.startsWith("ALREADY_JOINED:")) {
                 String existingTripId = msg.split(":")[1];
-                // 알림 쏘는 로직을 다 무시하고, 조용히 기존 워크스페이스로만 넘겨버림
                 return "redirect:/trip/" + existingTripId + "/workspace"; 
             }
-            e.printStackTrace();
-            return "redirect:/?error=already_joined";
+            session.setAttribute("toastMsg", "🚨 " + msg);
+            return "redirect:/trip/my-trips";
             
         } catch (Exception e) {
             e.printStackTrace(); 
-            return "redirect:/?error=invalid_invite";
+            session.setAttribute("toastMsg", "유효하지 않은 초대 링크입니다.");
+            return "redirect:/trip/my-trips";
         }
     }
 
@@ -196,7 +203,19 @@ public class TripController {
         return ResponseEntity.ok(Map.of("success", true));
     }
 
-  
+    
+    @DeleteMapping("/{tripId}/member/{memberId}/decline")
+    @ResponseBody
+    public ResponseEntity<Map<String, Object>> declineInvite(
+            @PathVariable("tripId") Long tripId, @PathVariable Long memberId) {
+        try {
+            tripMemberService.leaveTrip(tripId, memberId); 
+            return ResponseEntity.ok(Map.of("success", true));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(Map.of("success", false, "message", e.getMessage()));
+        }
+    }
+
     @PostMapping("/{tripId}/scrap")
     @ResponseBody
     public ResponseEntity<Map<String, Object>> scrapTrip(
@@ -213,7 +232,6 @@ public class TripController {
         return tripService.searchTags(keyword);
     }
 
-    // 환영 모달 읽음 처리 (1회성)
     @PatchMapping("/{tripId}/welcome/done")
     @ResponseBody
     public ResponseEntity<Map<String, Object>> markWelcomeDone(
@@ -223,6 +241,20 @@ public class TripController {
             return ResponseEntity.status(401).body(Map.of("success", false));
         tripMemberRepository.markFirstVisitDone(tripId, loginId);
         return ResponseEntity.ok(Map.of("success", true));
+    }
+
+    // 🚨 여기서 방금 전 뺀 "없는 메서드" 대신, 서비스에 만든 확실한 메서드를 호출합니다!
+    @PatchMapping("/{tripId}/invite-code")
+    @ResponseBody
+    public ResponseEntity<Map<String, Object>> regenerateInviteCode(@PathVariable("tripId") Long tripId, HttpSession session) {
+        Long loginId = getLoginMemberId(session);
+        if (loginId == null) return ResponseEntity.status(401).body(Map.of("success", false));
+        try {
+            String newCode = tripService.regenerateInviteCode(tripId);
+            return ResponseEntity.ok(Map.of("success", true, "newCode", newCode));
+        } catch(Exception e) {
+            return ResponseEntity.badRequest().body(Map.of("success", false, "message", e.getMessage()));
+        }
     }
 
     private Long getLoginMemberId(HttpSession session) {

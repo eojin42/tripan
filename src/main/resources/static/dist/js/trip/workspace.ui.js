@@ -230,90 +230,94 @@ function showToast(msg) {
 }
 
 /* ══════════════════════════════
-   초대 링크 복사
+   초대 링크 복사 및 초대코드 재발급 
 ══════════════════════════════ */
 function copyInviteLink() {
-  var el = document.getElementById('inviteLinkText');
-  if (!el) return;
-  var link = el.innerText || el.textContent || '';
-  if (navigator.clipboard) {
-    navigator.clipboard.writeText(link)
-      .then(function () { showToast('🔗 초대 링크가 복사됐어요!'); })
-      .catch(function () { _fallbackCopy(link); });
-  } else {
-    _fallbackCopy(link);
-  }
-}
-function _fallbackCopy(text) {
-  var ta = document.createElement('textarea');
-  ta.value = text;
-  document.body.appendChild(ta);
-  ta.select();
-  document.execCommand('copy');
-  document.body.removeChild(ta);
-  showToast('🔗 초대 링크가 복사됐어요!');
+    var input = document.getElementById('inviteLinkInput');
+    if(input) {
+        input.select();
+        document.execCommand('copy');
+        if (typeof wsToast === 'function') wsToast('초대 링크가 복사되었습니다 🔗');
+        else alert('초대 링크가 복사되었습니다.');
+    }
 }
 
-/* ══════════════════════════════
-   방장 권환 및 강퇴 등
-══════════════════════════════ */
-//  권한 변경 
+
+function refreshInviteCode() {
+  if(!confirm("초대 코드를 재발급하시겠습니까?")) return;
+  // CTX_PATH가 없으면 빈문자열 처리
+  var url = (typeof CTX_PATH !== 'undefined' ? CTX_PATH : '') + '/trip/' + TRIP_ID + '/invite-code';
+  
+  fetch(url, { method: 'PATCH' })
+  .then(function(res) { 
+      if(res.status === 404) throw new Error("404 에러: 서버 경로를 확인하세요.");
+      return res.json(); 
+  })
+  .then(function(data) {
+      if(data.success) {
+          document.getElementById('inviteLinkInput').value = 
+              window.location.origin + (CTX_PATH || '') + '/trip/invite/' + data.newCode;
+          wsToast('새로운 초대 코드가 발급되었습니다 🔄');
+      } else alert(data.message);
+  }).catch(function(e){ alert(e.message); });
+}
+
+
+/* ══════════════════════════════════════════════
+   동행자 관리 모달 관련 함수 (권한, 강퇴, 나가기)
+══════════════════════════════════════════════ */
+
+// 멤버 권한 변경
 function onChangeMemberRole(selectEl, memberId) {
-    const newRole = selectEl.value;
-    
-    fetch(`${CTX_PATH}/api/trip/${TRIP_ID}/members/${memberId}/role`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ role: newRole })
-    })
-    .then(res => res.json())
-    .then(data => {
-        if (data.success) {
-            if (typeof showToast === 'function') showToast(data.message);
-            // 필요 시 멤버 목록을 다시 불러오는 함수 호출
-        } else {
-            alert('권한 변경 실패: ' + data.message);
-        }
-    })
-    .catch(err => alert('오류가 발생했습니다.'));
+  var newRole = selectEl.value;
+  fetch(CTX_PATH + '/api/trip/' + TRIP_ID + '/members/' + memberId + '/role', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ role: newRole })
+  })
+  .then(function(res) { return res.json(); })
+  .then(function(data) {
+      if (data.success) {
+          if (typeof showToast === 'function') showToast('권한이 변경되었습니다.');
+      } else {
+          alert('권한 변경 실패: ' + data.message);
+      }
+  })
+  .catch(function() { alert('오류가 발생했습니다.'); });
 }
 
-//  강퇴 
+// 멤버 강퇴
 function onKickMember(memberId) {
-    if (!confirm('이 멤버를 정말 강퇴하시겠습니까?')) return;
-
-    fetch(`${CTX_PATH}/api/trip/${TRIP_ID}/members/${memberId}/kick`, {
-        method: 'DELETE'
-    })
-    .then(res => res.json())
-    .then(data => {
-        if (data.success) {
-            alert(data.message);
-            location.reload(); // 가장 깔끔하게 반영하려면 새로고침
-        } else {
-            alert('강퇴 실패: ' + data.message);
-        }
-    })
-    .catch(err => alert('오류가 발생했습니다.'));
+  // 방장에게 경고창 띄우기
+  if (!confirm('정말 이 멤버를 강퇴하시겠습니까?\n🚨 강퇴된 멤버는 이 여행에 다시는 초대할 수 없습니다!')) return;
+  
+  fetch(CTX_PATH + '/api/trip/' + TRIP_ID + '/members/' + memberId + '/kick', {
+      method: 'DELETE'
+  })
+  .then(function(res) { return res.json(); })
+  .then(function(data) {
+      if (data.success) {
+          alert(data.message);
+          location.reload(); 
+      } else alert('강퇴 실패: ' + data.message);
+  })
+  .catch(function() { alert('오류가 발생했습니다.'); });
 }
 
-//  스스로 나가기
+// 스스로 방 나가기
 function onLeaveTrip() {
-    if (!confirm('정말 이 여행에서 나가시겠습니까? 일정과 가계부 접근이 차단됩니다.')) return;
-
-    fetch(`${CTX_PATH}/api/trip/${TRIP_ID}/members/leave`, {
-        method: 'DELETE'
-    })
-    .then(res => res.json())
-    .then(data => {
-        if (data.success) {
-            alert(data.message);
-            window.location.href = CTX_PATH + '/trip/my-trips'; // 내 여행 목록으로 튕겨내기
-        } else {
-            alert('나가기 실패: ' + data.message);
-        }
-    })
-    .catch(err => alert('오류가 발생했습니다.'));
+  if (!confirm('정말 이 여행에서 나가시겠습니까?')) return;
+  fetch(CTX_PATH + '/api/trip/' + TRIP_ID + '/members/leave', {
+      method: 'DELETE'
+  })
+  .then(function(res) { return res.json(); })
+  .then(function(data) {
+      if (data.success) {
+          alert(data.message);
+          window.location.href = CTX_PATH + '/trip/my_trips'; 
+      } else alert('나가기 실패: ' + data.message);
+  })
+  .catch(function() { alert('오류가 발생했습니다.'); });
 }
 
 /* ══════════════════════════════

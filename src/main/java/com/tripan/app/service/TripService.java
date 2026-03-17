@@ -38,4 +38,7 @@ public interface TripService {
 
     // 받은 초대를 수락하여 정식 동행자로 상태 변경
     void acceptTripInvitation(Long tripId, Long memberId);
+    
+    // 초대 코드 재발급
+    String regenerateInviteCode(Long tripId);
 }

@@ -56,6 +56,7 @@ public class TripServiceImpl implements TripService {
     private final TripMapper tripMapper;
     private final TripPlaceMapper tripPlaceMapper;
     private final ExpenseMapper expenseMapper;
+    
 
     /** application.properties: tripan.upload.dir=/uploads/thumbnails */
     @Value("${tripan.upload.dir:${user.home}/tripan-uploads/thumbnails}")
@@ -305,6 +306,12 @@ public class TripServiceImpl implements TripService {
         Trip trip = tripRepository.findByInviteCode(inviteCode)
             .orElseThrow(() -> new IllegalArgumentException("유효하지 않은 링크"));
         
+        // 강퇴자 재입장 원천 차단 로직
+        Optional<TripMember> existMember = tripMemberRepository.findByTripIdAndMemberId(trip.getTripId(), memberId);
+        if (existMember.isPresent() && "DECLINED".equals(existMember.get().getInvitationStatus())) {
+            throw new IllegalStateException("방장에 의해 강퇴되었거나 거절된 여행에는 다시 참여할 수 없습니다.");
+        }
+        
         // 이미 방장이거나 합류한 멤버인지 선제 검사
         Optional<TripMember> existingMember = tripMemberRepository.findByTripIdAndMemberId(trip.getTripId(), memberId);
         if (existingMember.isPresent()) {
@@ -337,6 +344,16 @@ public class TripServiceImpl implements TripService {
         pm.setRole("EDITOR"); pm.setInvitationStatus("PENDING");
         tripMemberRepository.save(pm);
         saveNotification(tripId, inviteeId, null, "여행에 초대됐어요! 수락해주세요 ✉️", "INVITE");
+    }
+    
+    @Override
+    @Transactional
+    public String regenerateInviteCode(Long tripId) {
+        Trip trip = tripRepository.findById(tripId)
+                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 여행입니다."));
+        String newCode = java.util.UUID.randomUUID().toString().substring(0, 8);
+        trip.setInviteCode(newCode); // JPA Dirty Checking으로 자동 UPDATE
+        return newCode;
     }
 
     @Override
