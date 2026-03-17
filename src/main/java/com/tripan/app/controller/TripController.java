@@ -172,7 +172,7 @@ public class TripController {
                 return "redirect:/trip/" + existingTripId + "/workspace"; 
             }
             session.setAttribute("toastMsg", "🚨 " + msg);
-            return "redirect:/trip/my-trips";
+            return "redirect:/trip/my_trips";
             
         } catch (Exception e) {
             e.printStackTrace(); 

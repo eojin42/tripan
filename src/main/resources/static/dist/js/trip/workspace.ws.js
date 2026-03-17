@@ -184,29 +184,47 @@ function wsHandle(msg) {
       wsToast('🎉 ' + (p.nickname || '새 멤버') + '님이 여행에 참여했어요!');
       break;
 	
+  	  // 누군가 강퇴당했을 때
 	  case 'MEMBER_KICKED':
-        if (String(msg.targetId) === String(MY_MEMBER_ID)) {
+        var kId = (msg.payload && msg.payload.targetId) ? msg.payload.targetId : msg.targetId;
+        
+        if (String(kId) === String(MY_MEMBER_ID)) {
           alert('🚨 방장에 의해 여행에서 강퇴되었습니다.\n이 여행방에는 다시 입장하실 수 없습니다.');
-          window.location.replace(CTX_PATH + '/trip/my_trips');
+          window.location.replace(CTX_PATH + '/trip/my_trips'); 
         } else {
-          if (typeof wsToast === 'function') wsToast('멤버가 여행에서 내보내졌습니다 🚪');
+          //  닉네임 가져오기
+          var kickedNick = (typeof MEMBER_DICT !== 'undefined' && MEMBER_DICT[kId]) ? MEMBER_DICT[kId] : '멤버';
+          
+          if (typeof wsToast === 'function') wsToast(kickedNick + ' 님이 여행에서 내보내졌습니다 🚪');
           setTimeout(function() { window.location.reload(); }, 1200);
         }
         break;
+			
+	   // 동행자가 스스로 나갔을 때
+	   case 'MEMBER_LEFT':
+         var lId = (msg.payload && msg.payload.targetId) ? msg.payload.targetId : msg.targetId;
+         if (String(lId) !== String(MY_MEMBER_ID)) {
+           //  닉네임 가져오기 (없으면 '멤버'로 대체)
+           var leftNick = (typeof MEMBER_DICT !== 'undefined' && MEMBER_DICT[lId]) ? MEMBER_DICT[lId] : '멤버';
+           
+           if (typeof wsToast === 'function') wsToast(leftNick + ' 님이 여행에서 나갔습니다 🏃‍♂️');
+           setTimeout(function() { window.location.reload(); }, 1200);
+         }
+         break;
 
-      case 'ROLE_CHANGED':
-        // 내 권한이 바뀐 당사자일 때
-        if (Number(msg.targetId) === Number(MY_MEMBER_ID)) {
-          var rName = (msg.payload && msg.payload.newRole === 'VIEWER') ? '👀 읽기 전용' : '✏️ 편집자';
-          alert('🔄 방장에 의해 [' + rName + '] 권한으로 변경되었습니다.\n화면을 새로고침합니다.');
-          window.location.reload();
-        } 
-        // 다른 멤버들 화면
-        else {
-          if (typeof wsToast === 'function') wsToast('멤버 권한이 변경되었습니다 🔄');
-          setTimeout(function() { window.location.reload(); }, 1200);
-        }
-        break;
+		 case 'ROLE_CHANGED':
+	       if (String(msg.targetId) === String(MY_MEMBER_ID)) {
+	         var rName = (msg.payload && msg.payload.newRole === 'VIEWER') ? '👀 읽기 전용' : '✏️ 편집자';
+	         alert('🔄 방장에 의해 [' + rName + '] 권한으로 변경되었습니다.\n화면을 새로고침합니다.');
+	         window.location.reload();
+	       } else {
+	         //  닉네임 가져오기
+	         var roleNick = (typeof MEMBER_DICT !== 'undefined' && MEMBER_DICT[msg.targetId]) ? MEMBER_DICT[msg.targetId] : '멤버';
+	         
+	         if (typeof wsToast === 'function') wsToast(roleNick + ' 님의 권한이 변경되었습니다 🔄');
+	         setTimeout(function() { window.location.reload(); }, 1200);
+	       }
+	       break;
   }
 }
 
