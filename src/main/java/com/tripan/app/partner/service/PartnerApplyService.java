@@ -5,5 +5,6 @@ import com.tripan.app.partner.domain.dto.PartnerApplyDto;
 public interface PartnerApplyService {
     
     void applyPartner(PartnerApplyDto dto) throws Exception;
+    String getPartnerStatus(Long memberId);
     
 }
