@@ -125,3 +125,23 @@ document.addEventListener('DOMContentLoaded', function() {
     renderDaySummary();
   }
 });
+
+/* ══════════════════════════════
+   일정 변경 시 자동 업데이트
+   schedule.js의 addPlaceToDay / removePlace / DnD 완료 후
+   커스텀 이벤트 'tripan:schedule-changed'를 dispatch하면 자동 재렌더
+══════════════════════════════ */
+var _summaryUpdateTimer = null;
+
+document.addEventListener('tripan:schedule-changed', function() {
+  var summaryPane = document.getElementById('rpPane-summary');
+  if (!summaryPane || !summaryPane.classList.contains('active')) return;
+  // 디바운스 100ms (한 번에 여러 이벤트가 오는 경우 합치기)
+  clearTimeout(_summaryUpdateTimer);
+  _summaryUpdateTimer = setTimeout(renderDaySummary, 120);
+});
+
+// 외부에서 호출 가능한 유틸 함수
+window.notifySummaryChanged = function() {
+  document.dispatchEvent(new CustomEvent('tripan:schedule-changed'));
+};

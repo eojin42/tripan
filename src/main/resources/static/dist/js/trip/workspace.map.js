@@ -39,10 +39,10 @@ var _markers    = [];           // 순서용 배열 (fitBounds 등)
 var _markerMap  = {};           // itemId → {marker, iw, dayNum, order, name, lat, lng}
 var _infowindow = null;
 
-// ★ DAY별 색상 — 8가지 순환 (명확히 구분되는 컬러)
+// DAY별 색상 — 8가지 순환 (명확히 구분되는 컬러)
 var DAY_COLORS = [
-  '#FF6B6B', '#4ECDC4', '#45B7D1', '#FFA07A',
-  '#98D8C8', '#F7DC6F', '#BB8FCE', '#82E0AA'
+  '#FF6B6B', '#82E0AA', '#45B7D1', '#FFA07A',
+  '#98D8C8', '#F7DC6F', '#BB8FCE', '#4ECDC4' 
 ];
 
 
@@ -134,7 +134,6 @@ function addMapMarker(lat, lng, name, dayNum, order, itemId, category, address) 
   var color = DAY_COLORS[(dayNum - 1) % DAY_COLORS.length];
   var catInfo = (typeof window.getTripanCategory === 'function') ? window.getTripanCategory(category) : { icon: '📍', label: category || '장소' };
 
-  // ★ 같은 좌표에 이미 마커가 있으면 살짝 offset 적용 (겹침 방지)
   var finalLat = lat, finalLng = lng;
   var OFFSET_STEP = 0.00008; // 약 8m
   var sameCoordCount = _markers.filter(function(m) {
@@ -214,10 +213,18 @@ function _escIw(str) {
 }
 
 window.mapFlyTo = function(lat, lng) {
-  if (_map) { 
-      var latlng = new kakao.maps.LatLng(lat, lng);
-      _map.panTo(latlng); 
-      _map.setLevel(4); 
+  if (!_map) return;
+  var latlng   = new kakao.maps.LatLng(lat, lng);
+  var curLevel = _map.getLevel();
+
+  if (curLevel <= 4) {
+    // 이미 충분히 가까우면 부드럽게 이동만
+    _map.panTo(latlng);
+  } else {
+    // 멀리서 볼 때: 먼저 setCenter+setLevel로 즉시 이동 후 panTo 효과
+    // panTo는 현재 뷰포트 기반이라 멀리 있으면 이상하게 튀므로 setCenter 사용
+    _map.setCenter(latlng);
+    _map.setLevel(4, { animate: { duration: 350 } });
   }
 };
 
@@ -239,7 +246,6 @@ function mapRemoveMarker(itemId) {
   _reorderMarkersForDay(entry.marker._dayNum);
 }
 
-/** ★ DOM 구조를 싹 긁어와서 마커 번호를 완벽하게 강제 재정렬! */
 function _reorderMarkersForDay(dayNum) {
   var list = document.getElementById('places-' + dayNum);
   if (!list) return;
@@ -425,14 +431,12 @@ function selectMapSearchResult(lat, lng, name, address, categoryName) {
   var marker = new kakao.maps.Marker({ position: latlng, image: markerImg, map: _map });
   _tempMarkers.push(marker);
 
-  // 🟢 전역 변수에 데이터 안전하게 저장!
   window._currentMapPlace = { name: name, addr: address, lat: lat, lng: lng, cat: categoryName };
 
   var iwContent =
     '<div style="padding:14px;width:230px;font-family:Pretendard,sans-serif;">' +
     '<div style="font-weight:800;font-size:14px;color:#2d3748;margin-bottom:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + name + '</div>' +
     '<div style="font-size:12px;color:#718096;margin-bottom:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + address + '</div>' +
-    // 🟢 프롬프트 대신 고급스러운 모달 띄우는 함수 호출!
     '<button onclick="triggerMapAddModal()" style="width:100%;padding:9px 0;background:linear-gradient(135deg,#89CFF0,#B8A9D9);color:#fff;border:none;border-radius:8px;font-weight:700;font-size:13px;cursor:pointer;letter-spacing:0.3px;">+ 일정에 추가</button>' +
     '</div>';
 
@@ -444,7 +448,6 @@ function selectMapSearchResult(lat, lng, name, address, categoryName) {
   if (rb) rb.style.display = 'none';
 }
 
-// 🟢 [신규] 싼 티 나는 프롬프트를 날려버린 고급 커스텀 모달 생성기
 window.triggerMapAddModal = function() {
     var p = window._currentMapPlace;
     if (!p) return;

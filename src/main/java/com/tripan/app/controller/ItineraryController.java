@@ -143,6 +143,47 @@ public class ItineraryController {
         }
     }
 
+    // ── ★ 리스트 전체 순서 일괄 저장 + 단 1회 broadcast ──────
+    // body: { dayNumber: int, items: [{itemId, visitOrder}, ...] }
+    @PatchMapping("/trip/{tripId}/day/{dayNumber}/reorder")
+    public ResponseEntity<Map<String, Object>> reorderDay(
+            @PathVariable("tripId")    Long tripId,
+            @PathVariable("dayNumber") int  dayNumber,
+            @RequestBody Map<String, Object> body,
+            @AuthenticationPrincipal CustomUserDetails userDetails) {
+        if (userDetails == null)
+            return ResponseEntity.status(401)
+                .body(Map.of("success", false, "message", "로그인이 필요합니다."));
+        try {
+            @SuppressWarnings("unchecked")
+            List<Map<String, Object>> rawItems = (List<Map<String, Object>>) body.get("items");
+            if (rawItems == null || rawItems.isEmpty())
+                return ResponseEntity.ok(Map.of("success", true));
+
+            List<ItineraryService.ItemOrderDto> orderList = rawItems.stream().map(m -> {
+                ItineraryService.ItemOrderDto dto = new ItineraryService.ItemOrderDto();
+                dto.setItemId(Long.parseLong(m.get("itemId").toString()));
+                dto.setVisitOrder(m.get("visitOrder").toString());
+                return dto;
+            }).toList();
+
+            itineraryService.updateVisitOrder(tripId, orderList);
+
+            // WS: 단 1번 broadcast - 전체 순서 목록 포함
+            wsPublisher.publish(tripId, "LIST_REORDERED", null,
+                    userDetails.getMember().getNickname(),
+                    WorkspaceEventPublisher.payload(
+                        "dayNumber", dayNumber,
+                        "items",     rawItems));
+
+            return ResponseEntity.ok(Map.of("success", true));
+        } catch (Exception e) {
+            log.error("[Itinerary] reorder 오류: {}", e.getMessage());
+            return ResponseEntity.internalServerError()
+                    .body(Map.of("success", false, "message", e.getMessage()));
+        }
+    }
+
     // ── 장소 삭제 + broadcast ─────────────────────────────
     @DeleteMapping("/{itemId}")
     public ResponseEntity<Map<String, Object>> deleteItem(

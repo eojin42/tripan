@@ -57,6 +57,62 @@ function wsConnect(tripId, ctxPath, myNick) {
    2. 메시지 핸들러
    내가 보낸 건 낙관적 업데이트로 이미 처리됨 → 무시
 ══════════════════════════════════════════════ */
+// ── ORDER_UPDATED 배치 큐 ────────────────────────────────
+// 짧은 시간(100ms) 내 동일 day의 메시지를 모아서 DOM을 한 번에 재정렬
+// 이렇게 하면 N개 메시지가 연속으로 와도 중간 상태 없이 최종 순서만 반영됨
+var _wsOrderQueue   = {}; // { dayNumber: { itemId: visitOrder } }
+var _wsOrderTimers  = {}; // { dayNumber: timerHandle }
+var _wsOrderSender  = {}; // { dayNumber: nickname }
+
+function _wsEnqueueOrder(itemId, dayNumber, visitOrder, senderNick) {
+  var day = String(dayNumber);
+  if (!_wsOrderQueue[day]) _wsOrderQueue[day] = {};
+  _wsOrderQueue[day][String(itemId)] = visitOrder;
+  _wsOrderSender[day] = senderNick;
+
+  clearTimeout(_wsOrderTimers[day]);
+  _wsOrderTimers[day] = setTimeout(function() {
+    _wsFlushOrders(day);
+  }, 80); // 80ms 내 같은 day 메시지 모두 수집 후 처리
+}
+
+function _wsFlushOrders(day) {
+  var orderMap = _wsOrderQueue[day];
+  var nick     = _wsOrderSender[day];
+  _wsOrderQueue[day]  = {};
+  _wsOrderTimers[day] = null;
+
+  if (!orderMap || !Object.keys(orderMap).length) return;
+
+  var list = document.getElementById('places-' + day);
+  if (!list) return;
+
+  // 현재 DOM 순서를 기반으로 카드를 가져오되, visitOrder 업데이트
+  var cards = Array.from(list.querySelectorAll('.place-card'));
+
+  // orderMap에 있는 카드의 visitOrder 업데이트
+  cards.forEach(function(card) {
+    var newOrder = orderMap[String(card.dataset.id)];
+    if (newOrder !== undefined) {
+      card.dataset.order = newOrder;
+      // day 변경도 반영
+      card.dataset.day = day;
+    }
+  });
+
+  // visitOrder 숫자값 기준으로 정렬해서 DOM 재배치
+  cards.sort(function(a, b) {
+    return parseInt(a.dataset.order || '999999', 10) - parseInt(b.dataset.order || '999999', 10);
+  });
+  cards.forEach(function(card) { list.appendChild(card); });
+
+  if (typeof refreshPlaceNums === 'function') refreshPlaceNums(list);
+  if (typeof notifySummaryChanged === 'function') setTimeout(notifySummaryChanged, 100);
+  if (typeof _reorderMarkersForDay === 'function') _reorderMarkersForDay(parseInt(day));
+  wsToast((nick || '상대방') + '님이 일정 순서를 변경했어요 🔀');
+}
+// ─────────────────────────────────────────────────────────
+
 function wsHandle(msg) {
   if (!msg || !msg.type) return;
   if (msg.senderNickname && msg.senderNickname === _myNickname) return;
@@ -65,21 +121,17 @@ function wsHandle(msg) {
 
   switch (msg.type) {
 
-	case 'ORDER_UPDATED':
-	      var _targetCard = document.querySelector('.place-card[data-id="' + msg.targetId + '"]');
-	      var _oldDayNum = _targetCard ? parseInt(_targetCard.dataset.day) : null;
+    case 'ORDER_UPDATED':
+      // 짧은 시간 내 같은 day의 ORDER_UPDATED를 모아서 한 번에 정렬 (배치 처리)
+      _wsEnqueueOrder(msg.targetId, p.dayNumber, p.visitOrder, msg.senderNickname);
+      break;
 
-	      wsMoveCard(msg.targetId, p.dayNumber, p.visitOrder);
-	      
-	      if (typeof _reorderMarkersForDay === 'function') {
-	          _reorderMarkersForDay(p.dayNumber);
-	          
-	          if (_oldDayNum && _oldDayNum !== parseInt(p.dayNumber)) {
-	              _reorderMarkersForDay(_oldDayNum);
-	          }
-	      }
-	      wsToast(msg.senderNickname + '님이 일정 순서를 변경했어요 🔀');
-	      break;
+    case 'LIST_REORDERED':
+      // ★ 핵심: 개별 N번 wsMoveCard 대신 전체 순서를 한 번에 DOM 재정렬
+      // p.items = [{itemId, visitOrder}, ...], p.dayNumber
+      wsReorderList(p.dayNumber, p.items || []);
+      // 조용히 처리 (순서 변경 토스트는 발송자만 봄)
+      break;
 
     case 'PLACE_ADDED':
       //  카테고리 파라미터(p.categoryName) 추가 전달
@@ -199,6 +251,8 @@ function wsAddPlace(dayNumber, itemId, placeName, address, lat, lng, categoryNam
   card.style.animation    = 'fadeIn .3s ease';
   setTimeout(function () { card.style.outline = ''; card.style.borderRadius = ''; }, 1500);
 
+  if (typeof notifySummaryChanged === 'function') setTimeout(notifySummaryChanged, 200);
+
   if (typeof mapAddMarkerExternal === 'function' && lat && lng) {
     var catForMap = categoryName || '장소';
     mapAddMarkerExternal(lat, lng, placeName, dayNumber, count, itemId, catForMap, address);
@@ -216,10 +270,12 @@ function wsMoveCard(itemId, dayNumber, visitOrder) {
   var newList = document.getElementById('places-' + dayNumber);
   if (!card || !newList) return;
 
-  var siblings = Array.from(newList.querySelectorAll('.place-card'));
-  var before   = null;
+  // ✅ 숫자 비교 (문자열 'p','U' 등 LexoRank값 vs '000001' 혼용 버그 방지)
+  var targetNum = parseInt(visitOrder, 10) || 0;
+  var siblings  = Array.from(newList.querySelectorAll('.place-card'));
+  var before    = null;
   for (var i = 0; i < siblings.length; i++) {
-    if ((siblings[i].dataset.order || '999999') > visitOrder) { before = siblings[i]; break; }
+    if (parseInt(siblings[i].dataset.order || '999999', 10) > targetNum) { before = siblings[i]; break; }
   }
 
   card.dataset.day   = dayNumber;
@@ -228,6 +284,7 @@ function wsMoveCard(itemId, dayNumber, visitOrder) {
   else        newList.appendChild(card);
 
   if (typeof refreshPlaceNums === 'function') refreshPlaceNums(newList);
+  if (typeof notifySummaryChanged === 'function') setTimeout(notifySummaryChanged, 100);
 
   card.style.outline      = '2px solid #89CFF0';
   card.style.borderRadius = '14px';
@@ -244,7 +301,45 @@ function wsRemoveCard(itemId) {
   setTimeout(function () {
     card.remove();
     if (list && typeof refreshPlaceNums === 'function') refreshPlaceNums(list);
+    if (typeof notifySummaryChanged === 'function') notifySummaryChanged();
   }, 260);
+}
+
+/**
+ * wsReorderList — LIST_REORDERED 수신 시 해당 DAY 전체를 items 순서대로 DOM 재정렬
+ * items 순서 = 최종 확정 순서 → 중간 상태 없이 한 번에 적용
+ */
+function wsReorderList(dayNumber, items) {
+  var list = document.getElementById('places-' + dayNumber);
+  if (!list || !items || !items.length) return;
+
+  // ✅ 전체 DOM에서 카드 찾기 (다른 DAY에서 이동해 온 카드도 포함)
+  var cardMap = {};
+  document.querySelectorAll('.place-card').forEach(function(card) {
+    if (card.dataset.id) cardMap[card.dataset.id] = card;
+  });
+
+  // items 순서대로 list에 재삽입 (없으면 다른 DAY에서 이동)
+  items.forEach(function(item) {
+    var card = cardMap[String(item.itemId)];
+    if (!card) return;
+    card.dataset.order = item.visitOrder;
+    card.dataset.day   = String(dayNumber);
+    list.appendChild(card);
+  });
+
+  // items에 포함되지 않은 카드가 이 list에 남아있으면 제거 (다른 day로 이동된 것)
+  Array.from(list.querySelectorAll('.place-card')).forEach(function(card) {
+    var inItems = items.some(function(it) { return String(it.itemId) === card.dataset.id; });
+    if (!inItems) {
+      // 이 카드는 다른 day로 이동됐으므로 list에서 꺼냄 (해당 day LIST_REORDERED가 처리)
+      list.removeChild(card);
+    }
+  });
+
+  if (typeof refreshPlaceNums === 'function') refreshPlaceNums(list);
+  if (typeof notifySummaryChanged === 'function') setTimeout(notifySummaryChanged, 100);
+  if (typeof _reorderMarkersForDay === 'function') _reorderMarkersForDay(dayNumber);
 }
 
 /**
