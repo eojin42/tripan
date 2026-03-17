@@ -29,8 +29,8 @@ public class PartnerApplyController {
     @GetMapping("/apply")
     public String applyForm(
             @AuthenticationPrincipal CustomUserDetails userDetails, 
-            @RequestParam(value = "mode", required = false) String mode, 
-            @RequestParam(value = "source", required = false) String source, 
+            @RequestParam(value = "mode", required = false) String mode,
+            @RequestParam(value = "source", required = false) String source,
             RedirectAttributes rttr,
             Model model) { 
 
@@ -40,8 +40,7 @@ public class PartnerApplyController {
         }
 
         if (userDetails.getAuthorities().contains(new SimpleGrantedAuthority("ROLE_PARTNER"))) {
-            rttr.addFlashAttribute("msg", "이미 파트너로 등록되어 있습니다. 관리자 페이지로 이동합니다.");
-            return "redirect:/partner/admin/dashboard";
+            return "redirect:/partner/main"; 
         }
 
         Long memberId = userDetails.getMember().getMemberId();
@@ -53,17 +52,28 @@ public class PartnerApplyController {
 
         String entryPoint = "admin".equals(source) ? "ADMIN" : "MAIN";
 
-        if ("PENDING".equals(status)) {
+        if ("PENDING".equals(status) || "REJECTED".equals(status)) {
             model.addAttribute("entryPoint", entryPoint); 
             model.addAttribute("partnerStatus", status);
             return "partner/apply/waiting"; 
-        } else if ("REJECTED".equals(status)) {
-            model.addAttribute("entryPoint", entryPoint); 
-            model.addAttribute("partnerStatus", status);
-            return "partner/apply/waiting";
         }
 
         return "partner/apply/apply";
+    }
+
+    @GetMapping("/login")
+    public String partnerLoginForm(
+            @AuthenticationPrincipal CustomUserDetails userDetails) {
+        
+        if (userDetails != null) {
+            // 🌟 이미 로그인된 파트너인 경우: /partner/main 으로 이동 (404 해결!)
+            if (userDetails.getAuthorities().contains(new SimpleGrantedAuthority("ROLE_PARTNER"))) {
+                return "redirect:/partner/main"; 
+            } else {
+                return "redirect:/partner/apply"; 
+            }
+        }
+        return "partner/member/login"; 
     }
 
     @PostMapping("/apply")
@@ -77,19 +87,12 @@ public class PartnerApplyController {
             return "redirect:/login";
         }
 
-        log.info("입점 신청 접수: 스테이명 = {}, 첨부파일 수 = {}", 
-                 applyDto.getPartnerName(), 
-                 (applyDto.getBizLicenseFiles() != null ? applyDto.getBizLicenseFiles().size() : 0));
-
         try {
-            Long currentMemberId = userDetails.getMember().getMemberId();
-            applyDto.setMemberId(currentMemberId); 
-
+            applyDto.setMemberId(userDetails.getMember().getMemberId()); 
             partnerApplyService.applyPartner(applyDto);
-            
         } catch (Exception e) {
             log.error("입점 신청 중 에러 발생", e);
-            rttr.addFlashAttribute("errorMsg", "신청 중 문제가 발생했습니다. 다시 시도해주세요.");
+            rttr.addFlashAttribute("errorMsg", "신청 중 문제가 발생했습니다.");
             return "redirect:/partner/apply"; 
         }
 
@@ -100,23 +103,4 @@ public class PartnerApplyController {
     public String completePage() {
         return "partner/apply/apply_complete"; 
     }
-    
-    @GetMapping("/login")
-    public String partnerLoginForm(
-            @AuthenticationPrincipal CustomUserDetails userDetails, 
-            RedirectAttributes rttr) {
-        
-        if (userDetails != null) {
-            if (userDetails.getAuthorities().contains(new SimpleGrantedAuthority("ROLE_PARTNER"))) {
-                return "redirect:/partner/admin/dashboard"; 
-            } else {
-                return "redirect:/partner/apply"; 
-            }
-        }
-        
-        return "partner/member/login"; 
-    }
-
-    
-    
 }
