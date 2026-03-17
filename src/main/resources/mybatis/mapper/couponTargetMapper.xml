@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.tripan.app.admin.mapper.CouponTargetMapper">
+
+    <insert id="insertCouponTarget" parameterType="com.tripan.app.admin.domain.dto.CouponTargetDto">
+        INSERT INTO coupon_target (
+            target_id, coupon_id, target_type, target_value, is_exclude
+        ) VALUES (
+            coupon_target_seq.NEXTVAL,
+            #{couponId},
+            #{targetType},
+            #{targetValue},
+            #{isExclude}
+        )
+    </insert>
+
+    <select id="selectCouponTargets" parameterType="long"
+            resultType="com.tripan.app.admin.domain.dto.CouponTargetDto">
+        SELECT
+            target_id    AS targetId,
+            coupon_id    AS couponId,
+            target_type  AS targetType,
+            target_value AS targetValue,
+            is_exclude   AS isExclude
+        FROM coupon_target
+        WHERE coupon_id = #{couponId}
+        ORDER BY is_exclude, target_type, target_id
+    </select>
+
+    <delete id="deleteCouponTargets" parameterType="long">
+        DELETE FROM coupon_target
+        WHERE coupon_id = #{couponId}
+    </delete>
+
+    <select id="searchAccommodations" parameterType="map"
+            resultType="com.tripan.app.domain.dto.AccommodationDto">
+        SELECT
+            a.place_id           AS placeId,
+            p.place_name         AS name,
+            a.accommodation_type AS accommodationType
+        FROM accommodation a
+        LEFT JOIN place p ON a.place_id = p.place_id
+        <where>
+            <if test="keyword != null and keyword != ''">
+                AND (
+                    p.place_name LIKE '%' || #{keyword} || '%'
+                    OR a.accommodation_type LIKE '%' || #{keyword} || '%'
+                )
+            </if>
+            <if test="accommodationType != null and accommodationType != ''">
+                AND a.accommodation_type = #{accommodationType}
+            </if>
+        </where>
+        ORDER BY p.place_name
+    </select>
+
+    <select id="selectAccTypeOptions" resultType="string">
+        SELECT DISTINCT accommodation_type
+        FROM accommodation
+        WHERE accommodation_type IS NOT NULL
+        ORDER BY accommodation_type
+    </select>
+
+    <select id="selectRoomsByAccommodation" resultType="com.tripan.app.domain.dto.RoomDto">
+        SELECT
+            r.room_id    AS roomId,
+            r.place_id   AS placeId,
+            r.room_name  AS roomName,
+            p.place_name AS placeName
+        FROM room r
+        JOIN place p ON r.place_id = p.place_id
+        WHERE r.place_id = #{placeId}
+        <if test="keyword != null and keyword != ''">
+            AND r.room_name LIKE '%' || #{keyword} || '%'
+        </if>
+        ORDER BY r.room_name
+    </select>
+
+    <select id="isCouponApplicable" resultType="int">
+        SELECT COUNT(*)
+        FROM dual
+        WHERE NOT EXISTS (
+            SELECT 1
+            FROM coupon_target ct
+            WHERE ct.coupon_id = #{couponId}
+              AND ct.is_exclude = 'Y'
+              AND (
+                    (ct.target_type = 'ACCOMMODATION' AND ct.target_value = TO_CHAR(#{placeId}))
+                 OR (ct.target_type = 'ROOM'          AND ct.target_value = TO_CHAR(#{roomId}))
+                 OR (ct.target_type = 'ACC_TYPE'      AND ct.target_value = #{accommodationType})
+              )
+        )
+    </select>
+
+</mapper>

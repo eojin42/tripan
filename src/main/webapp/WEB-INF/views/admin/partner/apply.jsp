@@ -466,7 +466,7 @@
       /* ── KPI ── */
       const fetchKpi = async () => {
         try {
-          const res = await axios.get(`${contextPath}/admin/partner/apply/kpi`);
+          const res = await axios.get(`${contextPath}/admin/partner/kpi`);
           Object.assign(kpi, res.data);
         } catch(e) { console.error('KPI 오류', e); }
       };
@@ -481,7 +481,7 @@
       const fetchList = async (page = 1) => {
         pageNo.value = page;
         try {
-          const res = await axios.get(`${contextPath}/admin/partner/apply/list`, {
+          const res = await axios.get(`${contextPath}/admin/partner/list`, {
             params: {
               page,
               status:   filter.status,

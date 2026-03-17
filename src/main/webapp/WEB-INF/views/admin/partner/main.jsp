@@ -12,7 +12,6 @@
     .col-check { width: 44px; text-align: center; }
     input[type="checkbox"] { width: 16px; height: 16px; cursor: pointer; accent-color: var(--primary); }
 
-    /* bulk bar */
     .bulk-bar {
       display: none; align-items: center; gap: 12px;
       padding: 12px 20px; background: #FEF2F2;
@@ -45,6 +44,7 @@
       animation: modalUp 0.3s cubic-bezier(0.16,1,0.3,1);
       display: flex; flex-direction: column; max-height: 90vh;
     }
+    .modal-sheet-wide { max-width: 720px; }
     @keyframes modalUp { from{opacity:0;transform:translateY(20px)} to{opacity:1;transform:translateY(0)} }
     .ms-head    { padding: 26px 28px 18px; border-bottom: 1px solid var(--border); flex-shrink:0; }
     .ms-head h3 { font-size: 17px; font-weight: 900; margin: 0 0 4px; }
@@ -74,10 +74,11 @@
     .btn-reset:hover svg { transform: rotate(-180deg); }
 
     /* badge */
-    .badge-active    { background:#F0FDF4; color:#15803D; }
-    .badge-pending   { background:#FFF7ED; color:#C2410C; }
-    .badge-suspended { background:#FEF2F2; color:#DC2626; }
-    .category-chip   { display:inline-block; padding:2px 10px; border-radius:20px; font-size:12px; font-weight:700; background:#EFF6FF; color:#1D4ED8; }
+    .badge-active     { background:#F0FDF4; color:#15803D; }
+    .badge-pending    { background:#FFF7ED; color:#C2410C; }
+    .badge-suspended  { background:#FEF2F2; color:#DC2626; }
+    .badge-approved   { background:#DBEAFE; color:#1D4ED8; }
+    .badge-rejected   { background:#FEE2E2; color:#991B1B; }
 
     /* 별점 */
     .star-wrap  { display:inline-flex; align-items:center; gap:4px; }
@@ -102,6 +103,21 @@
       display:flex; align-items:center; gap:10px;
     }
     .danger-banner svg { flex-shrink:0; }
+
+    /* 상세 모달 전용 */
+    .detail-section-title {
+      font-size: 12px; font-weight: 800; color: var(--muted);
+      text-transform: uppercase; letter-spacing: 0.6px;
+      padding-bottom: 8px; border-bottom: 1.5px solid var(--border);
+      margin-bottom: 4px;
+    }
+    .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .info-item { display: flex; flex-direction: column; gap: 3px; }
+    .info-item .i-label { font-size: 11px; font-weight: 700; color: var(--muted); }
+    .info-item .i-value { font-size: 14px; font-weight: 700; color: var(--text); word-break: break-all; }
+    .info-item .i-value a { color: var(--primary); text-decoration: none; }
+    .info-item .i-value a:hover { text-decoration: underline; }
+    .detail-empty { text-align:center; padding: 20px 0; color: var(--muted); font-size: 13px; }
   </style>
 </head>
 <body>
@@ -159,25 +175,14 @@
       <div class="card filter-card fade-up">
         <div class="filter-row">
           <div class="filter-label">파트너사 검색</div>
-          <select class="filter-select" v-model="filter.category" style="width:130px;">
-            <option value="ALL">전체 카테고리</option>
-            <option value="HOTEL">호텔/숙박</option>
-            <option value="TOUR">투어/체험</option>
-            <option value="FLIGHT">항공</option>
-            <option value="RENT">렌터카</option>
-            <option value="ETC">기타</option>
-          </select>
           <select class="filter-select" v-model="filter.status" style="width:130px;">
             <option value="ALL">전체 상태</option>
-            <option value="ACTIVE">활성</option>
             <option value="PENDING">승인 대기</option>
+            <option value="ACTIVE">활성</option>
+            <option value="APPROVED">승인완료</option>
             <option value="SUSPENDED">정지</option>
-          </select>
-          <select class="filter-select" v-model="filter.ratingFilter" style="width:140px;">
-            <option value="ALL">전체 평점</option>
-            <option value="LOW">저평점 (3점 미만)</option>
-            <option value="MID">보통 (3~4점)</option>
-            <option value="HIGH">우수 (4점 이상)</option>
+            <option value="REJECTED">반려</option>
+            <option value="BLOCKED">영구차단</option>
           </select>
           <select class="filter-select" v-model="filter.sort" style="width:130px;">
             <option value="SALES_DESC">매출 높은순</option>
@@ -246,7 +251,6 @@
                   <input type="checkbox" @change="toggleCheckAll" :checked="isAllChecked">
                 </th>
                 <th>파트너사명</th>
-                <th>카테고리</th>
                 <th>상태</th>
                 <th>이번 달 매출</th>
                 <th>평점</th>
@@ -261,37 +265,39 @@
             </thead>
             <tbody>
               <tr v-if="!searched">
-                <td colspan="11" style="text-align:center;padding:50px 0;color:var(--muted);">
+                <td colspan="10" style="text-align:center;padding:50px 0;color:var(--muted);">
                   상단의 검색 조건을 설정한 후 <strong>[검색]</strong> 버튼을 눌러주세요.
                 </td>
               </tr>
               <tr v-else-if="partnerList.length === 0">
-                <td colspan="11" style="text-align:center;padding:50px 0;color:var(--muted);">
+                <td colspan="10" style="text-align:center;padding:50px 0;color:var(--muted);">
                   검색 결과가 없습니다.
                 </td>
               </tr>
               <tr v-for="p in partnerList" :key="p.partnerId"
-                  :style="p.status === 'SUSPENDED' ? 'opacity:0.6;' : ''">
+                  :style="(p.status === 'SUSPENDED' || p.status === 'BLOCKED') ? 'opacity:0.6;' : ''">
                 <td class="col-check">
                   <input type="checkbox" :value="p.partnerId" v-model="selectedIds" @click.stop>
                 </td>
                 <td>
                   <strong>{{ p.partnerName }}</strong>
-                  <span v-if="p.isNewThisMonth"
-                        style="display:inline-block;margin-left:6px;padding:1px 7px;border-radius:20px;font-size:11px;font-weight:800;background:#DBEAFE;color:#1D4ED8;">NEW</span>
                 </td>
-                <td><span class="category-chip">{{ p.categoryLabel }}</span></td>
                 <td>
-                  <span v-if="p.status === 'ACTIVE'"    class="badge badge-active">활성</span>
-                  <span v-else-if="p.status === 'PENDING'"   class="badge badge-pending">승인 대기</span>
-                  <span v-else-if="p.status === 'SUSPENDED'" class="badge badge-suspended">정지</span>
+                  <span v-if="p.status === 'ACTIVE'"      class="badge badge-active">활성</span>
+                  <span v-else-if="p.status === 'PENDING'"    class="badge badge-pending">승인 대기</span>
+                  <span v-else-if="p.status === 'APPROVED'"   class="badge badge-approved">승인완료</span>
+                  <span v-else-if="p.status === 'SUPPLEMENT'" class="badge" style="background:#EFF6FF;color:#1D4ED8;">보완요청</span>
+                  <span v-else-if="p.status === 'REJECTED'"   class="badge badge-suspended">반려</span>
+                  <span v-else-if="p.status === 'SUSPENDED'"  class="badge badge-suspended">정지</span>
+                  <span v-else-if="p.status === 'BLOCKED'"    class="badge badge-suspended">영구차단</span>
+                  <span v-else class="badge">{{ p.status }}</span>
                 </td>
                 <td>
                   <div class="sales-bar-wrap">
                     <div class="sales-bar-bg">
-                      <div class="sales-bar-fill" :style="{ width: p.salesRatio + '%' }"></div>
+                      <div class="sales-bar-fill" :style="{ width: (p.salesRatio || 0) + '%' }"></div>
                     </div>
-                    <span class="sales-amount">{{ p.salesLabel }}</span>
+                    <span class="sales-amount">{{ p.salesLabel || '-' }}</span>
                   </div>
                 </td>
                 <td>
@@ -299,13 +305,13 @@
                     <span style="color:#F59E0B;">★</span>
                     <span class="star-score"
                           :class="{ 'risk-high': p.rating < 3, 'risk-mid': p.rating >= 3 && p.rating < 4 }">
-                      {{ p.rating.toFixed(1) }}
+                      {{ Number(p.rating ?? 0).toFixed(1) }}
                     </span>
-                    <span class="star-count">({{ p.reviewCount }})</span>
+                    <span class="star-count">({{ p.reviewCount || 0 }})</span>
                   </div>
                 </td>
-                <td class="num">{{ p.productCount }}</td>
-                <td class="num">{{ p.commissionRate }}%</td>
+                <td class="num">{{ p.productCount || 0 }}</td>
+                <td class="num">{{ Number(p.commissionRate ?? 0).toFixed(0) }}%</td>
                 <td>
                   <span v-if="p.riskLevel === 'HIGH'" class="risk-high">🔴 고위험</span>
                   <span v-else-if="p.riskLevel === 'MID'" class="risk-mid">🟡 주의</span>
@@ -315,8 +321,8 @@
                 <td class="right" style="white-space:nowrap;">
                   <button class="btn btn-primary btn-sm"
                           style="margin-right:4px;"
-                          @click="goDetail(p.partnerId)">상세</button>
-                  <button v-if="p.status !== 'SUSPENDED'"
+                          @click="openDetailModal(p)">상세</button>
+                  <button v-if="p.status !== 'SUSPENDED' && p.status !== 'BLOCKED'"
                           class="btn btn-sm"
                           style="background:#FEF2F2;color:#DC2626;border:1px solid #FECACA;"
                           @click="openDeactivateModal(p)">차단</button>
@@ -346,6 +352,160 @@
 
     </main>
 
+    <!-- ══════════════ 파트너사 상세 모달 ══════════════ -->
+    <div class="modal-overlay" :class="{ open: showDetailModal }" @click.self="closeDetailModal">
+      <div class="modal-sheet modal-sheet-wide">
+        <div class="ms-head" style="display:flex;justify-content:space-between;align-items:flex-start;">
+          <div>
+            <h3>{{ detailData.partnerName || '-' }} <span v-if="detailData.status" style="font-size:13px;font-weight:600;margin-left:8px;">
+              <span v-if="detailData.status === 'ACTIVE'"    class="badge badge-active">활성</span>
+              <span v-else-if="detailData.status === 'PENDING'"  class="badge badge-pending">승인 대기</span>
+              <span v-else-if="detailData.status === 'APPROVED'" class="badge badge-approved">승인완료</span>
+              <span v-else class="badge badge-suspended">{{ detailData.status }}</span>
+            </span></h3>
+            <p>파트너사 상세 정보</p>
+          </div>
+          <button @click="closeDetailModal" style="background:none;border:none;cursor:pointer;padding:4px;color:var(--muted);">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+          </button>
+        </div>
+        <div class="ms-body" v-if="detailLoading" style="align-items:center;justify-content:center;min-height:200px;">
+          <span style="color:var(--muted);font-size:14px;">불러오는 중...</span>
+        </div>
+        <div class="ms-body" v-else>
+
+          <!-- 기본 정보 -->
+          <div class="detail-section-title">기본 정보</div>
+          <div class="info-grid">
+            <div class="info-item">
+              <span class="i-label">파트너 ID</span>
+              <span class="i-value">{{ detailData.partnerId || '-' }}</span>
+            </div>
+            <div class="info-item">
+              <span class="i-label">파트너사명</span>
+              <span class="i-value">{{ detailData.partnerName || '-' }}</span>
+            </div>
+            <div class="info-item">
+              <span class="i-label">사업자번호</span>
+              <span class="i-value">{{ detailData.bizNo || '-' }}</span>
+            </div>
+            <div class="info-item">
+              <span class="i-label">수수료율</span>
+              <span class="i-value">{{ detailData.commissionRate != null ? Number(detailData.commissionRate).toFixed(1) + '%' : '-' }}</span>
+            </div>
+            <div class="info-item">
+              <span class="i-label">담당자명</span>
+              <span class="i-value">{{ detailData.managerName || '-' }}</span>
+            </div>
+            <div class="info-item">
+              <span class="i-label">담당자 연락처</span>
+              <span class="i-value">{{ detailData.managerPhone || '-' }}</span>
+            </div>
+            <div class="info-item">
+              <span class="i-label">등록일</span>
+              <span class="i-value">{{ detailData.regDate || '-' }}</span>
+            </div>
+            <div class="info-item">
+              <span class="i-label">반려 사유</span>
+              <span class="i-value" style="color:#DC2626;">{{ detailData.rejectReason || '-' }}</span>
+            </div>
+          </div>
+
+          <!-- 계약서 / 입점신청서 -->
+          <div class="detail-section-title" style="margin-top:4px;">계약서 / 입점신청서</div>
+          <div style="display:flex;gap:10px;flex-wrap:wrap;">
+            <a v-if="detailData.contractFileUrl" :href="detailData.contractFileUrl" target="_blank"
+               style="display:inline-flex;align-items:center;gap:6px;padding:9px 16px;border:1.5px solid var(--border);border-radius:10px;font-size:13px;font-weight:700;color:var(--primary);text-decoration:none;">
+              📄 계약서 보기
+            </a>
+            <span v-else class="detail-empty" style="padding:0;font-size:13px;">등록된 계약서 없음</span>
+          </div>
+
+          <!-- 운영 현황 (숙소/상품) -->
+          <div class="detail-section-title" style="margin-top:4px;">운영 중인 상품</div>
+          <div v-if="detailData.products && detailData.products.length > 0">
+            <table style="width:100%;font-size:13px;border-collapse:collapse;">
+              <thead>
+                <tr style="background:var(--bg);">
+                  <th style="padding:8px 12px;text-align:left;font-weight:700;border-bottom:1px solid var(--border);">상품명</th>
+                  <th style="padding:8px 12px;text-align:center;font-weight:700;border-bottom:1px solid var(--border);">타입</th>
+                  <th style="padding:8px 12px;text-align:center;font-weight:700;border-bottom:1px solid var(--border);">가격</th>
+                  <th style="padding:8px 12px;text-align:center;font-weight:700;border-bottom:1px solid var(--border);">상태</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr v-for="prod in detailData.products" :key="prod.productId" style="border-bottom:1px solid var(--border);">
+                  <td style="padding:8px 12px;font-weight:600;">{{ prod.productName }}</td>
+                  <td style="padding:8px 12px;text-align:center;color:var(--muted);">{{ prod.productType || '-' }}</td>
+                  <td style="padding:8px 12px;text-align:center;">{{ prod.priceLabel || '-' }}</td>
+                  <td style="padding:8px 12px;text-align:center;">
+                    <span class="badge badge-active" v-if="prod.status === 'ACTIVE'">운영중</span>
+                    <span class="badge badge-suspended" v-else>{{ prod.status }}</span>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <div v-else class="detail-empty">등록된 상품이 없습니다.</div>
+
+          <!-- 예약 현황 -->
+          <div class="detail-section-title" style="margin-top:4px;">최근 예약 현황</div>
+          <div v-if="detailData.reservations && detailData.reservations.length > 0">
+            <table style="width:100%;font-size:13px;border-collapse:collapse;">
+              <thead>
+                <tr style="background:var(--bg);">
+                  <th style="padding:8px 12px;text-align:left;font-weight:700;border-bottom:1px solid var(--border);">예약번호</th>
+                  <th style="padding:8px 12px;text-align:left;font-weight:700;border-bottom:1px solid var(--border);">상품명</th>
+                  <th style="padding:8px 12px;text-align:center;font-weight:700;border-bottom:1px solid var(--border);">예약일</th>
+                  <th style="padding:8px 12px;text-align:center;font-weight:700;border-bottom:1px solid var(--border);">상태</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr v-for="rsv in detailData.reservations" :key="rsv.reservationId" style="border-bottom:1px solid var(--border);">
+                  <td style="padding:8px 12px;color:var(--muted);font-size:12px;">{{ rsv.reservationId }}</td>
+                  <td style="padding:8px 12px;font-weight:600;">{{ rsv.productName }}</td>
+                  <td style="padding:8px 12px;text-align:center;color:var(--muted);">{{ rsv.reservationDate }}</td>
+                  <td style="padding:8px 12px;text-align:center;">
+                    <span class="badge badge-active"    v-if="rsv.status === 'CONFIRMED'">확정</span>
+                    <span class="badge badge-pending"   v-else-if="rsv.status === 'PENDING'">대기</span>
+                    <span class="badge badge-suspended" v-else-if="rsv.status === 'CANCELLED'">취소</span>
+                    <span class="badge" v-else>{{ rsv.status }}</span>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <div v-else class="detail-empty">최근 예약 내역이 없습니다.</div>
+
+          <!-- 평점 & 리뷰 요약 -->
+          <div class="detail-section-title" style="margin-top:4px;">평점 요약</div>
+          <div style="display:flex;align-items:center;gap:24px;padding:12px 16px;background:var(--bg);border-radius:12px;">
+            <div style="text-align:center;">
+              <div style="font-size:32px;font-weight:900;color:#F59E0B;">{{ Number(detailData.avgRating ?? 0).toFixed(1) }}</div>
+              <div style="font-size:12px;color:var(--muted);">평균 평점</div>
+            </div>
+            <div style="height:40px;width:1px;background:var(--border);"></div>
+            <div style="text-align:center;">
+              <div style="font-size:22px;font-weight:900;">{{ detailData.reviewCount || 0 }}</div>
+              <div style="font-size:12px;color:var(--muted);">총 리뷰 수</div>
+            </div>
+            <div style="height:40px;width:1px;background:var(--border);"></div>
+            <div style="text-align:center;">
+              <div style="font-size:22px;font-weight:900;">{{ detailData.productCount || 0 }}</div>
+              <div style="font-size:12px;color:var(--muted);">등록 상품 수</div>
+            </div>
+          </div>
+
+        </div>
+        <div class="ms-foot">
+          <button class="btn-m btn-m-ghost" @click="closeDetailModal">닫기</button>
+          <button v-if="detailData.status !== 'SUSPENDED' && detailData.status !== 'BLOCKED'"
+                  class="btn-m btn-m-danger" style="flex:0.5;"
+                  @click="() => { closeDetailModal(); openDeactivateModal(detailData); }">차단</button>
+        </div>
+      </div>
+    </div>
+
     <!-- ══════════════ 파트너사 등록 모달 ══════════════ -->
     <div class="modal-overlay" :class="{ open: showRegisterModal }" @click.self="closeRegisterModal">
       <div class="modal-sheet" style="max-width:520px;">
@@ -360,19 +520,12 @@
           </div>
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
             <div class="fg">
-              <label>카테고리 <span style="color:var(--danger);">*</span></label>
-              <select v-model="register.category">
-                <option value="">선택</option>
-                <option value="HOTEL">호텔/숙박</option>
-                <option value="TOUR">투어/체험</option>
-                <option value="FLIGHT">항공</option>
-                <option value="RENT">렌터카</option>
-                <option value="ETC">기타</option>
-              </select>
-            </div>
-            <div class="fg">
               <label>사업자번호 <span style="color:var(--danger);">*</span></label>
               <input type="text" v-model="register.bizNo" placeholder="000-00-00000">
+            </div>
+            <div class="fg">
+              <label>수수료율</label>
+              <input type="number" v-model="register.commissionRate" placeholder="10">
             </div>
           </div>
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
@@ -418,7 +571,7 @@
             </select>
           </div>
           <div class="fg">
-            <label>처리 사유 <span style="color:var(--danger);">*</span></label>
+            <label>처리 사유</label>
             <textarea v-model="bulkStatus.reason" placeholder="정지 처리 시 반드시 입력하세요."></textarea>
           </div>
         </div>
@@ -460,11 +613,6 @@
             <label>상세 내용 <span style="color:var(--danger);">*</span></label>
             <textarea v-model="deactivate.detail" placeholder="차단 처리 사유를 상세히 입력하세요."></textarea>
           </div>
-          <div style="display:flex;align-items:center;gap:8px;font-size:13px;font-weight:700;">
-            <input type="checkbox" v-model="deactivate.sendNotify" id="chk-deact"
-                   style="width:16px;height:16px;accent-color:var(--primary);">
-            <label for="chk-deact" style="cursor:pointer;">파트너사 담당자에게 차단 사실 알림톡/이메일 발송</label>
-          </div>
         </div>
         <div class="ms-foot">
           <button class="btn-m btn-m-ghost"  @click="closeDeactivateModal">취소</button>
@@ -484,11 +632,6 @@
           <div class="fg">
             <label>활성화 사유</label>
             <textarea v-model="activate.reason" placeholder="활성화 처리 사유를 입력하세요. (선택)"></textarea>
-          </div>
-          <div style="display:flex;align-items:center;gap:8px;font-size:13px;font-weight:700;">
-            <input type="checkbox" v-model="activate.sendNotify" id="chk-act"
-                   style="width:16px;height:16px;accent-color:var(--primary);">
-            <label for="chk-act" style="cursor:pointer;">파트너사 담당자에게 활성화 사실 알림톡/이메일 발송</label>
           </div>
         </div>
         <div class="ms-foot">
@@ -561,8 +704,7 @@
 
       /* ── 필터 ── */
       const filter = reactive({
-        category: 'ALL', status: 'ALL',
-        ratingFilter: 'ALL', sort: 'SALES_DESC', keyword: ''
+        status: 'ALL', sort: 'SALES_DESC', keyword: ''
       });
 
       /* ── 목록 ── */
@@ -580,22 +722,27 @@
       );
 
       /* ── 모달 open 상태 ── */
+      const showDetailModal         = ref(false);
       const showRegisterModal       = ref(false);
       const showBulkStatusModal     = ref(false);
       const showDeactivateModal     = ref(false);
       const showActivateModal       = ref(false);
       const showBulkDeactivateModal = ref(false);
 
+      /* ── 상세 모달 데이터 ── */
+      const detailData    = reactive({});
+      const detailLoading = ref(false);
+
       /* ── 모달 데이터 ── */
       const register = reactive({
-        partnerName:'', category:'', bizNo:'',
+        partnerName:'', bizNo:'', commissionRate: 10,
         managerName:'', managerPhone:'', managerEmail:'', memo:''
       });
       const bulkStatus       = reactive({ status: 'ACTIVE', reason: '' });
       const deactivateTarget = reactive({ partnerId:'', partnerName:'' });
-      const deactivate       = reactive({ reason:'', detail:'', sendNotify: true });
+      const deactivate       = reactive({ reason:'', detail:'' });
       const activateTarget   = reactive({ partnerId:'', partnerName:'' });
-      const activate         = reactive({ reason:'', sendNotify: true });
+      const activate         = reactive({ reason:'' });
       const bulkDeactivate   = reactive({ reason:'', detail:'' });
 
       /* ── KPI 조회 ── */
@@ -613,11 +760,9 @@
           const res = await axios.get(`${contextPath}/admin/partner/list`, {
             params: {
               page,
-              category:     filter.category,
-              status:       filter.status,
-              ratingFilter: filter.ratingFilter,
-              sort:         filter.sort,
-              keyword:      filter.keyword
+              status:  filter.status,
+              sort:    filter.sort,
+              keyword: filter.keyword
             }
           });
           partnerList.value = res.data.list;
@@ -641,26 +786,60 @@
           ? partnerList.value.map(p => p.partnerId) : [];
       };
 
-      const goDetail = (id) => {
-        location.href = `${contextPath}/admin/partner/detail/${id}`;
-      };
-
       const downloadExcel = () => {
         const ids = selectedIds.value.join(',');
         location.href = ids
           ? `${contextPath}/admin/partner/excel?ids=${ids}`
-          : `${contextPath}/admin/partner/excel?category=${filter.category}&status=${filter.status}&keyword=${filter.keyword}`;
+          : `${contextPath}/admin/partner/excel?status=${filter.status}&keyword=${filter.keyword}`;
       };
+
+      /* ── 상세 모달 ── */
+      const openDetailModal = async (p) => {
+        Object.assign(detailData, {});
+        detailLoading.value = true;
+        showDetailModal.value = true;
+        try {
+          Object.assign(detailData, {
+            partnerId:       p.partnerId,
+            partnerName:     p.partnerName,
+            bizNo:           p.bizNo,
+            managerName:     p.managerName,
+            managerPhone:    p.managerPhone,
+            status:          p.status,
+            commissionRate:  p.commissionRate,
+            regDate:         p.regDate,
+            rejectReason:    p.rejectReason,
+            contractFileUrl: p.contractFileUrl,
+            avgRating:       p.rating || 0,
+            reviewCount:     p.reviewCount || 0,
+            productCount:    p.productCount || 0,
+            products:        [],
+            reservations:    []
+          });
+          detailLoading.value = false;
+
+          // 추가 데이터 (상품, 예약) 비동기 로드 - API 있으면 활성화
+          // try {
+          //   const detailRes = await axios.get(`${contextPath}/admin/partner/detail/${p.partnerId}`);
+          //   Object.assign(detailData, detailRes.data);
+          // } catch(e) { console.warn('상세 추가 정보 로드 실패', e); }
+
+        } catch(e) {
+          detailLoading.value = false;
+          console.error('상세 오류', e);
+        }
+      };
+      const closeDetailModal = () => { showDetailModal.value = false; };
 
       /* ── 등록 모달 ── */
       const openRegisterModal  = () => { showRegisterModal.value = true; };
       const closeRegisterModal = () => {
         showRegisterModal.value = false;
-        Object.assign(register, { partnerName:'', category:'', bizNo:'', managerName:'', managerPhone:'', managerEmail:'', memo:'' });
+        Object.assign(register, { partnerName:'', bizNo:'', commissionRate:10, managerName:'', managerPhone:'', managerEmail:'', memo:'' });
       };
       const submitRegister = async () => {
-        if (!register.partnerName.trim() || !register.category || !register.bizNo.trim()) {
-          alert('파트너사명, 카테고리, 사업자번호는 필수입니다.');
+        if (!register.partnerName.trim() || !register.bizNo.trim()) {
+          alert('파트너사명, 사업자번호는 필수입니다.');
           return;
         }
         try {
@@ -676,15 +855,11 @@
       const openBulkStatusModal  = () => { showBulkStatusModal.value = true; };
       const closeBulkStatusModal = () => { showBulkStatusModal.value = false; bulkStatus.reason = ''; };
       const submitBulkStatus = async () => {
-        if (!bulkStatus.reason.trim() && bulkStatus.status === 'SUSPENDED') {
-          alert('정지 처리 시 사유를 입력해주세요.');
-          return;
-        }
         try {
           await axios.post(`${contextPath}/admin/partner/bulk-status`, {
             partnerIds: selectedIds.value,
-            status:     bulkStatus.status,
-            reason:     bulkStatus.reason
+            status: bulkStatus.status,
+            reason: bulkStatus.reason
           });
           alert('상태가 일괄 변경되었습니다.');
           closeBulkStatusModal();
@@ -696,7 +871,7 @@
       /* ── 단건 차단 모달 ── */
       const openDeactivateModal  = (p) => {
         Object.assign(deactivateTarget, p);
-        Object.assign(deactivate, { reason:'', detail:'', sendNotify: true });
+        Object.assign(deactivate, { reason:'', detail:'' });
         showDeactivateModal.value = true;
       };
       const closeDeactivateModal = () => { showDeactivateModal.value = false; };
@@ -704,13 +879,8 @@
         if (!deactivate.reason)        { alert('차단 사유를 선택해주세요.'); return; }
         if (!deactivate.detail.trim()) { alert('상세 내용을 입력해주세요.'); return; }
         try {
-          await axios.post(`${contextPath}/admin/partner/deactivate`, {
-            partnerId:  deactivateTarget.partnerId,
-            reason:     deactivate.reason,
-            detail:     deactivate.detail,
-            sendNotify: deactivate.sendNotify
-          });
-          alert(deactivateTarget.partnerName + ' 파트너사가 즉시 차단되었습니다.');
+          await axios.post(`${contextPath}/admin/partner/suspend/${deactivateTarget.partnerId}`);
+          alert(deactivateTarget.partnerName + ' 파트너사가 차단되었습니다.');
           closeDeactivateModal();
           fetchList(pageNo.value);
           fetchKpi();
@@ -720,16 +890,15 @@
       /* ── 단건 활성화 모달 ── */
       const openActivateModal  = (p) => {
         Object.assign(activateTarget, p);
-        Object.assign(activate, { reason:'', sendNotify: true });
+        activate.reason = '';
         showActivateModal.value = true;
       };
       const closeActivateModal = () => { showActivateModal.value = false; };
       const submitActivate = async () => {
         try {
           await axios.post(`${contextPath}/admin/partner/activate`, {
-            partnerId:  activateTarget.partnerId,
-            reason:     activate.reason,
-            sendNotify: activate.sendNotify
+            partnerId: activateTarget.partnerId,
+            reason:    activate.reason
           });
           alert(activateTarget.partnerName + ' 파트너사가 활성화되었습니다.');
           closeActivateModal();
@@ -759,23 +928,29 @@
         } catch(e) { console.error('일괄 차단 오류', e); alert('처리 중 오류가 발생했습니다.'); }
       };
 
-      onMounted(() => { fetchKpi(); });
+      /* ── 최초 1회만 호출 (무한루프 방지: onMounted에서만 실행) ── */
+      onMounted(() => {
+        fetchKpi();
+        fetchList(1);
+      });
 
       return {
         kpi, filter, partnerList, totalCount, pageNo, pagination, searched, sortAsc,
         selectedIds, isAllChecked,
+        showDetailModal, detailData, detailLoading,
         showRegisterModal, register,
         showBulkStatusModal, bulkStatus,
         showDeactivateModal, deactivateTarget, deactivate,
         showActivateModal, activateTarget, activate,
         showBulkDeactivateModal, bulkDeactivate,
-        fetchList, toggleSort, toggleCheckAll, goDetail, downloadExcel,
+        fetchList, toggleSort, toggleCheckAll, downloadExcel,
+        openDetailModal,         closeDetailModal,
         openRegisterModal,       closeRegisterModal,       submitRegister,
         openBulkStatusModal,     closeBulkStatusModal,     submitBulkStatus,
         openDeactivateModal,     closeDeactivateModal,     submitDeactivate,
         openActivateModal,       closeActivateModal,       submitActivate,
         openBulkDeactivateModal, closeBulkDeactivateModal, submitBulkDeactivate,
-        resetFilter: () => { filter.category = 'ALL'; filter.status = 'ALL'; filter.ratingFilter = 'ALL'; filter.sort = 'SALES_DESC'; filter.keyword = ''; fetchList(1); }
+        resetFilter: () => { filter.status = 'ALL'; filter.sort = 'SALES_DESC'; filter.keyword = ''; fetchList(1); }
       };
     }
   }).mount('#app');

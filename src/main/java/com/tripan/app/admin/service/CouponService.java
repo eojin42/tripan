@@ -17,5 +17,5 @@ public interface CouponService {
 	 public CouponDto.PageResponse<CouponDto.IssuedItem> getIssuedList(
 	            int page, String status, String couponKeyword, String memberKeyword);
 	 public List<CouponDto.PartnerOption> getPartnerOptions();
-	 public CouponDto.ListItem getCouponById(Long couponId);
+	 public CouponDto.DetailResponse getCouponById(Long couponId);
 }

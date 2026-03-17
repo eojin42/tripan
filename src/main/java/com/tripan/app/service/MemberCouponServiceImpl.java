@@ -41,6 +41,7 @@ public class MemberCouponServiceImpl implements MemberCouponService{
         }
         
         for (CouponDto.ListItem coupon : welcomeCoupons) {
+        	
             MemberCoupon memberCoupon = new MemberCoupon();
             memberCoupon.setMemberId(member1.getId());
             memberCoupon.setCouponId(coupon.getCouponId());
