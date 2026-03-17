@@ -72,7 +72,7 @@
 
     <div class="util-links">
       <a href="${pageContext.request.contextPath}/member/pwd"></a>
-      <a href="${pageContext.request.contextPath}/member/member">일반 회원가입 (입점신청용)</a>
+      <a href="${pageContext.request.contextPath}/member/account">일반 회원가입</a>
     </div>
   </div>
 </div>

@@ -250,7 +250,6 @@
   </div>
 </div>
 
-<jsp:include page="/WEB-INF/views/partner/layout/footerResources.jsp" />
 
 <script>
   function openCancelModal(resId) {
