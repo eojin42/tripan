@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.tripan.app.partner.mapper.PartnerInfoMapper">
+	<select id="getPartnerInfoByMemberId" resultType="com.tripan.app.partner.domain.dto.PartnerInfoDto">
+        SELECT
+            partner_id AS partnerId,
+            member_id AS memberId,
+            partner_name AS partnerName,
+            business_number AS businessNumber,
+            contact_name AS contactName,
+            contact_phone AS contactPhone,
+            bank_name AS bankName,
+            account_number AS accountNumber,
+            partner_intro AS partnerIntro
+        FROM partner
+        WHERE member_id = #{memberId}
+    </select>
+
+    <update id="updatePartnerInfo">
+        UPDATE partner
+        SET
+            contact_name = #{contactName},
+            contact_phone = #{contactPhone},
+            bank_name = #{bankName},
+            account_number = #{accountNumber},
+            partner_intro = #{partnerIntro}
+        WHERE partner_id = #{partnerId}
+    </update>
+
+    <select id="getPlaceIdByMemberId" resultType="java.lang.Long">
+        SELECT pl.place_id
+        FROM partner p
+        JOIN place pl ON p.partner_id = pl.partner_id
+        WHERE p.member_id = #{memberId}
+        FETCH FIRST 1 ROWS ONLY
+    </select>
+</mapper>

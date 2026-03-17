@@ -1,24 +1,37 @@
 package com.tripan.app.partner.controller;
 
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
+
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
+import com.tripan.app.partner.domain.dto.PartnerInfoDto;
+import com.tripan.app.partner.domain.dto.PartnerRoomDto;
+import com.tripan.app.partner.mapper.PartnerRoomMapper;
+import com.tripan.app.partner.service.PartnerInfoService;
 import com.tripan.app.security.CustomUserDetails;
 
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 
-@Slf4j
 @Controller
 @RequestMapping("/partner")
 @RequiredArgsConstructor
 public class PartnerMainController {
+
+    private final PartnerInfoService partnerInfoService;
+    private final PartnerRoomMapper partnerRoomMapper; 
 
     @GetMapping("/main")
     public String partnerMain(
@@ -27,18 +40,59 @@ public class PartnerMainController {
             RedirectAttributes rttr,
             Model model) {
 
-        if (userDetails == null) {
-            rttr.addFlashAttribute("msg", "로그인이 필요합니다.");
-            return "redirect:/partner/login";
+        if (userDetails == null) return "redirect:/partner/login";
+        if (!userDetails.getAuthorities().contains(new SimpleGrantedAuthority("ROLE_PARTNER"))) return "redirect:/partner/apply";
+
+        Long memberId = userDetails.getMember().getMemberId();
+
+        if ("info".equals(tab)) {
+            PartnerInfoDto partnerInfo = partnerInfoService.getPartnerInfo(memberId);
+            model.addAttribute("partnerInfo", partnerInfo);
         }
 
-        if (!userDetails.getAuthorities().contains(new SimpleGrantedAuthority("ROLE_PARTNER"))) {
-            rttr.addFlashAttribute("msg", "정식 파트너만 접근 가능한 페이지입니다.");
-            return "redirect:/partner/apply";
+        if ("room".equals(tab)) {
+            List<PartnerRoomDto> myRooms = partnerRoomMapper.getRoomListByMemberId(memberId);
+            model.addAttribute("roomList", myRooms);
         }
 
         model.addAttribute("activeTab", tab);
-
         return "partner/main"; 
+    }
+
+    @ResponseBody
+    @PostMapping("/api/info/update")
+    public ResponseEntity<?> updatePartnerInfo(
+            @RequestBody PartnerInfoDto dto,
+            @AuthenticationPrincipal CustomUserDetails userDetails) {
+        try {
+            PartnerInfoDto myInfo = partnerInfoService.getPartnerInfo(userDetails.getMember().getMemberId());
+            dto.setPartnerId(myInfo.getPartnerId()); 
+            
+            partnerInfoService.updatePartnerInfo(dto);
+            return ResponseEntity.ok(Map.of("message", "success"));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(Map.of("message", "fail"));
+        }
+    }
+    
+    @ResponseBody
+    @PostMapping("/api/room/save")
+    public ResponseEntity<?> saveRoom(
+            @RequestBody PartnerRoomDto dto,
+            @AuthenticationPrincipal CustomUserDetails userDetails) {
+        try {
+            Long placeId = partnerInfoService.getPlaceIdByMemberId(userDetails.getMember().getMemberId());
+            dto.setPlaceId(placeId);
+            
+            dto.setRoomId("R-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase());
+            dto.setRfId("RF-DEFAULT");
+
+            partnerRoomMapper.insertRoom(dto);
+
+            return ResponseEntity.ok(Map.of("message", "success"));
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.badRequest().body(Map.of("message", "fail"));
+        }
     }
 }

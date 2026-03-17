@@ -7,3 +7,14 @@
 
 <link rel="stylesheet" href="${pageContext.request.contextPath}/dist/css/admin.css">
 <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
+
+<script>
+    const TripanConfig = {
+        contextPath: '${pageContext.request.contextPath}',
+        apiBaseUrl: '${pageContext.request.contextPath}/api'
+    };
+</script>
+
+<script src="${pageContext.request.contextPath}/dist/js/partner/partner_main.js" defer></script>
+<script src="${pageContext.request.contextPath}/dist/js/partner/partner_room.js" defer></script>
+<script src="${pageContext.request.contextPath}/dist/js/partner/partner_booking.js" defer></script>
