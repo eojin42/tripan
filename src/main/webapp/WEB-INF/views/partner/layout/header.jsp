@@ -4,13 +4,6 @@
 <header class="top-header">
   
   <div class="header-left" style="display: flex; align-items: center; gap: 12px;">
-    <a href="${pageContext.request.contextPath}/partner/apply" class="brand-logo" style="text-decoration: none;">
-      <div class="logo-text-wrapper" style="display: flex; align-items: center;">
-        <span class="trip" style="font-weight: 900; font-size: 24px; color: var(--text);">Trip</span>
-        <span class="an" style="font-weight: 900; font-size: 24px; background: linear-gradient(to right, var(--primary), var(--secondary)); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">an</span> 
-      </div>
-      <span class="super-badge" style="font-size: 10px; font-weight: 800; background: var(--secondary); color: white; padding: 3px 6px; border-radius: 6px; margin-left: 8px;">PARTNER</span>
-    </a>
   </div>
 
   <div class="nav-right" style="display: flex; align-items: center; gap: 12px;">

@@ -154,7 +154,6 @@
     </c:when>
     <c:otherwise>
         <jsp:include page="/WEB-INF/views/partner/layout/footer.jsp" />
-        <jsp:include page="/WEB-INF/views/partner/layout/footerResources.jsp" />
     </c:otherwise>
 </c:choose>
 
