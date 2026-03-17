@@ -85,22 +85,34 @@
       <%-- 저장 상태 표시 --%>
       <div id="wsSaveStatus" class="ws-save-status" data-state="connected">● 연결됨</div>
 
-      <%-- [DB] trip_member 테이블 → role/invitation_status 기반 렌더 --%>
+	  <%-- 상단바 아바타 디자인 --%>
       <div class="avatar-group" title="동행자" onclick="openModal('memberModal')" style="cursor:pointer">
         <c:forEach var="m" items="${tripDto.members}">
-          <c:choose>
-            <c:when test="${m.role == 'OWNER'}">
-              <div class="avatar role-owner" title="${m.nickname} (방장)">${fn:substring(m.nickname,0,2)}</div>
-            </c:when>
-            <c:when test="${m.invitationStatus == 'PENDING'}">
-              <div class="avatar role-pending" title="${m.nickname} (초대 대기중)">${fn:substring(m.nickname,0,2)}</div>
-            </c:when>
-            <c:otherwise>
-              <div class="avatar" title="${m.nickname} (편집자)">${fn:substring(m.nickname,0,2)}</div>
-            </c:otherwise>
-          </c:choose>
+          <%-- 강퇴/거절 멤버는 제외 --%>
+          <c:if test="${m.invitationStatus != 'DECLINED'}">
+            <c:choose>
+              <%-- '나'를 가장 눈에 띄게  --%>
+              <c:when test="${m.memberId == myMemberId}">
+                <div class="avatar" title="나 (${m.nickname})" style="background:#FFFFFF; color:#2D3748; border: 3px solid #89CFF0; transform: scale(1.2); z-index: 20; box-shadow: 0 4px 12px rgba(137,207,240,0.6); font-weight: 900;">${fn:substring(m.nickname,0,2)}</div>
+              </c:when>
+              <%-- 방장 --%>
+              <c:when test="${m.role == 'OWNER'}">
+                <div class="avatar role-owner" title="${m.nickname} (방장)">${fn:substring(m.nickname,0,2)}</div>
+              </c:when>
+              <%-- 대기중 --%>
+              <c:when test="${m.invitationStatus == 'PENDING'}">
+                <div class="avatar role-pending" title="${m.nickname} (초대 대기중)">${fn:substring(m.nickname,0,2)}</div>
+              </c:when>
+              <%-- 일반 멤버 --%>
+              <c:otherwise>
+                <div class="avatar" title="${m.nickname} (편집자)">${fn:substring(m.nickname,0,2)}</div>
+              </c:otherwise>
+            </c:choose>
+          </c:if>
         </c:forEach>
-        <div class="avatar avatar-add" onclick="event.stopPropagation();openModal('memberModal')" title="동행자 관리">+</div>
+        <c:if test="${isOwner}">
+          <div class="avatar avatar-add" onclick="event.stopPropagation();openModal('memberModal')" title="동행자 관리">+</div>
+        </c:if>
       </div>
 
       <%-- 뷰 토글 --%>
@@ -548,9 +560,7 @@
 </div>
 </c:if>
 
-<%-- 메모 & 첨부 모달 --%>
 <%-- 메모 & 이미지 모달 --%>
-<%-- 메모 & 이미지 모달 (View & Edit 겸용) --%>
 <div class="modal-overlay" id="memoModal">
   <div class="modal-box" style="max-width: 420px; border-radius: 24px;">
     <div class="modal-box__head" style="border-bottom: none; padding-bottom: 10px;">
@@ -594,82 +604,114 @@
 
 <%-- 동행자 관리 모달 [DB] trip_member 테이블 --%>
 <div class="modal-overlay" id="memberModal">
-  <div class="modal-box">
-    <div class="modal-box__head">
+  <div class="modal-box" style="border: 2px solid rgba(224, 187, 194, 0.3); box-shadow: 0 10px 30px rgba(168, 200, 225, 0.2);">
+    <div class="modal-box__head" style="border-bottom: 1px solid rgba(137, 207, 240, 0.2);">
       <span class="modal-box__title">👥 동행자 관리</span>
-      <button class="modal-close-btn" onclick="closeModal('memberModal')">✕</button>
+      <button class="modal-close-btn text-pastel-dark" onclick="closeModal('memberModal')">✕</button>
     </div>
     <div class="modal-box__body">
 
-      <%-- 현재 멤버 목록 --%>
-      <label class="form-label-sm" style="margin-bottom:10px;display:block">현재 멤버 (${fn:length(tripDto.members)}명)</label>
-      <div class="member-list">
-        <c:forEach var="m" items="${tripDto.members}">
-        <div class="member-row">
-          <div class="member-avatar-lg
-            <c:choose>
-              <c:when test="${m.role == 'OWNER'}"> role-owner</c:when>
-              <c:when test="${m.invitationStatus == 'PENDING'}"> role-pending</c:when>
-            </c:choose>">${fn:substring(m.nickname,0,2)}</div>
-          <div class="member-info">
-            <div class="member-name">${m.nickname}</div>
-            <div class="member-sub">
-              <c:choose>
-                <c:when test="${m.role == 'OWNER'}">나 · 방장</c:when>
-                <c:when test="${m.invitationStatus == 'PENDING'}">${m.nickname} · 초대 대기 중</c:when>
-                <c:otherwise>${m.nickname} · 편집자</c:otherwise>
-              </c:choose>
-            </div>
-          </div>
-          <c:choose>
-            <c:when test="${m.role == 'OWNER'}">
-              <span class="member-role-badge owner">👑 방장</span>
-            </c:when>
-            <c:when test="${m.invitationStatus == 'PENDING'}">
-              <span class="member-role-badge pending">⏳ 대기중</span>
-              <div class="member-actions">
-                <button class="member-act-btn cancel" onclick="showToast('초대 취소됨')">취소</button>
-              </div>
-            </c:when>
-            <c:otherwise>
-              <span class="member-role-badge editor">✏️ 편집자</span>
-              <div class="member-actions">
-                <button class="member-act-btn change" onclick="showToast('권한 변경 기능 연동 예정')">권한</button>
-                <button class="member-act-btn cancel" onclick="showToast('강퇴 기능 연동 예정')">강퇴</button>
-              </div>
-            </c:otherwise>
-          </c:choose>
+      <%-- ──────────────────────────────────────────────
+           1. 초대 링크 (Sky 테마 적용)
+           ────────────────────────────────────────────── --%>
+      <div class="setting-item" style="margin-top:10px;">
+        <label class="form-label-sm text-pastel-dark" style="display:block; margin-bottom:8px; font-weight: 800;">초대 링크</label>
+        <div style="display:flex; gap:8px;">
+          <input type="text" class="form-input text-pastel-dark" 
+                 value="${pageContext.request.scheme}://${pageContext.request.serverName}:${pageContext.request.serverPort}${pageContext.request.contextPath}/trip/invite/${tripDto.inviteCode}" 
+                 id="inviteLinkInput" readonly style="background:#F7FAFC; flex:1; border: 1px solid #C2B8D9; border-radius: 8px;">
+          <button type="button" class="btn-pastel" onclick="copyInviteLink()">복사</button>
+          <c:if test="${isOwner}">
+            <button type="button" class="btn-pastel" onclick="refreshInviteCode()" title="초대링크 재발급">🔄 재발급</button>
+          </c:if>
         </div>
+      </div>
+
+      <%-- ──────────────────────────────────────────────
+           2. 멤버 관리 리스트  
+           ────────────────────────────────────────────── --%>
+      <label class="form-label-sm text-pastel-dark" style="margin-top:28px; margin-bottom:12px; display:block; font-weight: 800;">현재 멤버 (${fn:length(tripDto.members)}명)</label>
+      <div class="member-list" style="display:flex; flex-direction:column; gap:12px;">
+        <c:forEach var="m" items="${tripDto.members}">
+          <%-- 강퇴/거절당한 유저는 리스트에 출력하지 않음 --%>
+          <c:if test="${m.invitationStatus != 'DECLINED'}">
+            <div class="member-row member-row-pastel" style="display:flex; align-items:center; padding:14px; border-radius:12px;">
+              
+              <%-- 아바타 --%>
+              <div class="member-avatar-lg <c:if test="${m.role == 'OWNER'}">role-owner</c:if>" 
+                   style="width:46px; height:46px; flex-shrink:0; overflow:hidden; border-radius:50%; display:flex; align-items:center; justify-content:center; background:#FFF; border: 2px solid #89CFF0;">
+                <c:choose>
+                  <c:when test="${not empty m.profileImage}">
+                    <img src="<c:choose><c:when test="${fn:startsWith(m.profileImage, 'http')}">${m.profileImage}</c:when><c:otherwise>${pageContext.request.contextPath}/uploads/${m.profileImage}</c:otherwise></c:choose>" 
+                         style="width:100%; height:100%; object-fit:cover;" 
+                         onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+                    <span style="display:none; font-weight:800; font-size:15px;" class="text-pastel-dark">${fn:substring(m.nickname,0,2)}</span>
+                  </c:when>
+                  <c:otherwise>
+                    <span style="font-weight:800; font-size:15px;" class="text-pastel-dark">${fn:substring(m.nickname,0,2)}</span>
+                  </c:otherwise>
+                </c:choose>
+              </div>
+
+              <%-- 닉네임 및 상태 텍스트 --%>
+              <div class="member-info" style="flex:1; margin-left:14px;">
+                <div class="member-name text-pastel-dark" style="font-weight:800; font-size:15px;">${m.nickname}</div>
+                <div class="member-sub" style="font-size:12px; color:#A8C8E1; font-weight:700; margin-top:2px;">
+                  <c:choose>
+                    <c:when test="${m.role == 'OWNER'}">방장</c:when>
+                    <c:when test="${m.invitationStatus == 'PENDING'}">초대 대기 중</c:when>
+                    <c:when test="${m.role == 'VIEWER'}">읽기 전용</c:when>
+                    <c:otherwise>편집자</c:otherwise>
+                  </c:choose>
+                </div>
+              </div>
+
+              <%-- 우측 컨트롤 패널 --%>
+              <c:choose>
+                <c:when test="${m.role == 'OWNER'}">
+                  <span style="font-size:12px; font-weight:900; background:linear-gradient(135deg, #89CFF0, #C2B8D9); color:#FFF; padding:6px 12px; border-radius:8px; box-shadow: 0 2px 4px rgba(194,184,217,0.4);">👑 방장</span>
+                </c:when>
+                <c:when test="${m.invitationStatus == 'PENDING'}">
+                  <span style="font-size:12px; font-weight:800; color:#C2B8D9; margin-right:8px;">⏳ 대기중</span>
+                  <c:if test="${isOwner}">
+                    <button onclick="onKickMember(${m.memberId})" style="padding:6px 12px; background:#FFF; color:#E0BBC2; border:2px solid #E0BBC2; border-radius:8px; font-weight:800; font-size:12px; cursor:pointer;">취소</button>
+                  </c:if>
+                </c:when>
+                <c:otherwise>
+                  <c:if test="${isOwner}">
+                    <div style="display:flex; gap:6px; align-items:center;">
+                      <select onchange="onChangeMemberRole(this, ${m.memberId})" 
+                              class="text-pastel-dark"
+                              style="padding:6px 10px; border-radius:8px; border:2px solid #A8C8E1; font-size:13px; font-weight:800; background:#FFF; cursor:pointer; outline:none;">
+                        <option value="EDITOR" ${m.role == 'EDITOR' ? 'selected' : ''}>✏️ 편집자</option>
+                        <option value="VIEWER" ${m.role == 'VIEWER' ? 'selected' : ''}>👀 읽기전용</option>
+                      </select>
+                      <button onclick="onKickMember(${m.memberId})" style="padding:6px 12px; background:#FFF; color:#E0BBC2; border:2px solid #E0BBC2; border-radius:8px; font-weight:800; font-size:12px; cursor:pointer;">강퇴</button>
+                    </div>
+                  </c:if>
+                  <c:if test="${!isOwner}">
+                     <span class="text-pastel-dark" style="font-size:12px; font-weight:800; background:#FFF; border: 2px solid #A8C8E1; padding:6px 12px; border-radius:8px;">
+                       ${m.role == 'VIEWER' ? '👀 읽기전용' : '✏️ 편집자'}
+                     </span>
+                  </c:if>
+                </c:otherwise>
+              </c:choose>
+              
+            </div>
+          </c:if>
         </c:forEach>
       </div>
+      <c:if test="${!isOwner}">
+        <div style="margin-top:24px; padding-top:16px; border-top:1px solid rgba(137,207,240,0.2);">
+          <button onclick="onLeaveTrip()" style="width:100%; padding:14px; background:#FFF; color:#E0BBC2; border:2px solid #E0BBC2; border-radius:12px; font-weight:900; font-size:14px; cursor:pointer;">
+            🚪 이 여행에서 나가기
+          </button>
+        </div>
+      </c:if>
 
-      <div class="invite-divider">초대하기</div>
-
-      <div class="invite-method">
-        <button class="invite-btn" onclick="showToast('카카오톡 공유 연동 예정')">
-          <span class="invite-icon">💬</span>카카오톡
-        </button>
-        <button class="invite-btn" onclick="copyInviteLink()">
-          <span class="invite-icon">🔗</span>링크 복사
-        </button>
-        <button class="invite-btn" onclick="showToast('아이디 검색 연동 예정')">
-          <span class="invite-icon">🔍</span>아이디 검색
-        </button>
-      </div>
-      <label class="form-label-sm" style="margin-top:12px;display:block">초대 링크</label>
-      <div class="invite-link-box" style="margin-top:6px">
-		  <%-- 동적 URL 생성 (서버 도메인 + /trip/invite/ + 초대코드) --%>
-		  <span id="inviteLinkText">${pageContext.request.scheme}://${pageContext.request.serverName}:${pageContext.request.serverPort}${pageContext.request.contextPath}/trip/invite/${tripDto.inviteCode}</span>
-		  <button class="btn-copy" onclick="copyInviteLink()">복사</button>
-	  </div>
-      <p style="font-size:12px;color:var(--light);margin-top:10px;line-height:1.6;">
-        링크를 클릭한 사람은 즉시 ACCEPTED로 참여돼요.<br>
-        아이디 검색 초대는 상대방 수락 후 ACCEPTED 처리됩니다.
-      </p>
     </div>
   </div>
 </div>
-
 <%-- ══════════════════════════════════════════════════
      여행 정보 상세 모달
 ════════════════════════════════════════════════== --%>
@@ -1123,6 +1165,77 @@ var TRIP_META = {
     wsConnect(TRIP_ID, CTX_PATH, MY_NICK);
   });
 </script>
+<%-- ✅ 전역 변수 설정 및 뷰어 권한 철통 통제 (최종 종결판) --%>
+<script>
+  var MY_MEMBER_ID = ${myMemberId};
+  var MY_ROLE = '${memberRole}';
+
+  if (MY_ROLE === 'VIEWER') {
+      document.body.classList.add('role-viewer');
+      
+      // 🚨 [1단계] 화면에 있는 모든 "추가/수정" 함수 껍데기로 만들기
+      window.openAddPlace = function() { alert('👀 읽기 전용 모드입니다.'); };
+      window.saveMemo = function() { alert('👀 읽기 전용 모드입니다.'); };
+      window.submitCheckItem = function() { alert('👀 읽기 전용 모드입니다.'); };
+      window.submitExpense = function() { alert('👀 읽기 전용 모드입니다.'); };
+      window.submitVote = function() { alert('👀 읽기 전용 모드입니다.'); };
+      window.removePlace = function() { alert('👀 읽기 전용 모드입니다.'); };
+      window.toggleCheckOptimistic = function() { alert('👀 읽기 전용 모드입니다.'); };
+
+      // 🚨 [2단계] 마우스 클릭 이벤트 자체를 1순위로 가로채서 파괴하기 (핵심!!!)
+      window.addEventListener('click', function(e) {
+          
+          // 1. 카카오맵 팝업이나 지도 검색창의 버튼을 누르려고 할 때
+          var btn = e.target.closest('button');
+          if (btn && (btn.classList.contains('map-add-btn') || 
+                      btn.classList.contains('btn-add-place') || 
+                      btn.classList.contains('rp-add-btn'))) {
+              e.preventDefault(); 
+              e.stopPropagation(); // 클릭 이벤트 압수!
+              alert('👀 읽기 전용 모드에서는 장소를 추가할 수 없습니다.');
+              return;
+          }
+          
+          // 2. 장소 배너(태그)나 검색 결과를 마우스로 클릭할 때
+          // (onclick 속성에 add 어쩌고 하는 함수가 적혀있으면 무조건 클릭을 죽여버립니다)
+          var clickEl = e.target.closest('[onclick]');
+          if (clickEl) {
+              var fnStr = clickEl.getAttribute('onclick') || '';
+              if (fnStr.includes('addRecToDay') || 
+                  fnStr.includes('openDayPicker') || 
+                  fnStr.includes('addMapPlace') || 
+                  fnStr.includes('addKakaoPlace') ||
+                  fnStr.includes('addPlace')) {
+                  
+                  e.preventDefault(); 
+                  e.stopPropagation(); // 클릭 이벤트 압수!
+                  alert('👀 읽기 전용 모드에서는 추천 장소나 지도 장소를 추가할 수 없습니다.');
+                  return;
+              }
+          }
+      }, true); // true 옵션: 브라우저에서 마우스 클릭이 발생하면 남들보다 무조건 제일 먼저 실행됨
+
+      //  드래그 앤 드롭 및 메모장 타이핑 물리적 마비
+      window.addEventListener('DOMContentLoaded', function() {
+          var memoArea = document.getElementById('memoText');
+          if(memoArea) {
+              memoArea.readOnly = true;
+              memoArea.placeholder = "읽기 전용 모드입니다.";
+          }
+          
+          document.querySelectorAll('.place-card').forEach(function(card) {
+              card.setAttribute('draggable', 'false');
+          });
+          
+          window.onCardDragStart = function(event) {
+              event.preventDefault();
+              alert('👀 읽기 전용 모드에서는 일정을 이동할 수 없습니다.');
+              return false;
+          };
+      });
+  }
+</script>
+
 <jsp:include page="/WEB-INF/views/layout/footerResources.jsp" />
 </body>
 </html>

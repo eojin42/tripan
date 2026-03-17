@@ -433,11 +433,17 @@ function selectMapSearchResult(lat, lng, name, address, categoryName) {
 
   window._currentMapPlace = { name: name, addr: address, lat: lat, lng: lng, cat: categoryName };
 
+  // 🚨 [핵심] 뷰어 모드 판별해서 버튼 디자인과 기능을 완전히 바꿔치기 합니다!
+  var isViewer = (typeof MY_ROLE !== 'undefined' && MY_ROLE === 'VIEWER');
+  var btnStyle = isViewer ? 'background:#E2E8F0; color:#A0AEC0; cursor:not-allowed;' : 'background:linear-gradient(135deg,#89CFF0,#B8A9D9); color:#fff; cursor:pointer;';
+  var btnAction = isViewer ? 'alert(\'👀 읽기 전용 모드에서는 일정을 추가할 수 없습니다.\')' : 'triggerMapAddModal()';
+  var btnText = isViewer ? '+ 추가 불가 (읽기 전용)' : '+ 일정에 추가';
+
   var iwContent =
     '<div style="padding:14px;width:230px;font-family:Pretendard,sans-serif;">' +
     '<div style="font-weight:800;font-size:14px;color:#2d3748;margin-bottom:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + name + '</div>' +
     '<div style="font-size:12px;color:#718096;margin-bottom:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + address + '</div>' +
-    '<button onclick="triggerMapAddModal()" style="width:100%;padding:9px 0;background:linear-gradient(135deg,#89CFF0,#B8A9D9);color:#fff;border:none;border-radius:8px;font-weight:700;font-size:13px;cursor:pointer;letter-spacing:0.3px;">+ 일정에 추가</button>' +
+    '<button onclick="' + btnAction + '" style="width:100%;padding:9px 0;border:none;border-radius:8px;font-weight:700;font-size:13px;letter-spacing:0.3px;' + btnStyle + '">' + btnText + '</button>' +
     '</div>';
 
   if (_infowindow) _infowindow.close();
@@ -449,6 +455,12 @@ function selectMapSearchResult(lat, lng, name, address, categoryName) {
 }
 
 window.triggerMapAddModal = function() {
+	
+	if (typeof MY_ROLE !== 'undefined' && MY_ROLE === 'VIEWER') {
+        alert('👀 읽기 전용 모드에서는 일정을 추가할 수 없습니다.');
+        return;
+    }
+		
     var p = window._currentMapPlace;
     if (!p) return;
 
@@ -509,6 +521,12 @@ window.triggerMapAddModal = function() {
 };
 
 window.executeMapAdd = function() {
+	
+	if (typeof MY_ROLE !== 'undefined' && MY_ROLE === 'VIEWER') {
+        alert('👀 읽기 전용 모드에서는 일정을 추가할 수 없습니다.');
+        return;
+    }
+	
     var p = window._currentMapPlace;
     var day = document.getElementById('customMapAddDay').value;
     var cat = document.getElementById('customMapAddCat').value; // NONE, RESTAURANT 등 영문 DB값으로 저장

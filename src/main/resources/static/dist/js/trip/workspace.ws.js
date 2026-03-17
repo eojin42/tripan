@@ -183,6 +183,30 @@ function wsHandle(msg) {
     case 'MEMBER_JOINED':
       wsToast('🎉 ' + (p.nickname || '새 멤버') + '님이 여행에 참여했어요!');
       break;
+	
+	  case 'MEMBER_KICKED':
+        if (String(msg.targetId) === String(MY_MEMBER_ID)) {
+          alert('🚨 방장에 의해 여행에서 강퇴되었습니다.\n이 여행방에는 다시 입장하실 수 없습니다.');
+          window.location.replace(CTX_PATH + '/trip/my_trips');
+        } else {
+          if (typeof wsToast === 'function') wsToast('멤버가 여행에서 내보내졌습니다 🚪');
+          setTimeout(function() { window.location.reload(); }, 1200);
+        }
+        break;
+
+      case 'ROLE_CHANGED':
+        // 내 권한이 바뀐 당사자일 때
+        if (Number(msg.targetId) === Number(MY_MEMBER_ID)) {
+          var rName = (msg.payload && msg.payload.newRole === 'VIEWER') ? '👀 읽기 전용' : '✏️ 편집자';
+          alert('🔄 방장에 의해 [' + rName + '] 권한으로 변경되었습니다.\n화면을 새로고침합니다.');
+          window.location.reload();
+        } 
+        // 다른 멤버들 화면
+        else {
+          if (typeof wsToast === 'function') wsToast('멤버 권한이 변경되었습니다 🔄');
+          setTimeout(function() { window.location.reload(); }, 1200);
+        }
+        break;
   }
 }
 
