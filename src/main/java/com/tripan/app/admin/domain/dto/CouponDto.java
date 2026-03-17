@@ -1,8 +1,11 @@
 package com.tripan.app.admin.domain.dto;
 
-import lombok.Data;
 import java.math.BigDecimal;
-import java.time.LocalDate;
+import java.time.LocalDateTime;
+
+import com.fasterxml.jackson.annotation.JsonFormat;
+
+import lombok.Data;
 
 public class CouponDto {
 
@@ -19,11 +22,14 @@ public class CouponDto {
         private BigDecimal minOrderAmount;     // 최소 주문 금액
         private BigDecimal platformShare;
         private BigDecimal partnerShare;
-        private LocalDate  validFrom;
-        private LocalDate  validUntil;
+        @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd HH:mm:ss", timezone = "Asia/Seoul")
+        private LocalDateTime  validFrom;
+        @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd HH:mm:ss", timezone = "Asia/Seoul")
+        private LocalDateTime  validUntil;
         private String     status;
         private int        issuedCount;
-        private String     createdAt;
+        @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd HH:mm:ss", timezone = "Asia/Seoul")
+        private LocalDateTime     createdAt;
         private String     issueConditionType;
         private String     issueConditionValue;
     }
@@ -38,9 +44,11 @@ public class CouponDto {
         private BigDecimal maxDiscountAmount;
         private BigDecimal minOrderAmount;     // 최소 주문 금액
         private BigDecimal platformShare;
-        private LocalDate  validFrom;
-        private LocalDate  validUntil;
-        private String     issueCondition;       // 프론트에서 오는 필드명
+        @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd HH:mm:ss", timezone = "Asia/Seoul")
+        private LocalDateTime  validFrom;
+        @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd HH:mm:ss", timezone = "Asia/Seoul")
+        private LocalDateTime  validUntil;
+        private String     issueConditionType;       // 프론트에서 오는 필드명
         private String     issueConditionValue;
     }
 
@@ -86,8 +94,10 @@ public class CouponDto {
         private Long   memberId;
         private String discountType;
         private BigDecimal discountAmount;
-        private String issuedAt;
-        private String validUntil;
+        @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd HH:mm:ss", timezone = "Asia/Seoul")
+        private LocalDateTime issuedAt;
+        @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd HH:mm:ss", timezone = "Asia/Seoul")
+        private LocalDateTime validUntil;
         private String status;  // UNUSED | USED | CANCELED
     }
     

@@ -58,6 +58,17 @@ public class CouponManageRestController {
     }
 
     /* ── 쿠폰 수정 ── */
+    @GetMapping("/{couponId}")
+    public ResponseEntity<?> getCoupon(@PathVariable("couponId") Long couponId) {
+        try {
+            CouponDto.ListItem coupon = couponService.getCouponById(couponId);
+            if (coupon == null) return ResponseEntity.notFound().build();
+            return ResponseEntity.ok(coupon);
+        } catch (Exception e) {
+            return ResponseEntity.status(500).build();
+        }
+    }
+    
     @PutMapping("/{couponId}")
     public ResponseEntity<Void> update(@PathVariable("couponId") Long couponId,
             @RequestBody CouponDto.SaveRequest req) {

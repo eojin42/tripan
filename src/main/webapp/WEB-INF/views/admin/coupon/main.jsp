@@ -9,6 +9,8 @@
   <title>TripanSuper — 쿠폰 관리</title>
   <link rel="stylesheet" href="${pageContext.request.contextPath}/dist/css/admin.css">
   <style>
+    html, body { overflow-y: auto !important; height: auto !important; }
+    .main-wrapper { overflow-y: auto !important; }
     .col-check { width: 44px; text-align: center; }
     input[type="checkbox"] { width: 16px; height: 16px; cursor: pointer; accent-color: var(--primary); }
 
@@ -299,7 +301,7 @@
                               style="background:#EFF6FF;color:#1D4ED8;border:1px solid #BFDBFE;"
                               @click="openApproveModal(c)">심사</button>
                       <button class="btn btn-outline btn-sm"
-                              @click="location.href='${pageContext.request.contextPath}/admin/coupon/form?id=' + c.couponId">수정</button>
+                              @click="goToEdit(c)">수정</button>
                       <button class="btn btn-sm"
                               style="background:#FEF2F2;color:#DC2626;border:1px solid #FECACA;"
                               @click="openDeleteConfirm(c)">삭제</button>
@@ -311,13 +313,13 @@
           </div>
 
           <div class="list-footer" v-if="couponPagination">
-            <div class="page-navigation"><div class="paginate">
-              <a v-if="couponPagination.showPrev" @click="fetchCoupons(couponPagination.firstPage)">≪</a>
-              <a v-if="couponPagination.showPrev" @click="fetchCoupons(couponPagination.prevBlockPage)">&lt;</a>
-              <a v-for="pg in couponPagination.pages" :key="pg" @click="fetchCoupons(pg)" :class="{ active: couponPageNo === pg }">{{ pg }}</a>
-              <a v-if="couponPagination.showNext" @click="fetchCoupons(couponPagination.nextBlockPage)">&gt;</a>
-              <a v-if="couponPagination.showNext" @click="fetchCoupons(couponPagination.lastPage)">≫</a>
-            </div></div>
+            <div class="pagination">
+              <button class="pg-btn pg-arrow" v-if="couponPagination.showPrev" @click="fetchCoupons(couponPagination.firstPage)">«</button>
+              <button class="pg-btn pg-arrow" v-if="couponPagination.showPrev" @click="fetchCoupons(couponPagination.prevBlockPage)">‹</button>
+              <button class="pg-btn" v-for="pg in couponPagination.pages" :key="pg" @click="fetchCoupons(pg)" :class="{ active: couponPageNo === pg }">{{ pg }}</button>
+              <button class="pg-btn pg-arrow" v-if="couponPagination.showNext" @click="fetchCoupons(couponPagination.nextBlockPage)">›</button>
+              <button class="pg-btn pg-arrow" v-if="couponPagination.showNext" @click="fetchCoupons(couponPagination.lastPage)">»</button>
+            </div>
           </div>
         </div>
       </template>
@@ -475,13 +477,13 @@
             </table>
           </div>
           <div class="list-footer" v-if="issuedPagination">
-            <div class="page-navigation"><div class="paginate">
-              <a v-if="issuedPagination.showPrev" @click="fetchIssued(issuedPagination.firstPage)">≪</a>
-              <a v-if="issuedPagination.showPrev" @click="fetchIssued(issuedPagination.prevBlockPage)">&lt;</a>
-              <a v-for="pg in issuedPagination.pages" :key="pg" @click="fetchIssued(pg)" :class="{ active: issuedPageNo === pg }">{{ pg }}</a>
-              <a v-if="issuedPagination.showNext" @click="fetchIssued(issuedPagination.nextBlockPage)">&gt;</a>
-              <a v-if="issuedPagination.showNext" @click="fetchIssued(issuedPagination.lastPage)">≫</a>
-            </div></div>
+            <div class="pagination">
+              <button class="pg-btn pg-arrow" v-if="issuedPagination.showPrev" @click="fetchIssued(issuedPagination.firstPage)">«</button>
+              <button class="pg-btn pg-arrow" v-if="issuedPagination.showPrev" @click="fetchIssued(issuedPagination.prevBlockPage)">‹</button>
+              <button class="pg-btn" v-for="pg in issuedPagination.pages" :key="pg" @click="fetchIssued(pg)" :class="{ active: issuedPageNo === pg }">{{ pg }}</button>
+              <button class="pg-btn pg-arrow" v-if="issuedPagination.showNext" @click="fetchIssued(issuedPagination.nextBlockPage)">›</button>
+              <button class="pg-btn pg-arrow" v-if="issuedPagination.showNext" @click="fetchIssued(issuedPagination.lastPage)">»</button>
+            </div>
           </div>
         </div>
       </template>
@@ -508,7 +510,8 @@
             </div>
             <div>
               <div style="color:var(--muted);font-size:11px;font-weight:800;margin-bottom:4px;">유효기간</div>
-              <div style="font-weight:700;">{{ approveTarget.validFrom }} ~ {{ approveTarget.validUntil }}</div>
+              <div style="font-weight:700;">{{ approveTarget.validFrom.replace('T', ' ') }}
+   						 <br>~ {{ approveTarget.validUntil.replace('T', ' ') }}</div>
             </div>
           </div>
 
@@ -762,7 +765,7 @@
         } catch(e) { console.error('삭제 오류', e); alert('처리 중 오류가 발생했습니다.'); }
       };
 
-      onMounted(() => { fetchKpi(); fetchPartnerOptions(); });
+      onMounted(() => { fetchKpi(); fetchPartnerOptions(); fetchCoupons(1); });
 
       return {
         kpi, activeTab, switchTab,
@@ -775,6 +778,11 @@
         fetchCoupons, fetchIssued, toggleCheckAll, downloadExcel,
         openApproveModal, closeApproveModal, submitApprove,
         openDeleteConfirm, openBulkDeleteModal, closeDeleteModal, submitDelete,
+        goToEdit: (c) => {
+          const id = c.couponId ?? c.coupon_id ?? c.id;
+          if (!id) { console.error('[goToEdit] 쿠폰 객체:', c); alert('쿠폰 ID를 찾을 수 없습니다. 콘솔(F12)을 확인해주세요.'); return; }
+          location.href = contextPath + '/admin/coupon/form?id=' + id;
+        },
         resetCouponFilter: () => { couponFilter.discountType = 'ALL'; couponFilter.status = 'ALL'; couponFilter.issuer = 'ALL'; couponFilter.keyword = ''; fetchCoupons(1); },
         resetIssuedFilter: () => { issuedFilter.status = 'ALL'; issuedFilter.couponKeyword = ''; issuedFilter.memberKeyword = ''; fetchIssued(1); }
       };

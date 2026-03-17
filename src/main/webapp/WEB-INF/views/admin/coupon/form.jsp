@@ -112,6 +112,136 @@
       .grid-2, .grid-3 { grid-template-columns: 1fr; }
       .col-span-2 { grid-column: span 1; }
     }
+
+    /* ── 적용 대상 섹션 ── */
+    .target-search-row {
+      display: flex; gap: 8px; align-items: center;
+    }
+    .target-search-row input {
+      flex: 1; border: 1.5px solid var(--border); border-radius: 10px;
+      padding: 10px 14px; font-size: 14px; font-weight: 600;
+      background: #fff; outline: none; transition: border-color .2s;
+      font-family: inherit; color: var(--text); box-sizing: border-box;
+    }
+    .target-search-row input:focus { border-color: var(--primary); box-shadow: 0 0 0 3px var(--primary-10); }
+    .btn-search-icon {
+      width: 42px; height: 42px; border-radius: 10px; border: 1.5px solid var(--border);
+      background: var(--bg); cursor: pointer; font-size: 16px;
+      display: flex; align-items: center; justify-content: center;
+      transition: all .15s; flex-shrink: 0;
+    }
+    .btn-search-icon:hover { background: var(--primary); border-color: var(--primary); color: #fff; }
+
+    .target-tags {
+      display: flex; flex-wrap: wrap; gap: 8px;
+      min-height: 40px; padding: 10px 12px;
+      border: 1.5px dashed var(--border); border-radius: 10px;
+      margin-top: 8px; background: var(--bg);
+    }
+    .target-tag {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 4px 10px 4px 12px; border-radius: 20px;
+      font-size: 12px; font-weight: 700;
+    }
+    .target-tag.include { background: #EFF6FF; color: #1D4ED8; border: 1px solid #BFDBFE; }
+    .target-tag.exclude { background: #FFF1F2; color: #BE123C; border: 1px solid #FECDD3; }
+    .target-tag button {
+      background: none; border: none; cursor: pointer; padding: 0;
+      font-size: 13px; line-height: 1; opacity: .6;
+      color: inherit; font-weight: 900;
+    }
+    .target-tag button:hover { opacity: 1; }
+    .target-empty-hint {
+      font-size: 12px; color: var(--muted); align-self: center; font-style: italic;
+    }
+
+    /* ── 통합 모달 ── */
+    .modal-backdrop {
+      position: fixed; inset: 0; background: rgba(0,0,0,.45);
+      z-index: 9000; display: flex; align-items: center; justify-content: center;
+    }
+    .modal-box {
+      background: #fff; border-radius: 18px; width: 580px; max-width: 96vw;
+      max-height: 82vh; display: flex; flex-direction: column;
+      box-shadow: 0 24px 60px rgba(0,0,0,.2);
+    }
+    .modal-header {
+      padding: 18px 24px 0; display: flex; align-items: center; justify-content: space-between;
+    }
+    .modal-header h3 { margin: 0; font-size: 15px; font-weight: 800; }
+    .modal-close { background: none; border: none; font-size: 20px; cursor: pointer; color: var(--muted); line-height:1; }
+    .modal-tabs {
+      display: flex; padding: 12px 24px 0; border-bottom: 1px solid var(--border);
+    }
+    .modal-tab {
+      padding: 8px 16px 10px; font-size: 13px; font-weight: 700; cursor: pointer;
+      border: none; background: none; border-bottom: 2.5px solid transparent;
+      color: var(--muted); font-family: inherit; transition: all .15s; margin-bottom: -1px;
+    }
+    .modal-tab.active { color: var(--primary); border-bottom-color: var(--primary); }
+    .modal-tab:hover:not(.active) { color: var(--text); }
+    .modal-search-row {
+      padding: 14px 24px; display: flex; gap: 8px; border-bottom: 1px solid var(--border);
+    }
+    .modal-search-row input {
+      flex: 1; border: 1.5px solid var(--border); border-radius: 10px;
+      padding: 9px 14px; font-size: 14px; font-weight: 600;
+      outline: none; font-family: inherit; transition: border-color .2s;
+    }
+    .modal-search-row input:focus { border-color: var(--primary); box-shadow: 0 0 0 3px var(--primary-10); }
+    .modal-search-row button {
+      padding: 0 18px; border-radius: 10px; border: none; height: 40px;
+      background: var(--primary); color: #fff; font-weight: 700; font-size: 13px;
+      cursor: pointer; font-family: inherit;
+    }
+    .modal-list { flex: 1; overflow-y: auto; padding: 4px 0; min-height: 200px; }
+    .modal-pre-search {
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      padding: 50px 0; color: var(--muted); gap: 10px;
+    }
+    .modal-pre-search .icon { font-size: 32px; opacity: .4; }
+    .modal-pre-search p { margin: 0; font-size: 13px; font-weight: 600; }
+    .modal-acc-row {
+      display: flex; align-items: center; gap: 12px;
+      padding: 10px 24px; cursor: pointer; transition: background .1s; user-select: none;
+    }
+    .modal-acc-row:hover { background: var(--bg); }
+    .modal-acc-row input[type=checkbox] { width: 16px; height: 16px; cursor: pointer; accent-color: var(--primary); flex-shrink:0; }
+    .modal-acc-info { flex: 1; }
+    .modal-acc-name { font-size: 14px; font-weight: 700; }
+    .modal-acc-sub  { font-size: 12px; color: var(--muted); margin-top: 2px; }
+    .modal-acc-expand {
+      font-size: 11px; font-weight: 700; color: var(--primary); padding: 3px 9px;
+      background: none; border: 1px solid var(--primary); border-radius: 6px;
+      cursor: pointer; white-space: nowrap; font-family: inherit; opacity: .7; transition: all .15s;
+    }
+    .modal-acc-expand:hover { opacity: 1; background: var(--primary); color: #fff; }
+    .modal-room-row {
+      display: flex; align-items: center; gap: 12px;
+      padding: 8px 24px 8px 52px; cursor: pointer; transition: background .1s;
+      background: #FAFBFC; border-left: 3px solid #E0E7FF; user-select: none;
+    }
+    .modal-room-row:hover { background: #EEF2FF; }
+    .modal-room-row input[type=checkbox] { width: 15px; height: 15px; cursor: pointer; accent-color: var(--primary); flex-shrink:0; }
+    .modal-room-name { font-size: 13px; font-weight: 600; flex: 1; }
+    .modal-room-sub  { font-size: 11px; color: var(--muted); }
+    .modal-loading { padding: 40px 0; text-align: center; color: var(--muted); font-size: 13px; }
+    .modal-empty   { padding: 40px 0; text-align: center; color: var(--muted); font-size: 13px; }
+    .modal-footer {
+      padding: 12px 24px; border-top: 1px solid var(--border);
+      display: flex; align-items: center; gap: 10px;
+    }
+    .modal-sel-count { flex: 1; font-size: 12px; color: var(--muted); font-weight: 600; }
+    .modal-footer .btn-cancel {
+      height: 38px; padding: 0 18px; border-radius: 8px; font-weight: 800;
+      font-size: 13px; border: 1.5px solid var(--border);
+      background: var(--bg); color: var(--text); cursor: pointer; font-family: inherit;
+    }
+    .modal-footer .btn-ok {
+      height: 38px; padding: 0 18px; border-radius: 8px; border: none;
+      background: var(--primary); color: #fff; font-weight: 800;
+      font-size: 13px; cursor: pointer; font-family: inherit;
+    }
   </style>
 </head>
 <body>
@@ -125,7 +255,7 @@
     <main class="main-content">
       <div class="form-page">
 
-        <a href="${pageContext.request.contextPath}/admin/coupon" class="back-link">← 쿠폰 목록으로</a>
+        <a href="${pageContext.request.contextPath}/admin/coupon/main" class="back-link">← 쿠폰 목록으로</a>
 
         <div class="page-header fade-up" style="margin-bottom:20px;">
           <div>
@@ -134,8 +264,11 @@
           </div>
         </div>
 
-        <!-- ── 카드 1: 기본 정보 ── -->
-        <div class="form-card fade-up">
+        <!-- ── 카드 4: 적용 대상 ── -->
+      
+
+
+
           <div class="card-title">📋 기본 정보</div>
 
           <!-- 쿠폰명 -->
@@ -216,7 +349,7 @@
           </div>
         </div>
 
-        <!-- ── 카드 2: 파트너 & 부담 비율 ── -->
+        <!-- 파트너 & 부담 비율 -->
         <div class="form-card partner-card fade-up">
 		  <div class="card-title">🤝 파트너 & 부담 비율</div>
 		
@@ -261,7 +394,7 @@
 		    ⚠ 플랫폼 쿠폰은 100% 플랫폼 부담으로 고정됩니다.
 		  </div>
 		</div>
-
+		
         <!-- ── 카드 3: 발급 조건 ── -->
         <div class="form-card fade-up">
           <div class="card-title">🎯 자동 발급 조건</div>
@@ -341,20 +474,20 @@
   </div>
 </div>
 
-<script>
-  const contextPath = (function() {
-    const cp = '${pageContext.request.contextPath}';
-    return cp === '/' ? '' : cp;
-  })();
-  const couponId = '${param.id}' || null;
-</script>
+
 
 <jsp:include page="/WEB-INF/views/layout/vue_cdn.jsp" />
 
 <script type="module">
-  import { createApp, ref, reactive, computed, onMounted } from 'vue';
-  import axios from 'axios';
+import { createApp, ref, reactive, computed, onMounted } from 'vue';
+import axios from 'axios';
 
+const contextPath = '${pageContext.request.contextPath}' === '/' ? '' : '${pageContext.request.contextPath}';
+  const _rawId = '${param.id}'; 
+  const couponId = (_rawId && _rawId !== 'null' && _rawId !== '') ? _rawId : null;
+
+  console.log('[Module 확인] 실제 사용할 ID:', couponId);
+  
   createApp({
     setup() {
 
@@ -364,8 +497,153 @@
         couponName: '', discountType: 'FIXED', discountAmount: '',
         maxDiscountAmount: '', minOrderAmount: '', platformShare: 100, partnerId: '',
         validFrom: '', validUntil: '',
-        issueConditionType: 'NONE', issueConditionValue: ''
+        issueConditionType: 'NONE', issueConditionValue: '',
+        // ── 적용 대상 ──
+        targetRegion: [],
+        targetAccType: [],
+        includeAccommodations: [],
+        excludeAccommodations: [],
+        excludeRooms: []          // [{roomId, roomName, placeId, accName}]
       });
+
+      /* ── 지역 / 타입 옵션 ── */
+      const regionOptions  = ref([]);
+      const accTypeOptions = ref([]);
+
+      const fetchRegionOptions = async () => {
+        try {
+          const res = await axios.get(`${contextPath}/admin/api/accommodation/regions`);
+          regionOptions.value = res.data;
+        } catch(e) { console.error('지역 옵션 오류', e); }
+      };
+      const fetchAccTypeOptions = async () => {
+        try {
+          const res = await axios.get(`${contextPath}/admin/api/accommodation/types`);
+          accTypeOptions.value = res.data;
+        } catch(e) { console.error('숙소타입 옵션 오류', e); }
+      };
+
+      /* ── 적용/제외 태그 관리 ── */
+      const includeSearchKeyword = ref('');
+      const excludeSearchKeyword = ref('');
+
+      const removeInclude = (placeId) => {
+        form.includeAccommodations = form.includeAccommodations.filter(a => a.placeId !== placeId);
+      };
+      const removeExclude = (placeId) => {
+        form.excludeAccommodations = form.excludeAccommodations.filter(a => a.placeId !== placeId);
+      };
+      const removeExcludeRoom = (roomId) => {
+        form.excludeRooms = form.excludeRooms.filter(r => r.roomId !== roomId);
+      };
+
+      /* ── 통합 모달 상태 ── */
+      const showAccModal    = ref(false);
+      const modalTab        = ref('include');   // 'include' | 'excludeAcc' | 'excludeRoom'
+      const modalKeyword    = ref('');
+      const modalSearched   = ref(false);       // 검색 실행 여부 (true일 때만 결과 표시)
+      const modalAccResults = ref([]);
+      const modalLoading    = ref(false);
+
+      // 제외 객실 탭 전용: 펼쳐진 숙소 + 로드된 객실
+      const expandedAccId  = ref(null);
+      const expandedRooms  = ref([]);
+      const roomLoading    = ref(false);
+
+      const openModal = (tab) => {
+        modalTab.value      = tab;
+        modalKeyword.value  = '';
+        modalSearched.value = false;
+        modalAccResults.value = [];
+        expandedAccId.value = null;
+        expandedRooms.value = [];
+        showAccModal.value  = true;
+      };
+      const closeModal = () => { showAccModal.value = false; };
+
+      const switchTab = (tab) => {
+        modalTab.value      = tab;
+        modalKeyword.value  = '';
+        modalSearched.value = false;
+        modalAccResults.value = [];
+        expandedAccId.value = null;
+        expandedRooms.value = [];
+      };
+
+      /* 숙소 검색 */
+      const runSearch = async () => {
+        if (!modalKeyword.value.trim()) return;
+        modalLoading.value  = true;
+        modalSearched.value = true;
+        expandedAccId.value = null;
+        expandedRooms.value = [];
+        try {
+          const res = await axios.get(`${contextPath}/admin/api/accommodation/search`, {
+            params: { keyword: modalKeyword.value }
+          });
+          modalAccResults.value = res.data;
+        } catch(e) {
+          console.error('숙소 검색 오류', e);
+          modalAccResults.value = [];
+        } finally {
+          modalLoading.value = false;
+        }
+      };
+
+      /* 적용/제외숙소 탭 — 숙소 체크박스 토글 */
+      const isAccSelected = (placeId) => {
+        if (modalTab.value === 'include')
+          return form.includeAccommodations.some(a => a.placeId === placeId);
+        return form.excludeAccommodations.some(a => a.placeId === placeId);
+      };
+      const toggleAccSelect = (acc) => {
+        if (modalTab.value === 'include') {
+          const idx = form.includeAccommodations.findIndex(a => a.placeId === acc.placeId);
+          idx >= 0 ? form.includeAccommodations.splice(idx, 1) : form.includeAccommodations.push(acc);
+        } else {
+          const idx = form.excludeAccommodations.findIndex(a => a.placeId === acc.placeId);
+          idx >= 0 ? form.excludeAccommodations.splice(idx, 1) : form.excludeAccommodations.push(acc);
+        }
+      };
+
+      /* 제외객실 탭 — 숙소 펼치기/접기 */
+      const toggleRoomExpand = async (placeId) => {
+        if (expandedAccId.value === placeId) {
+          expandedAccId.value = null;
+          expandedRooms.value = [];
+          return;
+        }
+        expandedAccId.value = placeId;
+        expandedRooms.value = [];
+        roomLoading.value   = true;
+        try {
+          const res = await axios.get(`${contextPath}/admin/api/accommodation/${placeId}/rooms`);
+          expandedRooms.value = res.data;
+        } catch(e) {
+          console.error('객실 목록 오류', e);
+          expandedRooms.value = [];
+        } finally {
+          roomLoading.value = false;
+        }
+      };
+
+      const isRoomSelected = (roomId) => form.excludeRooms.some(r => r.roomId === roomId);
+      const countSelectedRooms = (placeId) => form.excludeRooms.filter(r => r.placeId === placeId).length;
+
+      const toggleRoomSelect = (room, acc) => {
+        const idx = form.excludeRooms.findIndex(r => r.roomId === room.roomId);
+        if (idx >= 0) {
+          form.excludeRooms.splice(idx, 1);
+        } else {
+          form.excludeRooms.push({
+            roomId:   room.roomId,
+            roomName: room.roomName,
+            placeId:  acc.placeId,
+            accName:  acc.name
+          });
+        }
+      };
+
 
       /* ── 숫자 포맷 ── */
       const formatNumber = (val) => {
@@ -406,27 +684,51 @@
 
       /* ── 기존 쿠폰 불러오기 (수정 모드) ── */
       const loadCoupon = async () => {
-        if (!couponId) return;
+        if (!couponId) {
+        console.log("등록 모드입니다. 데이터를 불러오지 않습니다.");
+        return;			
+      }
+
         try {
-          const res = await axios.get(`${contextPath}/api/admin/coupon/${couponId}`);
+          const res = await axios.get(`${contextPath}/api/admin/coupon/`+couponId);
           const c = res.data;
+          const toDatetimeLocal = (val) => {
+            if (!val) return '';
+            let s = String(val).trim();
+  
+  			if (s.length <= 10) {
+    			s += 'T00:00';
+ 			 } else {
+    			s = s.replace(' ', 'T');
+  		}
+ 		 return s.slice(0, 16);
+
+          };
+
           Object.assign(form, {
-            couponName:          c.couponName,
-            discountType:        c.discountType,
-            discountAmount:      c.discountAmount,
-            maxDiscountAmount:   c.maxDiscountAmount  || '',
-            minOrderAmount:      c.minOrderAmount     || '',
-            platformShare:       c.platformShare,
-            partnerId:           c.partnerId          || '',
-            validFrom:           c.validFrom          || '',
-            validUntil:          c.validUntil         || '',
-            issueConditionType:  c.issueConditionType || 'NONE',
-            issueConditionValue: c.issueConditionValue|| ''
+            couponName:          c.couponName          || '',
+            discountType:        c.discountType        || 'FIXED',
+            discountAmount:      c.discountAmount      || '',
+            maxDiscountAmount:   c.maxDiscountAmount   || '',
+            minOrderAmount:      c.minOrderAmount      || '',
+            platformShare:       c.platformShare       ?? 100,
+            partnerId:           c.partnerId           || '',
+            validFrom:           toDatetimeLocal(c.validFrom),
+            validUntil:          toDatetimeLocal(c.validUntil),
+            issueConditionType:  c.issueConditionType  || 'NONE',
+            issueConditionValue: c.issueConditionValue || '',
+            // 적용 대상
+            targetRegion:  c.targets ? [...new Set(c.targets.filter(t=>t.targetType==='REGION' && t.isExclude==='N').map(t=>t.targetValue))] : [],
+            targetAccType: c.targets ? [...new Set(c.targets.filter(t=>t.targetType==='ACC_TYPE' && t.isExclude==='N').map(t=>t.targetValue))] : [],
+            includeAccommodations: c.targets ? c.targets.filter(t=>t.targetType==='PLACE' && t.isExclude==='N').map(t=>({placeId:t.targetValue, name:t.displayName||t.targetValue})) : [],
+            excludeAccommodations: c.targets ? c.targets.filter(t=>t.targetType==='ACCOMMODATION' && t.isExclude==='Y').map(t=>({placeId:t.targetValue, name:t.displayName||t.targetValue})) : [],
+            excludeRooms: c.targets ? c.targets.filter(t=>t.targetType==='ROOM' && t.isExclude==='Y').map(t=>({roomId:t.targetValue, roomName:t.displayName, placeId:t.accId, accName:t.accName})) : []
           });
           partnerSearch.value = c.partnerName || '';
         } catch(e) {
-          console.error('쿠폰 불러오기 실패', e);
-          alert('쿠폰 정보를 불러올 수 없습니다.');
+          console.error('[loadCoupon] 실패 - ID:', couponId, e);
+          const status = e.response ? e.response.status : '네트워크오류';
+          alert(`쿠폰 정보를 불러올 수 없습니다.\n• ID: ${couponId}\n• HTTP 상태: ${status}\n\n백엔드에 GET /api/admin/coupon/${couponId} 엔드포인트가 있는지 확인해주세요.`);
         }
       };
 
@@ -460,7 +762,15 @@
           validFrom:           form.validFrom,
           validUntil:          form.validUntil,
           issueCondition:      form.issueConditionType,
-          issueConditionValue: form.issueConditionValue|| null
+          issueConditionValue: form.issueConditionValue|| null,
+          // ── 적용 대상 ──
+          targets: [
+            ...form.targetRegion.filter(v=>v).map(v => ({ targetType:'REGION',        targetValue: v,              isExclude:'N' })),
+            ...form.targetAccType.filter(v=>v).map(v => ({ targetType:'ACC_TYPE',      targetValue: v,              isExclude:'N' })),
+            ...form.includeAccommodations.map(a =>      ({ targetType:'ACCOMMODATION', targetValue: String(a.placeId), isExclude:'N', displayName: a.name })),
+            ...form.excludeAccommodations.map(a =>      ({ targetType:'ACCOMMODATION', targetValue: String(a.placeId), isExclude:'Y', displayName: a.name })),
+            ...form.excludeRooms.map(r =>               ({ targetType:'ROOM',          targetValue: String(r.roomId),  isExclude:'Y', displayName: r.roomName, accId: r.placeId, accName: r.accName }))
+          ]
         };
         try {
           if (isEdit.value) {
@@ -481,6 +791,8 @@
 
       onMounted(() => {
         fetchPartnerOptions();
+        fetchRegionOptions();
+        fetchAccTypeOptions();
         loadCoupon();
       });
 
@@ -489,6 +801,14 @@
         formatNumber, parseNumber,
         partnerOptions, partnerSearch, showPartnerDropdown, filteredPartners,
         onPartnerSearch, hidePartnerDropdown, selectPartner,
+        regionOptions, accTypeOptions,
+        includeSearchKeyword, excludeSearchKeyword,
+        removeInclude, removeExclude, removeExcludeRoom,
+        showAccModal, modalTab, modalKeyword, modalSearched, modalAccResults, modalLoading,
+        expandedAccId, expandedRooms, roomLoading,
+        openModal, closeModal, switchTab, runSearch,
+        isAccSelected, toggleAccSelect,
+        toggleRoomExpand, isRoomSelected, countSelectedRooms, toggleRoomSelect,
         submitForm, goBack
       };
     }
