@@ -1,6 +1,8 @@
 package com.tripan.app.admin.controller;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -14,7 +16,10 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.tripan.app.admin.domain.dto.CouponDto;
+import com.tripan.app.admin.mapper.CouponTargetMapper;
 import com.tripan.app.admin.service.CouponService;
+import com.tripan.app.domain.dto.AccommodationDto;
+import com.tripan.app.domain.dto.RoomDto;
 
 import lombok.RequiredArgsConstructor;
 
@@ -24,6 +29,7 @@ import lombok.RequiredArgsConstructor;
 public class CouponManageRestController {
 
     private final CouponService couponService;
+    private final CouponTargetMapper couponTargetMapper;
 
     /* ── KPI ── */
     @GetMapping("/kpi")
@@ -61,7 +67,7 @@ public class CouponManageRestController {
     @GetMapping("/{couponId}")
     public ResponseEntity<?> getCoupon(@PathVariable("couponId") Long couponId) {
         try {
-            CouponDto.ListItem coupon = couponService.getCouponById(couponId);
+            CouponDto.DetailResponse coupon = couponService.getCouponById(couponId);
             if (coupon == null) return ResponseEntity.notFound().build();
             return ResponseEntity.ok(coupon);
         } catch (Exception e) {
@@ -101,6 +107,40 @@ public class CouponManageRestController {
 
         return ResponseEntity.ok(
                 couponService.getIssuedList(page, status, couponKeyword, memberKeyword));
+    }
+    
+    /* ── 숙소 타입 조회 ── */
+    @GetMapping("/accommodation/types")
+    public ResponseEntity<List<String>> getAccommodationTypes() {
+        return ResponseEntity.ok(couponTargetMapper.selectAccTypeOptions());
+    }
+
+    /* ── 숙소 검색 ── */
+    @GetMapping("/accommodation/search")
+    public ResponseEntity<List<AccommodationDto>> searchAccommodations(
+            @RequestParam(value = "keyword", required = false) String keyword,
+            @RequestParam(value = "accommodationType", required = false) String accommodationType) {
+
+        Map<String, Object> params = new HashMap<>();
+        params.put("keyword", keyword);
+        params.put("accommodationType", accommodationType);
+
+        return ResponseEntity.ok(couponTargetMapper.searchAccommodations(params));
+    }
+
+    /* ── 객실 조회 ── */
+    @GetMapping("/accommodation/{placeId}/rooms")
+    public ResponseEntity<List<RoomDto>> getRooms(
+            @PathVariable("placeId") Long placeId,
+            @RequestParam(value = "keyword", required = false) String keyword) {
+
+    	System.out.println("getRooms 진입 placeId = " + placeId + ", keyword = " + keyword);
+
+        List<RoomDto> rooms = couponTargetMapper.selectRoomsByAccommodation(placeId, keyword);
+
+        System.out.println("rooms size = " + (rooms == null ? "null" : rooms.size()));
+
+        return ResponseEntity.ok(rooms);
     }
 }
 

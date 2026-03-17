@@ -204,7 +204,7 @@
     <!-- ── 삭제 ── -->
     <delete id="deleteCoupons">
         DELETE FROM coupon
-        WHERE coupon_id = ${couponId}
+        WHERE coupon_id = #{couponId}
     </delete>
 
     <!-- ── 회원 발급 현황 ── -->
@@ -224,6 +224,7 @@
                     c.discount_amount                    AS discountAmount,
                     mc.issued_at						 AS issuedAt,
                     c.valid_until						 AS validUntil,
+                    mc.expired_at       				 AS expiredAt,
                     mc.status
                 FROM member_coupon mc
                 JOIN coupon c       ON mc.coupon_id  = c.coupon_id
@@ -376,5 +377,125 @@
             </when>
         </choose>
     </select>
+
+    <!-- ══════════════════════════════════════════════════
+         쿠폰 적용 대상 (coupon_target)
+         ══════════════════════════════════════════════════ -->
+
+    <!-- 적용 대상 INSERT (단건, bulk로 루프 호출) -->
+    <insert id="insertCouponTarget" parameterType="map">
+        INSERT INTO coupon_target (target_id, coupon_id, target_type, target_value, is_exclude)
+        VALUES (coupon_target_seq.NEXTVAL, #{couponId}, #{targetType}, #{targetValue}, #{isExclude})
+    </insert>
+
+    <!-- 적용 대상 전체 조회 (단건 쿠폰 조회 시 함께 사용) -->
+    <select id="selectCouponTargets" parameterType="long"
+            resultType="com.tripan.app.admin.domain.dto.CouponTargetDto">
+        SELECT
+            target_id    AS targetId,
+            coupon_id    AS couponId,
+            target_type  AS targetType,
+            target_value AS targetValue,
+            is_exclude   AS isExclude
+        FROM coupon_target
+        WHERE coupon_id = #{couponId}
+        ORDER BY is_exclude, target_type, target_id
+    </select>
+
+    <!-- 수정 시 기존 대상 전체 삭제 후 재등록 -->
+    <delete id="deleteCouponTargets" parameterType="long">
+        DELETE FROM coupon_target WHERE coupon_id = #{couponId}
+    </delete>
+
+    <!-- ── 숙소 검색 (모달용) ── -->
+    <select id="searchAccommodations" parameterType="map"
+            resultType="com.tripan.app.domain.dto.AccommodationDto">
+        SELECT
+            a.place_id             AS placeId,
+            p.place_name           AS name,
+            a.accommodation_type   AS accommodationType
+        FROM accommodation a
+        LEFT JOIN place p ON a.place_id = p.place_id
+        <where>
+            <if test="keyword != null and keyword != ''">
+                AND (
+                    p.place_name LIKE '%' || #{keyword} || '%'
+                )
+            </if>
+            <if test="accType != null and accType != ''">
+                AND a.accommodation_type = #{accType}
+            </if>
+        </where>
+        ORDER BY p.place_name
+    </select>
+
+    <!-- 숙소 타입 목록 -->
+    <select id="selectAccTypeOptions" resultType="String">
+        SELECT DISTINCT accommodation_type
+        FROM accommodation
+        WHERE accommodation_type IS NOT NULL
+        ORDER BY accommodation_type
+    </select>
+
+    <!-- 숙소별 객실 목록 (제외객실 모달용) -->
+    <select id="selectRoomsByAccommodation" parameterType="long"
+            resultType="com.tripan.app.domain.dto.RoomDto">
+        SELECT
+            r.room_id           AS roomId,
+            r.room_name         AS roomName,
+            r.roombasecount     AS roombasecount,
+            r.max_capacity      AS maxCapacity
+        FROM room r
+        WHERE r.place_id = #{placeId}
+        ORDER BY r.room_name
+    </select>
+
+    <!-- ── 결제/예약 단에서 쿠폰 적용 가능 여부 체크 ──
+         target_type: REGION | ACC_TYPE | ACCOMMODATION | ROOM
+         is_exclude : N=포함조건, Y=제외조건
+         대상 지정 0건 → 전체 허용
+    -->
+    <select id="isCouponApplicable" parameterType="map" resultType="int">
+        SELECT
+            CASE
+                WHEN (SELECT COUNT(*) FROM coupon_target WHERE coupon_id = #{couponId}) = 0
+                     THEN 1
+                WHEN (
+                    /* 포함 조건 매칭 체크 */
+                    SELECT COUNT(*) FROM coupon_target ct
+                    JOIN accommodation a ON a.place_id = #{accommodationPlaceId}
+                    LEFT JOIN place p    ON p.place_id = a.place_id
+                    WHERE ct.coupon_id   = #{couponId}
+                      AND ct.is_exclude  = 'N'
+                      AND (
+                          (ct.target_type = 'ACCOMMODATION' AND ct.target_value = TO_CHAR(#{accommodationPlaceId}))
+                       OR (ct.target_type = 'ACC_TYPE'      AND ct.target_value = a.accommodation_type)
+                      )
+                ) > 0
+                AND (
+                    /* 제외 숙소 체크 */
+                    SELECT COUNT(*) FROM coupon_target
+                    WHERE coupon_id  = #{couponId}
+                      AND is_exclude = 'Y'
+                      AND target_type = 'ACCOMMODATION'
+                      AND target_value = TO_CHAR(#{accommodationPlaceId})
+                ) = 0
+                AND (
+                    /* 제외 객실 체크 */
+                    SELECT COUNT(*) FROM coupon_target
+                    WHERE coupon_id  = #{couponId}
+                      AND is_exclude = 'Y'
+                      AND target_type = 'ROOM'
+                      AND target_value = TO_CHAR(#{roomId})
+                ) = 0
+                     THEN 1
+                ELSE 0
+            END AS applicable
+        FROM DUAL
+    </select>
+    
+    <select id="selectCurrentCouponId" resultType="long">
+	    SELECT MAX(coupon_id) FROM coupon
+	</select>
 
 </mapper>

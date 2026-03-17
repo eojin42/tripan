@@ -10,7 +10,7 @@ import lombok.extern.slf4j.Slf4j;
 @Controller
 @RequiredArgsConstructor
 @Slf4j
-@RequestMapping("/admin/partner/*")
+@RequestMapping("/admin/partner")
 public class PartnerManageController {
 
 	@GetMapping("main")

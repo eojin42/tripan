@@ -265,10 +265,9 @@
         </div>
 
         <!-- ── 카드 4: 적용 대상 ── -->
-      
+        
 
-
-
+        <div class="form-card fade-up">
           <div class="card-title">📋 기본 정보</div>
 
           <!-- 쿠폰명 -->
@@ -395,6 +394,178 @@
 		  </div>
 		</div>
 		
+		<div class="form-card fade-up">
+          <div class="card-title">🏨 적용 대상</div>
+
+          <!-- 숙소 타입 필터 -->
+          <div class="fg" style="margin-bottom:20px;">
+            <label>숙소 타입 (선택)</label>
+            <select v-model="form.targetAccType" multiple style="height:auto;min-height:42px;">
+              <option value="">전체 타입</option>
+              <option v-for="t in accTypeOptions" :key="t" :value="t">{{ t }}</option>
+            </select>
+            <span class="hint">Ctrl(Cmd)+클릭으로 여러 타입 선택</span>
+          </div>
+
+          <!-- 적용 숙소 -->
+          <div style="margin-bottom:20px;">
+            <label style="font-size:11px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.6px;display:block;margin-bottom:8px;">
+              적용 숙소 지정 (선택)
+            </label>
+            <div class="target-search-row">
+              <input type="text" v-model="includeSearchKeyword" placeholder="숙소명 검색 후 추가..." readonly @click="openModal('include')" style="cursor:pointer;">
+              <button class="btn-search-icon" @click="openModal('include')" title="숙소 검색">🔍</button>
+            </div>
+            <div class="target-tags">
+              <span v-if="form.includeAccommodations.length===0" class="target-empty-hint">숙소 타입 조건에 해당하는 전체 숙소에 적용됩니다</span>
+              <span v-for="acc in form.includeAccommodations" :key="acc.placeId" class="target-tag include">
+                🏨 {{ acc.name }}
+                <button @click="removeInclude(acc.placeId)">×</button>
+              </span>
+            </div>
+          </div>
+
+          <!-- 제외 숙소 / 제외 객실 -->
+          <div>
+            <label style="font-size:11px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.6px;display:block;margin-bottom:8px;">
+              제외 대상 (선택)
+            </label>
+            <div style="display:flex;gap:8px;margin-bottom:8px;">
+              <button type="button" style="flex:1;padding:9px 0;border:1.5px dashed #FECDD3;border-radius:10px;background:#FFF1F2;color:#BE123C;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;"
+                      @click="openModal('excludeAcc')">🚫 제외 숙소 선택</button>
+              <button type="button" style="flex:1;padding:9px 0;border:1.5px dashed #DDD6FE;border-radius:10px;background:#F5F3FF;color:#6D28D9;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;"
+                      @click="openModal('excludeRoom')">🛏 제외 객실 선택</button>
+            </div>
+            <div class="target-tags">
+              <span v-if="form.excludeAccommodations.length===0 && form.excludeRooms.length===0" class="target-empty-hint">제외 대상 없음</span>
+              <span v-for="acc in form.excludeAccommodations" :key="'ea-'+acc.placeId" class="target-tag exclude">
+                🚫 {{ acc.name }}
+                <button @click="removeExclude(acc.placeId)">×</button>
+              </span>
+              <span v-for="room in form.excludeRooms" :key="'er-'+room.roomId"
+                    style="display:inline-flex;align-items:center;gap:6px;padding:4px 10px 4px 12px;border-radius:20px;font-size:12px;font-weight:700;background:#F5F3FF;color:#6D28D9;border:1px solid #DDD6FE;">
+                🛏 {{ room.accName }} · {{ room.roomName }}
+                <button @click="removeExcludeRoom(room.roomId)" style="background:none;border:none;cursor:pointer;padding:0;font-size:13px;line-height:1;opacity:.6;color:inherit;font-weight:900;">×</button>
+              </span>
+            </div>
+          </div>
+
+          <div style="margin-top:14px;padding:11px 16px;background:#F8FAFC;border:1.5px solid var(--border);border-radius:10px;font-size:12px;color:var(--muted);font-weight:600;line-height:1.7;">
+            📌 적용 범위:
+            <span v-if="form.includeAccommodations.length>0">지정 숙소 {{ form.includeAccommodations.length }}개</span>
+            <span v-else>타입<span v-if="form.targetAccType.filter(v=>v).length"> ({{ form.targetAccType.filter(v=>v).join(', ') }})</span></span>
+            <span v-if="form.excludeAccommodations.length>0"> → 제외 숙소 {{ form.excludeAccommodations.length }}개</span>
+            <span v-if="form.excludeRooms.length>0"> → 제외 객실 {{ form.excludeRooms.length }}개</span>
+            <span v-if="form.includeAccommodations.length===0 && !form.targetAccType.filter(v=>v).length"> 전체 숙소</span>
+          </div>
+        </div>
+
+        <!-- ── 통합 숙소/객실 선택 모달 ── -->
+        <teleport to="body">
+          <div v-if="showAccModal" class="modal-backdrop" @click.self="closeModal">
+            <div class="modal-box">
+
+              <!-- 헤더 -->
+              <div class="modal-header">
+                <h3>🏨 적용 대상 선택</h3>
+                <button class="modal-close" @click="closeModal">✕</button>
+              </div>
+
+              <!-- 탭: 적용숙소 / 제외숙소 / 제외객실 -->
+              <div class="modal-tabs">
+                <button class="modal-tab" :class="{active: modalTab==='include'}"
+                        @click="switchTab('include')">✅ 적용 숙소</button>
+                <button class="modal-tab" :class="{active: modalTab==='excludeAcc'}"
+                        @click="switchTab('excludeAcc')">🚫 제외 숙소</button>
+                <button class="modal-tab" :class="{active: modalTab==='excludeRoom'}"
+                        @click="switchTab('excludeRoom')">🛏 제외 객실</button>
+              </div>
+
+              <!-- 검색 바 -->
+              <div class="modal-search-row">
+                <input type="text" v-model="modalKeyword"
+                       :placeholder="modalTab==='excludeRoom' ? '숙소명으로 검색 후 객실 선택...' : '숙소명 또는 지역으로 검색...'"
+                       @keyup.enter="runSearch">
+                <button @click="runSearch">검색</button>
+              </div>
+
+              <!-- 목록 -->
+              <div class="modal-list">
+
+                <!-- 검색 전 안내 -->
+                <div v-if="!modalSearched" class="modal-pre-search">
+                  <div class="icon">🔍</div>
+                  <p>검색어를 입력하고 검색 버튼을 눌러주세요</p>
+                </div>
+
+                <!-- 로딩 -->
+                <div v-else-if="modalLoading" class="modal-loading">검색 중...</div>
+
+                <!-- 결과 없음 -->
+                <div v-else-if="modalAccResults.length===0" class="modal-empty">검색 결과가 없습니다</div>
+
+                <!-- 적용/제외숙소 탭: 숙소 체크박스 목록 -->
+                <template v-else-if="modalTab !== 'excludeRoom'">
+                  <div v-for="acc in modalAccResults" :key="acc.placeId"
+                       class="modal-acc-row" @click="toggleAccSelect(acc)">
+                    <input type="checkbox" :checked="isAccSelected(acc.placeId)" @click.stop="toggleAccSelect(acc)">
+                    <div class="modal-acc-info">
+                      <div class="modal-acc-name">{{ acc.name }}</div>
+                      <div class="modal-acc-sub">{{ acc.accommodationType || '숙소 타입 미지정' }}</div>
+                    </div>
+                  </div>
+                </template>
+
+                <!-- 제외객실 탭: 숙소 클릭 → 객실 펼침 (2단계) -->
+                <template v-else>
+                  <template v-for="acc in modalAccResults" :key="acc.placeId">
+                    <!-- 숙소 행 -->
+                    <div class="modal-acc-row" @click="toggleRoomExpand(acc.placeId)">
+                      <div class="modal-acc-info">
+                        <div class="modal-acc-name">
+                          {{ expandedAccId === acc.placeId ? '▼' : '▶' }} {{ acc.name }}
+                        </div>
+                        <div class="modal-acc-sub">{{ acc.accommodationType || '숙소 타입 미지정' }}
+                          <span v-if="countSelectedRooms(acc.placeId) > 0"
+                                style="color:var(--primary);font-weight:700;">
+                            &nbsp;· {{ countSelectedRooms(acc.placeId) }}개 객실 선택됨
+                          </span>
+                        </div>
+                      </div>
+                      <button class="modal-acc-expand" @click.stop="toggleRoomExpand(acc.placeId)">
+                        {{ expandedAccId === acc.placeId ? '접기' : '객실 보기' }}
+                      </button>
+                    </div>
+                    <!-- 객실 행 (펼침) -->
+                    <template v-if="expandedAccId === acc.placeId">
+                      <div v-if="roomLoading" class="modal-loading" style="padding:16px 0 16px 52px;">객실 불러오는 중...</div>
+                      <div v-for="room in expandedRooms" :key="room.roomId"
+                           class="modal-room-row" @click="toggleRoomSelect(room, acc)">
+                        <input type="checkbox" :checked="isRoomSelected(room.roomId)" @click.stop="toggleRoomSelect(room, acc)">
+                        <span class="modal-room-name">{{ room.roomName }}</span>
+                        <span class="modal-room-sub">기준 {{ room.roombasecount }}인 · 최대 {{ room.maxCapacity }}인</span>
+                      </div>
+                    </template>
+                  </template>
+                </template>
+
+              </div>
+
+              <!-- 푸터 -->
+              <div class="modal-footer">
+                <span class="modal-sel-count">
+                  <template v-if="modalTab==='include'">적용 숙소 {{ form.includeAccommodations.length }}개 선택됨</template>
+                  <template v-else-if="modalTab==='excludeAcc'">제외 숙소 {{ form.excludeAccommodations.length }}개 선택됨</template>
+                  <template v-else>제외 객실 {{ form.excludeRooms.length }}개 선택됨</template>
+                </span>
+                <button class="btn-cancel" @click="closeModal">닫기</button>
+                <button class="btn-ok" @click="closeModal">확인</button>
+              </div>
+
+            </div>
+          </div>
+        </teleport>
+
         <!-- ── 카드 3: 발급 조건 ── -->
         <div class="form-card fade-up">
           <div class="card-title">🎯 자동 발급 조건</div>
@@ -499,26 +670,18 @@ const contextPath = '${pageContext.request.contextPath}' === '/' ? '' : '${pageC
         validFrom: '', validUntil: '',
         issueConditionType: 'NONE', issueConditionValue: '',
         // ── 적용 대상 ──
-        targetRegion: [],
         targetAccType: [],
         includeAccommodations: [],
         excludeAccommodations: [],
         excludeRooms: []          // [{roomId, roomName, placeId, accName}]
       });
 
-      /* ── 지역 / 타입 옵션 ── */
-      const regionOptions  = ref([]);
+      /* ── 숙소 타입 옵션 ── */
       const accTypeOptions = ref([]);
 
-      const fetchRegionOptions = async () => {
-        try {
-          const res = await axios.get(`${contextPath}/admin/api/accommodation/regions`);
-          regionOptions.value = res.data;
-        } catch(e) { console.error('지역 옵션 오류', e); }
-      };
       const fetchAccTypeOptions = async () => {
         try {
-          const res = await axios.get(`${contextPath}/admin/api/accommodation/types`);
+          const res = await axios.get(`${contextPath}/api/admin/coupon/accommodation/types`);
           accTypeOptions.value = res.data;
         } catch(e) { console.error('숙소타입 옵션 오류', e); }
       };
@@ -578,7 +741,7 @@ const contextPath = '${pageContext.request.contextPath}' === '/' ? '' : '${pageC
         expandedAccId.value = null;
         expandedRooms.value = [];
         try {
-          const res = await axios.get(`${contextPath}/admin/api/accommodation/search`, {
+          const res = await axios.get(`${contextPath}/api/admin/coupon/accommodation/search`, {
             params: { keyword: modalKeyword.value }
           });
           modalAccResults.value = res.data;
@@ -608,6 +771,8 @@ const contextPath = '${pageContext.request.contextPath}' === '/' ? '' : '${pageC
 
       /* 제외객실 탭 — 숙소 펼치기/접기 */
       const toggleRoomExpand = async (placeId) => {
+
+	
         if (expandedAccId.value === placeId) {
           expandedAccId.value = null;
           expandedRooms.value = [];
@@ -617,11 +782,17 @@ const contextPath = '${pageContext.request.contextPath}' === '/' ? '' : '${pageC
         expandedRooms.value = [];
         roomLoading.value   = true;
         try {
-          const res = await axios.get(`${contextPath}/admin/api/accommodation/${placeId}/rooms`);
+		const url = `${contextPath}/api/admin/coupon/accommodation/${placeId}/rooms`;
+console.log('placeId:', placeId);
+console.log('room url:', url);
+			
+          const res = await axios.get(url);
           expandedRooms.value = res.data;
         } catch(e) {
-          console.error('객실 목록 오류', e);
-          expandedRooms.value = [];
+           console.error('객실 목록 오류', e);
+  console.error('응답 상태:', e?.response?.status);
+  console.error('응답 데이터:', e?.response?.data);
+  expandedRooms.value = [];
         } finally {
           roomLoading.value = false;
         }
@@ -718,9 +889,8 @@ const contextPath = '${pageContext.request.contextPath}' === '/' ? '' : '${pageC
             issueConditionType:  c.issueConditionType  || 'NONE',
             issueConditionValue: c.issueConditionValue || '',
             // 적용 대상
-            targetRegion:  c.targets ? [...new Set(c.targets.filter(t=>t.targetType==='REGION' && t.isExclude==='N').map(t=>t.targetValue))] : [],
             targetAccType: c.targets ? [...new Set(c.targets.filter(t=>t.targetType==='ACC_TYPE' && t.isExclude==='N').map(t=>t.targetValue))] : [],
-            includeAccommodations: c.targets ? c.targets.filter(t=>t.targetType==='PLACE' && t.isExclude==='N').map(t=>({placeId:t.targetValue, name:t.displayName||t.targetValue})) : [],
+            includeAccommodations: c.targets ? c.targets.filter(t=>t.targetType==='ACCOMMODATION' && t.isExclude==='N').map(t=>({placeId:t.targetValue, name:t.displayName||t.targetValue})) : [],
             excludeAccommodations: c.targets ? c.targets.filter(t=>t.targetType==='ACCOMMODATION' && t.isExclude==='Y').map(t=>({placeId:t.targetValue, name:t.displayName||t.targetValue})) : [],
             excludeRooms: c.targets ? c.targets.filter(t=>t.targetType==='ROOM' && t.isExclude==='Y').map(t=>({roomId:t.targetValue, roomName:t.displayName, placeId:t.accId, accName:t.accName})) : []
           });
@@ -765,8 +935,7 @@ const contextPath = '${pageContext.request.contextPath}' === '/' ? '' : '${pageC
           issueConditionValue: form.issueConditionValue|| null,
           // ── 적용 대상 ──
           targets: [
-            ...form.targetRegion.filter(v=>v).map(v => ({ targetType:'REGION',        targetValue: v,              isExclude:'N' })),
-            ...form.targetAccType.filter(v=>v).map(v => ({ targetType:'ACC_TYPE',      targetValue: v,              isExclude:'N' })),
+            ...form.targetAccType.filter(v=>v).map(v => ({ targetType:'ACC_TYPE',      targetValue: v,                 isExclude:'N' })),
             ...form.includeAccommodations.map(a =>      ({ targetType:'ACCOMMODATION', targetValue: String(a.placeId), isExclude:'N', displayName: a.name })),
             ...form.excludeAccommodations.map(a =>      ({ targetType:'ACCOMMODATION', targetValue: String(a.placeId), isExclude:'Y', displayName: a.name })),
             ...form.excludeRooms.map(r =>               ({ targetType:'ROOM',          targetValue: String(r.roomId),  isExclude:'Y', displayName: r.roomName, accId: r.placeId, accName: r.accName }))
@@ -791,7 +960,6 @@ const contextPath = '${pageContext.request.contextPath}' === '/' ? '' : '${pageC
 
       onMounted(() => {
         fetchPartnerOptions();
-        fetchRegionOptions();
         fetchAccTypeOptions();
         loadCoupon();
       });
@@ -801,7 +969,7 @@ const contextPath = '${pageContext.request.contextPath}' === '/' ? '' : '${pageC
         formatNumber, parseNumber,
         partnerOptions, partnerSearch, showPartnerDropdown, filteredPartners,
         onPartnerSearch, hidePartnerDropdown, selectPartner,
-        regionOptions, accTypeOptions,
+        accTypeOptions,
         includeSearchKeyword, excludeSearchKeyword,
         removeInclude, removeExclude, removeExcludeRoom,
         showAccModal, modalTab, modalKeyword, modalSearched, modalAccResults, modalLoading,

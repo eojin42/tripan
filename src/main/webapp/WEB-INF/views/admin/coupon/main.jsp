@@ -285,7 +285,10 @@
                     </span>
                   </td>
                   <td class="num" style="font-size:12px;">{{ c.platformShare }}% / {{ c.partnerShare }}%</td>
-                  <td style="font-size:12px;color:var(--muted);">{{ c.validFrom }} ~ {{ c.validUntil }}</td>
+                  <td
+					  style="font-size:12px;color:var(--muted);"
+					  v-html="String(c.validFrom || '').replace('T', ' ') + ' ~<br>' + String(c.validUntil || '').replace('T', ' ')">
+					</td>
                   <td class="num">{{ c.issuedCount }}</td>
                   <td>
                     <span v-if="c.status === 'ACTIVE'"    class="badge badge-active">활성</span>
@@ -466,7 +469,7 @@
                     <span v-else>{{ i.discountAmount }}%</span>
                   </td>
                   <td style="font-size:12px;color:var(--muted);">{{ i.issuedAt }}</td>
-                  <td style="font-size:12px;color:var(--muted);">{{ i.validUntil }}</td>
+                  <td style="font-size:12px;color:var(--muted);">{{ i.expiredAt }}</td>
                   <td>
                     <span v-if="i.status === 'UNUSED'"   class="badge badge-unused">미사용</span>
                     <span v-else-if="i.status === 'USED'"    class="badge badge-used">사용 완료</span>
