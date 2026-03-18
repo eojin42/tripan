@@ -10,7 +10,7 @@ import lombok.Data;
 
 public class CouponDto {
 
-    @Data
+	@Data
     public static class ListItem {
         private Long couponId;
         private Long partnerId;
@@ -41,13 +41,13 @@ public class CouponDto {
 
     @Data
     public static class SaveRequest {
-        private Long partnerId;
         private String couponName;
         private BigDecimal discountAmount;
         private String discountType;
         private BigDecimal maxDiscountAmount;
         private BigDecimal minOrderAmount;
         private BigDecimal platformShare;
+        private Long partnerId;
 
         @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm")
         private LocalDateTime validFrom;
@@ -55,6 +55,7 @@ public class CouponDto {
         @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm")
         private LocalDateTime validUntil;
 
+        // NONE / NEW_MEMBER / BOOKING_COUNT / REVIEW_COUNT / AMOUNT_SPENT
         private String issueConditionType;
         private String issueConditionValue;
 
@@ -130,9 +131,9 @@ public class CouponDto {
 
         @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd HH:mm:ss", timezone = "Asia/Seoul")
         private LocalDateTime validUntil;
-        
+
         @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd HH:mm:ss", timezone = "Asia/Seoul")
-        private LocalDateTime expiredAt; 
+        private LocalDateTime expiredAt;
 
         private String status;
     }
@@ -165,4 +166,5 @@ public class CouponDto {
         private int prevBlockPage;
         private int nextBlockPage;
     }
+
 }

@@ -889,10 +889,11 @@ console.log('room url:', url);
             issueConditionType:  c.issueConditionType  || 'NONE',
             issueConditionValue: c.issueConditionValue || '',
             // 적용 대상
-            targetAccType: c.targets ? [...new Set(c.targets.filter(t=>t.targetType==='ACC_TYPE' && t.isExclude==='N').map(t=>t.targetValue))] : [],
-            includeAccommodations: c.targets ? c.targets.filter(t=>t.targetType==='ACCOMMODATION' && t.isExclude==='N').map(t=>({placeId:t.targetValue, name:t.displayName||t.targetValue})) : [],
-            excludeAccommodations: c.targets ? c.targets.filter(t=>t.targetType==='ACCOMMODATION' && t.isExclude==='Y').map(t=>({placeId:t.targetValue, name:t.displayName||t.targetValue})) : [],
-            excludeRooms: c.targets ? c.targets.filter(t=>t.targetType==='ROOM' && t.isExclude==='Y').map(t=>({roomId:t.targetValue, roomName:t.displayName, placeId:t.accId, accName:t.accName})) : []
+            // targets가 없거나 빈 배열이면 빈값으로 초기화
+            targetAccType:         (c.targets||[]).filter(t=>t.targetType==='ACC_TYPE'      && t.isExclude==='N').map(t=>t.targetValue),
+            includeAccommodations: (c.targets||[]).filter(t=>t.targetType==='ACCOMMODATION' && t.isExclude==='N').map(t=>({placeId:t.targetValue, name:t.displayName||('숙소'+t.targetValue)})),
+            excludeAccommodations: (c.targets||[]).filter(t=>t.targetType==='ACCOMMODATION' && t.isExclude==='Y').map(t=>({placeId:t.targetValue, name:t.displayName||('숙소'+t.targetValue)})),
+            excludeRooms:          (c.targets||[]).filter(t=>t.targetType==='ROOM'          && t.isExclude==='Y').map(t=>({roomId:t.targetValue, roomName:t.displayName||('객실'+t.targetValue), placeId:t.accId||'', accName:t.accName||''}))
           });
           partnerSearch.value = c.partnerName || '';
         } catch(e) {
@@ -905,7 +906,7 @@ console.log('room url:', url);
       /* ── 파트너 옵션 ── */
       const fetchPartnerOptions = async () => {
         try {
-          const res = await axios.get(`${contextPath}/admin/api/partner/options`);
+          const res = await axios.get(`${contextPath}/api/admin/partner/options`);
           partnerOptions.value = res.data;
         } catch(e) { console.error('파트너 옵션 오류', e); }
       };
@@ -931,10 +932,10 @@ console.log('room url:', url);
           partnerId:           form.partnerId          || null,
           validFrom:           form.validFrom,
           validUntil:          form.validUntil,
-          issueCondition:      form.issueConditionType,
+          issueConditionType:  form.issueConditionType,
           issueConditionValue: form.issueConditionValue|| null,
           // ── 적용 대상 ──
-          targets: [
+          targetList: [
             ...form.targetAccType.filter(v=>v).map(v => ({ targetType:'ACC_TYPE',      targetValue: v,                 isExclude:'N' })),
             ...form.includeAccommodations.map(a =>      ({ targetType:'ACCOMMODATION', targetValue: String(a.placeId), isExclude:'N', displayName: a.name })),
             ...form.excludeAccommodations.map(a =>      ({ targetType:'ACCOMMODATION', targetValue: String(a.placeId), isExclude:'Y', displayName: a.name })),
@@ -943,13 +944,13 @@ console.log('room url:', url);
         };
         try {
           if (isEdit.value) {
-            await axios.put(`${contextPath}/api/admin/coupon/${couponId}`, payload);
+            await axios.post(contextPath + '/api/admin/coupon/' + couponId + '/update', payload);
             alert('쿠폰이 수정되었습니다.');
           } else {
             await axios.post(`${contextPath}/api/admin/coupon/register`, payload);
             alert('쿠폰이 등록되었습니다.');
           }
-          location.href = contextPath + '/admin/coupon';
+          location.href = contextPath + '/admin/coupon/main';
         } catch(e) {
           console.error('저장 오류', e);
           alert('처리 중 오류가 발생했습니다.');

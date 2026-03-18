@@ -5,11 +5,9 @@ import java.util.List;
 import java.util.Map;
 
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -31,91 +29,75 @@ public class CouponManageRestController {
     private final CouponService couponService;
     private final CouponTargetMapper couponTargetMapper;
 
-    /* ── KPI ── */
     @GetMapping("/kpi")
     public ResponseEntity<CouponDto.KpiResponse> getKpi() {
         return ResponseEntity.ok(couponService.getKpi());
     }
 
-    /* ── 쿠폰 목록 ── */
     @GetMapping("/list")
     public ResponseEntity<CouponDto.PageResponse<CouponDto.ListItem>> getCouponList(
-            @RequestParam(value="page",defaultValue = "1")    int    page,
-            @RequestParam(value="discountType",defaultValue = "ALL")  String discountType,
-            @RequestParam(value="status",defaultValue = "ALL")  String status,
-            @RequestParam(value="issuer",defaultValue = "ALL")  String issuer,
-            @RequestParam(value="keyword",defaultValue = "")     String keyword) {
-
-        return ResponseEntity.ok(
-                couponService.getCouponList(page, discountType, status, issuer, keyword));
+            @RequestParam(value = "page", defaultValue = "1") int page,
+            @RequestParam(value = "discountType", defaultValue = "ALL") String discountType,
+            @RequestParam(value = "status", defaultValue = "ALL") String status,
+            @RequestParam(value = "issuer", defaultValue = "ALL") String issuer,
+            @RequestParam(value = "keyword", defaultValue = "") String keyword) {
+        return ResponseEntity.ok(couponService.getCouponList(page, discountType, status, issuer, keyword));
     }
 
-    /* ── 승인 대기 목록 ── */
     @GetMapping("/pending")
     public ResponseEntity<List<CouponDto.ListItem>> getPendingList() {
         return ResponseEntity.ok(couponService.getPendingList());
     }
 
-    /* ── 쿠폰 등록 ── */
     @PostMapping("/register")
     public ResponseEntity<Void> register(@RequestBody CouponDto.SaveRequest req) {
         couponService.registerCoupon(req);
         return ResponseEntity.ok().build();
     }
 
-    /* ── 쿠폰 수정 ── */
     @GetMapping("/{couponId}")
     public ResponseEntity<?> getCoupon(@PathVariable("couponId") Long couponId) {
-        try {
-            CouponDto.DetailResponse coupon = couponService.getCouponById(couponId);
-            if (coupon == null) return ResponseEntity.notFound().build();
-            return ResponseEntity.ok(coupon);
-        } catch (Exception e) {
-            return ResponseEntity.status(500).build();
+        CouponDto.DetailResponse coupon = couponService.getCouponById(couponId);
+        if (coupon == null) {
+            return ResponseEntity.notFound().build();
         }
+        return ResponseEntity.ok(coupon);
     }
-    
-    @PutMapping("/{couponId}")
+
+    @PostMapping("/{couponId}/update")
     public ResponseEntity<Void> update(@PathVariable("couponId") Long couponId,
-            @RequestBody CouponDto.SaveRequest req) {
+                                       @RequestBody CouponDto.SaveRequest req) {
         couponService.updateCoupon(couponId, req);
         return ResponseEntity.ok().build();
     }
 
-    /* ── 승인/반려 ── */
     @PostMapping("/{couponId}/review")
     public ResponseEntity<Void> review(@PathVariable("couponId") Long couponId,
-            @RequestBody CouponDto.ReviewRequest req) {
+                                       @RequestBody CouponDto.ReviewRequest req) {
         couponService.reviewCoupon(couponId, req);
         return ResponseEntity.ok().build();
     }
 
-    /* ── 삭제 ── */
-    @DeleteMapping
+    @PostMapping("/delete")
     public ResponseEntity<Void> delete(@RequestBody CouponDto.DeleteRequest req) {
         couponService.deleteCoupons(req.getCouponIds());
         return ResponseEntity.ok().build();
     }
 
-    /* ── 회원 발급 현황 ── */
     @GetMapping("/issued")
     public ResponseEntity<CouponDto.PageResponse<CouponDto.IssuedItem>> getIssuedList(
-            @RequestParam(value="page", defaultValue = "1")   int    page,
-            @RequestParam(value="status", defaultValue = "ALL") String status,
-            @RequestParam(value="couponKeyword", defaultValue = "")    String couponKeyword,
-            @RequestParam(value="memberKeyword", defaultValue = "")    String memberKeyword) {
-
-        return ResponseEntity.ok(
-                couponService.getIssuedList(page, status, couponKeyword, memberKeyword));
+            @RequestParam(value = "page", defaultValue = "1") int page,
+            @RequestParam(value = "status", defaultValue = "ALL") String status,
+            @RequestParam(value = "couponKeyword", defaultValue = "") String couponKeyword,
+            @RequestParam(value = "memberKeyword", defaultValue = "") String memberKeyword) {
+        return ResponseEntity.ok(couponService.getIssuedList(page, status, couponKeyword, memberKeyword));
     }
-    
-    /* ── 숙소 타입 조회 ── */
+
     @GetMapping("/accommodation/types")
     public ResponseEntity<List<String>> getAccommodationTypes() {
         return ResponseEntity.ok(couponTargetMapper.selectAccTypeOptions());
     }
 
-    /* ── 숙소 검색 ── */
     @GetMapping("/accommodation/search")
     public ResponseEntity<List<AccommodationDto>> searchAccommodations(
             @RequestParam(value = "keyword", required = false) String keyword,
@@ -124,23 +106,13 @@ public class CouponManageRestController {
         Map<String, Object> params = new HashMap<>();
         params.put("keyword", keyword);
         params.put("accommodationType", accommodationType);
-
         return ResponseEntity.ok(couponTargetMapper.searchAccommodations(params));
     }
 
-    /* ── 객실 조회 ── */
     @GetMapping("/accommodation/{placeId}/rooms")
     public ResponseEntity<List<RoomDto>> getRooms(
             @PathVariable("placeId") Long placeId,
             @RequestParam(value = "keyword", required = false) String keyword) {
-
-    	System.out.println("getRooms 진입 placeId = " + placeId + ", keyword = " + keyword);
-
-        List<RoomDto> rooms = couponTargetMapper.selectRoomsByAccommodation(placeId, keyword);
-
-        System.out.println("rooms size = " + (rooms == null ? "null" : rooms.size()));
-
-        return ResponseEntity.ok(rooms);
+        return ResponseEntity.ok(couponTargetMapper.selectRoomsByAccommodation(placeId, keyword));
     }
 }
-

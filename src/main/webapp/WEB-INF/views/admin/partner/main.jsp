@@ -127,8 +127,8 @@
   <div class="main-wrapper">
     <jsp:include page="../layout/header.jsp" />
 
-    <div id="app">
-    <main class="main-content">
+    <div id="app" style="flex:1;display:flex;flex-direction:column;min-height:0;overflow:hidden;">
+    <main class="main-content" style="flex:1;overflow-y:auto;">
 
       <!-- 페이지 헤더 -->
       <div class="page-header fade-up">
@@ -175,7 +175,7 @@
       <div class="card filter-card fade-up">
         <div class="filter-row">
           <div class="filter-label">파트너사 검색</div>
-          <select class="filter-select" v-model="filter.status" style="width:130px;">
+          <select class="filter-select" v-model="filter.status" @change="fetchList(1)" style="width:130px;">
             <option value="ALL">전체 상태</option>
             <option value="PENDING">승인 대기</option>
             <option value="ACTIVE">활성</option>
@@ -216,6 +216,7 @@
           <span class="bulk-count">{{ selectedIds.length }}개 선택</span>
           <span class="bulk-bar-label">선택된 파트너사에 일괄 작업을 수행합니다.</span>
           <div class="bulk-bar-actions">
+            <button class="btn-bulk btn-bulk-excel"  @click="copySelectedNames">파트너사명 복사</button>
             <button class="btn-bulk btn-bulk-black"  @click="openBulkStatusModal">상태 일괄 변경</button>
             <button class="btn-bulk btn-bulk-danger" @click="openBulkDeactivateModal">일괄 차단</button>
             <button class="btn-bulk btn-bulk-excel"  @click="downloadExcel">엑셀 다운로드</button>
@@ -264,12 +265,7 @@
               </tr>
             </thead>
             <tbody>
-              <tr v-if="!searched">
-                <td colspan="10" style="text-align:center;padding:50px 0;color:var(--muted);">
-                  상단의 검색 조건을 설정한 후 <strong>[검색]</strong> 버튼을 눌러주세요.
-                </td>
-              </tr>
-              <tr v-else-if="partnerList.length === 0">
+              <tr v-if="partnerList.length === 0">
                 <td colspan="10" style="text-align:center;padding:50px 0;color:var(--muted);">
                   검색 결과가 없습니다.
                 </td>
@@ -317,7 +313,7 @@
                   <span v-else-if="p.riskLevel === 'MID'" class="risk-mid">🟡 주의</span>
                   <span v-else class="risk-low">🟢 정상</span>
                 </td>
-                <td class="num date-cell">{{ p.regDate }}</td>
+                <td class="num date-cell">{{ p.createdAt ? String(p.createdAt).substring(0,10) : '-' }}</td>
                 <td class="right" style="white-space:nowrap;">
                   <button class="btn btn-primary btn-sm"
                           style="margin-right:4px;"
@@ -336,17 +332,18 @@
         </div>
 
         <!-- 페이지네이션 -->
-        <div class="list-footer" v-if="pagination">
-          <div class="page-navigation">
-            <div class="paginate">
-              <a v-if="pagination.showPrev" @click="fetchList(pagination.firstPage)">≪</a>
-              <a v-if="pagination.showPrev" @click="fetchList(pagination.prevBlockPage)">&lt;</a>
-              <a v-for="pg in pagination.pages" :key="pg"
-                 @click="fetchList(pg)" :class="{ active: pageNo === pg }">{{ pg }}</a>
-              <a v-if="pagination.showNext" @click="fetchList(pagination.nextBlockPage)">&gt;</a>
-              <a v-if="pagination.showNext" @click="fetchList(pagination.lastPage)">≫</a>
-            </div>
-          </div>
+        <div class="pagination" v-if="totalCount > 0" style="margin-top:24px;">
+          <template v-if="pagination">
+            <button class="pg-btn pg-arrow" v-if="pagination.showPrev" @click="fetchList(pagination.firstPage)">≪</button>
+            <button class="pg-btn pg-arrow" v-if="pagination.showPrev" @click="fetchList(pagination.prevBlockPage)">‹</button>
+            <button class="pg-btn" v-for="pg in pagination.pages" :key="pg"
+                    @click="fetchList(pg)" :class="{ active: pageNo === pg }">{{ pg }}</button>
+            <button class="pg-btn pg-arrow" v-if="pagination.showNext" @click="fetchList(pagination.nextBlockPage)">›</button>
+            <button class="pg-btn pg-arrow" v-if="pagination.showNext" @click="fetchList(pagination.lastPage)">≫</button>
+          </template>
+          <template v-else>
+            <button class="pg-btn active">1</button>
+          </template>
         </div>
       </div>
 
@@ -387,7 +384,7 @@
             </div>
             <div class="info-item">
               <span class="i-label">사업자번호</span>
-              <span class="i-value">{{ detailData.bizNo || '-' }}</span>
+              <span class="i-value">{{ detailData.businessNumber || '-' }}</span>
             </div>
             <div class="info-item">
               <span class="i-label">수수료율</span>
@@ -395,15 +392,15 @@
             </div>
             <div class="info-item">
               <span class="i-label">담당자명</span>
-              <span class="i-value">{{ detailData.managerName || '-' }}</span>
+              <span class="i-value">{{ detailData.contactName || '-' }}</span>
             </div>
             <div class="info-item">
               <span class="i-label">담당자 연락처</span>
-              <span class="i-value">{{ detailData.managerPhone || '-' }}</span>
+              <span class="i-value">{{ detailData.contactPhone || '-' }}</span>
             </div>
             <div class="info-item">
               <span class="i-label">등록일</span>
-              <span class="i-value">{{ detailData.regDate || '-' }}</span>
+              <span class="i-value">{{ detailData.createdAt ? String(detailData.createdAt).substring(0,10) : '-' }}</span>
             </div>
             <div class="info-item">
               <span class="i-label">반려 사유</span>
@@ -521,7 +518,7 @@
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
             <div class="fg">
               <label>사업자번호 <span style="color:var(--danger);">*</span></label>
-              <input type="text" v-model="register.bizNo" placeholder="000-00-00000">
+              <input type="text" v-model="register.businessNumber" placeholder="000-00-00000">
             </div>
             <div class="fg">
               <label>수수료율</label>
@@ -531,11 +528,11 @@
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
             <div class="fg">
               <label>담당자명</label>
-              <input type="text" v-model="register.managerName" placeholder="홍길동">
+              <input type="text" v-model="register.contactName" placeholder="홍길동">
             </div>
             <div class="fg">
               <label>담당자 연락처</label>
-              <input type="text" v-model="register.managerPhone" placeholder="010-0000-0000">
+              <input type="text" v-model="register.contactPhone" placeholder="010-0000-0000">
             </div>
           </div>
           <div class="fg">
@@ -712,7 +709,7 @@
       const totalCount  = ref(0);
       const pageNo      = ref(1);
       const pagination  = ref(null);
-      const searched    = ref(false);
+      const searched    = ref(true);
       const sortAsc     = ref(false);
       const selectedIds = ref([]);
 
@@ -748,28 +745,75 @@
       /* ── KPI 조회 ── */
       const fetchKpi = async () => {
         try {
-          const res = await axios.get(`${contextPath}/admin/partner/kpi`);
+          const res = await axios.get(`${contextPath}/api/admin/partner/kpi`);
           Object.assign(kpi, res.data);
         } catch(e) { console.error('KPI 오류', e); }
       };
 
       /* ── 목록 조회 ── */
-      const fetchList = async (page = 1) => {
+      // 전체 목록 캐시 (프론트 페이징용)
+      const allPartners = ref([]);
+      const PAGE_SIZE   = 10;
+
+      const buildPagination = (total, page) => {
+        const totalPages = Math.ceil(total / PAGE_SIZE);
+        if (totalPages <= 1) return null;
+        const blockSize    = 10;
+        const blockStart   = Math.floor((page - 1) / blockSize) * blockSize + 1;
+        const blockEnd     = Math.min(blockStart + blockSize - 1, totalPages);
+        const pages = [];
+        for (let i = blockStart; i <= blockEnd; i++) pages.push(i);
+        return {
+          pages,
+          firstPage:     1,
+          lastPage:      totalPages,
+          prevBlockPage: Math.max(1, blockStart - 1),
+          nextBlockPage: Math.min(totalPages, blockEnd + 1),
+          showPrev:      blockStart > 1,
+          showNext:      blockEnd < totalPages
+        };
+      };
+
+      const applyFilter = (page = 1) => {
         pageNo.value = page;
-        try {
-          const res = await axios.get(`${contextPath}/admin/partner/list`, {
-            params: {
-              page,
-              status:  filter.status,
-              sort:    filter.sort,
-              keyword: filter.keyword
-            }
+        let list = [...allPartners.value];
+
+        // 상태 필터
+        if (filter.status && filter.status !== 'ALL') {
+          list = list.filter(p => {
+            const s = (p.status || '').toUpperCase();
+            return s === filter.status.toUpperCase();
           });
-          partnerList.value = res.data.list;
-          totalCount.value  = res.data.totalCount;
-          pagination.value  = res.data.pagination;
-          searched.value    = true;
-          selectedIds.value = [];
+        }
+        // 키워드 필터
+        if (filter.keyword.trim()) {
+          const keywords = filter.keyword.split(',').map(k => k.trim()).filter(k => k);
+          list = list.filter(p =>
+            keywords.some(k => (p.partnerName || '').includes(k))
+          );
+        }
+
+        totalCount.value  = list.length;
+        pagination.value  = buildPagination(list.length, page);
+
+        // 페이징 슬라이싱
+        const start = (page - 1) * PAGE_SIZE;
+        partnerList.value = list.slice(start, start + PAGE_SIZE);
+        selectedIds.value = [];
+      };
+
+      const fetchList = async (page = 1) => {
+        try {
+          // page=1 이면 항상 전체 목록 재조회 (필터 변경 포함)
+          // page>1 이면 이미 캐시된 allPartners 재사용 (페이지 이동)
+          if (page === 1 || allPartners.value.length === 0) {
+            const res = await axios.get(`${contextPath}/api/admin/partner/list`, {
+              params: { page: 1, status: 'ALL', keyword: '' }
+            });
+            allPartners.value = res.data.list || [];
+          }
+          searched.value = true;
+          applyFilter(page);
         } catch(e) {
           console.error('목록 오류', e);
           alert('목록을 불러오는 중 오류가 발생했습니다.');
@@ -786,11 +830,57 @@
           ? partnerList.value.map(p => p.partnerId) : [];
       };
 
+      const copySelectedNames = () => {
+        const names = allPartners.value
+          .filter(p => selectedIds.value.includes(p.partnerId))
+          .map(p => p.partnerName);
+        if (names.length === 0) { alert('선택된 항목이 없습니다.'); return; }
+        navigator.clipboard.writeText(names.join(', ')).then(() => {
+          alert('✅ ' + names.length + '개 파트너사명이 복사됐습니다.\n검색창에 붙여넣기 하세요.');
+        }).catch(() => { prompt('아래를 복사하세요:', names.join(', ')); });
+      };
+
       const downloadExcel = () => {
-        const ids = selectedIds.value.join(',');
-        location.href = ids
-          ? `${contextPath}/admin/partner/excel?ids=${ids}`
-          : `${contextPath}/admin/partner/excel?status=${filter.status}&keyword=${filter.keyword}`;
+        // 선택된 항목이 있으면 선택분만, 없으면 현재 필터 전체
+        let rows = [];
+        if (selectedIds.value.length > 0) {
+          rows = allPartners.value.filter(p => selectedIds.value.includes(p.partnerId));
+        } else {
+          rows = allPartners.value.filter(p => {
+            const statusOk = !filter.status || filter.status === 'ALL'
+              || (p.status || '').toUpperCase() === filter.status.toUpperCase();
+            const kwOk = !filter.keyword.trim()
+              || (p.partnerName || '').includes(filter.keyword.trim());
+            return statusOk && kwOk;
+          });
+        }
+        if (rows.length === 0) { alert('다운로드할 데이터가 없습니다.'); return; }
+
+        const statusLabel = s => ({
+          PENDING:'승인대기', SUPPLEMENT:'보완요청', ACTIVE:'정상',
+          APPROVED:'승인완료', REJECTED:'반려', SUSPENDED:'이용정지', BLOCKED:'영구차단'
+        }[(s||'').toUpperCase()] || s || '-');
+
+        let csv = '\uFEFF' + '파트너ID,파트너사명,사업자번호,담당자명,담당자연락처,수수료율,상태,등록일\n';
+        rows.forEach(p => {
+          const cols = [
+            p.partnerId      ?? '-',
+            p.partnerName    ?? '-',
+            p.businessNumber ?? '-',
+            p.contactName    ?? '-',
+            p.contactPhone   ?? '-',
+            p.commissionRate != null ? Number(p.commissionRate).toFixed(1) + '%' : '-',
+            statusLabel(p.status),
+            p.createdAt ? String(p.createdAt).substring(0,10) : '-'
+          ];
+          csv += cols.map(v => '"' + String(v).replace(/"/g, '""') + '"').join(',') + '\n';
+        });
+
+        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement('a');
+        link.href = URL.createObjectURL(blob);
+        link.download = '파트너사목록_' + new Date().toISOString().slice(0,10) + '.csv';
+        document.body.appendChild(link); link.click(); document.body.removeChild(link);
       };
 
       /* ── 상세 모달 ── */
@@ -802,12 +892,12 @@
           Object.assign(detailData, {
             partnerId:       p.partnerId,
             partnerName:     p.partnerName,
-            bizNo:           p.bizNo,
-            managerName:     p.managerName,
-            managerPhone:    p.managerPhone,
+            businessNumber:  p.businessNumber,
+            contactName:     p.contactName,
+            contactPhone:    p.contactPhone,
             status:          p.status,
             commissionRate:  p.commissionRate,
-            regDate:         p.regDate,
+            createdAt:       p.createdAt,
             rejectReason:    p.rejectReason,
             contractFileUrl: p.contractFileUrl,
             avgRating:       p.rating || 0,
@@ -820,7 +910,7 @@
 
           // 추가 데이터 (상품, 예약) 비동기 로드 - API 있으면 활성화
           // try {
-          //   const detailRes = await axios.get(`${contextPath}/admin/partner/detail/${p.partnerId}`);
+          //   const detailRes = await axios.get(`${contextPath}/api/admin/partner/detail/${p.partnerId}`);
           //   Object.assign(detailData, detailRes.data);
           // } catch(e) { console.warn('상세 추가 정보 로드 실패', e); }
 
@@ -835,15 +925,15 @@
       const openRegisterModal  = () => { showRegisterModal.value = true; };
       const closeRegisterModal = () => {
         showRegisterModal.value = false;
-        Object.assign(register, { partnerName:'', bizNo:'', commissionRate:10, managerName:'', managerPhone:'', managerEmail:'', memo:'' });
+        Object.assign(register, { partnerName:'', businessNumber:'', commissionRate:10, contactName:'', contactPhone:'', managerEmail:'', memo:'' });
       };
       const submitRegister = async () => {
-        if (!register.partnerName.trim() || !register.bizNo.trim()) {
+        if (!register.partnerName.trim() || !register.businessNumber.trim()) {
           alert('파트너사명, 사업자번호는 필수입니다.');
           return;
         }
         try {
-          await axios.post(`${contextPath}/admin/partner/register`, register);
+          await axios.post(`${contextPath}/api/admin/partner/register`, register);
           alert('파트너사가 등록되었습니다. (승인 대기 상태)');
           closeRegisterModal();
           fetchList(1);
@@ -856,7 +946,7 @@
       const closeBulkStatusModal = () => { showBulkStatusModal.value = false; bulkStatus.reason = ''; };
       const submitBulkStatus = async () => {
         try {
-          await axios.post(`${contextPath}/admin/partner/bulk-status`, {
+          await axios.post(`${contextPath}/api/admin/partner/bulk-status`, {
             partnerIds: selectedIds.value,
             status: bulkStatus.status,
             reason: bulkStatus.reason
@@ -879,7 +969,7 @@
         if (!deactivate.reason)        { alert('차단 사유를 선택해주세요.'); return; }
         if (!deactivate.detail.trim()) { alert('상세 내용을 입력해주세요.'); return; }
         try {
-          await axios.post(`${contextPath}/admin/partner/suspend/${deactivateTarget.partnerId}`);
+          await axios.post(`${contextPath}/api/admin/partner/suspend/${deactivateTarget.partnerId}`);
           alert(deactivateTarget.partnerName + ' 파트너사가 차단되었습니다.');
           closeDeactivateModal();
           fetchList(pageNo.value);
@@ -896,7 +986,7 @@
       const closeActivateModal = () => { showActivateModal.value = false; };
       const submitActivate = async () => {
         try {
-          await axios.post(`${contextPath}/admin/partner/activate`, {
+          await axios.post(`${contextPath}/api/admin/partner/activate`, {
             partnerId: activateTarget.partnerId,
             reason:    activate.reason
           });
@@ -916,7 +1006,7 @@
       const submitBulkDeactivate = async () => {
         if (!bulkDeactivate.reason) { alert('차단 사유를 선택해주세요.'); return; }
         try {
-          await axios.post(`${contextPath}/admin/partner/bulk-deactivate`, {
+          await axios.post(`${contextPath}/api/admin/partner/bulk-deactivate`, {
             partnerIds: selectedIds.value,
             reason:     bulkDeactivate.reason,
             detail:     bulkDeactivate.detail
@@ -935,7 +1025,7 @@
       });
 
       return {
-        kpi, filter, partnerList, totalCount, pageNo, pagination, searched, sortAsc,
+        kpi, filter, partnerList, allPartners, totalCount, pageNo, pagination, searched, sortAsc,
         selectedIds, isAllChecked,
         showDetailModal, detailData, detailLoading,
         showRegisterModal, register,
@@ -943,14 +1033,14 @@
         showDeactivateModal, deactivateTarget, deactivate,
         showActivateModal, activateTarget, activate,
         showBulkDeactivateModal, bulkDeactivate,
-        fetchList, toggleSort, toggleCheckAll, downloadExcel,
+        fetchList, toggleSort, toggleCheckAll, downloadExcel, copySelectedNames,
         openDetailModal,         closeDetailModal,
         openRegisterModal,       closeRegisterModal,       submitRegister,
         openBulkStatusModal,     closeBulkStatusModal,     submitBulkStatus,
         openDeactivateModal,     closeDeactivateModal,     submitDeactivate,
         openActivateModal,       closeActivateModal,       submitActivate,
         openBulkDeactivateModal, closeBulkDeactivateModal, submitBulkDeactivate,
-        resetFilter: () => { filter.status = 'ALL'; filter.sort = 'SALES_DESC'; filter.keyword = ''; fetchList(1); }
+        resetFilter: () => { filter.status = 'ALL'; filter.sort = 'SALES_DESC'; filter.keyword = ''; allPartners.value = []; fetchList(1); }
       };
     }
   }).mount('#app');
