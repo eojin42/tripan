@@ -9,7 +9,7 @@
    뷰 모드 전환 (편집 / 분할 / 지도)
 ══════════════════════════════ */
 var currentMode  = 'split';
-var prevSidebarW = 520;
+var prevSidebarW = 500;
 
 function setViewMode(mode) {
   if (mode === currentMode) return;
@@ -18,7 +18,7 @@ function setViewMode(mode) {
   var sidebar = document.getElementById('wsSidebar');
 
   if (currentMode === 'split') {
-    prevSidebarW = parseInt(sidebar.style.width) || 520;
+    prevSidebarW = parseInt(sidebar.style.width) || 500;
   }
 
   layout.classList.remove('mode-edit', 'mode-map');
@@ -64,7 +64,7 @@ document.addEventListener('keydown', function (e) {
   var sidebar = document.getElementById('wsSidebar');
   var resizer = document.getElementById('wsResizer');
   var label   = document.getElementById('sidebarWidthLabel');
-  var MIN = 260, MAX = 860, DEFAULT = 520;
+  var MIN = 260, MAX = 860, DEFAULT = 500;
   var startX, startW, isDragging = false;
 
   var tip = document.createElement('div');
@@ -135,7 +135,7 @@ document.addEventListener('keydown', function (e) {
   var panel   = document.getElementById('editRecommendPanel');
   var resizer = document.getElementById('editRpResizer');
   if (!resizer) return;
-  var MIN = 200, MAX = 560, DEFAULT = 380;
+  var MIN = 200, MAX = 560, DEFAULT = 500;
   var startX, startW, isDragging = false;
 
   var tip = document.createElement('div');

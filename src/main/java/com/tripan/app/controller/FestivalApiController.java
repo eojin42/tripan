@@ -30,4 +30,20 @@ public class FestivalApiController {
         List<FestivalDto> festivalList = festivalService.getFestivals(year, month);
         return ResponseEntity.ok(festivalList);
     }
+    
+    
+    /**
+     * 워크스페이스 — 여행 기간과 겹치는 축제 목록 반환
+     */
+    @GetMapping("/by-trip")
+    public ResponseEntity<List<FestivalDto>> getFestivalsByTripPeriod(
+            @RequestParam("tripStart") String tripStart,
+            @RequestParam("tripEnd")   String tripEnd) {
+
+        List<FestivalDto> result =
+            festivalService.getFestivalsByTripPeriod(tripStart, tripEnd);
+        return ResponseEntity.ok(result);
+    }
+    
+    
 }

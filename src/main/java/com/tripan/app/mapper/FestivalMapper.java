@@ -28,4 +28,16 @@ public interface FestivalMapper {
      * 축제 상세 갤러리 이미지 조회
      */
     List<FestivalImageDto> selectFestivalImages(Long festivalId);
+    
+    /**
+     * ★ 여행 기간과 겹치는 축제 목록 조회 (여행 워크스페이스 전용)
+     * 겹침 조건 :
+     *   축제 시작일 <= 여행 종료일  AND  축제 종료일 >= 여행 시작일
+     *   → 두 기간이 단 하루라도 겹치면 조회
+     * @param tripStart 여행 시작일 (YYYY-MM-DD)
+     * @param tripEnd   여행 종료일 (YYYY-MM-DD)
+     */
+    List<FestivalDto> selectFestivalsByTripPeriod(
+            @Param("tripStart") String tripStart,
+            @Param("tripEnd")   String tripEnd);
 }

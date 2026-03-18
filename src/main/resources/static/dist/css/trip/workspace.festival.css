@@ -1,0 +1,937 @@
+/* ════════════════════════════════════════════════════
+   workspace.festival.css  v3
+   ════════════════════════════════════════════════════ */
+
+/* ──────────────────────────────────────────
+   0. 패널 구조
+   ★ BUG FIX: display:flex 제거 → .rp-pane { display:none } 에 맡기고
+               active 클래스일 때만 flex 표시
+────────────────────────────────────────── */
+#rpPane-festival.active {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
+}
+
+/* 헤더 강조 */
+.rp-pane-head {
+  padding: 2px 0 14px;
+  border-bottom: 1.5px solid #EDF2F7;
+  margin-bottom: 12px;
+  flex-shrink: 0;
+}
+.rp-pane-head__title {
+  font-size: 16px; font-weight: 900; color: #1A202C;
+  display: flex; align-items: center; gap: 6px;
+  margin-bottom: 4px;
+}
+.rp-pane-head__period {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 7px 14px;
+  background: linear-gradient(120deg, rgba(137,207,240,.13), rgba(194,184,217,.10));
+  border: 1.5px solid rgba(137,207,240,.45);
+  border-radius: 20px;
+  font-size: 13px; font-weight: 600; color: #4A5568;
+  align-self: flex-start;
+}
+.rp-pane-head__period strong {
+  color: #2D3748; font-weight: 800;
+}
+
+/* 지역 필터 */
+.festival-region-filter {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  margin-bottom: 12px;
+  flex-shrink: 0;
+}
+.festival-region-chip {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 4px 10px;
+  border: 1.5px solid #E2E8F0;
+  border-radius: 20px;
+  font-size: 11px; font-weight: 700; color: #718096;
+  background: #fff; cursor: pointer;
+  transition: all .15s;
+  font-family: inherit;
+}
+.festival-region-chip span {
+  font-size: 10px; color: #A0AEC0;
+  background: #F7FAFC; padding: 0 4px; border-radius: 8px;
+}
+.festival-region-chip:hover { border-color: #89CFF0; color: #2B6CB0; }
+.festival-region-chip.active {
+  background: linear-gradient(120deg, #89CFF0, #C2B8D9);
+  border-color: transparent; color: #fff;
+}
+.festival-region-chip.active span { background: rgba(255,255,255,.3); color: #fff; }
+
+/* 카드 리스트 스크롤 영역 */
+.festival-list-wrap {
+  flex: 1;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding-right: 2px;
+  scrollbar-width: thin;
+  scrollbar-color: #E2E8F0 transparent;
+}
+.festival-list-wrap::-webkit-scrollbar { width: 4px; }
+.festival-list-wrap::-webkit-scrollbar-thumb { background: #E2E8F0; border-radius: 4px; }
+
+
+/* ──────────────────────────────────────────
+   1. 축제 카드 (추가 버튼 없는 버전)
+────────────────────────────────────────── */
+.festival-card {
+  display: flex;
+  background: #fff;
+  border: 1.5px solid #EDF2F7;
+  border-radius: 14px;
+  overflow: hidden;
+  cursor: pointer;
+  transition: transform .18s, box-shadow .18s, border-color .18s;
+  font-family: 'Pretendard Variable', Pretendard, sans-serif;
+  min-height: 80px;
+}
+.festival-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(137,207,240,.22);
+  border-color: rgba(137,207,240,.5);
+}
+.festival-card:hover .festival-card__body::after {
+  opacity: 1;
+}
+
+.festival-card__thumb {
+  position: relative;
+  width: 80px;
+  min-height: 80px;
+  flex-shrink: 0;
+  background: linear-gradient(135deg, rgba(137,207,240,.15), rgba(194,184,217,.15));
+  overflow: hidden;
+}
+.festival-card__thumb img {
+  width: 100%; height: 100%;
+  object-fit: cover; display: block;
+}
+.festival-card__thumb--empty { background: linear-gradient(135deg, #EBF8FF, #EDE7F6); }
+.festival-card__thumb-empty-icon {
+  position: absolute; inset: 0;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 28px;
+}
+.festival-card__badge {
+  position: absolute; top: 5px; left: 5px;
+  font-size: 9px; font-weight: 800;
+  padding: 2px 6px; border-radius: 20px;
+  background: rgba(255,255,255,.88);
+  color: #C05621; pointer-events: none;
+}
+
+/* 바디 (정보만) */
+.festival-card__body {
+  flex: 1;
+  min-width: 0;
+  padding: 10px 14px 10px 12px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 5px;
+  position: relative;
+}
+/* hover 시 "클릭하여 상세보기" 힌트 */
+.festival-card__body::after {
+  content: '상세보기 →';
+  position: absolute; bottom: 8px; right: 12px;
+  font-size: 10px; font-weight: 700; color: #89CFF0;
+  opacity: 0; transition: opacity .18s;
+}
+
+.festival-card__title {
+  font-size: 13px; font-weight: 800; color: #1A202C;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  line-height: 1.4;
+}
+.festival-card__meta {
+  display: flex; align-items: center; gap: 4px;
+  font-size: 11px; color: #718096; font-weight: 600;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.festival-card__meta svg { flex-shrink: 0; color: #A0AEC0; }
+
+/* 로딩 */
+.festival-loading {
+  display: flex; align-items: center; justify-content: center;
+  gap: 6px; padding: 40px 0;
+}
+.festival-loading-dot {
+  width: 8px; height: 8px; border-radius: 50%;
+  background: #89CFF0;
+  animation: festDotBounce 1.2s infinite ease-in-out;
+}
+.festival-loading-dot:nth-child(2) { animation-delay:.2s; background:#C2B8D9; }
+.festival-loading-dot:nth-child(3) { animation-delay:.4s; background:#FFB6C1; }
+@keyframes festDotBounce {
+  0%,80%,100% { transform:scale(.6); opacity:.5; }
+  40%         { transform:scale(1);  opacity:1;  }
+}
+
+/* 빈 목록 */
+.festival-empty { text-align:center; padding:40px 20px; }
+.festival-empty__icon { font-size:36px; margin-bottom:10px; }
+.festival-empty__msg  { font-size:13px; color:#A0AEC0; line-height:1.8; font-weight:600; }
+
+
+/* ──────────────────────────────────────────
+   2. DAY 선택 팝업
+────────────────────────────────────────── */
+.fdp-overlay {
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,.5);
+  z-index: 10000;
+  display: flex; align-items: center; justify-content: center;
+  font-family: 'Pretendard Variable', Pretendard, sans-serif;
+}
+.fdp-box {
+  background: #fff;
+  border-radius: 18px;
+  padding: 24px 22px 20px;
+  width: min(320px, 92vw);
+  box-shadow: 0 20px 50px rgba(0,0,0,.22);
+  text-align: center;
+}
+.fdp-title { font-size: 15px; font-weight: 900; color: #1A202C; margin-bottom: 6px; }
+.fdp-subtitle {
+  font-size: 12px; color: #718096; margin-bottom: 18px;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.fdp-days { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; margin-bottom: 16px; }
+.fdp-day-btn {
+  padding: 9px 16px;
+  background: linear-gradient(120deg, #89CFF0, #C2B8D9);
+  border: none; border-radius: 10px;
+  font-size: 13px; font-weight: 800; color: #fff;
+  cursor: pointer; font-family: inherit;
+  transition: opacity .15s;
+}
+.fdp-day-btn:hover { opacity: .85; }
+.fdp-cancel {
+  padding: 9px 20px;
+  background: #F7FAFC; border: 1.5px solid #E2E8F0;
+  border-radius: 10px; font-size: 13px; font-weight: 700;
+  color: #718096; cursor: pointer; font-family: inherit;
+  width: 100%; transition: all .15s;
+}
+.fdp-cancel:hover { border-color: #CBD5E0; background: #EDF2F7; }
+
+
+/* ──────────────────────────────────────────
+   3. 축제 상세 대형 모달
+────────────────────────────────────────── */
+.fmodal-overlay {
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,.65);
+  z-index: 9000;
+  display: flex; align-items: center; justify-content: center;
+  padding: 16px;
+  font-family: 'Pretendard Variable', Pretendard, sans-serif;
+  animation: fmodalFadeIn .22s ease;
+}
+.fmodal-overlay--closing { animation: fmodalFadeOut .22s ease forwards; }
+@keyframes fmodalFadeIn  { from{opacity:0} to{opacity:1} }
+@keyframes fmodalFadeOut { from{opacity:1} to{opacity:0} }
+
+.fmodal-box {
+  background: #fff;
+  border-radius: 22px;
+  width: min(860px, 96vw);
+  max-height: 90vh;
+  display: flex; flex-direction: column;
+  overflow: hidden;
+  box-shadow: 0 32px 80px rgba(0,0,0,.3);
+  position: relative;
+  animation: fmodalSlideUp .25s cubic-bezier(.19,1,.22,1);
+}
+@keyframes fmodalSlideUp {
+  from { transform:translateY(20px); opacity:0; }
+  to   { transform:translateY(0);    opacity:1; }
+}
+
+.fmodal-close {
+  position: absolute; top: 14px; right: 14px;
+  width: 36px; height: 36px;
+  background: rgba(255,255,255,.92);
+  border: 1.5px solid #E2E8F0; border-radius: 50%;
+  cursor: pointer; z-index: 10;
+  display: flex; align-items: center; justify-content: center;
+  color: #4A5568; transition: all .15s;
+  backdrop-filter: blur(4px);
+}
+.fmodal-close:hover { background:#FFF5F5; border-color:#FC8181; color:#E53E3E; transform:scale(1.08); }
+
+
+/* ──────────────────────────────────────────
+   4. 캐러셀
+────────────────────────────────────────── */
+.fmodal-carousel {
+  position: relative;
+  height: 240px;
+  flex-shrink: 0;
+  background: linear-gradient(135deg, #EBF8FF, #EDE7F6);
+  overflow: hidden;
+}
+.fmodal-carousel__track { width:100%; height:100%; }
+.fmodal-carousel__slide {
+  position: absolute; inset: 0;
+  opacity: 0; transition: opacity .35s;
+}
+.fmodal-carousel__slide.active { opacity: 1; }
+.fmodal-carousel__slide img {
+  width:100%; height:100%;
+  object-fit: cover; display:block;
+}
+.fmodal-carousel__no-img {
+  position:absolute; inset:0;
+  display:flex; align-items:center; justify-content:center;
+  flex-direction:column; gap:8px;
+  font-size:36px; color:#A0AEC0;
+}
+.fmodal-carousel__btn {
+  position:absolute; top:50%; transform:translateY(-50%);
+  width:40px; height:40px;
+  background:rgba(255,255,255,.88); border:1px solid rgba(255,255,255,.6);
+  border-radius:50%; cursor:pointer; z-index:2;
+  display:flex; align-items:center; justify-content:center;
+  color:#2D3748; backdrop-filter:blur(4px);
+  transition:all .18s; box-shadow:0 2px 10px rgba(0,0,0,.15);
+}
+.fmodal-carousel__btn:hover { background:#fff; }
+.fmodal-carousel__btn--prev { left:12px; }
+.fmodal-carousel__btn--next { right:12px; }
+.fmodal-carousel__dots {
+  position:absolute; bottom:10px; left:50%; transform:translateX(-50%);
+  display:flex; gap:6px; z-index:2;
+}
+.fmodal-carousel__dot {
+  width:7px; height:7px; border-radius:50%;
+  background:rgba(255,255,255,.5); border:none; cursor:pointer; padding:0;
+  transition:all .2s;
+}
+.fmodal-carousel__dot.active { background:#fff; transform:scale(1.35); }
+.fmodal-carousel__hint {
+  position:absolute; bottom:10px; right:12px;
+  font-size:10px; color:rgba(255,255,255,.85); font-weight:600;
+  background:rgba(0,0,0,.3); padding:3px 8px; border-radius:20px;
+  backdrop-filter:blur(4px); pointer-events:none;
+}
+
+
+/* ──────────────────────────────────────────
+   5. 모달 바디
+────────────────────────────────────────── */
+.fmodal-body {
+  flex:1; overflow-y:auto;
+  padding: 22px 28px 28px;
+  scrollbar-width: thin;
+  scrollbar-color: #E2E8F0 transparent;
+}
+.fmodal-body::-webkit-scrollbar { width:5px; }
+.fmodal-body::-webkit-scrollbar-thumb { background:#E2E8F0; border-radius:4px; }
+
+.fmodal-header {
+  display: flex; align-items: flex-start;
+  justify-content: space-between; gap: 12px;
+  margin-bottom: 20px;
+}
+.fmodal-header__left { display:flex; flex-direction:column; gap:7px; flex:1; min-width:0; }
+.fmodal-header__badge {
+  display:inline-flex; align-items:center;
+  font-size:11px; font-weight:800; color:#C05621;
+  background:rgba(255,182,100,.12); border:1px solid rgba(255,182,100,.35);
+  padding:3px 10px; border-radius:20px; align-self:flex-start;
+}
+.fmodal-header__title {
+  font-size:22px; font-weight:900; color:#1A202C;
+  line-height:1.3; letter-spacing:-.4px; margin:0;
+}
+
+.fmodal-add-btn {
+  display:inline-flex; align-items:center; gap:6px;
+  padding: 10px 18px;
+  background: linear-gradient(120deg, #89CFF0, #C2B8D9);
+  border:none; border-radius:12px;
+  font-size:13px; font-weight:800; color:#fff;
+  cursor:pointer; font-family:inherit; flex-shrink:0;
+  box-shadow:0 4px 14px rgba(137,207,240,.38);
+  transition:opacity .15s, transform .15s;
+  white-space:nowrap;
+}
+.fmodal-add-btn:hover { opacity:.88; transform:translateY(-1px); }
+
+.fmodal-info {
+  background:#F7FAFC; border:1.5px solid #EDF2F7;
+  border-radius:16px; overflow:hidden; margin-bottom:22px;
+}
+.fmodal-info__row {
+  display:flex; align-items:flex-start; gap:14px;
+  padding: 13px 18px;
+  border-bottom: 1px solid #EDF2F7;
+}
+.fmodal-info__row:last-child { border-bottom:none; }
+.fmodal-info__icon { font-size:18px; flex-shrink:0; margin-top:1px; }
+.fmodal-info__content { display:flex; flex-direction:column; gap:2px; flex:1; min-width:0; }
+.fmodal-info__label {
+  font-size:11px; font-weight:800; color:#A0AEC0;
+  text-transform:uppercase; letter-spacing:.6px;
+}
+.fmodal-info__value {
+  font-size:15px; color:#2D3748; font-weight:600; line-height:1.5;
+  word-break:keep-all;
+}
+.fmodal-info__value strong { color:#1A202C; font-weight:900; }
+
+.fmodal-section { margin-bottom:20px; }
+.fmodal-section__title {
+  font-size:15px; font-weight:800; color:#2D3748;
+  margin-bottom:10px; padding-bottom:8px;
+  border-bottom:2px solid #EDF2F7;
+  display:flex; align-items:center; gap:6px;
+}
+.fmodal-section__content {
+  font-size:14px; color:#4A5568; line-height:2;
+  background:#F7FAFC; border:1px solid #EDF2F7;
+  border-radius:14px; padding:16px 18px;
+  word-break:keep-all;
+  max-height:280px; overflow-y:auto;
+}
+
+
+/* ──────────────────────────────────────────
+   6. 이미지 전체화면 뷰어
+────────────────────────────────────────── */
+.fviewer-overlay {
+  position:fixed; inset:0;
+  background:rgba(0,0,0,.92);
+  z-index:10001;
+  display:flex; align-items:center; justify-content:center;
+}
+.fviewer-img-wrap {
+  max-width:90vw; max-height:90vh;
+  display:flex; align-items:center; justify-content:center;
+}
+.fviewer-img-wrap img {
+  max-width:90vw; max-height:90vh;
+  object-fit:contain; border-radius:8px;
+  box-shadow:0 8px 40px rgba(0,0,0,.6);
+}
+.fviewer-close {
+  position:absolute; top:18px; right:18px;
+  width:40px; height:40px;
+  background:rgba(255,255,255,.15); border:1.5px solid rgba(255,255,255,.3);
+  border-radius:50%; color:#fff; cursor:pointer; font-size:18px;
+  display:flex; align-items:center; justify-content:center;
+  transition:background .15s;
+}
+.fviewer-close:hover { background:rgba(255,255,255,.28); }
+.fviewer-counter {
+  position:absolute; bottom:20px; left:50%; transform:translateX(-50%);
+  font-size:14px; font-weight:700; color:rgba(255,255,255,.85);
+  background:rgba(0,0,0,.4); padding:4px 14px; border-radius:20px;
+}
+.fviewer-btn {
+  position:absolute; top:50%; transform:translateY(-50%);
+  width:50px; height:50px;
+  background:rgba(255,255,255,.15); border:1.5px solid rgba(255,255,255,.3);
+  border-radius:50%; color:#fff; cursor:pointer; z-index:2;
+  display:flex; align-items:center; justify-content:center;
+  transition:background .18s;
+}
+.fviewer-btn:hover { background:rgba(255,255,255,.28); }
+.fviewer-btn--prev { left:20px; }
+.fviewer-btn--next { right:20px; }
+
+
+/* ──────────────────────────────────────────
+   7. 반응형
+────────────────────────────────────────── */
+@media (max-width: 640px) {
+  .fmodal-carousel { height: 180px; }
+  .fmodal-body { padding: 16px 18px 22px; }
+  .fmodal-header__title { font-size:18px; }
+  .fmodal-header { flex-direction:column; }
+  .fmodal-add-btn { align-self:stretch; justify-content:center; }
+  .fmodal-info__value { font-size:14px; }
+  .festival-card__thumb { width:72px; }
+}
+
+
+.rp-pane-head {
+  padding: 2px 2px 10px;
+  border-bottom: 1px solid #EDF2F7;
+  margin-bottom: 10px;
+  flex-shrink: 0;
+}
+.rp-pane-head__title {
+  font-size: 14px; font-weight: 800; color: #1A202C;
+}
+.rp-pane-head__sub {
+  font-size: 11px; color: #A0AEC0; margin-top: 3px; font-weight: 500;
+}
+
+/* 지역 필터 칩 영역 */
+.festival-region-filter {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  margin-bottom: 10px;
+  flex-shrink: 0;
+}
+.festival-region-chip {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 4px 10px;
+  border: 1.5px solid #E2E8F0;
+  border-radius: 20px;
+  font-size: 11px; font-weight: 700; color: #718096;
+  background: #fff; cursor: pointer;
+  transition: all .15s;
+  font-family: inherit;
+}
+.festival-region-chip span {
+  font-size: 10px; color: #A0AEC0;
+  background: #F7FAFC; padding: 0 4px; border-radius: 8px;
+}
+.festival-region-chip:hover {
+  border-color: #89CFF0; color: #2B6CB0;
+}
+.festival-region-chip.active {
+  background: linear-gradient(120deg, #89CFF0, #C2B8D9);
+  border-color: transparent; color: #fff;
+}
+.festival-region-chip.active span { background: rgba(255,255,255,.3); color: #fff; }
+
+/* 카드 리스트 스크롤 영역 */
+.festival-list-wrap {
+  flex: 1;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding-right: 2px;
+  scrollbar-width: thin;
+  scrollbar-color: #E2E8F0 transparent;
+}
+.festival-list-wrap::-webkit-scrollbar { width: 4px; }
+.festival-list-wrap::-webkit-scrollbar-thumb { background: #E2E8F0; border-radius: 4px; }
+
+
+/* ──────────────────────────────────────────
+   1. 축제 카드
+────────────────────────────────────────── */
+.festival-card {
+  display: flex;
+  background: #fff;
+  border: 1.5px solid #EDF2F7;
+  border-radius: 14px;
+  overflow: hidden;
+  transition: transform .18s, box-shadow .18s, border-color .18s;
+  font-family: 'Pretendard Variable', Pretendard, sans-serif;
+  min-height: 80px;
+}
+.festival-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(137,207,240,.22);
+  border-color: rgba(137,207,240,.5);
+}
+
+/* 썸네일 */
+.festival-card__thumb {
+  position: relative;
+  width: 80px;
+  min-height: 80px;
+  flex-shrink: 0;
+  background: linear-gradient(135deg, rgba(137,207,240,.15), rgba(194,184,217,.15));
+  overflow: hidden;
+  cursor: pointer;
+}
+.festival-card__thumb img {
+  width: 100%; height: 100%;
+  object-fit: cover; display: block;
+}
+.festival-card__thumb--empty { background: linear-gradient(135deg, #EBF8FF, #EDE7F6); }
+.festival-card__thumb-empty-icon {
+  position: absolute; inset: 0;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 28px;
+}
+.festival-card__badge {
+  position: absolute; top: 5px; left: 5px;
+  font-size: 9px; font-weight: 800;
+  padding: 2px 6px; border-radius: 20px;
+  background: rgba(255,255,255,.88);
+  color: #C05621; pointer-events: none;
+}
+
+/* 바디 (정보 + 버튼) */
+.festival-card__body {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 10px 12px 10px 12px;
+  gap: 6px;
+}
+
+/* 텍스트 정보 */
+.festival-card__info { cursor: pointer; flex: 1; min-width: 0; }
+.festival-card__title {
+  font-size: 13px; font-weight: 800; color: #1A202C;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  line-height: 1.4; margin-bottom: 5px;
+}
+.festival-card__meta {
+  display: flex; align-items: center; gap: 4px;
+  font-size: 11px; color: #718096; font-weight: 600;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  margin-bottom: 2px;
+}
+.festival-card__meta svg { flex-shrink: 0; color: #A0AEC0; }
+
+/* 일정에 추가 버튼 */
+.festival-card__add-btn {
+  display: inline-flex; align-items: center; gap: 4px;
+  align-self: flex-start;
+  padding: 5px 10px;
+  background: linear-gradient(120deg, #89CFF0, #C2B8D9);
+  border: none; border-radius: 20px;
+  font-size: 11px; font-weight: 700; color: #fff;
+  cursor: pointer; font-family: inherit;
+  transition: opacity .15s, transform .15s;
+  flex-shrink: 0;
+}
+.festival-card__add-btn:hover { opacity: .85; transform: translateY(-1px); }
+
+/* 로딩 */
+.festival-loading {
+  display: flex; align-items: center; justify-content: center;
+  gap: 6px; padding: 40px 0;
+}
+.festival-loading-dot {
+  width: 8px; height: 8px; border-radius: 50%;
+  background: #89CFF0;
+  animation: festDotBounce 1.2s infinite ease-in-out;
+}
+.festival-loading-dot:nth-child(2) { animation-delay:.2s; background:#C2B8D9; }
+.festival-loading-dot:nth-child(3) { animation-delay:.4s; background:#FFB6C1; }
+@keyframes festDotBounce {
+  0%,80%,100% { transform:scale(.6); opacity:.5; }
+  40%         { transform:scale(1);  opacity:1;  }
+}
+
+/* 빈 목록 */
+.festival-empty { text-align:center; padding:40px 20px; }
+.festival-empty__icon { font-size:36px; margin-bottom:10px; }
+.festival-empty__msg  { font-size:13px; color:#A0AEC0; line-height:1.8; font-weight:600; }
+
+
+/* ──────────────────────────────────────────
+   2. DAY 선택 팝업
+────────────────────────────────────────── */
+.fdp-overlay {
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,.5);
+  z-index: 10000;
+  display: flex; align-items: center; justify-content: center;
+  font-family: 'Pretendard Variable', Pretendard, sans-serif;
+}
+.fdp-box {
+  background: #fff;
+  border-radius: 18px;
+  padding: 24px 22px 20px;
+  width: min(320px, 92vw);
+  box-shadow: 0 20px 50px rgba(0,0,0,.22);
+  text-align: center;
+}
+.fdp-title {
+  font-size: 15px; font-weight: 900; color: #1A202C; margin-bottom: 6px;
+}
+.fdp-subtitle {
+  font-size: 12px; color: #718096; margin-bottom: 18px;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.fdp-days {
+  display: flex; flex-wrap: wrap; gap: 8px;
+  justify-content: center; margin-bottom: 16px;
+}
+.fdp-day-btn {
+  padding: 9px 16px;
+  background: linear-gradient(120deg, #89CFF0, #C2B8D9);
+  border: none; border-radius: 10px;
+  font-size: 13px; font-weight: 800; color: #fff;
+  cursor: pointer; font-family: inherit;
+  transition: opacity .15s;
+}
+.fdp-day-btn:hover { opacity: .85; }
+.fdp-cancel {
+  padding: 9px 20px;
+  background: #F7FAFC; border: 1.5px solid #E2E8F0;
+  border-radius: 10px; font-size: 13px; font-weight: 700;
+  color: #718096; cursor: pointer; font-family: inherit;
+  transition: all .15s; width: 100%;
+}
+.fdp-cancel:hover { border-color: #CBD5E0; background: #EDF2F7; }
+
+
+/* ──────────────────────────────────────────
+   3. 축제 상세 대형 모달
+────────────────────────────────────────── */
+.fmodal-overlay {
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,.65);
+  z-index: 9000;
+  display: flex; align-items: center; justify-content: center;
+  padding: 16px;
+  font-family: 'Pretendard Variable', Pretendard, sans-serif;
+  animation: fmodalFadeIn .22s ease;
+}
+.fmodal-overlay--closing { animation: fmodalFadeOut .22s ease forwards; }
+@keyframes fmodalFadeIn  { from{opacity:0} to{opacity:1} }
+@keyframes fmodalFadeOut { from{opacity:1} to{opacity:0} }
+
+.fmodal-box {
+  background: #fff;
+  border-radius: 22px;
+  width: min(860px, 96vw);
+  max-height: 90vh;
+  display: flex; flex-direction: column;
+  overflow: hidden;
+  box-shadow: 0 32px 80px rgba(0,0,0,.3);
+  position: relative;
+  animation: fmodalSlideUp .25s cubic-bezier(.19,1,.22,1);
+}
+@keyframes fmodalSlideUp {
+  from { transform:translateY(20px); opacity:0; }
+  to   { transform:translateY(0);    opacity:1; }
+}
+
+/* 닫기 버튼 */
+.fmodal-close {
+  position: absolute; top: 14px; right: 14px;
+  width: 36px; height: 36px;
+  background: rgba(255,255,255,.92);
+  border: 1.5px solid #E2E8F0; border-radius: 50%;
+  cursor: pointer; z-index: 10;
+  display: flex; align-items: center; justify-content: center;
+  color: #4A5568; transition: all .15s;
+  backdrop-filter: blur(4px);
+}
+.fmodal-close:hover { background:#FFF5F5; border-color:#FC8181; color:#E53E3E; transform:scale(1.08); }
+
+
+/* ──────────────────────────────────────────
+   4. 캐러셀 (축소: 240px)
+────────────────────────────────────────── */
+.fmodal-carousel {
+  position: relative;
+  height: 240px;
+  flex-shrink: 0;
+  background: linear-gradient(135deg, #EBF8FF, #EDE7F6);
+  overflow: hidden;
+}
+.fmodal-carousel__track { width:100%; height:100%; }
+.fmodal-carousel__slide {
+  position: absolute; inset: 0;
+  opacity: 0; transition: opacity .35s;
+}
+.fmodal-carousel__slide.active { opacity: 1; }
+.fmodal-carousel__slide img {
+  width:100%; height:100%;
+  object-fit: cover; display:block;
+}
+.fmodal-carousel__no-img {
+  position:absolute; inset:0;
+  display:flex; align-items:center; justify-content:center;
+  flex-direction:column; gap:8px;
+  font-size:36px; color:#A0AEC0;
+}
+
+.fmodal-carousel__btn {
+  position:absolute; top:50%; transform:translateY(-50%);
+  width:40px; height:40px;
+  background:rgba(255,255,255,.88); border:1px solid rgba(255,255,255,.6);
+  border-radius:50%; cursor:pointer; z-index:2;
+  display:flex; align-items:center; justify-content:center;
+  color:#2D3748; backdrop-filter:blur(4px);
+  transition:all .18s; box-shadow:0 2px 10px rgba(0,0,0,.15);
+}
+.fmodal-carousel__btn:hover { background:#fff; box-shadow:0 4px 16px rgba(0,0,0,.2); }
+.fmodal-carousel__btn--prev { left:12px; }
+.fmodal-carousel__btn--next { right:12px; }
+
+.fmodal-carousel__dots {
+  position:absolute; bottom:10px; left:50%; transform:translateX(-50%);
+  display:flex; gap:6px; z-index:2;
+}
+.fmodal-carousel__dot {
+  width:7px; height:7px; border-radius:50%;
+  background:rgba(255,255,255,.5); border:none; cursor:pointer; padding:0;
+  transition:all .2s;
+}
+.fmodal-carousel__dot.active { background:#fff; transform:scale(1.35); }
+
+.fmodal-carousel__hint {
+  position:absolute; bottom:10px; right:12px;
+  font-size:10px; color:rgba(255,255,255,.8); font-weight:600;
+  background:rgba(0,0,0,.28); padding:3px 8px; border-radius:20px;
+  backdrop-filter:blur(4px);
+  pointer-events:none;
+}
+
+
+/* ──────────────────────────────────────────
+   5. 모달 바디
+────────────────────────────────────────── */
+.fmodal-body {
+  flex:1; overflow-y:auto;
+  padding: 22px 28px 28px;
+  scrollbar-width: thin;
+  scrollbar-color: #E2E8F0 transparent;
+}
+.fmodal-body::-webkit-scrollbar { width:5px; }
+.fmodal-body::-webkit-scrollbar-thumb { background:#E2E8F0; border-radius:4px; }
+
+/* 헤더 */
+.fmodal-header {
+  display: flex; align-items: flex-start;
+  justify-content: space-between; gap: 12px;
+  margin-bottom: 20px;
+}
+.fmodal-header__left { display:flex; flex-direction:column; gap:7px; flex:1; min-width:0; }
+.fmodal-header__badge {
+  display:inline-flex; align-items:center;
+  font-size:11px; font-weight:800; color:#C05621;
+  background:rgba(255,182,100,.12); border:1px solid rgba(255,182,100,.35);
+  padding:3px 10px; border-radius:20px; align-self:flex-start;
+}
+.fmodal-header__title {
+  font-size:22px; font-weight:900; color:#1A202C;
+  line-height:1.3; letter-spacing:-.4px; margin:0;
+}
+
+/* 일정 추가 버튼 (모달 헤더) */
+.fmodal-add-btn {
+  display:inline-flex; align-items:center; gap:6px;
+  padding: 10px 18px;
+  background: linear-gradient(120deg, #89CFF0, #C2B8D9);
+  border:none; border-radius:12px;
+  font-size:13px; font-weight:800; color:#fff;
+  cursor:pointer; font-family:inherit; flex-shrink:0;
+  box-shadow:0 4px 14px rgba(137,207,240,.38);
+  transition:opacity .15s, transform .15s;
+  white-space:nowrap;
+}
+.fmodal-add-btn:hover { opacity:.88; transform:translateY(-1px); }
+
+/* 정보 그리드 */
+.fmodal-info {
+  background:#F7FAFC; border:1.5px solid #EDF2F7;
+  border-radius:16px; overflow:hidden; margin-bottom:22px;
+}
+.fmodal-info__row {
+  display:flex; align-items:flex-start; gap:14px;
+  padding: 13px 18px;
+  border-bottom: 1px solid #EDF2F7;
+}
+.fmodal-info__row:last-child { border-bottom:none; }
+.fmodal-info__icon { font-size:18px; flex-shrink:0; margin-top:1px; }
+.fmodal-info__content { display:flex; flex-direction:column; gap:2px; flex:1; min-width:0; }
+.fmodal-info__label {
+  font-size:11px; font-weight:800; color:#A0AEC0;
+  text-transform:uppercase; letter-spacing:.6px;
+}
+.fmodal-info__value {
+  font-size:15px; color:#2D3748; font-weight:600; line-height:1.5;
+  word-break:keep-all;
+}
+.fmodal-info__value strong { color:#1A202C; font-weight:900; }
+
+/* 섹션 (상세설명 / 부대행사) */
+.fmodal-section { margin-bottom:20px; }
+.fmodal-section__title {
+  font-size:15px; font-weight:800; color:#2D3748;
+  margin-bottom:10px; padding-bottom:8px;
+  border-bottom:2px solid #EDF2F7;
+  display:flex; align-items:center; gap:6px;
+}
+.fmodal-section__content {
+  font-size:14px; color:#4A5568; line-height:2;
+  background:#F7FAFC; border:1px solid #EDF2F7;
+  border-radius:14px; padding:16px 18px;
+  word-break:keep-all;
+  max-height:280px; overflow-y:auto;
+}
+
+
+/* ──────────────────────────────────────────
+   6. 이미지 전체화면 뷰어
+────────────────────────────────────────── */
+.fviewer-overlay {
+  position:fixed; inset:0;
+  background:rgba(0,0,0,.92);
+  z-index:10001;
+  display:flex; align-items:center; justify-content:center;
+  font-family: 'Pretendard Variable', Pretendard, sans-serif;
+}
+.fviewer-img-wrap {
+  max-width:90vw; max-height:90vh;
+  display:flex; align-items:center; justify-content:center;
+}
+.fviewer-img-wrap img {
+  max-width:90vw; max-height:90vh;
+  object-fit:contain; border-radius:8px;
+  box-shadow:0 8px 40px rgba(0,0,0,.6);
+}
+.fviewer-close {
+  position:absolute; top:18px; right:18px;
+  width:40px; height:40px;
+  background:rgba(255,255,255,.15); border:1.5px solid rgba(255,255,255,.3);
+  border-radius:50%; color:#fff; cursor:pointer; font-size:18px;
+  display:flex; align-items:center; justify-content:center;
+  transition:background .15s;
+}
+.fviewer-close:hover { background:rgba(255,255,255,.28); }
+.fviewer-counter {
+  position:absolute; bottom:20px; left:50%; transform:translateX(-50%);
+  font-size:14px; font-weight:700; color:rgba(255,255,255,.85);
+  background:rgba(0,0,0,.4); padding:4px 14px; border-radius:20px;
+  backdrop-filter:blur(4px);
+}
+.fviewer-btn {
+  position:absolute; top:50%; transform:translateY(-50%);
+  width:50px; height:50px;
+  background:rgba(255,255,255,.15); border:1.5px solid rgba(255,255,255,.3);
+  border-radius:50%; color:#fff; cursor:pointer; z-index:2;
+  display:flex; align-items:center; justify-content:center;
+  transition:background .18s;
+}
+.fviewer-btn:hover { background:rgba(255,255,255,.28); }
+.fviewer-btn--prev { left:20px; }
+.fviewer-btn--next { right:20px; }
+
+
+/* ──────────────────────────────────────────
+   7. 반응형
+────────────────────────────────────────── */
+@media (max-width: 640px) {
+  .fmodal-carousel { height: 180px; }
+  .fmodal-body { padding: 16px 18px 22px; }
+  .fmodal-header__title { font-size:18px; }
+  .fmodal-header { flex-direction:column; }
+  .fmodal-add-btn { align-self:stretch; justify-content:center; }
+  .fmodal-info__value { font-size:14px; }
+  .festival-card__thumb { width:72px; }
+}

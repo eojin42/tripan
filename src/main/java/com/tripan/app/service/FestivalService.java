@@ -13,4 +13,15 @@ public interface FestivalService {
      */
     List<FestivalDto> getFestivals(int year, int month);
     
+    
+    /**
+     * 여행 기간(startDate ~ endDate)과 겹치는 축제 목록 조회.
+     * 각 축제의 상세 이미지 목록도 함께 포함됩니다.
+     *
+     * @param tripStart 여행 시작일 (YYYY-MM-DD)
+     * @param tripEnd   여행 종료일 (YYYY-MM-DD)
+     * @return 겹치는 축제 DTO 목록 (imageList 포함)
+     */
+    List<FestivalDto> getFestivalsByTripPeriod(String tripStart, String tripEnd);
+    
 }

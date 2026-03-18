@@ -6,6 +6,7 @@ import java.util.List;
 import org.springframework.stereotype.Service;
 
 import com.tripan.app.domain.dto.FestivalDto;
+import com.tripan.app.domain.dto.FestivalImageDto;
 import com.tripan.app.mapper.FestivalMapper;
 
 @Service
@@ -43,5 +44,22 @@ public class FestivalServiceImpl implements FestivalService {
         }
 
         return festivalList;
+    }
+    
+    
+    
+    @Override
+    public List<FestivalDto> getFestivalsByTripPeriod(String tripStart, String tripEnd) {
+        // 여행 기간과 겹치는 축제 목록 조회 
+        List<FestivalDto> festivals = festivalMapper.selectFestivalsByTripPeriod(tripStart, tripEnd);
+
+        // 각 축제의 이미지 목록을 추가 조회 
+        for (FestivalDto dto : festivals) {
+            List<FestivalImageDto> images =
+                festivalMapper.selectFestivalImages(dto.getFestivalId());
+            dto.setImageList(images);
+        }
+
+        return festivals;
     }
 }

@@ -1620,7 +1620,7 @@ textarea.form-textarea:focus { border-color: var(--blue); background: var(--whit
 /* 좌측 추천 사이드바 */
 .edit-recommend-panel {
   display: none;
-  width: 380px;
+  width: 500px;
   min-width: 200px;
   max-width: 560px;
   flex-shrink: 0;
