@@ -82,5 +82,42 @@
         WHERE festival_id = #{festivalId}
         ORDER BY image_id ASC
     </select>
+    
+    <select id="selectFestivalsByTripPeriod"
+            resultType="com.tripan.app.domain.dto.FestivalDto">
+        SELECT
+            f.festival_id       AS festivalId,
+            p.place_id          AS placeId,
+            p.place_name        AS title,
+            p.address           AS eventPlace,
+            f.event_start_date  AS eventStartDate,
+            f.event_end_date    AS eventEndDate,
+            f.play_time         AS playTime,
+            f.spend_time        AS spendTime,
+            f.festival_grade    AS festivalGrade,
+            f.usage_fee         AS usageFee,
+            f.program           AS program,
+            f.sub_event         AS subEvent,
+            f.sponsor1          AS sponsor1,
+            f.sponsor1_tel      AS sponsor1Tel,
+            p.latitude          AS mapy,
+            p.longitude         AS mapx,
+            (
+                SELECT origin_img_url
+                FROM (
+                    SELECT fi.origin_img_url
+                    FROM   festival_image fi
+                    WHERE  fi.festival_id = f.festival_id
+                    ORDER BY fi.image_id ASC
+                )
+                WHERE ROWNUM = 1
+            ) AS firstimage
+        FROM  festival f
+        JOIN  place p ON f.place_id = p.place_id
+        WHERE f.event_start_date &lt;= TO_DATE(#{tripEnd},   'YYYY-MM-DD')
+          AND f.event_end_date   &gt;= TO_DATE(#{tripStart}, 'YYYY-MM-DD')
+        ORDER BY f.event_start_date ASC
+    </select>
+    
 
 </mapper>

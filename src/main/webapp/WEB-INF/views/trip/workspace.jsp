@@ -10,6 +10,7 @@
   <title>${tripDto.tripName} - Tripan 워크스페이스</title>
   <%-- CSS 로드 순서 중요: responsive.css는 반드시 마지막 --%>
   <link rel="stylesheet" href="${pageContext.request.contextPath}/dist/css/trip/trip.css">
+  <link rel="stylesheet" href="${pageContext.request.contextPath}/dist/css/trip/workspace.festival.css">
   <link rel="preconnect" href="https://cdn.jsdelivr.net">
   <link href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/variable/pretendardvariable.css" rel="stylesheet">
   <%-- WebSocket: SockJS + STOMP --%>
@@ -345,6 +346,7 @@
           <button class="rp-tab active" id="rpTab-suggest" onclick="switchRpTab('suggest',this)">추천 장소</button>
           <button class="rp-tab" id="rpTab-summary" onclick="switchRpTab('summary',this)">일정 요약</button>
           <button class="rp-tab" id="rpTab-weather" onclick="switchRpTab('weather',this); loadWeatherIfNeeded();">날씨</button>
+          <button class="rp-tab" id="rpTab-festival" onclick="switchRpTab('festival',this); loadFestivalTabIfNeeded();">축제</button>
         </div>
       </div>
 
@@ -358,7 +360,6 @@
           <button class="rp-filter-btn" onclick="filterRec(this,'CULTURE')">🎭 문화</button>
           <button class="rp-filter-btn" onclick="filterRec(this,'LEISURE')">🏄 레포츠</button>
           <button class="rp-filter-btn" onclick="filterRec(this,'SHOPPING')">🛍️ 쇼핑</button>
-          <button class="rp-filter-btn" onclick="filterRec(this,'FESTIVAL')">🎉 축제</button>
         </div>
 
         <%-- ✅ 카드는 workspace.recommend.js가 동적 렌더 --%>
@@ -383,6 +384,27 @@
       <div class="rp-pane" id="rpPane-weather">
         <%-- 날씨 v2: JS가 이 안에 검색창 + 지도 주입 --%>
       </div>
+
+      <%-- ── 탭: 축제 ── --%>
+      <div class="rp-pane" id="rpPane-festival">
+        <div class="rp-pane-head">
+          <div class="rp-pane-head__period">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+            <fmt:parseDate var="parsedStart" value="${fn:substring(tripDto.startDate,0,10)}" pattern="yyyy-MM-dd"/>
+            <fmt:parseDate var="parsedEnd"   value="${fn:substring(tripDto.endDate,0,10)}"   pattern="yyyy-MM-dd"/>
+            <fmt:formatDate var="fmtStart" value="${parsedStart}" pattern="M월 d일"/>
+            <fmt:formatDate var="fmtEnd"   value="${parsedEnd}"   pattern="M월 d일"/>
+            <strong style="color:#2D3748;">${fmtStart}부터 ${fmtEnd}</strong> 기간에 열리는 축제
+          </div>
+        </div>
+        <div id="festivalRegionFilter" class="festival-region-filter"></div>
+        <div id="festivalListWrap" class="festival-list-wrap">
+          <div class="festival-empty">
+            <div class="festival-empty__icon">🎉</div>
+            <div class="festival-empty__msg">축제 탭을 클릭하면 로드돼요</div>
+          </div>
+        </div>
+      </div><%-- /rpPane-festival --%>
 
     </div><%-- /edit-recommend-panel --%>
 
@@ -441,98 +463,47 @@
 
 <%-- ══════════ MODALS ══════════ --%>
 
-<%-- ✨ 장소 추가 모달 — 추천 장소 / 나만의 장소 분리 --%>
+<%-- ✨ 추천 장소 모달 (기존 장소 추가 모달 리브랜딩) --%>
 <div class="modal-overlay" id="addPlaceModal">
-  <div class="modal-box apm-box">
-
-    <%-- ── 모달 헤드: 메인 탭 전환 ── --%>
-    <div class="apm-head">
-      <div class="apm-main-tabs">
-        <button class="apm-main-tab active" id="apmTabRecommend" onclick="switchAddPlaceMainTab('recommend',this)">
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
-          추천 장소
-        </button>
-        <button class="apm-main-tab" id="apmTabMy" onclick="switchAddPlaceMainTab('my',this)">
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
-          나만의 장소
-        </button>
-      </div>
+  <div class="modal-box" style="width:min(660px,96vw);">
+    <div class="modal-box__head">
+      <span class="modal-box__title">🏢 추천 장소</span>
       <button class="modal-close-btn" onclick="closeModal('addPlaceModal')">✕</button>
     </div>
-
-    <div class="modal-box__body apm-body">
-
-      <%-- ══════════════════════════════
-           패널 A: 추천 장소
-      ══════════════════════════════ --%>
-      <div id="apmPanelRecommend" class="apm-panel">
-
-        <%-- 안내 배너 --%>
-        <div class="apm-recommend-banner">
-          <div class="apm-banner-icon">✈️</div>
-          <div class="apm-banner-text">
-            <strong>Tripan이 엄선한 요즘 핫플들을 모아봤어요</strong>
-            <span>없는 장소는 <b>상단 지도 검색창</b>으로 바로 추가하세요</span>
-          </div>
+    <div class="modal-box__body">
+      
+      <%-- 추천 안내 배너 --%>
+      <div class="recommend-banner">
+        <div class="recommend-banner-icon">✈️</div>
+        <div class="recommend-banner-text">
+          <strong>Tripan이 픽한 요즘 뜨는 핫플들을 모아봤어요!</strong>
+          <span>찾으시는 장소가 안 보인다면, <b>상단 지도 검색창</b>에서 바로 추가할 수 있어요</span>
         </div>
+      </div>
 
-        <%-- 카테고리 탭 --%>
-        <div class="place-type-tabs">
-          <button class="place-type-tab active" onclick="selectPlaceType(this,'all')">🔍 전체</button>
-          <button class="place-type-tab" onclick="selectPlaceType(this,'RESTAURANT')">🍽️ 맛집</button>
-          <button class="place-type-tab" onclick="selectPlaceType(this,'ACCOMMODATION')">🏨 숙소</button>
-          <button class="place-type-tab" onclick="selectPlaceType(this,'TOUR')">🏔️ 관광</button>
-          <button class="place-type-tab" onclick="selectPlaceType(this,'CULTURE')">🎭 문화</button>
-          <button class="place-type-tab" onclick="selectPlaceType(this,'LEISURE')">🏄 레포츠</button>
-          <button class="place-type-tab" onclick="selectPlaceType(this,'SHOPPING')">🛍️ 쇼핑</button>
+      <div class="place-type-tabs">
+        <button class="place-type-tab active" onclick="selectPlaceType(this,'all')">🔍 전체</button>
+        <button class="place-type-tab" onclick="selectPlaceType(this,'RESTAURANT')">🍽️ 맛집</button>
+        <button class="place-type-tab" onclick="selectPlaceType(this,'ACCOMMODATION')">🏨 숙소</button>
+        <button class="place-type-tab" onclick="selectPlaceType(this,'TOUR')">🏔️ 관광</button>
+        <button class="place-type-tab" onclick="selectPlaceType(this,'CULTURE')">🎭 문화</button>
+        <button class="place-type-tab" onclick="selectPlaceType(this,'LEISURE')">🏄 레포츠</button>
+        <button class="place-type-tab" onclick="selectPlaceType(this,'SHOPPING')">🛍️ 쇼핑</button>
+        <button class="place-type-tab" onclick="selectPlaceType(this,'my')">⭐ 나만의</button>
+      </div>
+      
+      <div class="search-input-wrap">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        <input type="text" placeholder="추천 장소 내에서 검색…" id="placeSearchInput" oninput="searchPlace(this.value)">
+      </div>
+      
+      <div class="place-results" id="placeResults">
+        <div style="text-align:center;padding:40px 20px;color:#A0AEC0;">
+          <div style="font-size:32px;margin-bottom:10px;">✨</div>
+          <div style="font-size:14px;font-weight:700;color:#4A5568;margin-bottom:4px;">카테고리를 선택해 보세요!</div>
+          <div style="font-size:12px;">Tripan이 엄선한 멋진 장소들을 추천해 드립니다.</div>
         </div>
-
-        <%-- 검색 --%>
-        <div class="search-input-wrap">
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-          <input type="text" placeholder="추천 장소 내에서 검색…" id="placeSearchInput" oninput="searchPlace(this.value)">
-        </div>
-
-        <%-- 결과 --%>
-        <div class="place-results" id="placeResults">
-          <div style="text-align:center;padding:40px 20px;color:#A0AEC0;">
-            <div style="font-size:36px;margin-bottom:10px;">✨</div>
-            <div style="font-size:14px;font-weight:700;color:#4A5568;margin-bottom:4px;">카테고리를 선택해 보세요!</div>
-            <div style="font-size:12px;">Tripan이 엄선한 멋진 장소들을 추천해 드립니다.</div>
-          </div>
-        </div>
-
-      </div><%-- /apmPanelRecommend --%>
-
-      <%-- ══════════════════════════════
-           패널 B: 나만의 장소
-      ══════════════════════════════ --%>
-      <div id="apmPanelMy" class="apm-panel" style="display:none;">
-
-        <%-- 안내 배너 --%>
-        <div class="apm-my-banner">
-          <div class="apm-banner-icon">⭐</div>
-          <div class="apm-banner-text">
-            <strong>나만 아는 특별한 장소를 저장해요</strong>
-            <span>직접 등록하거나 지도 검색 후 "나만의장소"로 추가한 장소가 표시돼요</span>
-          </div>
-        </div>
-
-        <%-- 나만의 검색 --%>
-        <div class="search-input-wrap">
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-          <input type="text" placeholder="나만의 장소 검색…" id="myPlaceSearchInput" oninput="loadMyPlaces(this.value)">
-        </div>
-
-        <%-- 나만의 결과 --%>
-        <div class="place-results" id="myPlaceResults">
-          <div style="text-align:center;padding:40px 20px;color:#A0AEC0;">
-            <div style="font-size:36px;margin-bottom:10px;">⭐</div>
-            <div style="font-size:14px;font-weight:700;color:#4A5568;margin-bottom:4px;">불러오는 중...</div>
-          </div>
-        </div>
-
-      </div><%-- /apmPanelMy --%>
+      </div>
 
     </div>
   </div>
@@ -1310,6 +1281,13 @@ var TRIP_CITIES     = [];
 <c:forEach var="city" items="${tripDto.cities}">
   TRIP_CITIES.push('${fn:escapeXml(city)}');
 </c:forEach>
+
+/* 축제 탭 — 처음 클릭 시 1회만 로드 */
+function loadFestivalTabIfNeeded() {
+  if (typeof loadFestivalTab === 'function' && !window._festivalLoaded) {
+    loadFestivalTab();
+  }
+}
 </script>
 
 <%-- ════════════════════════════════════════
@@ -1327,6 +1305,7 @@ var TRIP_CITIES     = [];
 <script src="${pageContext.request.contextPath}/dist/js/trip/workspace.welcome.js"></script>
 <script src="${pageContext.request.contextPath}/dist/js/trip/workspace.map.js"></script>
 <script src="${pageContext.request.contextPath}/dist/js/trip/workspace.trip.js"></script>
+<script src="${pageContext.request.contextPath}/dist/js/trip/workspace.festival.js"></script>
 
 <%-- 카카오맵 데이터 주입 및 KTO --%>
 <script>
@@ -1448,6 +1427,7 @@ var TRIP_META = {
           }
       }, true);
 
+      
       // 드래그 앤 드롭 및 메모장 타이핑 물리적 마비
       window.addEventListener('DOMContentLoaded', function() {
           var memoArea = document.getElementById('memoText');
