@@ -1,0 +1,150 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.tripan.app.admin.mapper.CouponUsageMapper">
+
+    <sql id="couponUsageColumns">
+        usage_id AS usageId,
+        order_id AS orderId,
+        member_coupon_id AS memberCouponId,
+        coupon_id AS couponId,
+        partner_id AS partnerId,
+        place_id AS placeId,
+        discount_amount AS discountAmount,
+        platform_discount_amount AS platformDiscountAmount,
+        partner_discount_amount AS partnerDiscountAmount,
+        status AS status,
+        created_at AS createdAt,
+        cancelled_at AS cancelledAt,
+        cancel_reason AS cancelReason,
+        updated_at AS updatedAt
+    </sql>
+
+    <insert id="insertCouponUsage" parameterType="com.tripan.app.admin.domain.dto.CouponUsageDto">
+        <selectKey keyProperty="usageId" resultType="long" order="BEFORE">
+            SELECT coupon_usage_seq.NEXTVAL FROM dual
+        </selectKey>
+        INSERT INTO coupon_usage (
+            usage_id,
+            order_id,
+            member_coupon_id,
+            coupon_id,
+            partner_id,
+            place_id,
+            discount_amount,
+            platform_discount_amount,
+            partner_discount_amount,
+            status,
+            created_at,
+            updated_at
+        ) VALUES (
+            #{usageId},
+            #{orderId},
+            #{memberCouponId},
+            #{couponId},
+            #{partnerId},
+            #{placeId},
+            #{discountAmount},
+            #{platformDiscountAmount},
+            #{partnerDiscountAmount},
+            #{status},
+            SYSDATE,
+            SYSDATE
+        )
+    </insert>
+
+    <update id="updateCouponUsageStatus" parameterType="map">
+        UPDATE coupon_usage
+        SET status = #{status},
+            cancelled_at = CASE WHEN #{status} = 'CANCELLED' THEN SYSDATE ELSE cancelled_at END,
+            cancel_reason = #{cancelReason},
+            updated_at = SYSDATE
+        WHERE usage_id = #{usageId}
+    </update>
+
+    <select id="selectCouponUsageById"
+            parameterType="long"
+            resultType="com.tripan.app.admin.domain.dto.CouponUsageDto">
+        SELECT
+            <include refid="couponUsageColumns"/>
+        FROM coupon_usage
+        WHERE usage_id = #{usageId}
+    </select>
+
+    <select id="selectCouponUsageByOrderId"
+            parameterType="string"
+            resultType="com.tripan.app.admin.domain.dto.CouponUsageDto">
+        SELECT
+            <include refid="couponUsageColumns"/>
+        FROM coupon_usage
+        WHERE order_id = #{orderId}
+    </select>
+
+    <select id="selectCouponUsageList"
+            parameterType="com.tripan.app.admin.domain.dto.CouponUsageDto$SearchRequest"
+            resultType="com.tripan.app.admin.domain.dto.CouponUsageDto">
+        SELECT
+            <include refid="couponUsageColumns"/>
+        FROM coupon_usage
+        <where>
+            <if test="orderId != null and orderId != ''">
+                AND order_id = #{orderId}
+            </if>
+            <if test="couponId != null">
+                AND coupon_id = #{couponId}
+            </if>
+            <if test="partnerId != null">
+                AND partner_id = #{partnerId}
+            </if>
+            <if test="placeId != null">
+                AND place_id = #{placeId}
+            </if>
+            <if test="status != null and status != ''">
+                AND status = #{status}
+            </if>
+            <if test="fromDate != null and fromDate != ''">
+                AND created_at <![CDATA[>=]]> TO_DATE(#{fromDate}, 'YYYY-MM-DD')
+            </if>
+            <if test="toDate != null and toDate != ''">
+                AND created_at <![CDATA[<]]> TO_DATE(#{toDate}, 'YYYY-MM-DD') + 1
+            </if>
+        </where>
+        ORDER BY usage_id DESC
+    </select>
+
+    <select id="selectCouponUsageSummary"
+            parameterType="com.tripan.app.admin.domain.dto.CouponUsageDto$SearchRequest"
+            resultType="com.tripan.app.admin.domain.dto.CouponUsageDto$SummaryResponse">
+        SELECT
+            COUNT(*) AS usageCount,
+            NVL(SUM(discount_amount), 0) AS totalDiscountAmount,
+            NVL(SUM(platform_discount_amount), 0) AS totalPlatformDiscountAmount,
+            NVL(SUM(partner_discount_amount), 0) AS totalPartnerDiscountAmount
+        FROM coupon_usage
+        <where>
+            <if test="orderId != null and orderId != ''">
+                AND order_id = #{orderId}
+            </if>
+            <if test="couponId != null">
+                AND coupon_id = #{couponId}
+            </if>
+            <if test="partnerId != null">
+                AND partner_id = #{partnerId}
+            </if>
+            <if test="placeId != null">
+                AND place_id = #{placeId}
+            </if>
+            <if test="status != null and status != ''">
+                AND status = #{status}
+            </if>
+            <if test="fromDate != null and fromDate != ''">
+                AND created_at <![CDATA[>=]]> TO_DATE(#{fromDate}, 'YYYY-MM-DD')
+            </if>
+            <if test="toDate != null and toDate != ''">
+                AND created_at <![CDATA[<]]> TO_DATE(#{toDate}, 'YYYY-MM-DD') + 1
+            </if>
+        </where>
+    </select>
+
+</mapper>
