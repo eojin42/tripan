@@ -14,7 +14,7 @@
   --bg:         #F7F9FC;
   --border:     #E2E8F0;
   --sidebar-w:  520px;
-  --topbar-h:   64px;
+  --topbar-h:   72px;
   --grad:       linear-gradient(120deg, var(--ice), var(--orchid), var(--rose));
   --grad2:      linear-gradient(135deg, var(--blue), var(--pink));
   --ease:       cubic-bezier(0.19,1,0.22,1);
@@ -41,10 +41,10 @@ html, body {
   border-bottom: 1px solid var(--border);
   display: flex;
   align-items: center;
-  padding: 0 20px;
-  gap: 16px;
+  padding: 0 24px;
+  gap: 14px;
   z-index: 200;
-  box-shadow: 0 2px 12px rgba(0,0,0,0.04);
+  box-shadow: 0 2px 12px rgba(0,0,0,0.05);
 }
 .ws-topbar__back {
   width: 36px; height: 36px;
@@ -74,14 +74,17 @@ html, body {
   flex: 1;
 }
 .ws-topbar__title {
-  font-size: 18px; font-weight: 900; color: var(--dark);
+  font-size: 17px; font-weight: 900; color: var(--dark);
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
   letter-spacing: -0.3px;
 }
-.ws-topbar__title-wrap { display: flex; align-items: center; gap: 8px; }
+.ws-topbar__title-wrap {
+  display: flex; align-items: center; gap: 10px;
+  flex-wrap: nowrap; min-width: 0;
+}
 .trip-status-badge {
   display: inline-flex; align-items: center; gap: 4px;
-  padding: 3px 10px; border-radius: 50px;
+  padding: 4px 11px; border-radius: 50px;
   font-size: 11px; font-weight: 800; white-space: nowrap; flex-shrink: 0;
 }
 .trip-status-badge.planning {
@@ -96,7 +99,8 @@ html, body {
   background: rgba(160,174,192,.15); color: var(--mid);
   border: 1px solid rgba(160,174,192,.3);
 }
-.ws-topbar__sub { font-size: 12px; color: var(--light); font-weight: 500; margin-top: 2px; }
+/* sub 라인 제거 — 지역/날짜는 상세 모달에서만 표시 */
+.ws-topbar__sub { display: none; }
 
 .ws-topbar__actions { display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
 
@@ -2428,7 +2432,6 @@ textarea.form-textarea:focus { border-color: var(--blue); background: var(--whit
 ═══════════════════════════════════════════ */
 @media (max-width: 1200px) {
   .ws-save-status { display: none; }
-  .ws-date-nights-pill { display: none; }
   .ws-topbar { gap: 8px; padding: 0 14px; }
   .ws-topbar__actions { gap: 6px; }
   .ws-tab { font-size: 11px; padding: 5px 9px; }
@@ -2452,8 +2455,6 @@ textarea.form-textarea:focus { border-color: var(--blue); background: var(--whit
   .ws-topbar__actions { gap: 4px; }
   .ws-tab { font-size: 11px; padding: 5px 8px; }
   .ws-topbar__title { font-size: 15px; }
-  /* 날짜 pill 숨김 */
-  .ws-date-nights-pill { display: none; }
 }
 
 /* ═══════════════════════════════════════════
@@ -2463,9 +2464,7 @@ textarea.form-textarea:focus { border-color: var(--blue); background: var(--whit
   /* avatar 축소 */
   .avatar { width: 26px; height: 26px; font-size: 9px; }
   .avatar-me { transform: scale(1.14); }
-  /* 도시 칩 숨김 */
-  .ws-city-chip-em { display: none; }
-  /* 상태 배지 숨김 */
+  /* 상태 배지 숨김 — 상세 버튼으로 대체 */
   .trip-status-badge { display: none; }
   .ws-topbar__title { font-size: 14px; }
   .ws-tab { font-size: 10px; padding: 5px 7px; }
@@ -2479,8 +2478,6 @@ textarea.form-textarea:focus { border-color: var(--blue); background: var(--whit
 ═══════════════════════════════════════════ */
 @media (max-width: 860px) {
   .live-badge { display: none; }
-  /* 탑바 info 최소화 */
-  .ws-topbar__info { max-width: 160px; }
   .ws-topbar__title { font-size: 13px; }
   .ws-tab { font-size: 10px; padding: 4px 6px; }
   .ws-topbar { gap: 4px; }
@@ -2492,12 +2489,11 @@ textarea.form-textarea:focus { border-color: var(--blue); background: var(--whit
    반응형 — 768px (모바일)
 ═══════════════════════════════════════════ */
 @media (max-width: 768px) {
-  :root { --topbar-h: 56px; }
+  :root { --topbar-h: 60px; }
 
   /* 탑바 */
   .ws-topbar { padding: 0 12px; gap: 8px; height: var(--topbar-h); }
   .ws-topbar__title { font-size: 14px; }
-  .ws-topbar__sub { display: none; }
   .ws-topbar__actions .live-badge,
   .ws-topbar__actions .avatar-group { display: none; }
   .view-toggle { gap: 2px; }
@@ -2557,13 +2553,15 @@ textarea.form-textarea:focus { border-color: var(--blue); background: var(--whit
    반응형 — 480px (소형 모바일)
 ═══════════════════════════════════════════ */
 @media (max-width: 480px) {
-  .ws-topbar__info { display: none; }
-  .view-toggle { display: none; } /* 뷰 토글 숨김 → 모드 버튼만 */
+  /* 소형 모바일: 썸네일 숨기고 텍스트만 유지 */
+  .ws-thumb-circle { display: none; }
+  .ws-topbar__title { font-size: 13px; }
+  .trip-status-badge { display: none; }
+  .view-toggle { display: none; }
   .ws-tabs .ws-tab { font-size: 10px; padding: 4px 6px; }
   .place-card { padding: 10px 12px; }
   .place-name { font-size: 13px; }
   .notif-dropdown { border-radius: 16px 16px 0 0; }
-  .trip-status-badge { display: none; }
 }
 
 
@@ -2595,14 +2593,6 @@ body { font-family: 'Pretendard Variable', 'Pretendard', -apple-system, BlinkMac
   transition: background .15s;
 }
 .ws-detail-btn:hover { background: rgba(137,207,240,.2); color: #2B6CB0; border-color: rgba(137,207,240,.4); }
-/* ── 여행 정보 모달 ── */
-.trip-info-section { margin-bottom: 18px; }
-.trip-info-label { font-size: 11px; font-weight: 800; letter-spacing: 1px; color: #A0AEC0; text-transform: uppercase; margin-bottom: 6px; }
-.trip-info-value { font-size: 14px; font-weight: 600; color: #1A202C; line-height: 1.6; }
-.trip-info-desc  { font-size: 13px; color: #4A5568; line-height: 1.7; white-space: pre-wrap; font-family: 'Pretendard Variable', 'Pretendard', -apple-system, sans-serif !important; }
-.trip-info-tags  { display: flex; flex-wrap: wrap; gap: 6px; }
-.trip-info-tag   { padding: 3px 10px; background: linear-gradient(135deg,rgba(137,207,240,.2),rgba(255,182,193,.2)); border: 1px solid rgba(137,207,240,.4); border-radius: 50px; font-size: 12px; font-weight: 700; color: #2B6CB0; }
-
 
 /* ws-city-chip-topbar / trip-city-chip → 하단 재정의 */
 
@@ -2749,14 +2739,6 @@ body { font-family: 'Pretendard Variable', 'Pretendard', -apple-system, BlinkMac
 .memo-img-add:hover { border-color: #89CFF0; color: #2B6CB0; }
 
 /* ── 여행 정보 모달: 썸네일 추가 ── */
-.trip-info-thumb-wrap { display: flex; align-items: center; gap: 16px; margin-bottom: 20px; }
-.trip-info-thumb-circle {
-  width: 64px; height: 64px; border-radius: 50%;
-  object-fit: cover; border: 3px solid #EDF2F7;
-  flex-shrink: 0;
-}
-.trip-info-thumb-name { font-size: 18px; font-weight: 800; color: #1A202C; }
-.trip-info-thumb-dates { font-size: 12px; color: #718096; margin-top: 3px; }
 
 /* ══════════════════════════════════════════════
    탑바 sub 개선
@@ -2827,25 +2809,7 @@ body { font-family: 'Pretendard Variable', 'Pretendard', -apple-system, BlinkMac
 }
 
 /* 초대코드 */
-.trip-info-invite-code {
-  font-size: 15px; font-weight: 800; letter-spacing: 3px; color: #1A202C;
-  font-family: 'SF Mono', 'Fira Code', 'Consolas', monospace;
-  background: #F7FAFC; border: 1px solid #E2E8F0;
-  border-radius: 8px; padding: 8px 14px; display: inline-block;
-}
 
-/* 수정 버튼 (모달 내) */
-.btn-trip-edit-open {
-  width: 100%; padding: 11px;
-  display: flex; align-items: center; justify-content: center; gap: 6px;
-  background: linear-gradient(135deg, #89CFF0, #FFB6C1);
-  color: white; border: none; border-radius: 10px;
-  font-size: 14px; font-weight: 800;
-  cursor: pointer; margin-top: 8px;
-  font-family: 'Pretendard Variable', 'Pretendard', -apple-system, sans-serif;
-  transition: opacity .2s;
-}
-.btn-trip-edit-open:hover { opacity: .88; }
 
 /* ── 여행 설명 폰트 강제 통일 ── */
 .trip-info-desc {
@@ -2916,14 +2880,76 @@ body { font-family: 'Pretendard Variable', 'Pretendard', -apple-system, BlinkMac
 
 /* 날짜 경고 */
 .edit-date-warning {
-  padding: 9px 14px; border-radius: 8px;
-  font-size: 12px; font-weight: 600; line-height: 1.6; margin-bottom: 16px;
-  font-family: 'Pretendard Variable', 'Pretendard', -apple-system, sans-serif;
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 12px 14px;
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.6;
+  margin-bottom: 16px;
+  border: 1.5px solid transparent;
+  animation: warnSlideIn .2s ease;
 }
-.warn-error   { background: #FFF5F5; border: 1px solid #FEB2B2; color: #C53030; }
-.warn-danger  { background: #FFF5F5; border: 1px solid #FC8181; color: #9B2C2C; }
-.warn-caution { background: #FFFAF0; border: 1px solid #F6AD55; color: #744210; }
 
+@keyframes warnSlideIn {
+  from { opacity: 0; transform: translateY(-4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* 아이콘 영역 */
+.edit-date-warning::before {
+  font-size: 16px;
+  flex-shrink: 0;
+  line-height: 1.4;
+}
+
+/* ── Case 0: 날짜 입력 오류 ── */
+.warn-error {
+  background: #FFF5F5;
+  border-color: #FEB2B2;
+  color: #C53030;
+}
+.warn-error::before { content: '⚠️'; }
+
+/* ── Case 1: 일수 감소 (일정 삭제 위험) ── */
+.warn-danger {
+  background: linear-gradient(135deg, #FFF5F5 0%, #FFF0F3 100%);
+  border-color: #FC8181;
+  color: #9B2C2C;
+}
+.warn-danger::before { content: '🚨'; }
+.warn-danger strong {
+  color: #C53030;
+  font-weight: 800;
+}
+
+/* ── Case 2·3: 일수 증가 / 날짜 이동 (안내) ── */
+.warn-info {
+  background: linear-gradient(135deg, #EBF8FF 0%, #EDE7F6 100%);
+  border-color: #90CDF4;
+  color: #2B6CB0;
+}
+.warn-info::before { content: '💡'; }
+.warn-info strong {
+  color: #2B5F9E;
+  font-weight: 800;
+}
+
+/* ── 기존 호환: warn-caution (구버전 날짜 겹침 경고) ── */
+.warn-caution {
+  background: #FFFAF0;
+  border-color: #F6AD55;
+  color: #744210;
+}
+.warn-caution::before { content: '📋'; }
+.warn-caution strong {
+  color: #744210;
+  font-weight: 800;
+}
+
+.warn-info { background: #EBF8FF; border: 1px solid #90CDF4; color: #2B6CB0; }
 /* 저장 버튼 */
 .btn-edit-save {
   width: 100%; padding: 12px;
@@ -2956,21 +2982,22 @@ body { font-family: 'Pretendard Variable', 'Pretendard', -apple-system, BlinkMac
 .ws-topbar__sep    { font-size: 12px; color: #CBD5E0; margin: 0 5px; }
 .ws-topbar__nights { font-size: 12px; color: #718096; font-weight: 500; margin-right: 4px; }
 
-/* ── 상세 버튼 강조 버전 ── */
+/* ── 상세 버튼 — 항상 표시, 강조 ── */
 .ws-detail-btn-v2 {
   display: inline-flex; align-items: center; gap: 5px;
-  margin-left: 6px; padding: 4px 11px;
-  background: linear-gradient(135deg, rgba(137,207,240,.25), rgba(255,182,193,.2));
-  border: 1.5px solid rgba(137,207,240,.5);
+  padding: 6px 14px;
+  background: linear-gradient(120deg, #89CFF0 0%, #C2B8D9 50%, #FFB6C1 100%);
+  border: none;
   border-radius: 20px;
-  font-size: 11px; font-weight: 800; color: #2B6CB0;
-  cursor: pointer; white-space: nowrap; vertical-align: middle;
+  font-size: 12px; font-weight: 800; color: white;
+  cursor: pointer; white-space: nowrap; flex-shrink: 0;
   transition: all .18s;
-  box-shadow: 0 1px 4px rgba(137,207,240,.25);
+  box-shadow: 0 2px 8px rgba(137,207,240,.4);
+  letter-spacing: .2px;
 }
 .ws-detail-btn-v2:hover {
-  background: linear-gradient(135deg, rgba(137,207,240,.4), rgba(255,182,193,.3));
-  box-shadow: 0 2px 8px rgba(137,207,240,.4);
+  opacity: .88;
+  box-shadow: 0 4px 14px rgba(137,207,240,.5);
   transform: translateY(-1px);
 }
 
@@ -3128,32 +3155,6 @@ body { font-family: 'Pretendard Variable', 'Pretendard', -apple-system, BlinkMac
 
 /* 드래그 중 커서 */
 .ws-sidebar.dragging-active { cursor: grabbing !important; }
-
-/* ══════════════════════════════════════════════
-   탑바 도시 강조 칩 (파랑 계열)
-══════════════════════════════════════════════ */
-.ws-city-chip-em {
-  display: inline-flex; align-items: center;
-  padding: 3px 10px; margin-right: 4px;
-  background: rgba(137,207,240,.2);
-  border: 1.5px solid rgba(137,207,240,.45);
-  border-radius: 7px;
-  font-size: 11.5px; font-weight: 800; color: #2B6CB0;
-  white-space: nowrap; vertical-align: middle;
-  letter-spacing: -0.01em;
-}
-
-/* 날짜+박수 합친 pill */
-.ws-date-nights-pill {
-  display: inline-flex; align-items: center;
-  padding: 3px 11px; margin-right: 6px;
-  background: rgba(160,174,192,.08);
-  border: 1px solid rgba(160,174,192,.2);
-  border-radius: 20px;
-  font-size: 11.5px; font-weight: 600; color: #4A5568;
-  white-space: nowrap; vertical-align: middle;
-}
-
 
 /* ══════════════════════════════════════════════
    WebSocket 저장 상태 + 동기화 토스트
@@ -4081,37 +4082,349 @@ body.role-viewer .map-add-btn {
 /* ──────────────────────────────────────────────
    상단바 반응형
 ────────────────────────────────────────────── */
-/* 1. 글자 영역이 좁아질 때 오른쪽 버튼들을 뚫고 나가지 않게 가두기 */
 .ws-topbar__info { min-width: 0; flex: 1; }
 .ws-topbar__text-area { min-width: 0; flex: 1; }
-.ws-topbar__sub {
-  display: flex; align-items: center; flex-wrap: nowrap;
-  min-width: 0; overflow: hidden;
-}
-
-/* 2. 각 요소들 말줄임 처리 적용 */
-.ws-topbar__title, .ws-date-nights-pill, .ws-city-chip-em {
+.ws-topbar__title {
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
 
-/* 3. 화면이 좁아질 때 덜 중요한 것들 확실하게 숨기기 (최우선 강제 적용) */
+/* 3. 화면이 좁아질 때 덜 중요한 것들 숨기기 */
 @media (max-width: 1200px) {
-  /* 노트북 화면: 연결됨 뱃지와 날짜 숨기기 */
   .ws-save-status { display: none !important; }
-  .ws-date-nights-pill { display: none !important; }
 }
 
 @media (max-width: 1100px) {
-  /* 더 좁아지면 서브 텍스트 라인 전체 날리기 (제목과 우측 버튼만 살림) */
   .ws-topbar__sub { display: none !important; }
-  /* 버튼들 사이 간격 좁히기 */
   .ws-topbar__actions { gap: 6px; }
   .ws-tab { padding: 5px 8px; }
 }
+/* ws-detail-btn-v2는 모든 해상도에서 항상 표시 */
+.ws-detail-btn-v2 { display: inline-flex !important; }
 
-@media (max-width: 980px) {
-  /* 태블릿: 뱃지 숨기고 프로필 크기 살짝 줄이기 */
-  .trip-status-badge { display: none !important; }
-  .avatar { width: 28px; height: 28px; font-size: 10px; margin-left: -6px; }
-  .avatar-me { transform: scale(1.12); }
+
+
+
+/* ═══════════════════════════════════════════════════════════
+   tripInfoModal — 여행 상세 모달 (최종)
+   브랜드 컬러: sky #89CFF0 / pink #FFB6C1 / orchid #C2B8D9
+═══════════════════════════════════════════════════════════ */
+
+/* ── 모달 박스 ── */
+.tinfo-modal-box {
+  max-width: 460px !important;
+  padding: 0 !important;
+  border-radius: 22px !important;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  max-height: 90vh;
+}
+
+/* ══════════════
+   히어로 배너
+══════════════ */
+.tinfo-hero {
+  position: relative;
+  height: 220px;
+  flex-shrink: 0;
+  overflow: hidden;
+  border-radius: 22px 22px 0 0;
+}
+.tinfo-hero-img {
+  width: 100%; height: 100%;
+  object-fit: cover;
+  filter: brightness(.72) saturate(1.1);
+  transition: transform .3s;
+}
+/* 기본 이미지(logo)는 작게 중앙에 */
+.tinfo-hero-img.is-default {
+  object-fit: contain;
+  object-position: center;
+  width: 50%; height: 50%;
+  position: absolute;
+  top: 50%; left: 50%;
+  transform: translate(-50%, -50%);
+  filter: none;
+  opacity: .55;
+}
+.tinfo-hero:hover .tinfo-hero-img:not(.is-default) { transform: scale(1.03); }
+.tinfo-hero-overlay {
+  position: absolute; inset: 0;
+  background: linear-gradient(to bottom,
+    rgba(0,0,0,.04) 0%,
+    rgba(0,0,0,.18) 40%,
+    rgba(0,0,0,.68) 100%);
+}
+/* 기본 이미지일 때 배경 그라데이션 */
+.tinfo-hero.is-default-bg {
+  background: linear-gradient(135deg, #EBF5FB 0%, #EDE7F6 50%, #FCE4EC 100%);
+}
+
+/* 닫기 버튼 */
+.tinfo-close-btn {
+  position: absolute; top: 12px; right: 12px;
+  width: 30px; height: 30px;
+  background: rgba(0,0,0,.28); border: 1px solid rgba(255,255,255,.22);
+  border-radius: 50%; color: white; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  backdrop-filter: blur(6px); transition: background .15s; z-index: 2;
+}
+.tinfo-close-btn:hover { background: rgba(0,0,0,.5); }
+
+/* 이미지 변경 버튼 — 우측 맨 하단 (텍스트 오버레이 아래) */
+.tinfo-hero-edit-btn {
+  position: absolute; bottom: 10px; right: 12px;
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 5px 11px;
+  background: rgba(0,0,0,.32); border: 1px solid rgba(255,255,255,.22);
+  border-radius: 20px; color: white; font-size: 11px; font-weight: 700;
+  cursor: pointer; backdrop-filter: blur(6px); transition: background .15s; z-index: 3;
+}
+.tinfo-hero-edit-btn:hover { background: rgba(0,0,0,.52); }
+
+/* 하단 텍스트 오버레이 — 이미지변경 버튼이 오른쪽 아래에 있으므로 왼쪽만 사용 */
+.tinfo-hero-text {
+  position: absolute; bottom: 12px; left: 16px; right: 110px; z-index: 2;
+}
+.tinfo-status {
+  display: inline-flex; align-items: center;
+  padding: 4px 11px; border-radius: 20px;
+  font-size: 11px; font-weight: 800;
+  margin-bottom: 6px; backdrop-filter: blur(6px);
+  letter-spacing: .2px;
+}
+.tinfo-status.ongoing {
+  background: rgba(56,178,172,.35); border: 1px solid rgba(56,178,172,.55); color: #81E6D9;
+  font-size: 12px; padding: 5px 13px;
+}
+.tinfo-status.planning  { background: rgba(99,179,237,.3); border: 1px solid rgba(99,179,237,.45); color: #BEE3F8; }
+.tinfo-status.completed { background: rgba(160,174,192,.3); border: 1px solid rgba(160,174,192,.45); color: #E2E8F0; }
+.tinfo-hero-title {
+  font-size: 20px; font-weight: 900; color: white;
+  margin: 0 0 4px; line-height: 1.2;
+  text-shadow: 0 1px 6px rgba(0,0,0,.45);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.tinfo-hero-dates {
+  font-size: 12px; color: rgba(255,255,255,.88); font-weight: 600; margin: 0;
+}
+
+/* ══════════════
+   스크롤 바디
+══════════════ */
+.tinfo-scroll-body {
+  flex: 1; overflow-y: auto;
+  padding: 16px 20px 4px;
+  scrollbar-width: thin;
+  scrollbar-color: #E2E8F0 transparent;
+  display: flex; flex-direction: column; gap: 0;
+}
+.tinfo-scroll-body::-webkit-scrollbar { width: 4px; }
+.tinfo-scroll-body::-webkit-scrollbar-thumb { background: #E2E8F0; border-radius: 4px; }
+
+/* ── 공통 섹션 row ── */
+.tinfo-row-section {
+  padding: 14px 0;
+  border-bottom: 1px solid #F0F4F8;
+}
+.tinfo-row-section:last-of-type { border-bottom: none; }
+.tinfo-row-label {
+  display: flex; align-items: center; gap: 6px;
+  font-size: 12px; font-weight: 800; letter-spacing: .6px;
+  color: #718096; text-transform: uppercase; margin-bottom: 10px;
+}
+.tinfo-label-hint {
+  font-size: 11px; font-weight: 500; color: #CBD5E0;
+  text-transform: none; letter-spacing: 0; margin-left: 4px;
+}
+/* 동행자 카운트 배지 제거 */
+.tinfo-count-badge { display: none; }
+
+/* ── 여행지 칩 (강조) ── */
+.tinfo-city-chips { display: flex; flex-wrap: wrap; gap: 7px; }
+.tinfo-city-chip {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 7px 16px;
+  background: linear-gradient(135deg, rgba(137,207,240,.18) 0%, rgba(194,184,217,.16) 100%);
+  border: 1.5px solid rgba(137,207,240,.5);
+  border-radius: 12px;
+  font-size: 15px; font-weight: 800; color: #2B6CB0;
+  letter-spacing: -.2px;
+  box-shadow: 0 2px 8px rgba(137,207,240,.18);
+  transition: transform .15s, box-shadow .15s;
+}
+.tinfo-city-chip:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 14px rgba(137,207,240,.28);
+}
+.tinfo-city-chip svg { color: #63B3ED; flex-shrink: 0; }
+
+/* ── 동행자 칩 ── */
+.tinfo-members-wrap { display: flex; flex-direction: column; gap: 6px; }
+.tinfo-member-chip {
+  display: flex; align-items: center; gap: 10px;
+  padding: 9px 12px;
+  background: #F7FAFC; border: 1px solid #EDF2F7;
+  border-radius: 12px; transition: border-color .15s;
+}
+.tinfo-member-chip:hover { border-color: rgba(137,207,240,.5); background: #EBF5FB; }
+.tinfo-member-chip.pending { opacity: .65; }
+.tinfo-member-chip-avatar {
+  width: 36px; height: 36px; border-radius: 50%;
+  background: linear-gradient(135deg, #89CFF0, #C2B8D9);
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0; overflow: hidden;
+  font-size: 13px; font-weight: 800; color: white;
+}
+.tinfo-member-chip-avatar.me {
+  background: linear-gradient(135deg, #FFB6C1, #89CFF0);
+  box-shadow: 0 0 0 2.5px white, 0 0 0 4px #89CFF0;
+}
+.tinfo-member-chip-avatar img { width: 100%; height: 100%; object-fit: cover; }
+.tinfo-member-chip-info {
+  display: flex; flex-direction: column; gap: 2px; flex: 1; min-width: 0;
+}
+.tinfo-member-chip-name {
+  font-size: 15px; font-weight: 700; color: #2D3748;
+  display: flex; align-items: center; gap: 5px;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.tinfo-me-tag {
+  font-size: 10px; font-weight: 800; color: #2B6CB0; font-style: normal;
+  background: rgba(137,207,240,.2); border: 1px solid rgba(137,207,240,.4);
+  border-radius: 4px; padding: 1px 5px;
+}
+.tinfo-member-chip-role { font-size: 12px; color: #718096; font-weight: 600; }
+
+/* ── 여행 설정 2열 ── */
+.tinfo-setting-row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.tinfo-setting-item {
+  display: flex; align-items: center; gap: 10px;
+  padding: 11px 14px;
+  background: #F7FAFC; border: 1px solid #EDF2F7; border-radius: 12px;
+}
+.tinfo-setting-icon { font-size: 24px; flex-shrink: 0; }
+.tinfo-setting-val { font-size: 14px; font-weight: 800; color: #2D3748; }
+.tinfo-setting-sub { font-size: 11px; color: #A0AEC0; font-weight: 600; margin-top: 2px; }
+
+/* ── 태그 칩 — 브랜드 그라데이션 ── */
+.tinfo-tag-chips { display: flex; flex-wrap: wrap; gap: 7px; }
+.tinfo-tag-chip {
+  display: inline-flex; align-items: center;
+  padding: 6px 14px; border-radius: 20px;
+  font-size: 13px; font-weight: 700;
+  background: linear-gradient(120deg, rgba(168,200,225,.18) 0%, rgba(194,184,217,.18) 50%, rgba(224,187,194,.18) 100%);
+  border: 1.5px solid rgba(194,184,217,.5);
+  color: #5A4E8C;
+}
+
+/* ── 설명 박스 ── */
+.tinfo-desc-box {
+  background: #F7FAFC; border: 1px solid #EDF2F7;
+  border-radius: 10px; padding: 13px 15px;
+}
+.tinfo-desc-text {
+  font-size: 14px; color: #4A5568; line-height: 1.8;
+  white-space: pre-wrap; margin: 0;
+}
+
+/* ── 액션 버튼 ── */
+.tinfo-action-row {
+  display: flex; gap: 8px;
+  padding: 14px 0 4px;
+  margin-top: 4px;
+  border-top: 1px solid #EDF2F7;
+}
+.tinfo-btn-edit {
+  flex: 1; padding: 12px 0;
+  display: flex; align-items: center; justify-content: center; gap: 6px;
+  background: linear-gradient(120deg, #89CFF0 0%, #C2B8D9 50%, #FFB6C1 100%);
+  color: white; border: none; border-radius: 10px;
+  font-size: 13px; font-weight: 800; cursor: pointer; transition: all .18s;
+}
+.tinfo-btn-edit:hover { opacity: .88; transform: translateY(-1px); box-shadow: 0 4px 16px rgba(137,207,240,.4); }
+.tinfo-btn-delete {
+  padding: 12px 16px;
+  display: flex; align-items: center; justify-content: center; gap: 6px;
+  background: white; color: #E53E3E;
+  border: 1.5px solid #FEB2B2; border-radius: 10px;
+  font-size: 13px; font-weight: 800; cursor: pointer; transition: all .18s;
+}
+.tinfo-btn-delete:hover { background: #FFF5F5; border-color: #FC8181; transform: translateY(-1px); box-shadow: 0 4px 12px rgba(229,62,62,.15); }
+.tinfo-btn-delete:disabled { opacity: .5; cursor: not-allowed; transform: none; }
+
+
+/* ══════════════════════════════════════════════
+   수정 모달 — 썸네일 업로드 UI
+══════════════════════════════════════════════ */
+.edit-thumb-wrap {
+  display: flex; align-items: center; gap: 16px;
+}
+.edit-thumb-circle {
+  width: 72px; height: 72px; border-radius: 50%;
+  overflow: hidden; flex-shrink: 0; cursor: pointer;
+  position: relative; border: 2px solid #E2E8F0; transition: border-color .15s;
+}
+.edit-thumb-circle:hover { border-color: #89CFF0; }
+.edit-thumb-circle img { width: 100%; height: 100%; object-fit: cover; }
+.edit-thumb-overlay {
+  position: absolute; inset: 0;
+  background: rgba(0,0,0,.45);
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 3px; opacity: 0; transition: opacity .2s;
+  color: white; font-size: 10px; font-weight: 700;
+}
+.edit-thumb-circle:hover .edit-thumb-overlay { opacity: 1; }
+.edit-thumb-right { display: flex; flex-direction: column; gap: 6px; }
+.edit-thumb-btn {
+  padding: 7px 14px; border-radius: 8px;
+  background: linear-gradient(135deg, rgba(137,207,240,.2), rgba(255,182,193,.15));
+  border: 1.5px solid rgba(137,207,240,.4);
+  font-size: 12px; font-weight: 700; color: #2B6CB0; cursor: pointer; transition: all .15s;
+}
+.edit-thumb-btn:hover { background: linear-gradient(135deg, rgba(137,207,240,.35), rgba(255,182,193,.25)); }
+.edit-thumb-reset {
+  padding: 5px 12px; border-radius: 7px;
+  background: transparent; border: 1px solid #E2E8F0;
+  font-size: 11px; font-weight: 600; color: #A0AEC0; cursor: pointer; transition: all .15s;
+}
+.edit-thumb-reset:hover { border-color: #FC8181; color: #E53E3E; }
+.edit-thumb-hint { font-size: 10px; color: #A0AEC0; margin: 0; }
+
+/* ══════════════════════════════════════════════
+   수정 모달 — 태그 편집 UI
+══════════════════════════════════════════════ */
+.edit-tag-wrap {
+  min-height: 42px; border: 1.5px solid #E2E8F0; border-radius: 10px;
+  padding: 6px 10px;
+  display: flex; flex-wrap: wrap; gap: 6px; align-items: center;
+  cursor: text; transition: border-color .15s;
+}
+.edit-tag-wrap:focus-within { border-color: #89CFF0; box-shadow: 0 0 0 3px rgba(137,207,240,.15); }
+.edit-tag-chip {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 3px 10px; border-radius: 20px;
+  background: linear-gradient(120deg, rgba(168,200,225,.2) 0%, rgba(194,184,217,.2) 50%, rgba(224,187,194,.2) 100%);
+  border: 1px solid rgba(194,184,217,.5);
+  font-size: 12px; font-weight: 700; color: #5A4E8C;
+}
+.edit-tag-chip button {
+  background: none; border: none; color: #9B7ACC; cursor: pointer;
+  font-size: 11px; padding: 0; line-height: 1; margin-left: 2px; transition: color .1s;
+}
+.edit-tag-chip button:hover { color: #6B46C1; }
+.edit-tag-input {
+  border: none; outline: none; font-size: 13px; font-weight: 500;
+  color: #2D3748; min-width: 100px; flex: 1; background: transparent; font-family: inherit;
+}
+.edit-tag-input::placeholder { color: #CBD5E0; }
+.edit-tag-presets { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 7px; }
+.edit-tag-preset {
+  padding: 3px 10px; border-radius: 20px;
+  background: #F7FAFC; border: 1px solid #E2E8F0;
+  font-size: 11px; font-weight: 700; color: #718096; cursor: pointer; transition: all .15s;
+}
+.edit-tag-preset:hover {
+  background: linear-gradient(120deg, rgba(168,200,225,.15), rgba(194,184,217,.15));
+  border-color: rgba(194,184,217,.5); color: #5A4E8C;
 }

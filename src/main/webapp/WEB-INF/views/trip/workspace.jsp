@@ -42,38 +42,26 @@
         alt="${tripDto.tripName}">
     </c:if>
     <div class="ws-topbar__text-area">
-    <div class="ws-topbar__title-wrap">
-      <div class="ws-topbar__title">${tripDto.tripName}</div>
-      <%-- 상태 배지 --%>
-      <c:choose>
-        <c:when test="${tripDto.status == 'ONGOING'}">
-          <span class="trip-status-badge ongoing">✈️ 진행중</span>
-        </c:when>
-        <c:when test="${tripDto.status == 'COMPLETED'}">
-          <span class="trip-status-badge completed">✅ 완료된 여행</span>
-        </c:when>
-        <c:otherwise>
-          <span class="trip-status-badge planning">📋 계획중</span>
-        </c:otherwise>
-      </c:choose>
-    </div>
-    <div class="ws-topbar__sub">
-      <%-- 도시 칩 (파랑 강조) --%>
-      <c:if test="${not empty tripDto.cities}">
-        <c:forEach var="city" items="${tripDto.cities}">
-          <span class="ws-city-chip-em">${fn:escapeXml(city)}</span>
-        </c:forEach>
-      </c:if>
-      <%-- 날짜+박수 하나로 합친 pill --%>
-      <span class="ws-date-nights-pill">
-        ${fn:replace(tripDto.startDate, '-', '.')} ~ ${fn:replace(tripDto.endDate, '-', '.')} &nbsp;·&nbsp; ${tripNights}
-      </span>
-      <%-- 상세 버튼 강조 --%>
-      <button class="ws-detail-btn-v2" onclick="openModal('tripInfoModal')" title="여행 정보">
-        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
-        상세
-      </button>
-    </div>
+      <div class="ws-topbar__title-wrap">
+        <div class="ws-topbar__title">${tripDto.tripName}</div>
+        <%-- 상태 배지 --%>
+        <c:choose>
+          <c:when test="${tripDto.status == 'ONGOING'}">
+            <span class="trip-status-badge ongoing">✈️ 진행중</span>
+          </c:when>
+          <c:when test="${tripDto.status == 'COMPLETED'}">
+            <span class="trip-status-badge completed">✅ 여행 완료</span>
+          </c:when>
+          <c:otherwise>
+            <span class="trip-status-badge planning">📋 계획중</span>
+          </c:otherwise>
+        </c:choose>
+        <%-- 상세 버튼 — 항상 노출 --%>
+        <button class="ws-detail-btn-v2" onclick="openModal('tripInfoModal')" title="여행 상세 정보">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+          상세
+        </button>
+      </div>
     </div><%-- /ws-topbar__text-area --%>
   </div>
 
@@ -720,96 +708,225 @@
 <%-- ══════════════════════════════════════════════════
      여행 정보 상세 모달
 ════════════════════════════════════════════════== --%>
+<%-- ══════════════════════════════════════════════════
+     여행 정보 상세 모달 (리디자인 v2)
+     - 초대 코드 제거
+     - 삭제 버튼 추가 (OWNER only + 2단계 경고)
+════════════════════════════════════════════════== --%>
 <div class="modal-overlay" id="tripInfoModal">
-  <div class="modal-box" style="max-width:480px;">
-    <div class="modal-box__head">
-      <span class="modal-box__title">여행 정보</span>
-      <button class="modal-close-btn" onclick="closeModal('tripInfoModal')">✕</button>
-    </div>
-    <div class="modal-box__body">
+  <div class="modal-box tinfo-modal-box">
 
-      <%-- ── 썸네일 + 제목/날짜 ── --%>
-      <div class="trip-info-thumb-wrap">
-        <img class="trip-info-thumb-circle"
-          src="${not empty tripDto.thumbnailUrl ? pageContext.request.contextPath.concat(tripDto.thumbnailUrl) : pageContext.request.contextPath.concat('/dist/images/logo.png')}"
-          alt="${tripDto.tripName}"
-          onerror="this.src='${pageContext.request.contextPath}/dist/images/logo.png'">
-        <div>
-          <div class="trip-info-thumb-name">${fn:escapeXml(tripDto.tripName)}</div>
-          <div class="trip-info-thumb-dates">
-            ${fn:replace(tripDto.startDate, '-', '.')} ~ ${fn:replace(tripDto.endDate, '-', '.')}
-            &nbsp;·&nbsp; ${tripNights}
-          </div>
-        </div>
+    <%-- ── 상단: 히어로 배너 ── --%>
+    <c:choose>
+      <c:when test="${empty tripDto.thumbnailUrl}">
+        <div class="tinfo-hero is-default-bg">
+      </c:when>
+      <c:otherwise>
+        <div class="tinfo-hero">
+      </c:otherwise>
+    </c:choose>
+      <%-- 썸네일 이미지 --%>
+      <c:choose>
+        <c:when test="${empty tripDto.thumbnailUrl}">
+          <img class="tinfo-hero-img is-default"
+            src="${pageContext.request.contextPath}/dist/images/logo.png"
+            alt="${fn:escapeXml(tripDto.tripName)}">
+        </c:when>
+        <c:otherwise>
+          <img class="tinfo-hero-img"
+            id="tinfoHeroImg"
+            src="${pageContext.request.contextPath}${tripDto.thumbnailUrl}"
+            alt="${fn:escapeXml(tripDto.tripName)}"
+            onerror="this.classList.add('is-default');this.src='${pageContext.request.contextPath}/dist/images/logo.png';this.closest('.tinfo-hero').classList.add('is-default-bg')">
+        </c:otherwise>
+      </c:choose>
+      <div class="tinfo-hero-overlay"></div>
+
+      <%-- 닫기 버튼 --%>
+      <button class="tinfo-close-btn" onclick="closeModal('tripInfoModal')">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+
+      <%-- 여행명 + 날짜 오버레이 --%>
+      <div class="tinfo-hero-text">
+        <c:choose>
+          <c:when test="${tripDto.status == 'ONGOING'}"><span class="tinfo-status ongoing">✈️ 여행중</span></c:when>
+          <c:when test="${tripDto.status == 'COMPLETED'}"><span class="tinfo-status completed">✅ 완료</span></c:when>
+          <c:otherwise><span class="tinfo-status planning">📋 계획중</span></c:otherwise>
+        </c:choose>
+        <h2 class="tinfo-hero-title">${fn:escapeXml(tripDto.tripName)}</h2>
+        <p class="tinfo-hero-dates">
+          ${fn:replace(tripDto.startDate,'-','.')} → ${fn:replace(tripDto.endDate,'-','.')} &nbsp;·&nbsp; ${tripNights}
+        </p>
       </div>
 
-      <%-- ── 여행지 ── --%>
-      <div class="trip-info-section">
-        <div class="trip-info-label">여행지</div>
-        <div class="trip-info-chips">
-          <c:choose>
-            <c:when test="${not empty tripDto.cities}">
-              <c:forEach var="city" items="${tripDto.cities}">
-                <span class="info-chip city-chip">${fn:escapeXml(city)}</span>
-              </c:forEach>
-            </c:when>
-            <c:otherwise><span class="trip-info-empty">미설정</span></c:otherwise>
-          </c:choose>
-        </div>
-      </div>
-
-      <%-- ── 여행 유형 (뱃지) ── --%>
-      <c:if test="${not empty tripDto.tripType}">
-        <div class="trip-info-section">
-          <div class="trip-info-label">여행 유형</div>
-          <div class="trip-info-chips">
-            <span class="info-chip type-chip">
-              <c:choose>
-                <c:when test="${tripDto.tripType == 'COUPLE'}">커플</c:when>
-                <c:when test="${tripDto.tripType == 'FAMILY'}">가족</c:when>
-                <c:when test="${tripDto.tripType == 'FRIENDS'}">친구</c:when>
-                <c:when test="${tripDto.tripType == 'SOLO'}">혼자</c:when>
-                <c:when test="${tripDto.tripType == 'BUSINESS'}">비즈니스</c:when>
-              </c:choose>
-            </span>
-          </div>
-        </div>
+      <%-- 이미지 변경 버튼 — 우하단 (OWNER/EDITOR만) --%>
+      <c:if test="${memberRole != 'VIEWER'}">
+        <button class="tinfo-hero-edit-btn" onclick="closeModal('tripInfoModal'); openTripEditModal();" title="대표 이미지 변경">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+          이미지 변경
+        </button>
       </c:if>
+    </div>
 
-      <%-- ── 테마 태그 ── --%>
-      <c:if test="${not empty tripDto.tags}">
-        <div class="trip-info-section">
-          <div class="trip-info-label">여행 태그</div>
-          <div class="trip-info-chips">
-            <c:forEach var="tag" items="${tripDto.tags}">
-              <span class="info-chip tag-chip">${fn:escapeXml(tag)}</span>
+    <%-- ── 스크롤 바디 ── --%>
+    <div class="tinfo-scroll-body">
+
+      <%-- 1. 여행지 (이름 강조) --%>
+      <c:if test="${not empty tripDto.cities}">
+        <div class="tinfo-row-section">
+          <div class="tinfo-row-label">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+            여행지
+          </div>
+          <div class="tinfo-city-chips">
+            <c:forEach var="city" items="${tripDto.cities}">
+              <span class="tinfo-city-chip">
+                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+                ${fn:escapeXml(city)}
+              </span>
             </c:forEach>
           </div>
         </div>
       </c:if>
 
-      <%-- ── 여행 설명 ── --%>
-      <c:if test="${not empty tripDto.description}">
-        <div class="trip-info-section">
-          <div class="trip-info-label">여행 설명</div>
-          <div class="trip-info-desc-box">
-            <div class="trip-info-desc-text">${fn:escapeXml(tripDto.description)}</div>
+      <%-- 2. 동행자 (이름 + 프로필) --%>
+      <div class="tinfo-row-section">
+        <div class="tinfo-row-label">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+          동행자
+        </div>
+        <div class="tinfo-members-wrap">
+          <c:forEach var="m" items="${tripDto.members}">
+            <c:if test="${m.invitationStatus != 'DECLINED'}">
+              <div class="tinfo-member-chip <c:if test='${m.invitationStatus == "PENDING"}'>pending</c:if>">
+                <%-- 프로필 이미지 or 이니셜 아바타 --%>
+                <div class="tinfo-member-chip-avatar <c:if test='${m.memberId == myMemberId}'>me</c:if>">
+                  <c:choose>
+                    <c:when test="${not empty m.profileImage}">
+                      <img src="${pageContext.request.contextPath}${m.profileImage}"
+                           alt="${m.nickname}"
+                           onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
+                      <span style="display:none">${fn:substring(m.nickname,0,1)}</span>
+                    </c:when>
+                    <c:otherwise>
+                      <span>${fn:substring(m.nickname,0,1)}</span>
+                    </c:otherwise>
+                  </c:choose>
+                </div>
+                <div class="tinfo-member-chip-info">
+                  <span class="tinfo-member-chip-name">
+                    ${fn:escapeXml(m.nickname)}
+                    <c:if test="${m.memberId == myMemberId}"><em class="tinfo-me-tag">나</em></c:if>
+                  </span>
+                  <span class="tinfo-member-chip-role">
+                    <c:choose>
+                      <c:when test="${m.role == 'OWNER'}">✨</c:when>
+                      <c:when test="${m.invitationStatus == 'PENDING'}">⏳</c:when>
+                      <c:when test="${m.role == 'EDITOR'}">✏️</c:when>
+                      <c:otherwise>👀</c:otherwise>
+                    </c:choose>
+                    <c:choose>
+                      <c:when test="${m.role == 'OWNER'}">방장</c:when>
+                      <c:when test="${m.invitationStatus == 'PENDING'}">대기중</c:when>
+                      <c:when test="${m.role == 'EDITOR'}">편집자</c:when>
+                      <c:otherwise>읽기전용</c:otherwise>
+                    </c:choose>
+                  </span>
+                </div>
+              </div>
+            </c:if>
+          </c:forEach>
+        </div>
+      </div>
+
+      <%-- 3. 여행 유형 & 공개 설정 (2열 행) --%>
+      <div class="tinfo-row-section">
+        <div class="tinfo-row-label">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+          여행 설정
+        </div>
+        <div class="tinfo-setting-row">
+          <div class="tinfo-setting-item">
+            <span class="tinfo-setting-icon">
+              <c:choose>
+                <c:when test="${tripDto.tripType == 'COUPLE'}">💑</c:when>
+                <c:when test="${tripDto.tripType == 'FAMILY'}">👨‍👩‍👧</c:when>
+                <c:when test="${tripDto.tripType == 'FRIENDS'}">🤝</c:when>
+                <c:when test="${tripDto.tripType == 'SOLO'}">🧳</c:when>
+                <c:when test="${tripDto.tripType == 'BUSINESS'}">💼</c:when>
+                <c:otherwise>✈️</c:otherwise>
+              </c:choose>
+            </span>
+            <div>
+              <div class="tinfo-setting-val">
+                <c:choose>
+                  <c:when test="${tripDto.tripType == 'COUPLE'}">커플</c:when>
+                  <c:when test="${tripDto.tripType == 'FAMILY'}">가족</c:when>
+                  <c:when test="${tripDto.tripType == 'FRIENDS'}">친구</c:when>
+                  <c:when test="${tripDto.tripType == 'SOLO'}">혼자</c:when>
+                  <c:when test="${tripDto.tripType == 'BUSINESS'}">비즈니스</c:when>
+                  <c:otherwise>미설정</c:otherwise>
+                </c:choose>
+              </div>
+              <div class="tinfo-setting-sub">여행 유형</div>
+            </div>
+          </div>
+          <div class="tinfo-setting-item">
+            <span class="tinfo-setting-icon">${tripDto.isPublic == 1 ? '🌐' : '🔒'}</span>
+            <div>
+              <div class="tinfo-setting-val">${tripDto.isPublic == 1 ? '공개' : '비공개'}</div>
+              <div class="tinfo-setting-sub">공개 설정</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <%-- 4. 여행 태그 --%>
+      <c:if test="${not empty tripDto.tags}">
+        <div class="tinfo-row-section">
+          <div class="tinfo-row-label">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>
+            여행 태그
+          </div>
+          <div class="tinfo-tag-chips">
+            <c:forEach var="tag" items="${tripDto.tags}">
+              <span class="tinfo-tag-chip">${fn:escapeXml(tag)}</span>
+            </c:forEach>
           </div>
         </div>
       </c:if>
 
-      <%-- ── 초대 코드 ── --%>
-      <div class="trip-info-section">
-        <div class="trip-info-label">초대 코드</div>
-        <div class="trip-info-invite-code">${tripDto.inviteCode}</div>
+      <%-- 5. 여행 설명 --%>
+      <c:if test="${not empty tripDto.description}">
+        <div class="tinfo-row-section">
+          <div class="tinfo-row-label">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="17" y1="10" x2="3" y2="10"/><line x1="21" y1="6" x2="3" y2="6"/><line x1="21" y1="14" x2="3" y2="14"/><line x1="17" y1="18" x2="3" y2="18"/></svg>
+            여행 메모
+          </div>
+          <div class="tinfo-desc-box">
+            <p class="tinfo-desc-text">${fn:escapeXml(tripDto.description)}</p>
+          </div>
+        </div>
+      </c:if>
+
+      <%-- 6. 액션 버튼 --%>
+      <div class="tinfo-action-row">
+        <c:if test="${memberRole != 'VIEWER'}">
+          <button class="tinfo-btn-edit" onclick="closeModal('tripInfoModal'); openTripEditModal();">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+            여행 정보 수정
+          </button>
+        </c:if>
+        <c:if test="${isOwner}">
+          <button id="btnDeleteTrip" class="tinfo-btn-delete" onclick="confirmDeleteTrip()">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
+            여행 삭제
+          </button>
+        </c:if>
       </div>
 
-      <%-- ── 수정 버튼 ── --%>
-      <button class="btn-trip-edit-open" onclick="closeModal('tripInfoModal'); openTripEditModal();">
-        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
-        여행 정보 수정
-      </button>
-    </div>
+    </div><%-- /tinfo-scroll-body --%>
   </div>
 </div>
 
@@ -819,66 +936,122 @@
 <div class="modal-overlay" id="tripEditModal">
   <div class="modal-box" style="max-width:520px;">
     <div class="modal-box__head">
-      <span class="modal-box__title">여행 수정</span>
+      <span class="modal-box__title">✏️ 여행 정보 수정</span>
       <button class="modal-close-btn" onclick="closeModal('tripEditModal')">✕</button>
     </div>
-    <div class="modal-box__body">
+    <div class="modal-box__body" style="max-height:80vh;overflow-y:auto;scrollbar-width:none;">
 
-      <%-- 여행 제목 --%>
+      <%-- ── 대표 이미지 변경 ── --%>
       <div class="edit-form-group">
-        <label class="edit-form-label">여행 제목</label>
+        <label class="edit-form-label">대표 이미지</label>
+        <div class="edit-thumb-wrap">
+          <%-- 미리보기 원형 --%>
+          <div class="edit-thumb-circle" onclick="document.getElementById('editThumbInput').click()" title="클릭하여 이미지 변경">
+            <img id="editThumbPreview"
+              src="${not empty tripDto.thumbnailUrl
+                ? pageContext.request.contextPath.concat(tripDto.thumbnailUrl)
+                : pageContext.request.contextPath.concat('/dist/images/logo.png')}"
+              alt="대표 이미지"
+              onerror="this.src='${pageContext.request.contextPath}/dist/images/logo.png'">
+            <div class="edit-thumb-overlay">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+              <span>변경</span>
+            </div>
+          </div>
+          <div class="edit-thumb-right">
+            <button type="button" class="edit-thumb-btn" onclick="document.getElementById('editThumbInput').click()">
+              📷 이미지 선택
+            </button>
+            <input type="file" id="editThumbInput" accept="image/*" style="display:none" onchange="onEditThumbChange(event)">
+            <button type="button" class="edit-thumb-reset" id="editThumbResetBtn" onclick="resetEditThumb()" style="display:none">기본으로 초기화</button>
+            <p class="edit-thumb-hint">JPG · PNG · WEBP · 최대 5MB</p>
+          </div>
+        </div>
+      </div>
+
+      <%-- ── 제목 ── --%>
+      <div class="edit-form-group">
+        <label class="edit-form-label">여행 제목 <span style="color:#FC8181">*</span></label>
         <input type="text" id="editTripTitle" class="edit-form-input"
-          value="${fn:escapeXml(tripDto.tripName)}" maxlength="30" placeholder="여행 제목을 입력하세요">
+          placeholder="여행 제목을 입력하세요" maxlength="100"
+          value="${fn:escapeXml(tripDto.tripName)}">
       </div>
 
-      <%-- 여행 설명 --%>
-      <div class="edit-form-group">
-        <label class="edit-form-label">여행 설명 <span class="edit-form-opt">(선택)</span></label>
-        <textarea id="editTripDesc" class="edit-form-textarea" maxlength="200"
-          placeholder="이 여행에 대해 소개해 주세요">${fn:escapeXml(tripDto.description)}</textarea>
-        <div class="edit-form-count"><span id="editDescCount">${fn:length(tripDto.description)}</span>/200</div>
-      </div>
-
-      <%-- 날짜 --%>
+      <%-- ── 날짜 ── --%>
       <div class="edit-form-row">
-        <div class="edit-form-group" style="flex:1;">
+        <div style="flex:1;">
           <label class="edit-form-label">시작일</label>
           <input type="date" id="editStartDate" class="edit-form-input"
+            onchange="checkEditDateWarning()"
             value="${fn:substring(tripDto.startDate,0,10)}">
         </div>
-        <div style="display:flex;align-items:flex-end;padding-bottom:10px;color:#A0AEC0;font-size:14px;">→</div>
-        <div class="edit-form-group" style="flex:1;">
+        <div style="flex:1;">
           <label class="edit-form-label">종료일</label>
           <input type="date" id="editEndDate" class="edit-form-input"
+            onchange="checkEditDateWarning()"
             value="${fn:substring(tripDto.endDate,0,10)}">
         </div>
       </div>
-      <%-- 날짜 경고 메시지 --%>
       <div id="editDateWarning" class="edit-date-warning" style="display:none;"></div>
 
-      <%-- 여행 유형 --%>
+      <%-- ── 여행 유형 ── --%>
       <div class="edit-form-group">
         <label class="edit-form-label">여행 유형</label>
         <div class="edit-type-grid">
-          <button class="edit-type-btn <c:if test='${tripDto.tripType == "COUPLE"}'>active</c:if>"
-            onclick="selectEditType('COUPLE',this)">커플</button>
-          <button class="edit-type-btn <c:if test='${tripDto.tripType == "FAMILY"}'>active</c:if>"
-            onclick="selectEditType('FAMILY',this)">가족</button>
-          <button class="edit-type-btn <c:if test='${tripDto.tripType == "FRIENDS"}'>active</c:if>"
-            onclick="selectEditType('FRIENDS',this)">친구</button>
-          <button class="edit-type-btn <c:if test='${tripDto.tripType == "SOLO"}'>active</c:if>"
-            onclick="selectEditType('SOLO',this)">혼자</button>
-          <button class="edit-type-btn <c:if test='${tripDto.tripType == "BUSINESS"}'>active</c:if>"
-            onclick="selectEditType('BUSINESS',this)">비즈니스</button>
+          <button class="edit-type-btn <c:if test='${tripDto.tripType == "COUPLE"}'>active</c:if>" onclick="selectEditType('COUPLE',this)">💑 커플</button>
+          <button class="edit-type-btn <c:if test='${tripDto.tripType == "FAMILY"}'>active</c:if>" onclick="selectEditType('FAMILY',this)">👨‍👩‍👧 가족</button>
+          <button class="edit-type-btn <c:if test='${tripDto.tripType == "FRIENDS"}'>active</c:if>" onclick="selectEditType('FRIENDS',this)">🤝 친구</button>
+          <button class="edit-type-btn <c:if test='${tripDto.tripType == "SOLO"}'>active</c:if>" onclick="selectEditType('SOLO',this)">🧳 혼자</button>
+          <button class="edit-type-btn <c:if test='${tripDto.tripType == "BUSINESS"}'>active</c:if>" onclick="selectEditType('BUSINESS',this)">💼 비즈니스</button>
         </div>
         <input type="hidden" id="editTripType" value="${tripDto.tripType}">
       </div>
 
-      <%-- 공개 여부 --%>
+      <%-- ── 태그 편집 ── --%>
+      <div class="edit-form-group">
+        <label class="edit-form-label">
+          여행 태그
+          <span class="edit-form-opt">이 여행의 분위기·테마 (최대 10개)</span>
+        </label>
+        <%-- 현재 태그 칩 렌더 --%>
+        <div class="edit-tag-wrap" id="editTagWrap" onclick="document.getElementById('editTagInput').focus()">
+          <c:forEach var="tag" items="${tripDto.tags}">
+            <span class="edit-tag-chip" data-tag="${fn:escapeXml(tag)}">
+              ${fn:escapeXml(tag)}
+              <button type="button" onclick="removeEditTag(this)" title="삭제">✕</button>
+            </span>
+          </c:forEach>
+          <input type="text" id="editTagInput" class="edit-tag-input"
+            placeholder="태그 입력 후 Enter…" maxlength="15"
+            onkeydown="handleEditTagInput(event)">
+        </div>
+        <%-- 빠른 태그 추가 --%>
+        <div class="edit-tag-presets">
+          <span class="edit-tag-preset" onclick="addEditTagPreset(this)">#힐링</span>
+          <span class="edit-tag-preset" onclick="addEditTagPreset(this)">#맛집투어</span>
+          <span class="edit-tag-preset" onclick="addEditTagPreset(this)">#우정여행</span>
+          <span class="edit-tag-preset" onclick="addEditTagPreset(this)">#혼행</span>
+          <span class="edit-tag-preset" onclick="addEditTagPreset(this)">#감성사진</span>
+          <span class="edit-tag-preset" onclick="addEditTagPreset(this)">#쇼핑</span>
+        </div>
+      </div>
+
+      <%-- ── 설명 ── --%>
+      <div class="edit-form-group">
+        <label class="edit-form-label">여행 설명 <span class="edit-form-opt">선택</span></label>
+        <textarea id="editTripDesc" class="edit-form-textarea"
+          placeholder="여행에 대해 간단히 적어보세요…" maxlength="500"
+          oninput="document.getElementById('editDescCount').textContent=this.value.length"
+          >${fn:escapeXml(tripDto.description)}</textarea>
+        <div class="edit-form-count"><span id="editDescCount">${fn:length(tripDto.description)}</span> / 500</div>
+      </div>
+
+      <%-- ── 공개 여부 ── --%>
       <div class="edit-form-group">
         <label class="edit-form-label">공개 여부</label>
         <label class="edit-toggle-wrap">
-          <input type="checkbox" id="editIsPublic" ${tripDto.isPublic == 1 ? 'checked' : ''}>
+          <input type="checkbox" id="editIsPublic" ${tripDto.isPublic == 1 ? 'checked' : ''}
+            onchange="document.getElementById('editPublicLabel').textContent=this.checked?'공개 여행':'비공개 여행'">
           <span class="edit-toggle-slider"></span>
           <span id="editPublicLabel" style="font-size:13px;font-weight:600;color:#4A5568;margin-left:10px;">
             ${tripDto.isPublic == 1 ? '공개 여행' : '비공개 여행'}
@@ -886,14 +1059,15 @@
         </label>
       </div>
 
-      <%-- 저장 버튼 --%>
+      <%-- ── 저장 버튼 ── --%>
       <button class="btn-edit-save" id="btnEditSave" onclick="submitTripEdit()">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
         저장하기
       </button>
     </div>
   </div>
 </div>
+
 
 <%-- ══════════════════════════════════════════════════
      체크리스트 항목 추가 모달
@@ -926,7 +1100,7 @@
       </div>
       <div class="form-group" style="margin-bottom:20px;">
         <label class="form-label-sm">담당자 <span style="font-weight:400;color:#A0AEC0">(선택)</span></label>
-        <input type="text" class="form-input" id="chk-manager" placeholder="예: 나, 지민, 민준…" maxlength="20">
+        <input type="text" class="form-input" id="chk-manager" placeholder="담당자를 입력해주세요." maxlength="20">
       </div>
       <button class="btn-primary" onclick="submitCheckItem()">추가하기</button>
     </div>

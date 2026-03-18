@@ -27,7 +27,6 @@ public class TripPlaceServiceImpl implements TripPlaceService {
     private final TripPlaceMapper tripPlaceMapper;
     private final PlaceMapper placeMapper;
 
-    // 💡 기존 yml에 등록된 카카오 키값 그대로 사용
     @Value("${tripan.api.kakao-map-api-key}")
     private String kakaoRestApiKey;
 
