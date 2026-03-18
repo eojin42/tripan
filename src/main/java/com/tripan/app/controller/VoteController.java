@@ -1,6 +1,7 @@
 package com.tripan.app.controller;
 
 import com.tripan.app.service.VoteService;
+import com.tripan.app.service.NotificationService;
 import com.tripan.app.websocket.WorkspaceEventPublisher;
 import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
@@ -25,6 +26,7 @@ public class VoteController {
 
     private final VoteService             voteService;
     private final WorkspaceEventPublisher wsPublisher;
+    private final NotificationService     notificationService;
 
     // ── 투표 목록 조회 ────────────────────────────────────
     @GetMapping
@@ -73,8 +75,13 @@ public class VoteController {
         Long voteId = voteService.createVote(tripId, title, candidates, deadline);
 
         String nick = getLoginNickname(session);
+        Long myId   = getLoginMemberId(session);
         wsPublisher.publish(tripId, "VOTE_CREATED", voteId, nick != null ? nick : "멤버",
                 WorkspaceEventPublisher.payload("title", title));
+
+        // ★ DB 알림 저장
+        notificationService.notifyAll(tripId, myId,
+            (nick != null ? nick : "누군가") + "님이 투표 [" + title + "] 를 만들었어요 🗳️", "VOTE");
 
         return ResponseEntity.ok(Map.of("success", true, "voteId", voteId));
     }
@@ -118,10 +125,23 @@ public class VoteController {
             @PathVariable("voteId") Long voteId,
             HttpSession session) {
 
+        String nick = getLoginNickname(session);
+        Long   myId = getLoginMemberId(session);
+
+        // ★ 삭제 전 투표 제목 조회 (서비스에 메서드 있으면 사용, 없으면 fallback)
+        String voteTitle = "투표";
+        try {
+            String fetched = voteService.getVoteTitle(voteId);
+            if (fetched != null && !fetched.isBlank()) voteTitle = fetched;
+        } catch (Exception ignored) {}
+
         voteService.deleteVote(voteId, tripId);
 
-        String nick = getLoginNickname(session);
         wsPublisher.publish(tripId, "VOTE_DELETED", voteId, nick != null ? nick : "멤버");
+
+        // ★ DB 알림 저장
+        notificationService.notifyAll(tripId, myId,
+            (nick != null ? nick : "누군가") + "님이 투표 [" + voteTitle + "] 를 삭제했어요 🗑️", "VOTE");
 
         return ResponseEntity.ok(Map.of("success", true));
     }

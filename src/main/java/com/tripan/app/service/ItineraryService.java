@@ -26,6 +26,9 @@ public interface ItineraryService {
 
     Long getTripIdByItemId(Long itemId);
 
+    /** 장소 삭제 알림 메시지용 — 삭제 전 장소명 조회 */
+    String getPlaceNameByItemId(Long itemId);
+
     void moveItem(Long itemId, int dayNumber, String visitOrder);
 
     void deleteItem(Long itemId);

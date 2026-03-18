@@ -115,23 +115,50 @@ html, body {
 }
 @keyframes pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:.6;transform:scale(1.3)} }
 
-.avatar-group { display: flex; }
+.avatar-group { display: flex; align-items: center; }
 .avatar {
   width: 30px; height: 30px; border-radius: 50%;
-  border: 2px solid var(--white);
+  border: 2.5px solid var(--white);
   margin-left: -8px;
   background: var(--grad2);
   display: flex; align-items: center; justify-content: center;
   font-size: 11px; font-weight: 800; color: white;
   cursor: pointer;
-  transition: transform .2s;
+  transition: transform .2s, box-shadow .2s;
+  position: relative;
 }
 .avatar:first-child { margin-left: 0; }
 .avatar:hover { transform: translateY(-3px); z-index: 1; }
-/* OWNER: 파란 링 */
+
+/* ── 유저별 고유 색상 팔레트 (이미지 색상표 기반 파스텔 6색) ── */
+/* #D99ABC 계열 — 모브 핑크  */
+.avatar-color-0 { background: #D99ABC; color: #fff; }
+/* #F2CEE9 계열 — 라벤더 핑크  */
+.avatar-color-1 { background: #E8B8D8; color: #fff; }
+/* #77ACF2 계열 — 소프트 블루  */
+.avatar-color-2 { background: #77ACF2; color: #fff; }
+/* #F2D479 계열 — 머스터드 옐로  */
+.avatar-color-3 { background: #E8C66A; color: #fff; }
+/* #F2BC79 계열 — 피치 오렌지  */
+.avatar-color-4 { background: #F2BC79; color: #fff; }
+/* 추가 6번째 색 — 민트 */
+.avatar-color-5 { background: #85C9B8; color: #fff; }
+
+/* ── '나' 아바타: scale 강조, 팔레트 색상 중 하나로 (별도 표시) ── */
+.avatar-me {
+  background: #77ACF2 !important;
+  color: #fff !important;
+  border: 2.5px solid #fff !important;
+  transform: scale(1.2);
+  z-index: 20;
+  box-shadow: 0 0 0 2.5px #77ACF2, 0 4px 14px rgba(119,172,242,0.45);
+  font-weight: 900 !important;
+}
+.avatar-me:hover { transform: scale(1.24) translateY(-2px); }
+
+/* OWNER: 깔끔한 흰 테두리 강조 (금 제거) */
 .avatar.role-owner {
-  border-color: #89CFF0;
-  box-shadow: 0 0 0 2px #89CFF0;
+  box-shadow: 0 0 0 2px rgba(255,255,255,0.9), 0 0 0 3.5px rgba(119,172,242,0.6);
 }
 /* PENDING: 점선 + 흐림 */
 .avatar.role-pending {
@@ -158,12 +185,15 @@ html, body {
 }
 .member-row:hover { background: #EBF8FF; }
 .member-avatar-lg {
-  width: 38px; height: 38px; border-radius: 50%;
+  width: 44px; height: 44px; border-radius: 50%;
   display: flex; align-items: center; justify-content: center;
-  font-size: 13px; font-weight: 800; color: white;
-  flex-shrink: 0; border: 2px solid var(--white);
+  font-size: 14px; font-weight: 800; color: white;
+  flex-shrink: 0; border: 2.5px solid var(--white);
+  overflow: hidden;
+  /* 기본 색 - mm-avatar-color-N 클래스로 덮어씀 */
+  background: linear-gradient(135deg, var(--blue), var(--orchid));
 }
-.member-avatar-lg.role-owner { box-shadow: 0 0 0 2px #89CFF0; }
+.member-avatar-lg.role-owner { box-shadow: 0 0 0 2px rgba(255,255,255,0.9), 0 0 0 3.5px rgba(119,172,242,0.5); }
 .member-avatar-lg.role-pending { filter: grayscale(40%) opacity(.7); border: 2px dashed #CBD5E0; }
 .member-info { flex: 1; min-width: 0; }
 .member-name { font-size: 14px; font-weight: 700; color: var(--dark); }
@@ -2432,6 +2462,7 @@ textarea.form-textarea:focus { border-color: var(--blue); background: var(--whit
 @media (max-width: 980px) {
   /* avatar 축소 */
   .avatar { width: 26px; height: 26px; font-size: 9px; }
+  .avatar-me { transform: scale(1.14); }
   /* 도시 칩 숨김 */
   .ws-city-chip-em { display: none; }
   /* 상태 배지 숨김 */
@@ -3757,9 +3788,10 @@ body { font-family: 'Pretendard Variable', 'Pretendard', -apple-system, BlinkMac
 .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 10px 28px rgba(137,207,240,.5); }
 
 /* ═══════════════════════════════════════════
-   ✨ 조장님 특제 파스텔 테마 (Sky & Instar)
+   ✨ 동행자 모달 v2 — 세련된 리뉴얼
 ═══════════════════════════════════════════ */
-/* 모달 헤더 텍스트: Instar 3색 그라데이션 */
+
+/* ── 모달 헤더 텍스트: Instar 그라데이션 ── */
 .modal-box__title {
     background: linear-gradient(120deg, #A8C8E1 0%, #C2B8D9 50%, #E0BBC2 100%);
     -webkit-background-clip: text;
@@ -3768,30 +3800,245 @@ body { font-family: 'Pretendard Variable', 'Pretendard', -apple-system, BlinkMac
     font-size: 20px;
 }
 
-/* 복사/재발급 등 주요 버튼: Sky 2색 그라데이션 */
+/* ── 복사/재발급 버튼 ── */
 .btn-pastel {
-    background: linear-gradient(135deg, #89CFF0, #FFB6C1) !important;
-    color: #2D3748 !important;
+    background: linear-gradient(135deg, #89CFF0, #C2B8D9) !important;
+    color: #fff !important;
     border: none !important;
-    font-weight: 800 !important;
-    border-radius: 8px;
-    padding: 8px 14px;
+    font-weight: 700 !important;
+    border-radius: 10px;
+    padding: 9px 16px;
     cursor: pointer;
-    box-shadow: 0 2px 6px rgba(137, 207, 240, 0.3);
-    transition: transform 0.2s, box-shadow 0.2s;
+    font-size: 13px;
+    box-shadow: 0 2px 8px rgba(137, 207, 240, 0.35);
+    transition: transform 0.18s, box-shadow 0.18s;
 }
 .btn-pastel:hover {
-    transform: translateY(-1px);
-    box-shadow: 0 4px 12px rgba(255, 182, 193, 0.4);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 18px rgba(137, 207, 240, 0.5);
 }
 
-/* 멤버 리스트 배경 미세한 파스텔 톤 적용 */
-.member-row-pastel {
-    background: linear-gradient(to right, rgba(168,200,225,0.08), rgba(255,182,193,0.08)) !important;
-    border: 1px solid rgba(137,207,240,0.2) !important;
+/* ═══════════════════════════════════════════
+   동행자 모달 전용 컴포넌트 (mm- prefix)
+═══════════════════════════════════════════ */
+
+/* 모달 박스 오버라이드 */
+.mm-modal-box {
+  border: none !important;
+  box-shadow: 0 24px 80px rgba(45,55,72,0.18), 0 4px 20px rgba(137,207,240,0.1) !important;
+  border-radius: 22px !important;
+  overflow: hidden;
 }
 
-/* 글자색 공통 강제 지정 */
+/* 헤더 */
+.mm-head {
+  background: linear-gradient(135deg, #f0f7ff 0%, #f5f0ff 50%, #fff0f3 100%) !important;
+  border-bottom: 1px solid rgba(226,232,240,0.7) !important;
+  padding: 20px 22px 18px !important;
+  align-items: flex-start !important;
+}
+.mm-head-inner { display: flex; align-items: center; gap: 14px; }
+.mm-head-icon {
+  width: 46px; height: 46px; border-radius: 14px;
+  background: linear-gradient(135deg, #89CFF0 0%, #C2B8D9 100%);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 22px; flex-shrink: 0;
+  box-shadow: 0 6px 18px rgba(137,207,240,0.38);
+}
+.mm-head-title { font-size: 17px; font-weight: 900; color: var(--dark); }
+.mm-head-sub { font-size: 12px; color: var(--light); margin-top: 3px; font-weight: 500; }
+
+/* body 패딩 */
+.mm-body { padding: 20px 22px 22px !important; }
+
+/* ── 초대 링크 섹션 ── */
+.mm-invite-section {
+  background: #f8faff;
+  border: 1.5px solid rgba(137,207,240,0.28);
+  border-radius: 14px;
+  padding: 14px 15px;
+  margin-bottom: 22px;
+}
+.mm-invite-label {
+  display: flex; align-items: center; gap: 6px;
+  font-size: 11px; font-weight: 700; color: var(--light);
+  text-transform: uppercase; letter-spacing: 0.6px;
+  margin-bottom: 10px;
+}
+.mm-invite-row { display: flex; gap: 7px; align-items: center; }
+.mm-invite-input {
+  flex: 1; min-width: 0;
+  padding: 9px 12px;
+  background: #fff;
+  border: 1.5px solid rgba(226,232,240,0.9);
+  border-radius: 10px;
+  font-size: 12px; color: var(--mid);
+  font-family: 'Pretendard', monospace;
+  outline: none;
+  transition: border-color .15s, box-shadow .15s;
+}
+.mm-invite-input:focus {
+  border-color: var(--blue);
+  box-shadow: 0 0 0 3px rgba(137,207,240,0.15);
+}
+.mm-invite-btn {
+  display: flex; align-items: center; gap: 5px;
+  height: 38px; padding: 0 14px;
+  background: linear-gradient(135deg, #89CFF0, #C2B8D9);
+  color: #fff; border: none; border-radius: 10px;
+  font-size: 12px; font-weight: 700; cursor: pointer;
+  white-space: nowrap;
+  box-shadow: 0 3px 10px rgba(137,207,240,0.32);
+  transition: transform .18s, box-shadow .18s, filter .18s;
+}
+.mm-invite-btn:hover {
+  transform: translateY(-2px);
+  filter: brightness(1.06);
+  box-shadow: 0 7px 20px rgba(137,207,240,0.45);
+}
+.mm-invite-btn--refresh {
+  width: 38px; height: 38px; padding: 0;
+  display: flex; align-items: center; justify-content: center;
+  background: #fff; color: var(--light);
+  border: 1.5px solid rgba(226,232,240,0.9) !important;
+  border-radius: 10px; box-shadow: none; cursor: pointer;
+  transition: background .18s, border-color .18s, transform .36s, color .18s;
+  flex-shrink: 0;
+}
+.mm-invite-btn--refresh:hover {
+  background: #f0f7ff;
+  border-color: var(--blue) !important;
+  color: var(--blue);
+  transform: rotate(180deg);
+}
+
+/* ── 섹션 레이블 ── */
+.mm-section-label {
+  display: flex; align-items: center; gap: 8px;
+  font-size: 11px; font-weight: 800; color: var(--light);
+  text-transform: uppercase; letter-spacing: 0.6px;
+  margin-bottom: 10px;
+}
+.mm-count {
+  display: inline-flex; align-items: center; justify-content: center;
+  min-width: 20px; height: 20px; border-radius: 10px; padding: 0 6px;
+  background: rgba(137,207,240,0.18);
+  color: #3a8fb7; font-size: 11px; font-weight: 800;
+}
+
+/* ── 멤버 리스트 ── */
+.member-list { gap: 7px !important; margin-bottom: 16px; }
+
+/* 멤버 행 v2 */
+.member-row-v2 {
+  background: #fff !important;
+  border: 1.5px solid rgba(226,232,240,0.7) !important;
+  border-radius: 14px !important;
+  padding: 11px 14px !important;
+  gap: 12px !important;
+  transition: border-color .2s, box-shadow .2s, transform .2s !important;
+}
+.member-row-v2:hover {
+  background: #fff !important;
+  border-color: rgba(137,207,240,0.45) !important;
+  box-shadow: 0 5px 20px rgba(137,207,240,0.14) !important;
+  transform: translateY(-1px);
+}
+
+/* ── 모달 아바타 색상 팔레트 (상단바와 동일 파스텔 팔레트) ── */
+.mm-avatar-color-0 { background: #D99ABC !important; color: #fff !important; }
+.mm-avatar-color-1 { background: #E8B8D8 !important; color: #fff !important; }
+.mm-avatar-color-2 { background: #77ACF2 !important; color: #fff !important; }
+.mm-avatar-color-3 { background: #E8C66A !important; color: #fff !important; }
+.mm-avatar-color-4 { background: #F2BC79 !important; color: #fff !important; }
+.mm-avatar-color-5 { background: #85C9B8 !important; color: #fff !important; }
+
+/* '나' 아바타 모달용 */
+.mm-avatar-me {
+  background: #77ACF2 !important;
+  box-shadow: 0 0 0 2.5px rgba(119,172,242,0.5), 0 4px 14px rgba(119,172,242,0.25) !important;
+}
+
+/* ── 멤버 이름 영역 ── */
+.mm-member-name {
+  display: flex; align-items: center; gap: 6px;
+  font-size: 14px; font-weight: 800; color: var(--dark); line-height: 1.2;
+}
+.mm-me-badge {
+  display: inline-flex; align-items: center;
+  padding: 2px 7px; border-radius: 50px;
+  background: rgba(137,207,240,0.18);
+  color: #3a8fb7; font-size: 10px; font-weight: 800; letter-spacing: 0.2px;
+}
+.mm-member-sub {
+  display: flex; align-items: center; gap: 5px;
+  font-size: 11px; color: var(--light); font-weight: 600; margin-top: 3px;
+}
+
+/* 역할 색상 도트 */
+.mm-role-dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
+.mm-role-dot.owner  { background: #77ACF2; }
+.mm-role-dot.editor { background: #60a5fa; }
+.mm-role-dot.viewer { background: #cbd5e1; }
+.mm-role-dot.pending{ background: #e2e8f0; }
+
+/* ── 우측 컨트롤 ── */
+.mm-badge-owner {
+  display: inline-flex; align-items: center; gap: 5px;
+  font-size: 12px; font-weight: 700;
+  background: rgba(119,172,242,0.14);
+  color: #4a88d8;
+  border: 1.5px solid rgba(119,172,242,0.35);
+  padding: 5px 11px; border-radius: 10px;
+  white-space: nowrap; letter-spacing: 0.2px;
+}
+.mm-badge-pending {
+  display: inline-flex; align-items: center; gap: 4px;
+  font-size: 11px; font-weight: 600; color: var(--light);
+  background: var(--bg); border: 1.5px solid var(--border);
+  padding: 5px 10px; border-radius: 10px; margin-right: 4px;
+}
+.mm-badge-role {
+  font-size: 11px; font-weight: 600; color: var(--mid);
+  background: var(--bg); border: 1.5px solid var(--border);
+  padding: 5px 10px; border-radius: 10px;
+}
+.mm-role-select {
+  height: 34px; padding: 0 10px;
+  border-radius: 10px;
+  border: 1.5px solid rgba(226,232,240,0.9) !important;
+  font-size: 12px; font-weight: 700; color: var(--dark);
+  background: #fff; cursor: pointer; outline: none;
+  transition: border-color .15s, box-shadow .15s; appearance: auto;
+}
+.mm-role-select:hover { border-color: rgba(137,207,240,0.6) !important; }
+.mm-role-select:focus { border-color: var(--blue) !important; box-shadow: 0 0 0 3px rgba(137,207,240,0.18); }
+
+.mm-btn-kick {
+  height: 34px; padding: 0 12px;
+  background: #fff; color: #f87171;
+  border: 1.5px solid #fecaca; border-radius: 10px;
+  font-weight: 700; font-size: 12px; cursor: pointer;
+  white-space: nowrap;
+  transition: background .15s, border-color .15s, transform .15s;
+}
+.mm-btn-kick:hover { background: #fff5f5; border-color: #f87171; transform: translateY(-1px); }
+
+/* ── 나가기 버튼 ── */
+.mm-leave-wrap {
+  margin-top: 18px; padding-top: 16px;
+  border-top: 1px solid rgba(226,232,240,0.7);
+}
+.mm-btn-leave {
+  width: 100%; padding: 12px;
+  background: #fff; color: #f87171;
+  border: 1.5px solid #fecaca; border-radius: 12px;
+  font-weight: 700; font-size: 13px; cursor: pointer;
+  transition: background .18s, border-color .18s, transform .18s;
+}
+.mm-btn-leave:hover { background: #fff5f5; border-color: #f87171; transform: translateY(-1px); }
+
+/* 구버전 스타일 호환 유지 */
 .text-pastel-dark { color: #2D3748 !important; }
 
 /* ═══════════════════════════════════════════
@@ -3866,4 +4113,5 @@ body.role-viewer .map-add-btn {
   /* 태블릿: 뱃지 숨기고 프로필 크기 살짝 줄이기 */
   .trip-status-badge { display: none !important; }
   .avatar { width: 28px; height: 28px; font-size: 10px; margin-left: -6px; }
+  .avatar-me { transform: scale(1.12); }
 }

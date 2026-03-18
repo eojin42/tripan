@@ -101,7 +101,13 @@ function _wsFlushOrders(day) {
 
 function wsHandle(msg) {
   if (!msg || !msg.type) return;
-  if (msg.senderNickname && msg.senderNickname === _myNickname) return;
+
+  // ★ 멤버 이벤트(강퇴/퇴장/입장)는 발신자 필터 예외 — 강퇴당한 본인도 수신해야 함
+  var MEMBER_EVENTS = { MEMBER_KICKED:1, MEMBER_LEFT:1, MEMBER_JOINED:1 };
+  if (!MEMBER_EVENTS[msg.type]) {
+    // 일반 편집 이벤트: 내가 보낸 건 낙관적 업데이트로 이미 처리됨 → 무시
+    if (msg.senderNickname && msg.senderNickname === _myNickname) return;
+  }
 
   var p = msg.payload || {};
 
@@ -182,6 +188,10 @@ function wsHandle(msg) {
 
     case 'MEMBER_JOINED':
       wsToast('🎉 ' + (p.nickname || '새 멤버') + '님이 여행에 참여했어요!');
+      // 알림 뱃지 갱신 (DB에 notifyAll로 저장된 알림 반영)
+      if (typeof loadNotifList === 'function') setTimeout(loadNotifList, 600);
+      // 멤버 목록 갱신을 위해 1.5초 후 리로드
+      setTimeout(function() { window.location.reload(); }, 1500);
       break;
 	
   	  // 누군가 강퇴당했을 때
@@ -189,14 +199,20 @@ function wsHandle(msg) {
         var kId = (msg.payload && msg.payload.targetId) ? msg.payload.targetId : msg.targetId;
         
         if (String(kId) === String(MY_MEMBER_ID)) {
-          alert('🚨 방장에 의해 여행에서 강퇴되었습니다.\n이 여행방에는 다시 입장하실 수 없습니다.');
-          window.location.replace(CTX_PATH + '/trip/my_trips'); 
+          // ★ 강퇴당한 본인:
+          // - wsToast로 즉시 화면에 표시 (alert는 location과 레이스 발생하므로 사용 안 함)
+          // - ?kicked=true 쿼리로 이동 → my_trips.jsp 인라인 스크립트에서 alert 표시
+          wsToast('🚨 방장에 의해 강퇴되었습니다. 이동합니다...');
+          setTimeout(function() {
+            window.location.replace(CTX_PATH + '/trip/my_trips?kicked=true');
+          }, 1200);
         } else {
-          //  닉네임 가져오기
+          // ★ 다른 멤버들: 토스트 + 알림 뱃지 갱신 + 멤버 목록 리로드
           var kickedNick = (typeof MEMBER_DICT !== 'undefined' && MEMBER_DICT[kId]) ? MEMBER_DICT[kId] : '멤버';
-          
-          if (typeof wsToast === 'function') wsToast(kickedNick + ' 님이 여행에서 내보내졌습니다 🚪');
-          setTimeout(function() { window.location.reload(); }, 1200);
+          wsToast(kickedNick + ' 님이 여행에서 강퇴되었습니다 🚪');
+          // 알림 뱃지 갱신 (서버가 notifyAll로 저장한 알림 반영)
+          if (typeof loadNotifList === 'function') setTimeout(loadNotifList, 600);
+          setTimeout(function() { window.location.reload(); }, 1500);
         }
         break;
 			
@@ -204,11 +220,11 @@ function wsHandle(msg) {
 	   case 'MEMBER_LEFT':
          var lId = (msg.payload && msg.payload.targetId) ? msg.payload.targetId : msg.targetId;
          if (String(lId) !== String(MY_MEMBER_ID)) {
-           //  닉네임 가져오기 (없으면 '멤버'로 대체)
            var leftNick = (typeof MEMBER_DICT !== 'undefined' && MEMBER_DICT[lId]) ? MEMBER_DICT[lId] : '멤버';
-           
-           if (typeof wsToast === 'function') wsToast(leftNick + ' 님이 여행에서 나갔습니다 🏃‍♂️');
-           setTimeout(function() { window.location.reload(); }, 1200);
+           wsToast(leftNick + ' 님이 여행에서 나갔습니다 🏃‍♂️');
+           // 알림 뱃지 갱신
+           if (typeof loadNotifList === 'function') setTimeout(loadNotifList, 600);
+           setTimeout(function() { window.location.reload(); }, 1500);
          }
          break;
 

@@ -209,7 +209,8 @@ public class TripController {
     public ResponseEntity<Map<String, Object>> declineInvite(
             @PathVariable("tripId") Long tripId, @PathVariable Long memberId) {
         try {
-            tripMemberService.leaveTrip(tripId, memberId); 
+            // 초대 거절은 PENDING 상태라 아직 합류 전 → 닉네임 알림 불필요, 빈 문자열 전달
+            tripMemberService.leaveTrip(tripId, memberId, "");
             return ResponseEntity.ok(Map.of("success", true));
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(Map.of("success", false, "message", e.getMessage()));

@@ -526,6 +526,25 @@
 <footer>
   <jsp:include page="/WEB-INF/views/layout/footer.jsp"/>
 </footer>
+<script>
+/* ★ 강퇴 알림 인라인 처리 (외부 파일 로드 불필요 — NoResourceFoundException 방지) */
+(function () {
+  var params = new URLSearchParams(window.location.search);
+  if (params.get('kicked') === 'true') {
+    // ① URL 정리 (뒤로가기 시 재표시 방지)
+    if (history.replaceState) history.replaceState(null, '', window.location.pathname);
+    // ② DOM 준비 후 alert
+    function showKicked() {
+      alert('🚨 방장에 의해 여행에서 강퇴되었습니다.\n이 여행방에는 다시 입장하실 수 없습니다.');
+    }
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', showKicked);
+    } else {
+      setTimeout(showKicked, 150);
+    }
+  }
+})();
+</script>
 
 </body>
 </html>

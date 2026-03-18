@@ -87,25 +87,21 @@
 
 	  <%-- 상단바 아바타 디자인 --%>
       <div class="avatar-group" title="동행자" onclick="openModal('memberModal')" style="cursor:pointer">
-        <c:forEach var="m" items="${tripDto.members}">
+        <c:forEach var="m" items="${tripDto.members}" varStatus="avSt">
           <%-- 강퇴/거절 멤버는 제외 --%>
           <c:if test="${m.invitationStatus != 'DECLINED'}">
             <c:choose>
-              <%-- '나'를 가장 눈에 띄게  --%>
+              <%-- '나'를 가장 눈에 띄게: scale 강조 + 선명한 텍스트 --%>
               <c:when test="${m.memberId == myMemberId}">
-                <div class="avatar" title="나 (${m.nickname})" style="background:#FFFFFF; color:#2D3748; border: 3px solid #89CFF0; transform: scale(1.2); z-index: 20; box-shadow: 0 4px 12px rgba(137,207,240,0.6); font-weight: 900;">${fn:substring(m.nickname,0,2)}</div>
-              </c:when>
-              <%-- 방장 --%>
-              <c:when test="${m.role == 'OWNER'}">
-                <div class="avatar role-owner" title="${m.nickname} (방장)">${fn:substring(m.nickname,0,2)}</div>
+                <div class="avatar avatar-me" title="나 (${m.nickname})">${fn:substring(m.nickname,0,2)}</div>
               </c:when>
               <%-- 대기중 --%>
               <c:when test="${m.invitationStatus == 'PENDING'}">
                 <div class="avatar role-pending" title="${m.nickname} (초대 대기중)">${fn:substring(m.nickname,0,2)}</div>
               </c:when>
-              <%-- 일반 멤버 --%>
+              <%-- 방장 또는 일반 멤버: 유저별 고유 색상 클래스 --%>
               <c:otherwise>
-                <div class="avatar" title="${m.nickname} (편집자)">${fn:substring(m.nickname,0,2)}</div>
+                <div class="avatar avatar-color-${avSt.index % 6}<c:if test="${m.role == 'OWNER'}"> role-owner</c:if>" title="${m.nickname}<c:if test="${m.role == 'OWNER'}"> (방장)</c:if>">${fn:substring(m.nickname,0,2)}</div>
               </c:otherwise>
             </c:choose>
           </c:if>
@@ -604,64 +600,74 @@
 
 <%-- 동행자 관리 모달 [DB] trip_member 테이블 --%>
 <div class="modal-overlay" id="memberModal">
-  <div class="modal-box" style="border: 2px solid rgba(224, 187, 194, 0.3); box-shadow: 0 10px 30px rgba(168, 200, 225, 0.2);">
-    <div class="modal-box__head" style="border-bottom: 1px solid rgba(137, 207, 240, 0.2);">
-      <span class="modal-box__title">👥 동행자 관리</span>
-      <button class="modal-close-btn text-pastel-dark" onclick="closeModal('memberModal')">✕</button>
+  <div class="modal-box mm-modal-box">
+    <div class="modal-box__head mm-head">
+      <div class="mm-head-inner">
+        <div class="mm-head-icon">👥</div>
+        <div>
+          <div class="mm-head-title">동행자 관리</div>
+          <div class="mm-head-sub">함께하는 여행 멤버를 관리해요</div>
+        </div>
+      </div>
+      <button class="modal-close-btn" onclick="closeModal('memberModal')">✕</button>
     </div>
-    <div class="modal-box__body">
+    <div class="modal-box__body mm-body">
 
-      <%-- ──────────────────────────────────────────────
-           1. 초대 링크 (Sky 테마 적용)
-           ────────────────────────────────────────────── --%>
-      <div class="setting-item" style="margin-top:10px;">
-        <label class="form-label-sm text-pastel-dark" style="display:block; margin-bottom:8px; font-weight: 800;">초대 링크</label>
-        <div style="display:flex; gap:8px;">
-          <input type="text" class="form-input text-pastel-dark" 
+      <%-- 1. 초대 링크 --%>
+      <div class="mm-invite-section">
+        <div class="mm-invite-label">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+          초대 링크
+        </div>
+        <div class="mm-invite-row">
+          <input type="text" class="mm-invite-input" 
                  value="${pageContext.request.scheme}://${pageContext.request.serverName}:${pageContext.request.serverPort}${pageContext.request.contextPath}/trip/invite/${tripDto.inviteCode}" 
-                 id="inviteLinkInput" readonly style="background:#F7FAFC; flex:1; border: 1px solid #C2B8D9; border-radius: 8px;">
-          <button type="button" class="btn-pastel" onclick="copyInviteLink()">복사</button>
+                 id="inviteLinkInput" readonly>
+          <button type="button" class="mm-invite-btn" onclick="copyInviteLink()">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+            복사
+          </button>
           <c:if test="${isOwner}">
-            <button type="button" class="btn-pastel" onclick="refreshInviteCode()" title="초대링크 재발급">🔄 재발급</button>
+            <button type="button" class="mm-invite-btn--refresh" onclick="refreshInviteCode()" title="초대링크 재발급">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+          </button>
           </c:if>
         </div>
       </div>
-
-      <%-- ──────────────────────────────────────────────
-           2. 멤버 관리 리스트  
-           ────────────────────────────────────────────── --%>
-      <label class="form-label-sm text-pastel-dark" style="margin-top:28px; margin-bottom:12px; display:block; font-weight: 800;">현재 멤버 (${fn:length(tripDto.members)}명)</label>
-      <div class="member-list" style="display:flex; flex-direction:column; gap:12px;">
-        <c:forEach var="m" items="${tripDto.members}">
+      <div class="mm-section-label">현재 멤버 <span class="mm-count">${fn:length(tripDto.members)}</span></div>
+      <div class="member-list">
+        <c:forEach var="m" items="${tripDto.members}" varStatus="mmSt">
           <%-- 강퇴/거절당한 유저는 리스트에 출력하지 않음 --%>
           <c:if test="${m.invitationStatus != 'DECLINED'}">
-            <div class="member-row member-row-pastel" style="display:flex; align-items:center; padding:14px; border-radius:12px;">
+            <div class="member-row member-row-v2">
               
               <%-- 아바타 --%>
-              <div class="member-avatar-lg <c:if test="${m.role == 'OWNER'}">role-owner</c:if>" 
-                   style="width:46px; height:46px; flex-shrink:0; overflow:hidden; border-radius:50%; display:flex; align-items:center; justify-content:center; background:#FFF; border: 2px solid #89CFF0;">
+              <div class="member-avatar-lg mm-avatar-color-${mmSt.index % 6}<c:if test="${m.role == 'OWNER'}"> role-owner</c:if><c:if test="${m.memberId == myMemberId}"> mm-avatar-me</c:if>">
                 <c:choose>
                   <c:when test="${not empty m.profileImage}">
                     <img src="<c:choose><c:when test="${fn:startsWith(m.profileImage, 'http')}">${m.profileImage}</c:when><c:otherwise>${pageContext.request.contextPath}/uploads/${m.profileImage}</c:otherwise></c:choose>" 
-                         style="width:100%; height:100%; object-fit:cover;" 
-                         onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
-                    <span style="display:none; font-weight:800; font-size:15px;" class="text-pastel-dark">${fn:substring(m.nickname,0,2)}</span>
+                         style="width:100%; height:100%; object-fit:cover; border-radius:50%;" 
+                         onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                    <span style="display:none; font-weight:800; font-size:15px;">${fn:substring(m.nickname,0,2)}</span>
                   </c:when>
                   <c:otherwise>
-                    <span style="font-weight:800; font-size:15px;" class="text-pastel-dark">${fn:substring(m.nickname,0,2)}</span>
+                    <span style="font-weight:800; font-size:15px;">${fn:substring(m.nickname,0,2)}</span>
                   </c:otherwise>
                 </c:choose>
               </div>
 
               <%-- 닉네임 및 상태 텍스트 --%>
-              <div class="member-info" style="flex:1; margin-left:14px;">
-                <div class="member-name text-pastel-dark" style="font-weight:800; font-size:15px;">${m.nickname}</div>
-                <div class="member-sub" style="font-size:12px; color:#A8C8E1; font-weight:700; margin-top:2px;">
+              <div class="member-info">
+                <div class="mm-member-name">
+                  ${m.nickname}
+                  <c:if test="${m.memberId == myMemberId}"><span class="mm-me-badge">나</span></c:if>
+                </div>
+                <div class="mm-member-sub">
                   <c:choose>
-                    <c:when test="${m.role == 'OWNER'}">방장</c:when>
-                    <c:when test="${m.invitationStatus == 'PENDING'}">초대 대기 중</c:when>
-                    <c:when test="${m.role == 'VIEWER'}">읽기 전용</c:when>
-                    <c:otherwise>편집자</c:otherwise>
+                    <c:when test="${m.role == 'OWNER'}"><span class="mm-role-dot owner"></span>방장</c:when>
+                    <c:when test="${m.invitationStatus == 'PENDING'}"><span class="mm-role-dot pending"></span>초대 대기 중</c:when>
+                    <c:when test="${m.role == 'VIEWER'}"><span class="mm-role-dot viewer"></span>읽기 전용</c:when>
+                    <c:otherwise><span class="mm-role-dot editor"></span>편집자</c:otherwise>
                   </c:choose>
                 </div>
               </div>
@@ -669,30 +675,29 @@
               <%-- 우측 컨트롤 패널 --%>
               <c:choose>
                 <c:when test="${m.role == 'OWNER'}">
-                  <span style="font-size:12px; font-weight:900; background:linear-gradient(135deg, #89CFF0, #C2B8D9); color:#FFF; padding:6px 12px; border-radius:8px; box-shadow: 0 2px 4px rgba(194,184,217,0.4);">👑 방장</span>
+                  <span class="mm-badge-owner">
+                    <svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+                    방장
+                  </span>
                 </c:when>
                 <c:when test="${m.invitationStatus == 'PENDING'}">
-                  <span style="font-size:12px; font-weight:800; color:#C2B8D9; margin-right:8px;">⏳ 대기중</span>
+                  <span class="mm-badge-pending">⏳ 대기중</span>
                   <c:if test="${isOwner}">
-                    <button onclick="onKickMember(${m.memberId})" style="padding:6px 12px; background:#FFF; color:#E0BBC2; border:2px solid #E0BBC2; border-radius:8px; font-weight:800; font-size:12px; cursor:pointer;">취소</button>
+                    <button onclick="onKickMember(${m.memberId})" class="mm-btn-kick">취소</button>
                   </c:if>
                 </c:when>
                 <c:otherwise>
                   <c:if test="${isOwner}">
                     <div style="display:flex; gap:6px; align-items:center;">
-                      <select onchange="onChangeMemberRole(this, ${m.memberId})" 
-                              class="text-pastel-dark"
-                              style="padding:6px 10px; border-radius:8px; border:2px solid #A8C8E1; font-size:13px; font-weight:800; background:#FFF; cursor:pointer; outline:none;">
+                      <select onchange="onChangeMemberRole(this, ${m.memberId})" class="mm-role-select">
                         <option value="EDITOR" ${m.role == 'EDITOR' ? 'selected' : ''}>✏️ 편집자</option>
                         <option value="VIEWER" ${m.role == 'VIEWER' ? 'selected' : ''}>👀 읽기전용</option>
                       </select>
-                      <button onclick="onKickMember(${m.memberId})" style="padding:6px 12px; background:#FFF; color:#E0BBC2; border:2px solid #E0BBC2; border-radius:8px; font-weight:800; font-size:12px; cursor:pointer;">강퇴</button>
+                      <button onclick="onKickMember(${m.memberId})" class="mm-btn-kick">강퇴</button>
                     </div>
                   </c:if>
                   <c:if test="${!isOwner}">
-                     <span class="text-pastel-dark" style="font-size:12px; font-weight:800; background:#FFF; border: 2px solid #A8C8E1; padding:6px 12px; border-radius:8px;">
-                       ${m.role == 'VIEWER' ? '👀 읽기전용' : '✏️ 편집자'}
-                     </span>
+                     <span class="mm-badge-role">${m.role == 'VIEWER' ? '👀 읽기전용' : '✏️ 편집자'}</span>
                   </c:if>
                 </c:otherwise>
               </c:choose>
@@ -702,8 +707,8 @@
         </c:forEach>
       </div>
       <c:if test="${!isOwner}">
-        <div style="margin-top:24px; padding-top:16px; border-top:1px solid rgba(137,207,240,0.2);">
-          <button onclick="onLeaveTrip()" style="width:100%; padding:14px; background:#FFF; color:#E0BBC2; border:2px solid #E0BBC2; border-radius:12px; font-weight:900; font-size:14px; cursor:pointer;">
+        <div class="mm-leave-wrap">
+          <button onclick="onLeaveTrip()" class="mm-btn-leave">
             🚪 이 여행에서 나가기
           </button>
         </div>

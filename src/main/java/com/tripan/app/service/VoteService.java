@@ -30,4 +30,7 @@ public interface VoteService {
 
     /** 투표 삭제 */
     void deleteVote(Long voteId, Long tripId);
+
+    /** 투표 제목 조회 (삭제 알림 메시지용) */
+    String getVoteTitle(Long voteId);
 }

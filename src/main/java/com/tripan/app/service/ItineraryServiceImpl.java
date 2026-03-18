@@ -170,6 +170,16 @@ public class ItineraryServiceImpl implements ItineraryService {
         return itemRepository.findTripIdByItemId(itemId);
     }
 
+    /* ── getPlaceNameByItemId ──────────────────────────── */
+    @Override
+    @Transactional(readOnly = true)
+    public String getPlaceNameByItemId(Long itemId) {
+        return itemRepository.findById(itemId)
+            .flatMap(item -> placeRepository.findById(item.getTripPlaceId()))
+            .map(TripPlace::getPlaceName)
+            .orElse("장소");
+    }
+
     /* ── moveItem ──────────────────────────────────────── */
     @Override
     @Transactional

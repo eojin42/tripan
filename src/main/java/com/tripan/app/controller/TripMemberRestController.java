@@ -33,13 +33,17 @@ public class TripMemberRestController {
     }
 
     // 강퇴 (DELETE)
+    // ★ body에 targetNickname 을 함께 받아서 서비스로 전달
+    //   JS(workspace_ui.js): fetch body에 { targetNickname: MEMBER_DICT[memberId] } 추가 필요
     @DeleteMapping("/{targetMemberId}/kick")
     public ResponseEntity<?> kickMember(
             @PathVariable("tripId") Long tripId,
             @PathVariable("targetMemberId") Long targetMemberId,
+            @RequestBody(required = false) Map<String, String> body,
             @AuthenticationPrincipal CustomUserDetails userDetails) {
         try {
-            tripMemberService.kickMember(tripId, targetMemberId, userDetails.getMember().getMemberId());
+            String targetNickname = (body != null) ? body.getOrDefault("targetNickname", "") : "";
+            tripMemberService.kickMember(tripId, targetMemberId, userDetails.getMember().getMemberId(), targetNickname);
             return ResponseEntity.ok(Map.of("success", true, "message", "멤버를 내보냈습니다."));
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(Map.of("success", false, "message", e.getMessage()));
@@ -47,12 +51,16 @@ public class TripMemberRestController {
     }
 
     // 스스로 나가기 (DELETE)
+    // ★ CustomUserDetails에서 닉네임 추출해서 서비스로 전달
     @DeleteMapping("/leave")
     public ResponseEntity<?> leaveTrip(
             @PathVariable("tripId") Long tripId,
             @AuthenticationPrincipal CustomUserDetails userDetails) {
         try {
-            tripMemberService.leaveTrip(tripId, userDetails.getMember().getMemberId());
+            // CustomUserDetails → getMember().getNickname() 구조 사용
+            String myNick = "";
+            try { myNick = userDetails.getMember().getNickname(); } catch (Exception ignored) {}
+            tripMemberService.leaveTrip(tripId, userDetails.getMember().getMemberId(), myNick);
             return ResponseEntity.ok(Map.of("success", true, "message", "여행에서 성공적으로 나갔습니다."));
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(Map.of("success", false, "message", e.getMessage()));
