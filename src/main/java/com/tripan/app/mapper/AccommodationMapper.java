@@ -19,6 +19,7 @@ public interface AccommodationMapper {
 	public List<AccommodationDto> selectAccommodationList(AdSearchConditionDto condition);
 	
 	AccommodationDetailDto selectAccommodationDetail(@Param("placeId") Long placeId, @Param("memberId") Long memberId);
+	AccommodationDetailDto selectAccommodationDetailForPartner(@Param("placeId") Long placeId, @Param("memberId") Long memberId);
     
     public List<String> selectAccommodationImages(Long placeId);
     

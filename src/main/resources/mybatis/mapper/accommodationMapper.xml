@@ -468,5 +468,30 @@
         </if>
         ORDER BY pr.CREATED_AT DESC
     </select>
+    
+    <!-- 파트너용 메서드  -->
+    <select id="selectAccommodationDetailForPartner" resultType="com.tripan.app.domain.dto.AccommodationDetailDto">
+	    SELECT 
+	        p.PLACE_ID as placeId,
+	        p.PLACE_NAME as name, 
+	        p.IMAGE_URL as imageUrl,
+	        p.ADDRESS as region, 
+	        p.DESCRIPTION as description,
+	        p.LATITUDE as latitude,      
+	        p.LONGITUDE as longitude,    
+	        a.CHECKINTIME as checkinTime,    a.CHECKOUTTIME as checkoutTime,  a.PARKINGLODGING as parkinglodging,
+	        
+	        af.FITNESS as fitness, 
+	        af.CHKCOOKING as chkcooking, 
+	        af.BARBECUE as barbecue, 
+	        af.BEVERAGE as beverage, 
+	        af.KARAOKE as karaoke, 
+	        af.PUBLICPC as publicpc, 
+	        af.SAUNA as sauna,
+	        0 as isBookmarked
+	    FROM PLACE p
+	    LEFT JOIN ACCOMMODATION a ON p.PLACE_ID = a.PLACE_ID  LEFT JOIN ACCOMMODATION_FACILITY af ON a.AF_ID = af.AF_ID 
+	    WHERE p.PLACE_ID = #{placeId}
+	</select>
 	
 </mapper>
