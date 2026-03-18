@@ -18,6 +18,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 
+import com.tripan.app.common.PaginateUtil;
 import com.tripan.app.domain.dto.AccommodationDetailDto;
 import com.tripan.app.domain.dto.AccommodationDto;
 import com.tripan.app.domain.dto.AdSearchConditionDto;
@@ -28,6 +29,7 @@ import com.tripan.app.domain.dto.ReviewStatsDto;
 import com.tripan.app.domain.dto.RoomDto;
 import com.tripan.app.service.AccommodationService;
 
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
 
@@ -36,6 +38,7 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class AccommodationController {
 	private final AccommodationService accommodationService;
+	private final PaginateUtil paginateUtil;
 	
 	@Value("${tripan.api.kakao-map-api-key}")
 	private String kakaoApiKey;
@@ -84,6 +87,18 @@ public class AccommodationController {
 
         List<String> bookedDates = accommodationService.getFullyBookedDates(id);
         model.addAttribute("bookedDates", bookedDates);
+        
+        ReviewStatsDto reviewStats = accommodationService.getReviewStats(id);
+        model.addAttribute("reviewStats", reviewStats);
+        
+        int bookmarkCount = accommodationService.getBookmarkCount(id);
+        model.addAttribute("bookmarkCount", bookmarkCount);
+        
+        List<String> reviewPhotos = accommodationService.getReviewPhotos(id, null);
+        model.addAttribute("reviewPhotos", reviewPhotos);
+        
+        List<ReviewDto> topReviews = accommodationService.getReviewList(id, "high", null, 0, 3);
+        model.addAttribute("topReviews", topReviews);
         
         model.addAttribute("kakaoApiKey", kakaoApiKey);
         
@@ -309,62 +324,117 @@ public class AccommodationController {
     }
     
     @GetMapping("review/list/{placeId}")
-    public String reviewList(@PathVariable("placeId") Long placeId, Model model) {
+    public String reviewList(@PathVariable("placeId") Long placeId, 
+                             @RequestParam(value = "page", defaultValue = "1") int current_page, // 🚀 현재 페이지 파라미터 추가
+                             @RequestParam(value = "sort", defaultValue = "latest") String sort,
+                             @RequestParam(value = "roomId", required = false) String roomId, 
+                             HttpServletRequest req, 
+                             Model model) {
         
-    	AccommodationDetailDto placeInfo = accommodationService.getAccommodationDetail(placeId, null, null, null);
-    	
+        AccommodationDetailDto placeInfo = accommodationService.getAccommodationDetail(placeId, null, null, null);
         ReviewStatsDto stats = accommodationService.getReviewStats(placeId);
+        List<RoomDto> roomList = accommodationService.getRoomsByPlaceId(placeId);
         
-        List<ReviewDto> reviewList = accommodationService.getReviewList(placeId);
+        int size = 5; 
+        int dataCount = accommodationService.getReviewCount(placeId, roomId); 
+        int total_page = paginateUtil.pageCount(dataCount, size); 
+        
+        if (current_page > total_page && total_page > 0) {
+            current_page = total_page;
+        }
+        
+        int offset = (current_page - 1) * size;
+        if(offset < 0) offset = 0;
+        
+        List<ReviewDto> reviewList = accommodationService.getReviewList(placeId, sort, roomId, offset, size);
+        
+        String cp = req.getContextPath();
+        String list_url = cp + "/accommodation/review/list/" + placeId + "?sort=" + sort;
+        if (roomId != null && !roomId.isEmpty()) {
+            list_url += "&roomId=" + roomId;
+        }
+        
+        String paging = paginateUtil.paging(current_page, total_page, list_url);
+        
+        // ==========================================
         
         model.addAttribute("placeId", placeId);
         model.addAttribute("placeInfo", placeInfo);
         model.addAttribute("stats", stats);
         model.addAttribute("reviewList", reviewList);
+        model.addAttribute("roomList", roomList);
+        model.addAttribute("sort", sort);
+        model.addAttribute("roomId", roomId);
+        
+        model.addAttribute("page", current_page);
+        model.addAttribute("dataCount", dataCount);
+        model.addAttribute("paging", paging); 
         
         return "accommodation/review/review_list"; 
     }
     
-    /*
-    @GetMapping("review/update/{reviewId}")
-    public String updateForm(@PathVariable("reviewId") Long reviewId, 
-                             HttpSession session, 
-                             Model model) {
-                             
+    @PostMapping("review/delete")
+    public String deleteReview(@RequestParam("reviewId") Long reviewId, 
+                               @RequestParam("placeId") Long placeId, 
+                               HttpSession session,
+                               Model model) {
+                               
         MemberDto loginUser = (MemberDto) session.getAttribute("loginUser");
         if (loginUser == null) {
             return "redirect:/member/login";
         }
-
-        // 기존 리뷰 정보 조회 (에디터 본문, 별점, 예약했던 객실/장소 정보 등)
-        // ReviewDto 안에는 이전 답변에서 설계한 대로 startDate, endDate, placeId 등이 들어있어야 함
-        ReviewDto review = reviewService.getReviewById(reviewId);
         
-        // 본인 리뷰인지 검증
-        if (review == null || !review.getMemberId().equals(loginUser.getMemberId())) {
-            model.addAttribute("message", "수정 권한이 없거나 존재하지 않는 리뷰입니다.");
-            return "common/error";
+        try {
+            accommodationService.deleteReview(reviewId); 
+        } catch (Exception e) {
+            e.printStackTrace();
+            model.addAttribute("message", "리뷰 삭제 중 오류가 발생했습니다.");
+            return "error/error2";
         }
-
-        // 숙박 일수 계산 (리뷰 DTO에 있는 체크인/체크아웃 날짜 활용)
-        long nights = 1;
-        if (review.getStartDate() != null && review.getEndDate() != null) {
-            // DB에 날짜가 문자열로 저장되어 있다면 바로 파싱, Date 타입이라면 변환 필요
-            LocalDate inDate = LocalDate.parse(review.getStartDate()); 
-            LocalDate outDate = LocalDate.parse(review.getEndDate());
-            nights = ChronoUnit.DAYS.between(inDate, outDate);
-        }
-
-        // 수정 폼 상단에 띄워줄 숙소/객실 정보가 필요하다면 추가 조회
-        // RoomDto room = accommodationService.findRoomByPlaceId(review.getPlaceId()); ...
-
-        // JSP에 데이터 전달 (수정 모드)
-        model.addAttribute("mode", "update"); // ★ 핵심: JSP에서 분기 처리할 모드 값
-        model.addAttribute("review", review);
-        model.addAttribute("nights", nights);
-        // model.addAttribute("room", room);
         
-        return "accommodation/review/review_form"; // 작성 시와 동일한 폼 재활용
+        return "redirect:/accommodation/review/list/" + placeId;
     }
-    */
+    
+    
+    @GetMapping("review/update/{reviewId}")
+    public String updateForm(@PathVariable("reviewId") Long reviewId, HttpSession session, Model model) {
+        MemberDto loginUser = (MemberDto) session.getAttribute("loginUser");
+        if (loginUser == null) return "redirect:/member/login";
+
+        ReviewDto review = accommodationService.getReviewById(reviewId);
+        if (review == null || !review.getMemberId().equals(loginUser.getMemberId())) {
+            model.addAttribute("message", "수정 권한이 없습니다.");
+            return "error/error2";
+        }
+
+        model.addAttribute("mode", "update");
+        model.addAttribute("review", review);
+        return "accommodation/review/review_form";
+    }
+
+    @PostMapping("review/update")
+    public String updateReviewSubmit(ReviewDto dto, HttpSession session, Model model) {
+        MemberDto loginUser = (MemberDto) session.getAttribute("loginUser");
+        if (loginUser == null) return "redirect:/member/login";
+
+        dto.setMemberId(loginUser.getMemberId()); 
+
+        try {
+            accommodationService.updateReview(dto);
+        } catch (Exception e) {
+            e.printStackTrace();
+            model.addAttribute("message", "리뷰 수정 중 오류가 발생했습니다.");
+            return "error/error2";
+        }
+
+        return "redirect:/accommodation/review/list/" + dto.getPlaceId();
+    }
+    
+    @GetMapping("review/photos/{placeId}")
+    @ResponseBody
+    public List<String> getReviewPhotos(@PathVariable("placeId") Long placeId, 
+                                        @RequestParam(value = "roomId", required = false) String roomId) {
+        return accommodationService.getReviewPhotos(placeId, roomId);
+    }
+    
 }

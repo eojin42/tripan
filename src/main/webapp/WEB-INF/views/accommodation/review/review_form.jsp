@@ -135,7 +135,7 @@
     </h2>
     <p class="review-subtitle">이용하신 숙소는 어떠셨나요? 소중한 경험을 나누어주세요.</p>
     
-    <form id="reviewForm" action="/accommodation/review/submit" method="post" enctype="multipart/form-data">
+    <form id="reviewForm" action="${pageContext.request.contextPath}/accommodation/review/${mode == 'update' ? 'update' : 'submit'}" method="post" enctype="multipart/form-data">
         <input type="hidden" name="mode" value="${mode}">
         
         <c:if test="${mode == 'write'}">
@@ -168,10 +168,18 @@
         <div class="form-group">
 		    <label class="form-label">사진 첨부 (선택)</label>
 		    
+		    <div id="retainImagesContainer">
+		        <c:if test="${mode == 'update'}">
+		            <c:forEach var="img" items="${review.imageUrls}">
+		                <input type="hidden" name="retainImageUrls" value="${img}" id="retain_${img.replace('.', '_')}">
+		            </c:forEach>
+		        </c:if>
+		    </div>
+		
 		    <div class="file-upload-box" id="dropZone">
 		        <i class="bi bi-cloud-arrow-up" style="font-size: 32px; color: #89CFF0; margin-bottom: 12px; display: block;"></i>
 		        <p style="margin: 0; font-size: 15px; font-weight: 700; color: #4A5568;">클릭하거나 이미지를 이곳에 드래그 앤 드롭하세요.</p>
-		        <p style="font-size: 12px; color: #A0AEC0; margin-top: 8px; margin-bottom: 0;">(5장 첨부 가능)</p>
+		        <p style="font-size: 12px; color: #A0AEC0; margin-top: 8px; margin-bottom: 0;">(기존 사진 포함 최대 5장)</p>
 		        
 		        <input type="file" name="uploadFiles" id="fileInput" multiple accept="image/*" style="display: none;">
 		    </div>
@@ -193,103 +201,100 @@ document.addEventListener('DOMContentLoaded', () => {
     const fileInput = document.getElementById('fileInput');
     const previewContainer = document.getElementById('imagePreviewContainer');
     
-    // 🚀 여러 번 드래그 앤 드롭해도 파일이 누적되도록 관리해주는 객체
     let dataTransfer = new DataTransfer();
 
-    // 1. 박스 클릭 시 파일 탐색기 열기
-    dropZone.addEventListener('click', () => {
-        fileInput.click();
-    });
+    <c:if test="${mode == 'update' and not empty review.imageUrls}">
+        <c:forEach var="img" items="${review.imageUrls}">
+        {
+            const existingDiv = document.createElement('div');
+            existingDiv.className = 'preview-wrapper';
+            existingDiv.innerHTML = `
+                <img src="${pageContext.request.contextPath}/uploads/review/${img}" alt="기존 이미지">
+                <button type="button" class="preview-remove-btn" data-existing="${img}">
+                    <i class="bi bi-x"></i>
+                </button>
+            `;
+            previewContainer.appendChild(existingDiv);
+        }
+        </c:forEach>
+    </c:if>
 
-    // 2. 파일이 들어왔을 때 (드롭 또는 선택) 처리하는 공통 함수
-	const handleFiles = (files) => {
-	    const currentCount = dataTransfer.items.length; // 현재 업로드된 사진 개수
-	    
-	    // 추가하려는 파일 중 이미지만 걸러내기
-	    const validFiles = Array.from(files).filter(file => {
-	        if (!file.type.match('image.*')) {
-	            alert('이미지 파일만 업로드 가능합니다: ' + file.name);
-	            return false;
-	        }
-	        return true;
-	    });
-	
-	    // 🚀 핵심: 기존 개수 + 새로 추가할 개수가 5장을 초과하는지 검사
-	    if (currentCount + validFiles.length > 5) {
-	        alert('사진은 최대 5장까지만 첨부할 수 있습니다.');
-	        // 5장을 채울 수 있는 만큼만 남기고 나머지는 잘라내기
-	        validFiles.splice(5 - currentCount); 
-	    }
-	
-	    // 통과한 파일들만 화면에 추가
-	    validFiles.forEach(file => {
-	        // 중복 방지를 원한다면 이름 비교 로직을 넣을 수도 있습니다.
-	        dataTransfer.items.add(file);
-	        
-	        const reader = new FileReader();
-	        reader.onload = (e) => {
-	            const div = document.createElement('div');
-	            div.className = 'preview-wrapper';
-	            div.innerHTML = `
-	                <img src="\${e.target.result}" alt="미리보기">
-	                <button type="button" class="preview-remove-btn" data-name="\${file.name}">
-	                    <i class="bi bi-x"></i>
-	                </button>
-	            `;
-	            previewContainer.appendChild(div);
-	        };
-	        reader.readAsDataURL(file);
-	    });
-	
-	    // 실제 파일 input에 덮어쓰기
-	    fileInput.files = dataTransfer.files;
-	};
+    dropZone.addEventListener('click', () => fileInput.click());
 
-    // 3. 파일 탐색기에서 선택했을 때
-    fileInput.addEventListener('change', (e) => {
-        handleFiles(e.target.files);
-    });
+    const handleFiles = (files) => {
+        const currentCount = previewContainer.querySelectorAll('.preview-wrapper').length; 
+        
+        const validFiles = Array.from(files).filter(file => {
+            if (!file.type.match('image.*')) {
+                alert('이미지 파일만 업로드 가능합니다: ' + file.name);
+                return false;
+            }
+            return true;
+        });
 
-    // 4. 드래그 앤 드롭 이벤트들
-    dropZone.addEventListener('dragover', (e) => {
-        e.preventDefault(); // 필수: 이걸 해야 드롭이 허용됨
-        dropZone.classList.add('dragover');
-    });
+        if (currentCount + validFiles.length > 5) {
+            alert('사진은 기존 사진 포함 최대 5장까지만 첨부할 수 있습니다.');
+            validFiles.splice(5 - currentCount); 
+        }
 
-    dropZone.addEventListener('dragleave', (e) => {
-        e.preventDefault();
-        dropZone.classList.remove('dragover');
-    });
+        validFiles.forEach(file => {
+            dataTransfer.items.add(file);
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                const div = document.createElement('div');
+                div.className = 'preview-wrapper';
+                div.innerHTML = `
+                    <img src="\${e.target.result}" alt="미리보기">
+                    <button type="button" class="preview-remove-btn" data-name="\${file.name}">
+                        <i class="bi bi-x"></i>
+                    </button>
+                `;
+                previewContainer.appendChild(div);
+            };
+            reader.readAsDataURL(file);
+        });
 
+        fileInput.files = dataTransfer.files;
+    };
+
+    fileInput.addEventListener('change', (e) => handleFiles(e.target.files));
+
+    dropZone.addEventListener('dragover', (e) => { e.preventDefault(); dropZone.classList.add('dragover'); });
+    dropZone.addEventListener('dragleave', (e) => { e.preventDefault(); dropZone.classList.remove('dragover'); });
     dropZone.addEventListener('drop', (e) => {
-        e.preventDefault();
-        dropZone.classList.remove('dragover');
-        handleFiles(e.dataTransfer.files); // 드롭된 파일들을 함수로 전달
+        e.preventDefault(); dropZone.classList.remove('dragover');
+        handleFiles(e.dataTransfer.files); 
     });
 
-    // 5. 썸네일 X 버튼 눌러서 삭제하기
+    // 🚀 X 버튼 눌렀을 때 삭제 로직 (기존 vs 신규 구분)
     previewContainer.addEventListener('click', (e) => {
         const btn = e.target.closest('.preview-remove-btn');
         if (btn) {
-            const fileNameToRemove = btn.getAttribute('data-name');
+            const existingImg = btn.getAttribute('data-existing');
             
-            // 1) 화면에서 썸네일 날리기
+            if (existingImg) {
+                // (1) 기존에 있던 이미지를 지울 때: 서버로 날아갈 hidden input 삭제
+                const safeId = existingImg.replace('.', '_');
+                const hiddenInput = document.getElementById('retain_' + safeId);
+                if (hiddenInput) hiddenInput.remove();
+            } else {
+                // (2) 새로 첨부한 이미지를 지울 때: DataTransfer에서 빼기
+                const fileNameToRemove = btn.getAttribute('data-name');
+                const newDataTransfer = new DataTransfer();
+                Array.from(dataTransfer.files).forEach(file => {
+                    if (file.name !== fileNameToRemove) newDataTransfer.items.add(file);
+                });
+                dataTransfer = newDataTransfer;
+                fileInput.files = dataTransfer.files;
+            }
+            
+            // 화면에서 썸네일 날리기
             btn.closest('.preview-wrapper').remove();
-            
-            // 2) DataTransfer 안에서 해당 파일 찾아서 지우기
-            const newDataTransfer = new DataTransfer();
-            Array.from(dataTransfer.files).forEach(file => {
-                if (file.name !== fileNameToRemove) {
-                    newDataTransfer.items.add(file);
-                }
-            });
-            
-            // 3) 업데이트된 파일 목록을 input 태그에 다시 적용
-            dataTransfer = newDataTransfer;
-            fileInput.files = dataTransfer.files;
         }
     });
 });
 </script>
+
+
 </body>
 </html>

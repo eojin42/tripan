@@ -17,6 +17,7 @@ public interface AccommodationService {
 	
 	public RoomDto findRoomById(String roomId);
 	
+	public int getBookmarkCount(Long placeId);
 	
 	public boolean acquireLock(String roomId, String checkin, String checkout, String sessionId);
     public void releaseLock(String roomId, String checkin, String sessionId);
@@ -35,5 +36,17 @@ public interface AccommodationService {
 	
 	public void insertReview(ReviewDto dto);
 	public ReviewStatsDto getReviewStats(Long placeId);
-    public List<ReviewDto> getReviewList(Long placeId);
+    public List<ReviewDto> getReviewList(Long placeId, String sort, String roomId, int offset, int size);
+    public int getReviewCount(Long placeId, String roomId);
+    
+    public void deleteReview(Long reviewId);
+    
+    public List<RoomDto> getRoomsByPlaceId(Long placeId);
+
+	public ReviewDto getReviewById(Long reviewId);
+
+	public void updateReview(ReviewDto dto);
+	
+	public List<String> getReviewPhotos(Long placeId, String roomId);
+	
 }

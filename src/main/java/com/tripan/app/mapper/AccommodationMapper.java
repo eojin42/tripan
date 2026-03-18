@@ -26,6 +26,8 @@ public interface AccommodationMapper {
     
     public RoomDto findRoomById(String roomId);
     
+    int getBookmarkCountByPlaceId(Long placeId);
+    
     // 동시성 문제 해결 관련
     void deleteExpiredLocks();
     int countActiveLocks(@Param("roomId") String roomId, @Param("checkin") String checkin, @Param("sessionId") String sessionId);
@@ -61,6 +63,20 @@ public interface AccommodationMapper {
     void insertReview(ReviewDto dto); 
     void insertReviewImage(@Param("reviewId") Long reviewId, @Param("imageUrl") String imageUrl); 
     
+    List<String> selectReviewImagesByReviewId(Long reviewId);
+    void deleteReviewImagesByReviewId(Long reviewId);
+    void deleteReview(Long reviewId);
+    
+    int getReviewCount(@Param("placeId") Long placeId, @Param("roomId") String roomId);
     ReviewStatsDto getReviewStatsByPlaceId(Long placeId);
-    List<ReviewDto> getReviewListByPlaceId(Long placeId);
+    List<ReviewDto> getReviewListByPlaceId(@Param("placeId") Long placeId,
+    										@Param("sort") String sort, 
+    										@Param("roomId") String roomId,
+    										@Param("offset") int offset, 
+                                            @Param("size") int size);
+    
+    ReviewDto getReviewById(Long reviewId);
+    void updateReview(ReviewDto dto);
+    
+    List<String> getReviewPhotosByPlaceId(@Param("placeId") Long placeId, @Param("roomId") String roomId);
 }
