@@ -17,8 +17,8 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.client.RestTemplate;
 
 import java.util.List;
+import java.util.UUID;
 
-// 나만의 장소\
 @Slf4j
 @Service
 @RequiredArgsConstructor
@@ -30,16 +30,11 @@ public class TripPlaceServiceImpl implements TripPlaceService {
     @Value("${tripan.api.kakao-map-api-key}")
     private String kakaoRestApiKey;
 
-    
-    // 키워드 검색 
+    // ── 키워드 검색 ────────────────────────────────────────────────
     @Override
     @Transactional
     public List<TripPlaceDto> searchPlaces(String keyword, Long currentMemberId) {
-        
-        // 카카오 API 검색 -> KTO 중복 검사 -> DB에 저장
         fetchAndSaveFromKakao(keyword);
-
-        // 권한 제어 적용: 공용 장소 + 내 장소만 조회
         return tripPlaceMapper.searchPlacesByKeyword(keyword, currentMemberId);
     }
 
@@ -57,22 +52,22 @@ public class TripPlaceServiceImpl implements TripPlaceService {
             JsonNode documents = objectMapper.readTree(response.getBody()).path("documents");
 
             for (JsonNode doc : documents) {
-                String kakaoId = doc.path("id").asText();
+                String kakaoId   = doc.path("id").asText();
                 String placeName = doc.path("place_name").asText();
-                String address = doc.path("address_name").asText();
+                String address   = doc.path("address_name").asText();
 
                 if (tripPlaceMapper.findPlaceIdByApiContentId(kakaoId) != null) continue;
                 if (placeMapper.findPlaceIdByNameAndAddress(placeName, address) != null) continue;
 
                 TripPlaceDto dto = new TripPlaceDto();
-                dto.setMemberId(null); // 공용 장소 처리
+                dto.setMemberId(null);
                 dto.setApiContentId(kakaoId);
                 dto.setPlaceName(placeName);
                 dto.setAddress(address);
                 dto.setLatitude(doc.path("y").asDouble());
                 dto.setLongitude(doc.path("x").asDouble());
                 dto.setCategory(doc.path("category_group_name").asText());
-                dto.setImageUrl(doc.path("place_url").asText()); 
+                dto.setImageUrl(doc.path("place_url").asText());
 
                 tripPlaceMapper.insertPlace(dto);
             }
@@ -81,29 +76,35 @@ public class TripPlaceServiceImpl implements TripPlaceService {
         }
     }
 
-    // 나만의 장소 직접 등록 
+    // ── 나만의 장소 직접 등록 ──────────────────────────────────────
+    // 🐛 BUG FIX: insertPlace() 전 apiContentId(=api_place_id) 반드시 세팅
+    //   원인: api_place_id NOT NULL 컬럼인데 값을 세팅하지 않아 ORA-01400 발생
     @Override
     @Transactional
     public TripPlaceDto registerMyPlace(TripPlaceDto dto, Long memberId) {
-        Long existing = tripPlaceMapper.findPlaceIdByNameAndAddress(
-                dto.getPlaceName(), dto.getAddress());
-        
-        if (existing != null) {
-            dto.setPlaceId(existing);
-            return dto;
-        }
-        
-        dto.setMemberId(memberId);   // 소유자 반드시 기록
+        dto.setMemberId(memberId);
         dto.setContentTypeId(null);
+
         if (dto.getCategory() == null || dto.getCategory().isBlank()) {
-            dto.setCategory("ETC");
+            dto.setCategory("NONE");
         }
-        
+
+        // ✅ FIX: 서버에서 고유 custom_UUID 생성 → api_place_id NULL 방지
+        dto.setApiContentId("custom_" + UUID.randomUUID().toString().replace("-", ""));
+
         tripPlaceMapper.insertPlace(dto);
         return dto;
     }
 
-    // 나만의 장소 목록 (본인 전용)
+    // ── 나만의 장소 삭제 (본인 소유 검증) ─────────────────────────
+    @Override
+    @Transactional
+    public boolean deleteMyPlace(Long placeId, Long memberId) {
+        int deleted = tripPlaceMapper.deleteMyPlace(placeId, memberId);
+        return deleted > 0;
+    }
+
+    // ── 나만의 장소 목록 ───────────────────────────────────────────
     @Override
     public List<TripPlaceDto> getMyPlaces(Long memberId) {
         return tripPlaceMapper.selectMyPlaces(memberId);

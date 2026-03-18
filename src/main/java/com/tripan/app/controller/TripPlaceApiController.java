@@ -111,6 +111,27 @@ public class TripPlaceApiController {
         TripPlaceDto saved = tripPlaceService.registerMyPlace(dto, memberId);
         return ResponseEntity.ok(Map.of("success", true, "place", saved));
     }
+    
+    // ── [나만의 장소] 삭제 ──────────────────────────────
+    @DeleteMapping("/my/{placeId}")
+    public ResponseEntity<?> deleteMyPlace(
+            @PathVariable("placeId") Long placeId,
+            HttpSession session) {
+
+        Long memberId = getLoginMemberId(session);
+        if (memberId == null)
+            return ResponseEntity.status(401)
+                .body(Map.of("success", false, "message", "로그인이 필요합니다"));
+
+        boolean deleted = tripPlaceService.deleteMyPlace(placeId, memberId);
+        if (deleted)
+            return ResponseEntity.ok(Map.of("success", true));
+        else
+            return ResponseEntity.status(403)
+                .body(Map.of("success", false,
+                    "message", "삭제 권한이 없거나 존재하지 않는 장소입니다"));
+    }
+
 
     // ── [KTO] 배치 수동 트리거 ────────────────────────────────────
     @PostMapping("/sync")

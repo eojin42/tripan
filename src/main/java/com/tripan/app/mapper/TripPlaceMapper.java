@@ -38,6 +38,10 @@ public interface TripPlaceMapper {
 
     // 나만의 장소 목록
     List<TripPlaceDto> selectMyPlaces(@Param("memberId") Long memberId);
+    
+    // 나만의 장소 삭제 
+    int deleteMyPlace(@Param("placeId") Long placeId, 
+    		@Param("memberId") Long memberId);
 
     // 단건 조회 (권한 검증 포함)
     TripPlaceDto selectPlaceById(@Param("placeId")          Long placeId,

@@ -388,18 +388,19 @@ function mapSearch() {
     var resultBox = document.getElementById('mapSearchResults');
     if (status === kakao.maps.services.Status.OK && data.length > 0) {
       var html = '';
-      data.forEach(function(p) {
-        var safeName = p.place_name.replace(/'/g, "\\'");
-        var safeAddr = (p.address_name || '').replace(/'/g, "\\'");
-        var safeCat  = (p.category_group_name || '장소').replace(/'/g, "\\'"); 
+	  data.forEach(function(p) {
+	      var safeName = p.place_name.replace(/'/g, "\\'");
+	      var safeAddr = (p.address_name || '').replace(/'/g, "\\'");
+	      var safeCat  = (p.category_group_name || '장소').replace(/'/g, "\\'");
+	      var safeId   = (p.id || '').toString().replace(/'/g, "\\'");  // ← 추가
 
-        html += '<div style="padding:12px 16px; border-bottom:1px solid #f1f5f9; cursor:pointer;" ' +
-                'onclick="selectMapSearchResult(' + p.y + ', ' + p.x + ', \'' + safeName + '\', \'' + safeAddr + '\', \'' + safeCat + '\')" ' +
-                'onmouseover="this.style.background=\'#f8fafc\'" onmouseout="this.style.background=\'none\'">';
-        html += '  <div style="font-size:14px; font-weight:700; color:#1a202c;">' + p.place_name + '</div>';
-        html += '  <div style="font-size:12px; color:#a0aec0; margin-top:4px;">' + p.address_name + '</div>';
-        html += '</div>';
-      });
+	      html += '<div style="padding:12px 16px; border-bottom:1px solid #f1f5f9; cursor:pointer;" ' +
+	              'onclick="selectMapSearchResult(' + p.y + ', ' + p.x + ', \'' + safeName + '\', \'' + safeAddr + '\', \'' + safeCat + '\', \'' + safeId + '\')" ' +
+	              'onmouseover="this.style.background=\'#f8fafc\'" onmouseout="this.style.background=\'none\'">';
+	      html += '  <div style="font-size:14px; font-weight:700; color:#1a202c;">' + p.place_name + '</div>';
+	      html += '  <div style="font-size:12px; color:#a0aec0; margin-top:4px;">' + p.address_name + '</div>';
+	      html += '</div>';
+	    });
       resultBox.innerHTML = html;
       resultBox.style.display = 'block';
     } else {
@@ -412,7 +413,7 @@ function mapSearch() {
 // 전역 변수로 선택한 장소 데이터 임시 저장 (문자열 충돌 완벽 방지)
 window._currentMapPlace = null;
 
-function selectMapSearchResult(lat, lng, name, address, categoryName) { 
+function selectMapSearchResult(lat, lng, name, address, categoryName, kakaoPlaceId) {
   var latlng = new kakao.maps.LatLng(lat, lng);
   _map.setCenter(latlng);
   _map.setLevel(4);
@@ -431,9 +432,11 @@ function selectMapSearchResult(lat, lng, name, address, categoryName) {
   var marker = new kakao.maps.Marker({ position: latlng, image: markerImg, map: _map });
   _tempMarkers.push(marker);
 
-  window._currentMapPlace = { name: name, addr: address, lat: lat, lng: lng, cat: categoryName };
+  window._currentMapPlace = {
+     name: name, addr: address, lat: lat, lng: lng, cat: categoryName,
+     kakaoId: kakaoPlaceId || ''   
+   };
 
-  // 🚨 [핵심] 뷰어 모드 판별해서 버튼 디자인과 기능을 완전히 바꿔치기 합니다!
   var isViewer = (typeof MY_ROLE !== 'undefined' && MY_ROLE === 'VIEWER');
   var btnStyle = isViewer ? 'background:#E2E8F0; color:#A0AEC0; cursor:not-allowed;' : 'background:linear-gradient(135deg,#89CFF0,#B8A9D9); color:#fff; cursor:pointer;';
   var btnAction = isViewer ? 'alert(\'👀 읽기 전용 모드에서는 일정을 추가할 수 없습니다.\')' : 'triggerMapAddModal()';
@@ -562,9 +565,10 @@ window.executeMapAdd = function() {
             var pid = (saved && saved.place && saved.place.placeId) ? String(saved.place.placeId) : null;
             addPlaceToDay(null, p.name, p.addr, p.lat, p.lng, pid, cat);
         });
-    } else {
-        addPlaceToDay(null, p.name, p.addr, p.lat, p.lng, null, cat);
-    }
+	} else {
+	    var kakaoId = (p.kakaoId && p.kakaoId !== '') ? p.kakaoId : null;
+	    addPlaceToDay(null, p.name, p.addr, p.lat, p.lng, kakaoId, cat);
+	  }
 };
 
 /* ══════════════════════════════

@@ -105,9 +105,16 @@ function _esc(str) {
    장소 추가 (POST)
 ══════════════════════════════ */
 function addPlaceToDay(el, name, addr, lat, lng, apiPlaceId, categoryName) {
-  var cat = categoryName || 'NONE'; 
+  var cat = categoryName || 'NONE';
+
+  // ✅ FIX: 공식 장소 여부 판별
+  //   - apiPlaceId가 존재하고 'custom_'으로 시작하지 않으면 → 공식 장소 (카카오 ID)
+  //   - null이거나 'custom_'으로 시작하면 → 나만의 장소 (서버에서 UUID 생성)
+  var isCustom = !apiPlaceId || String(apiPlaceId).indexOf('custom_') === 0;
+  var finalApiPlaceId = isCustom ? null : apiPlaceId;  // 나만의 장소는 null 전달 → 서버 UUID
+
   showToast('🔄 저장 중...');
-  
+
   fetch(CTX_PATH + '/api/itinerary/trip/' + TRIP_ID + '/day/' + currentAddDay + '/place', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -116,9 +123,9 @@ function addPlaceToDay(el, name, addr, lat, lng, apiPlaceId, categoryName) {
       address:      addr || '',
       latitude:     lat  || 0,
       longitude:    lng  || 0,
-      apiPlaceId:   apiPlaceId || ('custom_' + Date.now()),
-      categoryName: cat, 
-      customPlace:  !apiPlaceId
+      apiPlaceId:   finalApiPlaceId,   // ✅ 공식 장소: 카카오 ID / 나만의: null
+      categoryName: cat,
+      customPlace:  isCustom           // ✅ 백엔드 two-track 분기 힌트
     })
   })
   .then(function (r) { return r.json(); })
@@ -128,17 +135,15 @@ function addPlaceToDay(el, name, addr, lat, lng, apiPlaceId, categoryName) {
       closeModal('addPlaceModal');
       if (typeof notifySummaryChanged === 'function') notifySummaryChanged();
       showToast('📍 ' + name + ' 일정이 추가됐어요!');
-      
-      if (typeof mapAddMarkerExternal === 'function' && lat && lng) {
-        var dayCards = document.querySelectorAll('#places-' + currentAddDay + ' .place-card');
-        mapAddMarkerExternal(lat, lng, name, currentAddDay, dayCards.length, data.itemId, cat, addr);
-      }
     } else {
-      showToast('⚠️ 추가 실패: ' + (data.message || '알 수 없는 오류'));
+      showToast('❌ 추가 실패: ' + (data.message || '오류가 발생했습니다'));
     }
   })
-  .catch(function (err) { console.error(err); showToast('⚠️ 통신 오류'); });
+  .catch(function () {
+    showToast('❌ 네트워크 오류가 발생했습니다');
+  });
 }
+
 
 function _appendPlaceCard(dayNum, itemId, name, addr, lat, lng, categoryName) {
   var list = document.getElementById('places-' + dayNum);

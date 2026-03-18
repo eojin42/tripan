@@ -43,20 +43,44 @@ public class ItineraryServiceImpl implements ItineraryService {
     @Transactional
     public Long addPlaceAndItinerary(Long tripId, Long dayId,
                                      TripDto.PlaceAddDto dto, Long loginMemberId) {
-        TripPlace place = placeRepository.findByApiPlaceId(dto.getApiPlaceId())
-            .orElseGet(() -> {
-                TripPlace np = new TripPlace();
-                np.setApiPlaceId(dto.getApiPlaceId());
-                np.setPlaceName(dto.getPlaceName());
-                np.setAddress(dto.getAddress());
-                np.setLatitude(dto.getLatitude());
-                np.setLongitude(dto.getLongitude());
-                np.setCategoryName(dto.getCategoryName());
-                np.setPlaceUrl(dto.getPlaceUrl());
-                np.setMemberId(dto.isCustomPlace() ? loginMemberId : null);
-                np.setCreatedAt(LocalDateTime.now());
-                return placeRepository.save(np);
-            });
+        TripPlace place;
+
+        String apiId = dto.getApiPlaceId();
+        boolean isCustom = (apiId == null || apiId.isBlank() || apiId.startsWith("custom_"));
+
+        if (!isCustom) {
+            // ── Track A: 공식 장소 Upsert ──────────────────────────
+            place = placeRepository.findByApiPlaceId(apiId)
+                .orElseGet(() -> {
+                    // 처음 등록되는 공식 장소만 INSERT
+                    TripPlace np = new TripPlace();
+                    np.setApiPlaceId(apiId);
+                    np.setPlaceName(dto.getPlaceName());
+                    np.setAddress(dto.getAddress());
+                    np.setLatitude(dto.getLatitude());
+                    np.setLongitude(dto.getLongitude());
+                    np.setCategoryName(dto.getCategoryName());
+                    np.setPlaceUrl(dto.getPlaceUrl());
+                    np.setMemberId(null);   // 공식 장소: member_id = NULL
+                    np.setCreatedAt(LocalDateTime.now());
+                    return placeRepository.save(np);
+                });
+        } else {
+            // ── Track B: 나만의 장소 Always Insert ─────────────────
+            // 서버에서 고유한 custom_UUID 생성 → 프론트 timestamp 의존 제거
+            String customId = "custom_" + UUID.randomUUID().toString().replace("-", "");
+            TripPlace np = new TripPlace();
+            np.setApiPlaceId(customId);
+            np.setPlaceName(dto.getPlaceName());
+            np.setAddress(dto.getAddress());
+            np.setLatitude(dto.getLatitude());
+            np.setLongitude(dto.getLongitude());
+            np.setCategoryName(dto.getCategoryName() != null ? dto.getCategoryName() : "NONE");
+            np.setPlaceUrl(dto.getPlaceUrl());
+            np.setMemberId(loginMemberId);  // 나만의 장소: member_id = 작성자
+            np.setCreatedAt(LocalDateTime.now());
+            place = placeRepository.save(np);
+        }
 
         ItineraryItem item = new ItineraryItem();
         item.setDayId(dayId);
@@ -69,6 +93,7 @@ public class ItineraryServiceImpl implements ItineraryService {
 
         return itemRepository.save(item).getItemId();
     }
+
 
     /* ── 전체 순서 배열 업데이트 ─────────────────────── */
     @Override
