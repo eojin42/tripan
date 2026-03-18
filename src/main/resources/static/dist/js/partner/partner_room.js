@@ -7,15 +7,38 @@ function closeRoomModal() {
 }
 
 function saveRoom() {
-    const roomData = {  };
+    const formData = new FormData();
+    
+    formData.append('roomName', document.getElementById('roomName').value);
+    formData.append('roombasecount', document.getElementById('roombasecount').value);
+    formData.append('maxCapacity', document.getElementById('maxCapacity').value);
+    formData.append('roomCount', document.getElementById('roomCount').value);
+    formData.append('amount', document.getElementById('amount').value);
+    formData.append('roomintro', document.getElementById('roomintro').value);
+
+	const fileInput = document.getElementById('roomImages');
+    const maxFiles = 5; //  최대 업로드 가능 개수
+
+    if (fileInput.files.length === 0) {
+        showToast('최소 1장 이상의 객실 사진을 등록해주세요!', 'error');
+        return; 
+    }
+    
+    if (fileInput.files.length > maxFiles) {
+        showToast(`객실 사진은 최대 ${maxFiles}장까지만 등록할 수 있습니다.`, 'error');
+        return; 
+    }
+    
+    for (let i = 0; i < fileInput.files.length; i++) {
+        formData.append('images', fileInput.files[i]); 
+    }
 
     fetch(TripanConfig.contextPath + '/partner/api/room/save', {
         method: 'POST',
         headers: { 
-            'Content-Type': 'application/json',
-            'AJAX': 'true'
+            'AJAX': 'true' 
         },
-        body: JSON.stringify(roomData)
+        body: formData 
     })
     .then(res => {
         if (res.status === 401) {
@@ -27,7 +50,7 @@ function saveRoom() {
     })
     .then(data => {
         if (data.message === 'success') {
-            showToast('🎉 새 객실이 성공적으로 등록되었습니다!', 'success');
+            showToast('🎉 새 객실과 사진이 성공적으로 등록되었습니다!', 'success');
             closeRoomModal();
             setTimeout(() => { location.reload(); }, 1000); 
         } else {
@@ -36,6 +59,5 @@ function saveRoom() {
     })
     .catch(error => {
         console.error('Error:', error);
-        showToast('서버와의 통신에 문제가 발생했습니다.', 'error');
     });
 }
