@@ -117,15 +117,19 @@
         </div>
 
         <div class="info-group">
-          <div class="flex-header">
-            <div class="info-label">마일리지</div>
-            <div class="sub-text">보유 마일리지 0원</div>
-          </div>
-          <div style="display: flex; gap: 12px;">
-            <input type="text" class="input-text" placeholder="0" style="background:#F8F9FA;" readonly>
-            <button type="button" class="btn-use-all">모두 사용</button>
-          </div>
-        </div>
+		  <div class="flex-header">
+		    <div class="info-label">마일리지</div>
+		    <div class="sub-text">
+		        보유 마일리지 <fmt:formatNumber value="${currentPoint}" pattern="#,###"/>P 
+		        (최대 <fmt:formatNumber value="${maxUsablePoint}" pattern="#,###"/>P 사용 가능)
+		    </div>
+		  </div>
+		  <div style="display: flex; gap: 12px;">
+		    <input type="number" id="usePointInput" class="input-text" placeholder="0" 
+		           max="${maxUsablePoint}" oninput="applyMileage()">
+		    <button type="button" class="btn-use-all" onclick="useAllMileage()">모두 사용</button>
+		  </div>
+		</div>
 
         <div class="info-group">
           <div class="info-label" style="margin-bottom: 16px;">요금 상세</div>
@@ -346,6 +350,57 @@
             alert("결제에 실패하였습니다.\n에러 내용: " + rsp.error_msg);
         }
     });
+  }
+  
+  const originalAmount = ${amount}; 
+  let finalAmount = originalAmount;
+  let usedMileage = 0;
+  // 컨트롤러에서 넘어온 최대 사용 가능 포인트
+  const maxUsablePoint = ${maxUsablePoint}; 
+
+  // 마일리지 입력 시 실행되는 함수
+  function applyMileage() {
+      let inputVal = parseInt(document.getElementById('usePointInput').value) || 0;
+
+      // 1. 제한 로직: 한도(30% 또는 내 잔액) 초과 시
+      if (inputVal > maxUsablePoint) {
+          alert("마일리지는 최대 " + maxUsablePoint.toLocaleString() + "P까지만 사용 가능합니다. (상품 금액의 30%)");
+          inputVal = maxUsablePoint;
+          document.getElementById('usePointInput').value = inputVal;
+      } else if (inputVal < 0) { // 음수 입력 방지
+          inputVal = 0;
+          document.getElementById('usePointInput').value = '';
+      }
+
+      usedMileage = inputVal;
+      
+      // 2. 통합 계산 함수 호출 (나중에 쿠폰 할인액과 합치기 좋게 분리)
+      calculateTotal();
+  }
+
+  function useAllMileage() {
+      if (maxUsablePoint === 0) {
+          alert("사용할 수 있는 마일리지가 없습니다.");
+          return;
+      }
+      document.getElementById('usePointInput').value = maxUsablePoint;
+      applyMileage();
+  }
+
+  function calculateTotal() {
+      // 나중에 쿠폰 작업하실 때 여기에 currentCouponDiscount 빼주시면 됩니다.
+      finalAmount = originalAmount - usedMileage; 
+      if (finalAmount < 0) finalAmount = 0;
+
+      // 요금 상세 - 마일리지 행 업데이트 (id="displayMileageDiscount" 추가 필요)
+      let displayObj = document.getElementById('displayMileageDiscount');
+      if(displayObj) displayObj.innerText = '- ₩' + usedMileage.toLocaleString();
+
+      // 총 결제 금액 업데이트 (class="displayTotalAmount" 추가 필요)
+      const totalDisplays = document.querySelectorAll('.displayTotalAmount');
+      totalDisplays.forEach(el => {
+          el.innerText = '₩' + finalAmount.toLocaleString();
+      });
   }
 </script>
 

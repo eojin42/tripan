@@ -28,6 +28,7 @@ import com.tripan.app.domain.dto.ReviewDto;
 import com.tripan.app.domain.dto.ReviewStatsDto;
 import com.tripan.app.domain.dto.RoomDto;
 import com.tripan.app.service.AccommodationService;
+import com.tripan.app.service.PointService;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
@@ -38,6 +39,7 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class AccommodationController {
 	private final AccommodationService accommodationService;
+	private final PointService pointService;
 	private final PaginateUtil paginateUtil;
 	
 	@Value("${tripan.api.kakao-map-api-key}")
@@ -112,6 +114,7 @@ public class AccommodationController {
             @RequestParam(value = "checkout", defaultValue = "") String checkout,
             @RequestParam(value = "adult", defaultValue = "1") int adult,
             @RequestParam(value = "child", defaultValue = "0") int child,
+            HttpSession session,
             Model model) {
 
         model.addAttribute("roomId", roomId);
@@ -138,8 +141,22 @@ public class AccommodationController {
         int extraGuest = Math.max(0, totalGuest - room.getRoomBaseCount()); 
         long extraFeePerNight = extraGuest * 20000;
         
-        // 4. 총 결제 금액 계산 = (1박 가격 * 숙박 일수)
         long totalAmount = (room.getAmount() + extraFeePerNight) * nights;
+        
+        MemberDto loginUser = (MemberDto) session.getAttribute("loginUser");
+        if (loginUser != null) {
+            // 1. 내 마일리지 잔액 조회
+            long currentPoint = pointService.getLatestPoint(loginUser.getMemberId());
+            
+            // 2. 최대 사용 가능 마일리지 계산 (결제 금액의 30%)
+            long limitPoint = (long) (totalAmount * 0.3);
+            
+            // 3. 실제 쓸 수 있는 포인트 = (내 잔액)과 (30% 한도) 중 더 작은 값
+            long maxUsablePoint = Math.min(currentPoint, limitPoint);
+
+            model.addAttribute("currentPoint", currentPoint);
+            model.addAttribute("maxUsablePoint", maxUsablePoint);
+        }
         
         model.addAttribute("nights", nights);
         model.addAttribute("amount", totalAmount); // 폼에서 보여줄 최종 금액
