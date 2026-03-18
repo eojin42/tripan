@@ -142,7 +142,7 @@ public class TripServiceImpl implements TripService {
         trip.setTripName(dto.getTitle());
         trip.setStartDate(LocalDate.parse(dto.getStartDate()).atStartOfDay());
         trip.setEndDate(LocalDate.parse(dto.getEndDate()).atStartOfDay());
-        if (dto.getTripType() != null) trip.setTripType(dto.getTripType());
+        if (dto.getTripType() != null)    trip.setTripType(dto.getTripType());
         if (dto.getTotalBudget() != null) trip.setTotalBudget(dto.getTotalBudget());
         if (dto.getDescription() != null) trip.setDescription(dto.getDescription());
         if (dto.getCities() != null && !dto.getCities().isEmpty())
@@ -159,21 +159,37 @@ public class TripServiceImpl implements TripService {
         tripRegionRepository.deleteByTripId(tripId);
         saveRegions(tripId, dto.getRegionId());
 
-        // DAY 수 조정
-        if (newDays > oldDays) {
+        LocalDate newStartDate = LocalDate.parse(dto.getStartDate());
+
+        if (newDays < oldDays) {
+            // Case 1: 일수 감소 → 초과 day 및 하위 itinerary_item 삭제
+            tripDayRepository.deleteByTripIdAndDayNumberGreaterThan(tripId, (int) newDays);
+
+        } else if (newDays > oldDays) {
+            // Case 2/3: 일수 증가 → 새 day 추가 (날짜는 Step 2에서 덮어씌워도 되지만 미리 세팅)
             for (long i = oldDays + 1; i <= newDays; i++) {
-                TripDay td = new TripDay(); td.setTripId(tripId); td.setDayNumber((int) i);
-                td.setTripDate(LocalDate.parse(dto.getStartDate()).plusDays(i - 1).atStartOfDay());
+                TripDay td = new TripDay();
+                td.setTripId(tripId);
+                td.setDayNumber((int) i);
+                td.setTripDate(newStartDate.plusDays(i - 1).atStartOfDay());
                 tripDayRepository.save(td);
             }
-        } else if (newDays < oldDays) {
-            tripDayRepository.deleteByTripIdAndDayNumberGreaterThan(tripId, (int) newDays);
+        }
+
+        // 남아있는 모든 trip_day의 tripDate를 새 시작일 기준으로 일괄 업데이트
+        // 예) 3/18~20(Day1=3/18, Day2=3/19, Day3=3/20)에서
+        //     4/1~3으로 변경하면 → Day1=4/1, Day2=4/2, Day3=4/3 으로 갱신
+        List<TripDay> existingDays = tripDayRepository.findByTripIdOrderByDayNumberAsc(tripId);
+        for (TripDay td : existingDays) {
+            td.setTripDate(newStartDate.plusDays(td.getDayNumber() - 1).atStartOfDay());
+            tripDayRepository.save(td);
         }
 
         // 태그 재저장
         tripTagRepository.deleteByTripId(tripId);
         saveTags(tripId, dto.getTags());
     }
+
 
     // ═══════════════════════════════════════════════════════
     //  getTripDetails: trip + days + members + tags + expense

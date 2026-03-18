@@ -2,12 +2,6 @@
  * workspace.notif.js
  * ──────────────────────────────────────────────
  * 담당: 알림 드롭다운 · 목록 로드 · 읽음 처리 · 초대 수락/거절
- *       ← JSP 인라인 toggleNotif/loadNotifList/markNotifRead/clearAllNotif 이동
- *
- * 수정: 드롭다운 클래스를 'active'로 통일 (기존 파일은 'open' 사용 → 불일치 수정)
- *
- * 의존: workspace.ui.js (showToast, normalizeRow)
- *       TRIP_ID, CTX_PATH (JSP inline 전역)
  * ──────────────────────────────────────────────
  */
 

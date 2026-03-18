@@ -59,7 +59,6 @@ function _wsEnqueueOrder(itemId, dayNumber, visitOrder, senderNick) {
     _wsFlushOrders(day);
   }, 80); // 80ms 내 같은 day 메시지 모두 수집 후 처리
 }
-
 function _wsFlushOrders(day) {
   var orderMap = _wsOrderQueue[day];
   var nick     = _wsOrderSender[day];
