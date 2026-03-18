@@ -48,6 +48,36 @@
     .btn { display: inline-flex; align-items: center; gap: 6px; padding: 10px 20px; border-radius: 100px; font-size: 13px; font-weight: 700; cursor: pointer; border: none; transition: 0.2s; }
     .btn-primary { background: #0D1117; color: white; }
     .btn-ghost { background: rgba(0,0,0,0.05); color: #0D1117; }
+	
+	 /* 세션만료 토스트알람 */     
+    #toast-container {
+      position: fixed;
+      bottom: 24px;
+      right: 24px;
+      z-index: 99999;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .toast-msg {
+      background: #0D1117; 
+      color: #FFF;
+      padding: 14px 24px;
+      border-radius: 12px;
+      font-size: 14px;
+      font-weight: 700;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+      opacity: 0;
+      transform: translateY(20px);
+      transition: all 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55); 
+    }
+    .toast-msg.show {
+      opacity: 1;
+      transform: translateY(0);
+    }
+    .toast-msg.error { background: #EF4444; } 
+    .toast-msg.success { background: #10B981; } 
+    
   </style>
 </head>
 <body>
@@ -133,45 +163,50 @@
           </div>
         </div>
 
-		<h3 style="font-size: 15px; font-weight: 800; margin: 24px 0 16px 0;">🛏️ 등록된 객실 목록 (총 ${roomList.size()}개)</h3>
-		        
-		        <div style="display: flex; flex-direction: column; gap: 16px;">
-		          <c:choose>
-		            <%-- 객실이 하나도 없을 때 --%>
-		            <c:when test="${empty roomList}">
-		              <div class="card" style="text-align:center; padding: 40px; color: var(--muted); margin-bottom:0;">
-		                등록된 객실이 없습니다. [+ 새 객실 등록] 버튼을 눌러 객실을 추가해주세요.
-		              </div>
-		            </c:when>
-		            
-		            <%-- 객실이 있을 때 반복문으로 뿌리기 --%>
-		            <c:otherwise>
-		              <c:forEach var="room" items="${roomList}">
-		                <div class="card" style="display:flex; gap:20px; align-items:center; padding: 20px; margin-bottom: 0;">
-		                  <img src="https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=300&q=80" style="width:180px; height:120px; border-radius:12px; object-fit:cover;">
-		                  <div style="flex:1;">
-		                    <div style="display:flex; gap:8px; margin-bottom:6px;">
-		                      <span class="badge badge-done">판매중</span>
-		                      <span class="badge" style="background:#F1F5F9; color:#475569;">보유 ${room.roomCount}객실</span>
-		                    </div>
-		                    <h3 style="font-size:18px; font-weight:800; margin-bottom:8px;">${room.roomName}</h3>
-		                    <p style="color:#8B92A5; font-size:13px; margin:0 0 4px 0;">👥 기준 ${room.roombasecount}인 / 최대 ${room.maxCapacity}인</p>
-		                    <p style="color:#8B92A5; font-size:13px; margin:0;">📝 ${room.roomintro}</p>
-		                  </div>
-		                  <div style="text-align: right;">
-		                    <p style="font-family:'Sora', sans-serif; font-size:20px; font-weight:900; color:var(--text); margin-bottom: 12px;">
-		                      ₩ <fmt:formatNumber value="${room.amount}" pattern="#,###" />
-		                    </p>
-		                    <div style="display: flex; gap: 8px; justify-content: flex-end;">
-		                      <button class="btn btn-ghost" style="padding: 6px 12px; font-size: 12px;" onclick="alert('객실 수정 기능은 곧 업데이트 됩니다!')">수정</button>
-		                      <button class="btn btn-ghost" style="padding: 6px 12px; font-size: 12px; color: var(--danger);" onclick="alert('객실 삭제 기능은 곧 업데이트 됩니다!')">삭제</button>
-		                    </div>
-		                  </div>
-		                </div>
-		              </c:forEach>
-		            </c:otherwise>
-		          </c:choose>
-		        </div>
+		<h3 style="font-size: 15px; font-weight: 800; margin: 24px 0 16px 0;">🛏️ 등록된 객실 목록</h3>
+        
+        <div style="display: flex; flex-direction: column; gap: 16px;">
+          <c:choose>
+            <c:when test="${not empty roomList}">
+              <%-- 🌟 컨트롤러에서 넘겨준 roomList를 빙글빙글 돌립니다! --%>
+              <c:forEach var="room" items="${roomList}">
+                <div class="card" style="display:flex; gap:20px; align-items:center; margin-bottom: 0; padding: 20px;">
+                  <%-- 임시 썸네일 (추후 객실별 이미지 업로드 구현 시 교체) --%>
+                  <img src="https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=300&q=80" style="width:180px; height:120px; border-radius:12px; object-fit:cover;">
+                  
+                  <div style="flex:1;">
+                    <div style="display:flex; gap:8px; margin-bottom:6px;">
+                      <span class="badge badge-done">판매중</span>
+                      <span class="badge" style="background:#F1F5F9; color:#475569;">보유 ${room.roomCount}객실</span>
+                    </div>
+                    <h3 style="font-size:18px; font-weight:800; margin-bottom:8px;">${room.roomName}</h3>
+                    <p style="color:#8B92A5; font-size:13px; margin:0 0 4px 0;">👥 기준 ${room.roombasecount}인 / 최대 ${room.maxCapacity}인</p>
+                    <p style="color:#8B92A5; font-size:13px; margin:0; line-height: 1.4;">${room.roomintro}</p>
+                  </div>
+                  
+                  <div style="text-align: right;">
+                    <%-- 금액에 콤마(,) 찍어주기 --%>
+                    <p style="font-family:'Sora', sans-serif; font-size:20px; font-weight:900; color:var(--text); margin-bottom: 12px;">
+                      <fmt:formatNumber value="${room.amount}" pattern="#,###"/> 원
+                    </p>
+                    <div style="display: flex; gap: 8px; justify-content: flex-end;">
+                      <button class="btn btn-ghost" style="padding: 6px 12px; font-size: 12px;">수정</button>
+                      <button class="btn btn-ghost" style="padding: 6px 12px; font-size: 12px; color: var(--danger);">삭제</button>
+                    </div>
+                  </div>
+                </div>
+              </c:forEach>
+            </c:when>
+            
+            <c:otherwise>
+              <%-- 등록된 객실이 없을 때 보여줄 빈 화면 --%>
+              <div class="card" style="text-align: center; padding: 40px;">
+                <p style="color: var(--muted); font-size: 14px; margin-bottom: 16px;">아직 등록된 객실이 없습니다.</p>
+                <button class="btn btn-primary" onclick="openRoomModal()">첫 객실 등록하기</button>
+              </div>
+            </c:otherwise>
+          </c:choose>
+        </div>
 
       <div id="tab-calendar" class="page-section ${activeTab == 'calendar' ? 'active' : ''}">
         <div class="page-header">

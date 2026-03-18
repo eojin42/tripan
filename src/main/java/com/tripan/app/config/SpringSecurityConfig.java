@@ -6,11 +6,14 @@ import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
+import org.springframework.security.core.session.SessionRegistry;
+import org.springframework.security.core.session.SessionRegistryImpl;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.access.ExceptionTranslationFilter;
 import org.springframework.security.web.savedrequest.HttpSessionRequestCache;
+import org.springframework.security.web.session.HttpSessionEventPublisher;
 
 import com.tripan.app.security.AjaxSessionTimeoutFilter;
 import com.tripan.app.security.LoginFailureHandler;
@@ -36,7 +39,8 @@ public class SpringSecurityConfig {
 				"/accommodation/home", "/accommodation/list", "/accommodation/search", "/accommodation/detail/*", 
 				"/community/feed", "/community/fragment/feed", 
 				"/api/festivals/**", "/api/chat/rooms/region",
-				"/ws-tripan/**"
+				"/ws-tripan/**",
+				"/partner/api/check-session",
 			    };
 		
 		http.cors(Customizer.withDefaults())
@@ -67,7 +71,24 @@ public class SpringSecurityConfig {
 		.addFilterAfter(ajaxSessionTimeoutFilter(), ExceptionTranslationFilter.class)
 		.sessionManagement(management -> management
 				.maximumSessions(1)
-				.expiredUrl("/member/expired"))
+				.sessionRegistry(sessionRegistry())
+				.expiredSessionStrategy(event -> {
+					jakarta.servlet.http.HttpServletRequest request = event.getRequest();
+					jakarta.servlet.http.HttpServletResponse response = event.getResponse();
+					String uri = request.getRequestURI();
+					String ajaxHeader = request.getHeader("AJAX");
+
+					if ("true".equals(ajaxHeader)) {
+						response.sendError(jakarta.servlet.http.HttpServletResponse.SC_UNAUTHORIZED, "Ajax Session Expired");
+					} else {
+						if (uri.startsWith("/partner")) {
+							response.sendRedirect(request.getContextPath() + "/partner/login");
+						} else {
+							response.sendRedirect(request.getContextPath() + "/member/login");
+						}
+					}
+				})
+		)
 		.exceptionHandling(exception -> exception
 				.authenticationEntryPoint((request, response, authException) -> {
 					String uri = request.getRequestURI();
@@ -114,4 +135,15 @@ public class SpringSecurityConfig {
 		filter.setAjaxHeader("AJAX");
 		return filter;
 	}
+	
+	@Bean
+	public HttpSessionEventPublisher httpSessionEventPublisher() {
+		return new HttpSessionEventPublisher();
+	}
+	
+	@Bean
+	public SessionRegistry sessionRegistry() {
+		return new SessionRegistryImpl();
+	}
+	
 }
