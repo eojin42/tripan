@@ -543,7 +543,7 @@
       /* ── KPI ── */
       const fetchKpi = async () => {
         try {
-          const res = await axios.get(`${contextPath}/admin/partner/kpi`);
+          const res = await axios.get(`${contextPath}/api/admin/partner/kpi`);
           Object.assign(kpi, res.data);
         } catch(e) { console.error('KPI 오류', e); }
       };
@@ -610,7 +610,7 @@
       const fetchList = async (page = 1) => {
         try {
           if (page === 1 || allApplies.value.length === 0) {
-            const res = await axios.get(`${contextPath}/admin/partner/list`, {
+            const res = await axios.get(`${contextPath}/api/admin/partner/list`, {
               params: { page: 1, status: 'ALL', keyword: '' }
             });
             allApplies.value = res.data.list || [];
@@ -658,7 +658,7 @@
         }
         try {
           await Promise.all(selectedIds.value.map(id =>
-            axios.post(contextPath + '/admin/partner/apply/review', {
+            axios.post(contextPath + '/api/admin/partner/apply/review', {
               applyId:        id,
               result:         bulkReview.result,
               commissionRate: bulkReview.commissionRate,
@@ -683,7 +683,7 @@
         if (review.result === 'APPROVED' && !review.commissionRate)  { alert('수수료율을 입력해주세요.'); return; }
 
         try {
-          await axios.post(`${contextPath}/admin/partner/apply/review`, {
+          await axios.post(`${contextPath}/api/admin/partner/apply/review`, {
             applyId:        reviewTarget.partnerId,
             result:         review.result,
             commissionRate: review.commissionRate,
@@ -709,7 +709,7 @@
         Object.assign(docTarget, item); // applyId 포함
         showDocModal.value = true;
         try {
-          const res = await axios.get(`${contextPath}/admin/partner/apply/docs`, {
+          const res = await axios.get(`${contextPath}/api/admin/partner/apply/docs`, {
             params: { applyId: item.partnerId }
           });
           docTarget.docs = res.data;
