@@ -97,4 +97,19 @@ public class CustomUserDetails implements UserDetails{
 	public SessionInfo getMember() {
 		return member;
 	}
+	
+	@Override
+	public boolean equals(Object o) {
+		if (this == o) return true;
+		if (o == null || getClass() != o.getClass()) return false;
+		CustomUserDetails that = (CustomUserDetails) o;
+		if (this.member == null || that.member == null) return false;
+		return this.member.getLoginId().equals(that.member.getLoginId());
+	}
+
+	@Override
+	public int hashCode() {
+		return member != null && member.getLoginId() != null ? member.getLoginId().hashCode() : 0;
+	}
+	
 }

@@ -44,7 +44,7 @@ function closeCouponModal() {
     document.getElementById('couponModal').classList.remove('open');
 }
 
-// 파트너 정보 저장 함수
+// 파트너 정보 저장 함수 (partner_main.js)
 function savePartnerInfo() {
     const data = {
         contactName: document.getElementById('contactName').value,
@@ -56,19 +56,52 @@ function savePartnerInfo() {
 
     fetch(TripanConfig.contextPath + '/partner/api/info/update', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+            'Content-Type': 'application/json',
+            'AJAX': 'true' 
+        },
         body: JSON.stringify(data)
     })
-    .then(res => res.json())
+    .then(res => {
+        if (res.status === 401) {
+            showToast('세션이 만료되었습니다. 로그인 페이지로 이동합니다.', 'error');
+            setTimeout(() => { location.href = TripanConfig.contextPath + '/partner/login'; }, 1500);
+            throw new Error('Session Expired');
+        }
+        return res.json();
+    })
     .then(resData => {
         if(resData.message === 'success') {
-            alert('성공적으로 저장되었습니다! 🎉');
+            showToast('성공적으로 저장되었습니다! 🎉', 'success');
         } else {
-            alert('저장에 실패했습니다.');
+            showToast('저장에 실패했습니다.', 'error');
         }
     })
     .catch(error => {
         console.error('Error:', error);
-        alert('서버 오류가 발생했습니다.');
+        // showToast('서버 오류가 발생했습니다.', 'error');
     });
+}
+
+
+// 🌟 토스트 알림 띄워주는 공통 함수
+function showToast(message, type = 'success') {
+    let container = document.getElementById('toast-container');
+    if (!container) {
+        container = document.createElement('div');
+        container.id = 'toast-container';
+        document.body.appendChild(container);
+    }
+
+    const toast = document.createElement('div');
+    toast.className = `toast-msg ${type}`;
+    toast.innerText = message;
+    container.appendChild(toast);
+
+    setTimeout(() => toast.classList.add('show'), 10);
+
+    setTimeout(() => {
+        toast.classList.remove('show');
+        setTimeout(() => toast.remove(), 300); 
+    }, 3000);
 }
