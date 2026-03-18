@@ -4,14 +4,22 @@
 
 <mapper namespace="com.tripan.app.admin.mapper.CouponTargetMapper">
 
-    <insert id="insertCouponTarget" parameterType="com.tripan.app.admin.domain.dto.CouponTargetDto">
+   <insert id="insertCouponTarget" parameterType="com.tripan.app.admin.domain.dto.CouponTargetDto">
         INSERT INTO coupon_target (
-            target_id, coupon_id, target_type, target_value, is_exclude
+            target_id,
+            coupon_id,
+            partner_id,
+            place_id,
+            target_type,
+            target_value,
+            is_exclude
         ) VALUES (
             coupon_target_seq.NEXTVAL,
             #{couponId},
+            #{partnerId, jdbcType=NUMERIC},
+            #{placeId, jdbcType=NUMERIC},
             #{targetType},
-            #{targetValue},
+            #{targetValue, jdbcType=VARCHAR},
             #{isExclude}
         )
     </insert>
@@ -21,6 +29,8 @@
         SELECT
             target_id    AS targetId,
             coupon_id    AS couponId,
+            partner_id   AS partnerId,
+            place_id     AS placeId,
             target_type  AS targetType,
             target_value AS targetValue,
             is_exclude   AS isExclude
@@ -79,19 +89,19 @@
     </select>
 
     <select id="isCouponApplicable" resultType="int">
-        SELECT COUNT(*)
-        FROM dual
-        WHERE NOT EXISTS (
+        SELECT CASE WHEN EXISTS (
             SELECT 1
             FROM coupon_target ct
             WHERE ct.coupon_id = #{couponId}
               AND ct.is_exclude = 'Y'
               AND (
-                    (ct.target_type = 'ACCOMMODATION' AND ct.target_value = TO_CHAR(#{placeId}))
+                    (ct.target_type = 'ACCOMMODATION' AND ct.place_id = #{placeId})
                  OR (ct.target_type = 'ROOM'          AND ct.target_value = TO_CHAR(#{roomId}))
                  OR (ct.target_type = 'ACC_TYPE'      AND ct.target_value = #{accommodationType})
               )
-        )
+        ) THEN 0 ELSE 1 END
+        FROM dual
     </select>
+
 
 </mapper>

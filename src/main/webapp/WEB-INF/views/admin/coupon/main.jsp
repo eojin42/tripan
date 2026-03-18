@@ -139,7 +139,7 @@
           <p>플랫폼 쿠폰을 직접 등록하고, 파트너사가 신청한 쿠폰을 승인·관리합니다.</p>
         </div>
         <div style="margin-left:auto;">
-          <a href="${pageContext.request.contextPath}/admin/coupon/form"
+          <a href="${pageContext.request.contextPath}api/admin/coupon/form"
              class="btn btn-primary" style="display:inline-flex;align-items:center;gap:6px;text-decoration:none;">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
               <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
@@ -643,7 +643,7 @@
 
       const fetchPartnerOptions = async () => {
         try {
-          const res = await axios.get(`${contextPath}/admin/api/partner/options`);
+          const res = await axios.get(`${contextPath}/api/admin/partner/options`);
           partnerOptions.value = res.data;
         } catch(e) { console.error('파트너 옵션 오류', e); }
       };
