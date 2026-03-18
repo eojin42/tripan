@@ -10,10 +10,13 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.tripan.app.admin.domain.dto.PartnerKpiDto;
 import com.tripan.app.admin.domain.dto.PartnerManageDto;
+import com.tripan.app.admin.mapper.PartnerManageMapper;
 import com.tripan.app.admin.service.PartnerManageService;
 
 import lombok.RequiredArgsConstructor;
@@ -26,6 +29,7 @@ import lombok.extern.slf4j.Slf4j;
 public class PartnerManageRestController {
 
 	private final PartnerManageService partnerService;
+	private final PartnerManageMapper partnerManageMapper;
 	 
     /* ── KPI ── */
     @GetMapping("/kpi")
@@ -98,4 +102,17 @@ public class PartnerManageRestController {
         partnerService.approvePartner(req.getApplyId(), 10.0);
         return ResponseEntity.ok("활성화 완료");
     }
+    
+	
+    
+	@ResponseBody
+    @GetMapping("/apply/docs")
+    public ResponseEntity<?> getApplyDocs(@RequestParam("applyId") Long applyId) {
+        
+        List<Map<String, Object>> docs = partnerManageMapper.selectPartnerDocs(applyId);
+        
+        return ResponseEntity.ok(docs);
+    }
+	
+	
 }

@@ -63,4 +63,16 @@
         )
     </insert>
     
+    <!-- 입점 심사용 파일 multi 조회용 쿼리 -->
+    <select id="selectPartnerDocs" resultType="map">
+        SELECT 
+            file_id             AS "docId", 
+            origin_file_name    AS "docName", 
+            TO_CHAR(created_at, 'YYYY-MM-DD') AS "uploadDate", 
+            file_url            AS "url" 
+        FROM partner_file 
+        WHERE partner_id = #{applyId}
+        ORDER BY file_id ASC
+    </select>
+    
 </mapper>

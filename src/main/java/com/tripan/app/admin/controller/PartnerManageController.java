@@ -12,6 +12,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @RequestMapping("/admin/partner")
 public class PartnerManageController {
+	
 
 	@GetMapping("main")
 	public String main() {
@@ -27,6 +28,5 @@ public class PartnerManageController {
 	public String manage() {
 		return "admin/partner/manage";
 	}
-	
-	
+
 }

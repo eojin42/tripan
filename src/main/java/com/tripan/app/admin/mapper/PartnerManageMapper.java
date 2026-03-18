@@ -12,4 +12,5 @@ public interface PartnerManageMapper {
     List<Map<String, Object>> selectActivePartners();
     int updatePartnerStatus(Map<String, Object> params);
     void insertPartner(Map<String, Object> params);
+    List<Map<String, Object>> selectPartnerDocs(Long applyId);
 }
