@@ -170,6 +170,28 @@
   @media (max-width: 768px) {
     .facility-grid { grid-template-columns: repeat(2, 1fr); }
   }
+  
+  /* 🚀 상세페이지 리뷰 섹션 스타일 */
+  .review-photo-gallery { display: flex; gap: 12px; margin-bottom: 32px; overflow-x: auto; padding-bottom: 8px; }
+  .review-photo-gallery::-webkit-scrollbar { height: 6px; }
+  .review-photo-gallery::-webkit-scrollbar-thumb { background: #E2E8F0; border-radius: 4px; }
+  .review-photo-item { position: relative; width: 140px; height: 140px; border-radius: 12px; overflow: hidden; cursor: pointer; flex-shrink: 0; }
+  .review-photo-item img { width: 100%; height: 100%; object-fit: cover; transition: transform 0.3s; }
+  .review-photo-item:hover img { transform: scale(1.05); }
+  .review-photo-overlay { position: absolute; inset: 0; background: rgba(0,0,0,0.6); color: white; display: flex; align-items: center; justify-content: center; font-size: 24px; font-weight: 900; pointer-events: none; }
+  
+  .detail-review-list { display: flex; flex-direction: column; gap: 24px; }
+  .detail-review-item { border-bottom: 1px solid var(--border-light, #E2E8F0); padding-bottom: 24px; }
+  .detail-review-item:last-child { border-bottom: none; padding-bottom: 0; }
+  .d-rev-header { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; }
+  .d-rev-profile { width: 44px; height: 44px; border-radius: 50%; background: #E6F4FF; color: var(--point-blue); font-size: 16px; font-weight: 900; display: flex; justify-content: center; align-items: center; }
+  .d-rev-name { font-size: 15px; font-weight: 800; color: var(--text-black); }
+  .d-rev-meta { font-size: 13px; color: var(--text-gray); display: flex; align-items: center; gap: 8px; margin-top: 4px; }
+  .d-rev-stars { color: #FFD700; font-size: 13px; letter-spacing: -1px; }
+  .d-rev-content { font-size: 15px; color: var(--text-dark); line-height: 1.6; display: -webkit-box; -webkit-line-clamp: 4; -webkit-box-orient: vertical; overflow: hidden; }
+  
+  .btn-all-reviews { width: 100%; padding: 16px; background: white; border: 1px solid var(--border-light, #E2E8F0); border-radius: 8px; font-size: 15px; font-weight: 800; color: var(--text-black); cursor: pointer; transition: background 0.2s; margin-top: 24px; }
+  .btn-all-reviews:hover { background: #F8F9FA; border-color: var(--text-gray); }
 </style>
 
 <div class="detail-page-wrapper">
@@ -211,10 +233,13 @@
             
             <div class="acc-stats">
               <span class="stat-item">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"></path></svg>
-                5,744
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="#2D3748" style="margin-right:-2px; margin-top:-1px;">
+                    <path d="M17 3H7c-1.1 0-1.99.9-1.99 2L5 21l7-3 7 3V5c0-1.1-.9-2-2-2z"/>
+                </svg>
+                <fmt:formatNumber value="${bookmarkCount}" pattern="#,###"/>
               </span>
-              <a href="#sec-reviews" class="review-link detail-tab">후기 10개</a>
+              <span style="color:#E2E8F0; margin:0 4px;">|</span>
+              <a href="#sec-reviews" class="review-link detail-tab">후기 ${reviewStats.totalCount}개</a>
             </div>
           </div>
 
@@ -347,8 +372,59 @@
         </div>
 
         <div id="sec-reviews" class="scroll-section">
-            <h3 class="section-title">방문자 리뷰</h3>
-            <p class="intro-text" style="color:var(--text-gray);">아직 작성된 리뷰가 없습니다. 첫 리뷰의 주인공이 되어보세요!</p>
+            <h3 class="section-title">방문자 리뷰 <span style="color:var(--text-gray); font-size:18px; margin-left:4px;">(${reviewStats.totalCount})</span></h3>
+            
+            <c:choose>
+                <c:when test="${reviewStats.totalCount == 0}">
+                    <p class="intro-text" style="color:var(--text-gray);">아직 작성된 리뷰가 없습니다. 첫 리뷰의 주인공이 되어보세요!</p>
+                </c:when>
+                <c:otherwise>
+                    
+                    <c:if test="${not empty reviewPhotos}">
+                        <div class="review-photo-gallery">
+                            <c:forEach var="photo" items="${reviewPhotos}" varStatus="status" end="5">
+                                <div class="review-photo-item" onclick="location.href='${pageContext.request.contextPath}/accommodation/review/list/${detail.placeId}?tab=photo'">
+                                    <img src="${pageContext.request.contextPath}/uploads/review/${photo}" alt="리뷰 사진">
+                                    <c:if test="${status.index == 5 and fn:length(reviewPhotos) > 6}">
+                                        <div class="review-photo-overlay">+${fn:length(reviewPhotos) - 6}</div>
+                                    </c:if>
+                                </div>
+                            </c:forEach>
+                        </div>
+                    </c:if>
+                    
+                    <div class="detail-review-list">
+                        <c:forEach var="review" items="${topReviews}">
+                            <div class="detail-review-item">
+                                <div class="d-rev-header">
+                                    <div class="d-rev-profile">${fn:substring(review.memberName, 0, 1)}</div>
+                                    <div>
+                                        <div class="d-rev-name">${review.memberName}</div>
+                                        <div class="d-rev-meta">
+                                            <span>${review.roomName}</span>
+                                            <span style="margin: 0 4px; color: #E2E8F0;">|</span>
+                                            <div class="d-rev-stars" style="display: flex; gap: 2px; align-items: center; margin-top: -2px;">
+                                                <c:forEach begin="1" end="5" var="i">
+                                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="${i <= review.rating ? '#333333' : '#EDF2F7'}">
+                                                        <path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/>
+                                                    </svg>
+                                                </c:forEach>
+                                            </div>
+                                            <span style="color:#0051C9; font-weight:800; font-size:15px; margin-left:2px;">
+                                                <fmt:formatNumber value="${review.rating}" pattern="0.0"/>
+                                            </span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="d-rev-content"><c:out value="${review.content}" /></div>
+                            </div>
+                        </c:forEach>
+                    </div>
+                    
+                    <button class="btn-all-reviews" onclick="location.href='${pageContext.request.contextPath}/accommodation/review/list/${detail.placeId}?tab=review'">방문자 리뷰 전체 보기</button>
+                    
+                </c:otherwise>
+            </c:choose>
         </div>
 
         <div id="sec-info" class="scroll-section">

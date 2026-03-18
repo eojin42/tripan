@@ -78,6 +78,11 @@ public class AccommodationServiceImpl implements AccommodationService{
 	public RoomDto findRoomById(String roomId) {
 		return mapper.findRoomById(roomId);
 	}
+	
+	@Override
+    public int getBookmarkCount(Long placeId) {
+        return mapper.getBookmarkCountByPlaceId(placeId);
+    }
 
 
 	@Override
@@ -234,8 +239,95 @@ public class AccommodationServiceImpl implements AccommodationService{
 
 
 	@Override
-	public List<ReviewDto> getReviewList(Long placeId) {
-		return mapper.getReviewListByPlaceId(placeId);
+	public List<ReviewDto> getReviewList(Long placeId, String sort, String roomId, int offset, int size) {
+		return mapper.getReviewListByPlaceId(placeId, sort, roomId, offset, size);
+	}
+
+
+	@Override
+    @Transactional(rollbackFor = Exception.class) 
+    public void deleteReview(Long reviewId) {
+        List<String> imageUrls = mapper.selectReviewImagesByReviewId(reviewId);
+        
+        if (imageUrls != null && !imageUrls.isEmpty()) {
+            for (String fileName : imageUrls) {
+                storageService.deleteFile(uploadPath, fileName);
+            }
+        }
+        
+        mapper.deleteReviewImagesByReviewId(reviewId);
+        
+        mapper.deleteReview(reviewId);
+    }
+
+
+	@Override
+	public List<RoomDto> getRoomsByPlaceId(Long placeId) {
+		return mapper.selectRoomsByPlaceId(placeId);
+	}
+	
+	
+	
+	@Override
+	public ReviewDto getReviewById(Long reviewId) {
+	    return mapper.getReviewById(reviewId);
+	}
+
+	@Override
+	@Transactional(rollbackFor = Exception.class)
+	public void updateReview(ReviewDto dto) {
+	    mapper.updateReview(dto);
+
+	    // 물리적(서버) 파일 삭제 처리
+	    List<String> oldImages = mapper.selectReviewImagesByReviewId(dto.getReviewId()); // 원래 DB에 있던 사진들
+	    List<String> retainImages = dto.getRetainImageUrls(); // 사용자가 안 지우고 남긴 사진들
+	    if (retainImages == null) retainImages = new ArrayList<>();
+
+	    if (oldImages != null) {
+	        for (String oldImg : oldImages) {
+	            // 남기기로 한 목록에 원래 사진이 없다면 = 사용자가 X 버튼을 눌러 지웠다는 뜻
+	            if (!retainImages.contains(oldImg)) {
+	                // 서버 폴더에서 실제 파일을 삭제합니다.
+	                storageService.deleteFile(uploadPath, oldImg);
+	            }
+	        }
+	    }
+
+	    // 기존 매퍼 활용: DB 이미지 매핑 싹 다 지우기
+	    mapper.deleteReviewImagesByReviewId(dto.getReviewId());
+
+	    // 남기기로 한 기존 사진들을 DB에 다시 INSERT
+	    for (String retainImg : retainImages) {
+	        mapper.insertReviewImage(dto.getReviewId(), retainImg);
+	    }
+
+	    // 새로 첨부한 사진 서버 업로드 및 DB INSERT
+	    if (dto.getUploadFiles() != null && !dto.getUploadFiles().isEmpty()) {
+	        for (MultipartFile file : dto.getUploadFiles()) {
+	            if (file.isEmpty()) continue;
+	            try {
+	                String saveFilename = storageService.uploadFileToServer(file, uploadPath);
+	                if (saveFilename != null) {
+	                    mapper.insertReviewImage(dto.getReviewId(), saveFilename);
+	                }
+	            } catch (Exception e) {
+	                log.error("리뷰 이미지 수정 업로드 실패", e);
+	                throw new RuntimeException("파일 업로드 중 오류 발생");
+	            }
+	        }
+	    }
+	}
+
+
+	@Override
+    public int getReviewCount(Long placeId, String roomId) {
+        return mapper.getReviewCount(placeId, roomId);
+    }
+
+
+	@Override
+	public List<String> getReviewPhotos(Long placeId, String roomId) {
+		return mapper.getReviewPhotosByPlaceId(placeId, roomId);
 	}
 	
 }

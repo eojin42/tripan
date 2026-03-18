@@ -31,4 +31,6 @@ public class ReviewDto {
     private String roomName;   
     
     private List<String> imageUrls;
+    
+    private List<String> retainImageUrls;
 }

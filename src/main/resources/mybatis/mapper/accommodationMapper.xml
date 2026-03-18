@@ -179,6 +179,10 @@
         ORDER BY r.AMOUNT ASC
     </select>
     
+    <select id="getBookmarkCountByPlaceId" resultType="int">
+        SELECT COUNT(*) FROM BOOKMARK WHERE PLACE_ID = #{placeId}
+    </select>
+    
     <select id="findRoomById" resultType="com.tripan.app.domain.dto.RoomDto">
 	    SELECT 
             r.ROOM_ID as roomId,
@@ -345,6 +349,43 @@
 	    VALUES (REVIEW_IMG_SEQ.NEXTVAL, #{reviewId}, #{imageUrl})
 	</insert>
 	
+	<select id="selectReviewImagesByReviewId" resultType="string">
+        SELECT IMAGE_URL 
+        FROM REVIEW_IMG 
+        WHERE REVIEW_ID = #{reviewId}
+    </select>
+
+    <delete id="deleteReviewImagesByReviewId">
+        DELETE FROM REVIEW_IMG 
+        WHERE REVIEW_ID = #{reviewId}
+    </delete>
+
+    <delete id="deleteReview">
+        DELETE FROM PLACE_REVIEW 
+        WHERE REVIEW_ID = #{reviewId}
+    </delete>
+    
+    <select id="getReviewById" resultMap="ReviewListMap">
+	    SELECT 
+	        pr.REVIEW_ID, pr.PLACE_ID, pr.MEMBER_ID, pr.RATING, pr.CONTENT,
+	        TO_CHAR(pr.CREATED_AT, 'YYYY-MM-DD HH24:MI') as CREATED_AT,
+	        r.ROOM_NAME as ROOM_NAME,
+	        ri.IMAGE_URL
+	    FROM PLACE_REVIEW pr
+	    LEFT JOIN RESERVATION res ON pr.RESERVATION_ID = res.RESERVATION_ID
+	    LEFT JOIN ROOM r ON res.ROOM_ID = r.ROOM_ID
+	    LEFT JOIN REVIEW_IMG ri ON pr.REVIEW_ID = ri.REVIEW_ID
+	    WHERE pr.REVIEW_ID = #{reviewId}
+	</select>
+	
+	<update id="updateReview">
+	    UPDATE PLACE_REVIEW 
+	    SET RATING = #{rating}, 
+	        CONTENT = #{content}, 
+	        UPDATED_AT = SYSDATE
+	    WHERE REVIEW_ID = #{reviewId} AND MEMBER_ID = #{memberId}
+	</update>
+	
 	<select id="getReviewStatsByPlaceId" resultType="com.tripan.app.domain.dto.ReviewStatsDto">
 	    SELECT 
 	        COUNT(REVIEW_ID) as totalCount,
@@ -375,19 +416,57 @@
 	
 	<select id="getReviewListByPlaceId" resultMap="ReviewListMap">
 	    SELECT 
-	        pr.REVIEW_ID,
-	        pr.PLACE_ID,
-	        pr.MEMBER_ID,
-	        pr.RATING,
-	        pr.CONTENT,
+	        pr.REVIEW_ID, pr.PLACE_ID, pr.MEMBER_ID, pr.RATING, pr.CONTENT,
 	        TO_CHAR(pr.CREATED_AT, 'YYYY-MM-DD HH24:MI') as CREATED_AT,
-	        m2.NICKNAME as MEMBER_NAME,   r.ROOM_NAME as ROOM_NAME,
+	        m2.NICKNAME as MEMBER_NAME,
+	        r.ROOM_NAME as ROOM_NAME,
 	        ri.IMAGE_URL
 	    FROM PLACE_REVIEW pr
-	    LEFT JOIN MEMBER2 m2 ON pr.MEMBER_ID = m2.MEMBER_ID   LEFT JOIN RESERVATION res ON pr.RESERVATION_ID = res.RESERVATION_ID
+	    LEFT JOIN MEMBER2 m2 ON pr.MEMBER_ID = m2.MEMBER_ID 
+	    LEFT JOIN RESERVATION res ON pr.RESERVATION_ID = res.RESERVATION_ID
 	    LEFT JOIN ROOM r ON res.ROOM_ID = r.ROOM_ID
 	    LEFT JOIN REVIEW_IMG ri ON pr.REVIEW_ID = ri.REVIEW_ID
 	    WHERE pr.PLACE_ID = #{placeId}
-	    ORDER BY pr.CREATED_AT DESC
+	    
+	    <if test="roomId != null and roomId != ''">
+	        AND r.ROOM_ID = #{roomId}
+	    </if>
+	    
+	    <choose>
+	        <when test="sort == 'high'">ORDER BY pr.RATING DESC, pr.CREATED_AT DESC</when>
+	        <when test="sort == 'low'">ORDER BY pr.RATING ASC, pr.CREATED_AT DESC</when>
+	        <otherwise>ORDER BY pr.CREATED_AT DESC</otherwise>
+	    </choose>
+	    
+	    OFFSET #{offset} ROWS FETCH NEXT #{size} ROWS ONLY
 	</select>
+	
+	<select id="getReviewCount" resultType="int">
+        SELECT COUNT(pr.REVIEW_ID)
+        FROM PLACE_REVIEW pr
+        <if test="roomId != null and roomId != ''">
+            LEFT JOIN RESERVATION res ON pr.RESERVATION_ID = res.RESERVATION_ID
+            LEFT JOIN ROOM r ON res.ROOM_ID = r.ROOM_ID
+        </if>
+        WHERE pr.PLACE_ID = #{placeId}
+        <if test="roomId != null and roomId != ''">
+            AND r.ROOM_ID = #{roomId}
+        </if>
+    </select>
+    
+    <select id="getReviewPhotosByPlaceId" resultType="string">
+        SELECT ri.IMAGE_URL
+        FROM REVIEW_IMG ri
+        JOIN PLACE_REVIEW pr ON ri.REVIEW_ID = pr.REVIEW_ID
+        <if test="roomId != null and roomId != ''">
+            JOIN RESERVATION res ON pr.RESERVATION_ID = res.RESERVATION_ID
+            JOIN ROOM r ON res.ROOM_ID = r.ROOM_ID
+        </if>
+        WHERE pr.PLACE_ID = #{placeId}
+        <if test="roomId != null and roomId != ''">
+            AND r.ROOM_ID = #{roomId}
+        </if>
+        ORDER BY pr.CREATED_AT DESC
+    </select>
+	
 </mapper>
