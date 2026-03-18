@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.tripan.app.mapper.PointMapper">
+	<select id="getLatestPoint" resultType="Long">
+        SELECT NVL(
+            (SELECT rem_point 
+             FROM (
+                 SELECT rem_point 
+                 FROM point 
+                 WHERE member_id = #{memberId} 
+                 ORDER BY reg_date DESC, point_id DESC
+             ) WHERE ROWNUM = 1), 
+        0) FROM DUAL
+    </select>
+
+    <insert id="insertPoint" parameterType="com.tripan.app.domain.dto.PointDto">
+        INSERT INTO point (
+            point_id, member_id, order_id, change_reason, point_amount, rem_point, reg_date
+        ) VALUES (
+            point_seq.NEXTVAL, #{memberId}, #{orderId, jdbcType=VARCHAR}, 
+            #{changeReason}, #{pointAmount}, #{remPoint}, SYSDATE
+        )
+    </insert>
+</mapper>
