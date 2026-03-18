@@ -207,6 +207,7 @@
             </c:otherwise>
           </c:choose>
         </div>
+       </div>
 
       <div id="tab-calendar" class="page-section ${activeTab == 'calendar' ? 'active' : ''}">
         <div class="page-header">
@@ -308,6 +309,60 @@
 
 	    </div>
 	  </div>
+	  
+	  <div id="tab-facility" class="page-section ${activeTab == 'facility' ? 'active' : ''}">
+  <div class="page-header" style="display:flex; justify-content:space-between; align-items:flex-end;">
+    <div>
+      <h1>공통 시설 및 규정 관리</h1>
+      <p>숙소의 공통 체크인/아웃 시간과 보유한 편의시설(Default)을 설정합니다.</p>
+    </div>
+    <button class="btn btn-primary" onclick="saveFacilityInfo()">설정 저장하기</button>
+  </div>
+
+  <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px;">
+    <div class="card">
+      <h2 style="font-size: 16px; font-weight: 800; margin-bottom: 20px;">🕒 숙소 운영 규정</h2>
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 20px;">
+        <div>
+          <label class="form-label">체크인 시간</label>
+          <input type="text" id="checkintime" class="form-control" value="${accommodation.checkinTime}" placeholder="예: 15:00">
+        </div>
+        <div>
+          <label class="form-label">체크아웃 시간</label>
+          <input type="text" id="checkouttime" class="form-control" value="${accommodation.checkoutTime}" placeholder="예: 11:00">
+        </div>
+      </div>
+      <div>
+        <label class="form-label">주차 시설 여부</label>
+        <input type="text" id="parkinglodging" class="form-control" value="${accommodation.parkinglodging}" placeholder="예: 가능 (무료)">
+      </div>
+    </div>
+
+    <div class="card">
+      <h2 style="font-size: 16px; font-weight: 800; margin-bottom: 20px;">🏊 숙소 공통 시설</h2>
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;" id="af-checkbox-group">
+        <label style="display:flex; align-items:center; gap:8px; cursor:pointer;">
+          <input type="checkbox" id="fitness" ${facility.fitness == 1 ? 'checked' : ''}> 🏋️ 헬스장
+        </label>
+        <label style="display:flex; align-items:center; gap:8px; cursor:pointer;">
+          <input type="checkbox" id="chkcooking" ${facility.chkcooking == 1 ? 'checked' : ''}> 🍳 취사 가능
+        </label>
+        <label style="display:flex; align-items:center; gap:8px; cursor:pointer;">
+          <input type="checkbox" id="barbecue" ${facility.barbecue == 1 ? 'checked' : ''}> 🍖 바베큐장
+        </label>
+        <label style="display:flex; align-items:center; gap:8px; cursor:pointer;">
+          <input type="checkbox" id="sauna" ${facility.sauna == 1 ? 'checked' : ''}> ♨️ 사우나
+        </label>
+        <label style="display:flex; align-items:center; gap:8px; cursor:pointer;">
+          <input type="checkbox" id="karaoke" ${facility.karaoke == 1 ? 'checked' : ''}> 🎤 노래방
+        </label>
+        <label style="display:flex; align-items:center; gap:8px; cursor:pointer;">
+          <input type="checkbox" id="publicpc" ${facility.publicpc == 1 ? 'checked' : ''}> 💻 공용 PC
+        </label>
+      </div>
+    </div>
+  </div>
+</div>
 
       <div id="tab-booking" class="page-section ${activeTab == 'booking' ? 'active' : ''}">
         <div class="page-header">
@@ -496,34 +551,40 @@
       <form id="roomForm">
         <div style="margin-bottom: 16px;">
           <label style="display:block; font-size:12px; font-weight:700; margin-bottom:6px;">객실 이름 (room_name)</label>
-          <input type="text" class="form-control" placeholder="예: 오션뷰 스위트룸" style="width:100%; padding:10px; border:1px solid var(--border); border-radius:8px; outline:none;">
+          <input type="text" id="roomName" class="form-control" placeholder="예: 오션뷰 스위트룸" style="width:100%; padding:10px; border:1px solid var(--border); border-radius:8px; outline:none;">
         </div>
         
         <div style="display:grid; grid-template-columns: 1fr 1fr; gap:16px; margin-bottom: 16px;">
           <div>
             <label style="display:block; font-size:12px; font-weight:700; margin-bottom:6px;">기준 인원 (roombasecount)</label>
-            <input type="number" class="form-control" value="2" style="width:100%; padding:10px; border:1px solid var(--border); border-radius:8px; outline:none;">
+            <input type="number" id="roombasecount" class="form-control" value="2" style="width:100%; padding:10px; border:1px solid var(--border); border-radius:8px; outline:none;">
           </div>
           <div>
             <label style="display:block; font-size:12px; font-weight:700; margin-bottom:6px;">최대 인원 (max_capacity)</label>
-            <input type="number" class="form-control" value="4" style="width:100%; padding:10px; border:1px solid var(--border); border-radius:8px; outline:none;">
+            <input type="number" id="maxCapacity" class="form-control" value="4" style="width:100%; padding:10px; border:1px solid var(--border); border-radius:8px; outline:none;">
           </div>
         </div>
 
         <div style="display:grid; grid-template-columns: 1fr 1fr; gap:16px; margin-bottom: 24px;">
           <div>
             <label style="display:block; font-size:12px; font-weight:700; margin-bottom:6px;">보유 객실 수 (room_count)</label>
-            <input type="number" class="form-control" value="10" style="width:100%; padding:10px; border:1px solid var(--border); border-radius:8px; outline:none;">
+            <input type="number" id="roomCount" class="form-control" value="10" style="width:100%; padding:10px; border:1px solid var(--border); border-radius:8px; outline:none;">
           </div>
           <div>
             <label style="display:block; font-size:12px; font-weight:700; margin-bottom:6px;">기본 요금 (amount)</label>
-            <input type="number" class="form-control" placeholder="예: 150000" style="width:100%; padding:10px; border:1px solid var(--border); border-radius:8px; outline:none;">
+            <input type="number" id="amount" class="form-control" placeholder="예: 150000" style="width:100%; padding:10px; border:1px solid var(--border); border-radius:8px; outline:none;">
           </div>
         </div>
 
-        <div style="margin-bottom: 24px;">
+        <div style="margin-bottom: 16px;">
           <label style="display:block; font-size:12px; font-weight:700; margin-bottom:6px;">객실 소개 (roomintro)</label>
-          <textarea class="form-control" style="width:100%; height:80px; padding:10px; border:1px solid var(--border); border-radius:8px; resize:none; outline:none;"></textarea>
+          <textarea id="roomintro" class="form-control" placeholder="객실에 대한 상세한 설명을 적어주세요." style="width:100%; height:80px; padding:10px; border:1px solid var(--border); border-radius:8px; resize:none; outline:none;"></textarea>
+        </div>
+
+        <div style="margin-bottom: 24px; padding: 16px; background: #F8FAFC; border-radius: 8px; border: 1px dashed #CBD5E1;">
+          <label style="display:block; font-size:12px; font-weight:800; margin-bottom:8px; color: var(--primary);">📸 객실 사진 등록 (여러 장 선택 가능)</label>
+          <input type="file" id="roomImages" name="images" multiple accept="image/*" style="width:100%; font-size: 13px;">
+          <p style="font-size: 11px; color: var(--muted); margin-top: 6px;">* Ctrl(또는 Shift) 키를 누른 채 여러 장의 사진을 선택하세요.</p>
         </div>
 
         <div style="display: flex; gap: 10px; justify-content: flex-end;">
