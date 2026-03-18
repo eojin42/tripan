@@ -67,7 +67,24 @@ public class SpringSecurityConfig {
 		.addFilterAfter(ajaxSessionTimeoutFilter(), ExceptionTranslationFilter.class)
 		.sessionManagement(management -> management
 				.maximumSessions(1)
-				.expiredUrl("/member/expired"));
+				.expiredUrl("/member/expired"))
+		.exceptionHandling(exception -> exception
+				.authenticationEntryPoint((request, response, authException) -> {
+					String uri = request.getRequestURI();
+					String ajaxHeader = request.getHeader("AJAX");
+					boolean isAjax = ajaxHeader != null && ajaxHeader.equals("true");
+
+					if (isAjax) {
+						response.sendError(jakarta.servlet.http.HttpServletResponse.SC_UNAUTHORIZED, "Ajax Session Expired");
+					} else {
+						if (uri.startsWith("/partner")) {
+							response.sendRedirect(request.getContextPath() + "/partner/login");
+						} else {
+							response.sendRedirect(request.getContextPath() + "/member/login");
+						}
+					}
+				})
+		);
 		
 		return http.build();
 	}
