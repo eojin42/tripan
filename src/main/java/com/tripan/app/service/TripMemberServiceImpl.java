@@ -50,7 +50,7 @@ public class TripMemberServiceImpl implements TripMemberService {
     }
 
     @Override
-    public void kickMember(Long tripId, Long targetMemberId, Long requesterId) {
+    public void kickMember(Long tripId, Long targetMemberId, Long requesterId, String targetNickname) {
         //  요청자가 방장(OWNER)인지 확인
         TripMember requester = memberMapper.findByTripIdAndMemberId(tripId, requesterId);
         if (requester == null || !"OWNER".equals(requester.getRole())) {
@@ -66,14 +66,23 @@ public class TripMemberServiceImpl implements TripMemberService {
 
         // DB 제약조건에 맞춰서 DECLINED로 처리 (강퇴자 영구 차단)
         target.setInvitationStatus("DECLINED");
-        memberRepository.save(target); // 확실하게 저장
+        memberRepository.save(target);
+
+        // ★ 강퇴당한 본인에게 알림 저장
+        notificationService.notifyOne(tripId, targetMemberId, requesterId,
+            "방장에 의해 여행에서 강퇴되었습니다. 이 여행방에는 다시 입장하실 수 없습니다. 🚨", "SYSTEM");
+
+        // ★ 나머지 멤버들에게 강퇴 사실 알림 (닉네임 포함)
+        String nick = (targetNickname != null && !targetNickname.isEmpty()) ? targetNickname : "동행자";
+        notificationService.notifyAll(tripId, requesterId,
+            nick + "님이 방장에 의해 강퇴되었습니다 🚪", "SYSTEM");
 
         wsPublisher.publish(tripId, "MEMBER_KICKED", targetMemberId, "방장",
             com.tripan.app.websocket.WorkspaceEventPublisher.payload("targetId", targetMemberId));
     }
 
     @Override
-    public void leaveTrip(Long tripId, Long requesterId) {
+    public void leaveTrip(Long tripId, Long requesterId, String requesterNickname) {
         // 내 정보 조회
         TripMember me = memberRepository.findByTripIdAndMemberId(tripId, requesterId)
                 .orElseThrow(() -> new IllegalArgumentException("참여 중인 여행이 아닙니다."));
@@ -85,8 +94,11 @@ public class TripMemberServiceImpl implements TripMemberService {
         // DB에서 내 정보 삭제
         memberRepository.delete(me);
 
-        // 방나가기 완료 후 남은 멤버들에게 알림 발송 (우상단 종 모양 알림)
-        notificationService.notifyAll(tripId, requesterId, "동행자가 여행에서 나갔습니다 🏃‍♂️", "SYSTEM");
+        // ★ 닉네임: RestController가 세션에서 꺼내 전달
+        String nick = (requesterNickname != null && !requesterNickname.isEmpty()) ? requesterNickname : "동행자";
+
+        // 방나가기 완료 후 남은 멤버들에게 알림 발송
+        notificationService.notifyAll(tripId, requesterId, nick + "님이 여행에서 나갔습니다 🏃‍♂️", "SYSTEM");
         
         // 남은 멤버들 화면 즉시 갱신을 위해 웹소켓 발송
         wsPublisher.publish(tripId, "MEMBER_LEFT", requesterId, "시스템",

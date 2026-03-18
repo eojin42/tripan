@@ -2,6 +2,7 @@ package com.tripan.app.controller;
 
 import com.tripan.app.domain.dto.TripDto;
 import com.tripan.app.service.ItineraryService;
+import com.tripan.app.service.NotificationService;
 import com.tripan.app.security.CustomUserDetails;
 import com.tripan.app.trip.domain.entity.TripDay;
 import com.tripan.app.trip.repository.TripDayRepository;
@@ -24,6 +25,7 @@ public class ItineraryController {
     private final ItineraryService        itineraryService;
     private final WorkspaceEventPublisher wsPublisher;
     private final TripDayRepository       dayRepository;
+    private final NotificationService     notificationService;
 
     // ── 장소 추가 + broadcast ─────────────────────────────
     @PostMapping("/trip/{tripId}/day/{dayNumber}/place")
@@ -53,6 +55,12 @@ public class ItineraryController {
                         "latitude",  dto.getLatitude(),
                         "longitude", dto.getLongitude(),
                         "categoryName",  dto.getCategoryName() != null ? dto.getCategoryName() : "ETC"));
+
+            // ★ DB 알림 저장 — 알림 뱃지에 표시
+            String nick     = userDetails.getMember().getNickname();
+          
+            notificationService.notifyAll(tripId, memberId,
+                nick + "님이 [" + dto.getPlaceName() + "]" + " 장소를 추가했어요 📍", "SYSTEM");
 
             return ResponseEntity.ok(Map.of("success", true, "itemId", itemId));
         } catch (Exception e) {
@@ -194,14 +202,44 @@ public class ItineraryController {
                 .body(Map.of("success", false, "message", "로그인이 필요합니다."));
         try {
             Long tripId = itineraryService.getTripIdByItemId(itemId);
+
+            // ★ 삭제 전 장소명 조회 (서비스에 메서드 있으면 사용, 없으면 "장소" fallback)
+            String placeName = "장소";
+            try {
+                String fetched = itineraryService.getPlaceNameByItemId(itemId);
+                if (fetched != null && !fetched.isBlank()) placeName = fetched;
+            } catch (Exception ignored) {}
+
             itineraryService.deleteItem(itemId);
-            if (tripId != null)
-                wsPublisher.publish(tripId, "PLACE_DELETED", itemId,
-                        userDetails.getMember().getNickname());
+
+            if (tripId != null) {
+                String nick = userDetails.getMember().getNickname();
+                wsPublisher.publish(tripId, "PLACE_DELETED", itemId, nick);
+
+                // ★ DB 알림 저장
+                notificationService.notifyAll(tripId, userDetails.getMember().getMemberId(),
+                    nick + "님이 [" + placeName + "] 장소를 삭제했어요 🗑️", "SYSTEM");
+            }
             return ResponseEntity.ok(Map.of("success", true));
         } catch (Exception e) {
             return ResponseEntity.internalServerError()
                     .body(Map.of("success", false, "message", e.getMessage()));
+        }
+    }
+
+    // ── 카테고리 한글 변환 ─────────────────────────────────
+    private String categoryLabel(String cat) {
+        if (cat == null) return "";
+        switch (cat.toUpperCase()) {
+            case "RESTAURANT":    return "맛집";
+            case "CAFE":          return "카페";
+            case "TOUR":          return "관광지";
+            case "ACCOMMODATION": return "숙박";
+            case "CULTURE":       return "문화";
+            case "LEISURE":       return "레포츠";
+            case "SHOPPING":      return "쇼핑";
+            case "FESTIVAL":      return "축제";
+            default:              return "";
         }
     }
 }

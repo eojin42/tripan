@@ -290,9 +290,15 @@ function onChangeMemberRole(selectEl, memberId) {
 function onKickMember(memberId) {
   // 방장에게 경고창 띄우기
   if (!confirm('정말 이 멤버를 강퇴하시겠습니까?\n🚨 강퇴된 멤버는 이 여행에 다시는 초대할 수 없습니다!')) return;
+
+  // ★ MEMBER_DICT에서 강퇴 대상 닉네임 조회해서 body에 포함
+  var targetNickname = (typeof MEMBER_DICT !== 'undefined' && MEMBER_DICT[memberId])
+    ? MEMBER_DICT[memberId] : '';
   
   fetch(CTX_PATH + '/api/trip/' + TRIP_ID + '/members/' + memberId + '/kick', {
-      method: 'DELETE'
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ targetNickname: targetNickname })
   })
   .then(function(res) { return res.json(); })
   .then(function(data) {

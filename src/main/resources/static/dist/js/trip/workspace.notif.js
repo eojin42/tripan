@@ -57,7 +57,7 @@ function loadNotifList() {
               + '<div class="notif-item-info">'
               + '<div class="notif-item-text">' + n.message + '</div>'
               + '<div class="notif-item-time">' + n.timeAgo + '</div>'
-              + '</div>' + dot2 + '</div>';ㅁ
+              + '</div>' + dot2 + '</div>';
           }).join('');
 
       var listEl = document.getElementById('notifList');

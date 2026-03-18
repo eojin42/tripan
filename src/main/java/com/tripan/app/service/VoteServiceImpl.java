@@ -32,6 +32,8 @@ public class VoteServiceImpl implements VoteService {
     private final VoteRepository          voteRepository;
     private final VoteCandidateRepository voteCandidateRepository;
     private final VoteRecordRepository    voteRecordRepository;
+    // ★ 알림 서비스 주입
+    private final NotificationService     notificationService;
 
     // ── 조회 ─────────────────────────────────────────────
     @Override
@@ -81,7 +83,7 @@ public class VoteServiceImpl implements VoteService {
             throw new IllegalStateException("이미 투표하셨어요");
         }
 
-        // 3) 투표 저장 (created_at 은 DB DEFAULT SYSDATE 에 맡김)
+        // 3) 투표 저장
         VoteRecord record = new VoteRecord();
         record.setVoteId(voteId);
         record.setCandidateId(candidateId);
@@ -98,5 +100,44 @@ public class VoteServiceImpl implements VoteService {
         voteCandidateRepository.deleteByVoteId(voteId);
         voteRepository.deleteByVoteIdAndTripId(voteId, tripId);
         log.info("[Vote] 삭제 voteId={}, tripId={}", voteId, tripId);
+    }
+
+    // ── 제목 조회 (삭제 알림용) ───────────────────────────
+    @Override
+    @Transactional(readOnly = true)
+    public String getVoteTitle(Long voteId) {
+        return voteRepository.findById(voteId)
+            .map(v -> v.getTitle())
+            .orElse("투표");
+    }
+
+    // ── ★ 알림 포함 생성 (VoteRestController에서 호출) ─────
+    /**
+     * 투표 생성 + 알림 저장
+     * @param senderMemberId 투표 만든 사람 memberId (본인 제외하고 notifyAll)
+     * @param senderNickname 투표 만든 사람 닉네임 (알림 메시지에 포함)
+     */
+    public Long createVoteWithNotif(Long tripId, String title, List<String> candidates,
+                                    LocalDateTime deadline, Long senderMemberId, String senderNickname) {
+        Long voteId = createVote(tripId, title, candidates, deadline);
+
+        // ★ 나머지 멤버들에게 알림 저장
+        String nick = (senderNickname != null && !senderNickname.isEmpty()) ? senderNickname : "누군가";
+        notificationService.notifyAll(tripId, senderMemberId,
+            nick + "님이 투표 [" + title + "] 를 만들었어요 🗳️", "VOTE");
+
+        return voteId;
+    }
+
+    /**
+     * 투표 삭제 + 알림 저장
+     */
+    public void deleteVoteWithNotif(Long voteId, Long tripId, String voteTitle,
+                                    Long senderMemberId, String senderNickname) {
+        deleteVote(voteId, tripId);
+
+        String nick = (senderNickname != null && !senderNickname.isEmpty()) ? senderNickname : "누군가";
+        notificationService.notifyAll(tripId, senderMemberId,
+            nick + "님이 투표 [" + voteTitle + "] 를 삭제했어요 🗑️", "VOTE");
     }
 }
