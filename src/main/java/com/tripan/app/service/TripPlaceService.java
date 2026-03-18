@@ -14,4 +14,7 @@ public interface TripPlaceService {
 
     // 나만의 장소 목록 
     List<TripPlaceDto> getMyPlaces(Long memberId);
+    
+    // 나만의 장소 삭제 
+    boolean deleteMyPlace(Long placeId, Long memberId);
 }

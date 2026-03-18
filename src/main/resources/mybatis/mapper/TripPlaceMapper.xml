@@ -327,5 +327,12 @@
         WHERE trip_place_id = #{placeId}
           AND (member_id IS NULL OR member_id = #{currentMemberId})
     </select>
+    
+    <!-- 나만의 장소 삭제  -->
+    <delete id="deleteMyPlace">
+        DELETE FROM trip_place
+        WHERE trip_place_id = #{placeId}
+          AND member_id     = #{memberId}
+    </delete>
 
 </mapper>
