@@ -67,8 +67,15 @@ public class SpringSecurityConfig {
 				.logoutUrl("/member/logout")
 				.invalidateHttpSession(true)
 				.deleteCookies("JSESSIONID")
-				.logoutSuccessUrl("/")
-				)
+				.logoutSuccessHandler((request, response, authentication) -> {
+					String referer = request.getHeader("Referer");
+					if (referer != null && referer.contains("/partner")) {
+						response.sendRedirect(request.getContextPath() + "/partner/login");
+					} else {
+						response.sendRedirect(request.getContextPath() + "/");
+					}
+				})
+		)
 		.addFilterAfter(ajaxSessionTimeoutFilter(), ExceptionTranslationFilter.class)
 		.sessionManagement(management -> management
 				.maximumSessions(1)
