@@ -265,11 +265,16 @@
               </tr>
             </thead>
             <tbody>
-              <tr v-if="partnerList.length === 0">
-                <td colspan="10" style="text-align:center;padding:50px 0;color:var(--muted);">
-                  검색 결과가 없습니다.
-                </td>
-              </tr>
+              <tr v-if="!searched">
+				  <td colspan="10" style="text-align:center; padding:50px 0; color:var(--muted);">
+				    검색 조건을 선택하면 목록이 표시됩니다.
+				  </td>
+				</tr>
+				<tr v-else-if="partnerList.length === 0">
+				  <td colspan="10" style="text-align:center; padding:50px 0; color:var(--muted);">
+				    검색 결과가 없습니다.
+				  </td>
+				</tr>
               <tr v-for="p in partnerList" :key="p.partnerId"
                   :style="(p.status === 'SUSPENDED' || p.status === 'BLOCKED') ? 'opacity:0.6;' : ''">
                 <td class="col-check">
@@ -709,7 +714,7 @@
       const totalCount  = ref(0);
       const pageNo      = ref(1);
       const pagination  = ref(null);
-      const searched    = ref(true);
+      const searched    = ref(false);
       const sortAsc     = ref(false);
       const selectedIds = ref([]);
 
@@ -1021,7 +1026,6 @@
       /* ── 최초 1회만 호출 (무한루프 방지: onMounted에서만 실행) ── */
       onMounted(() => {
         fetchKpi();
-        fetchList(1);
       });
 
       return {

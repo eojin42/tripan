@@ -520,7 +520,7 @@
       const totalCount = ref(0);
       const pageNo     = ref(1);
       const pagination = ref(null);
-      const searched   = ref(true);
+      const searched   = ref(false);
 
       /* 심사 처리 모달 */
       const showReviewModal = ref(false);
@@ -603,7 +603,7 @@
       /* ── 탭 클릭 ── */
       const setTab = (status) => {
         filter.status = status;
-        applyFilter(1);
+        fetchList(1); 
       };
 
       /* ── 목록 조회 (전체 1회 로드 후 캐시) ── */
@@ -720,7 +720,6 @@
 
       onMounted(() => {
         fetchKpi();
-        setTab('PENDING'); // 기본: 심사 대기 탭
       });
 
       return {

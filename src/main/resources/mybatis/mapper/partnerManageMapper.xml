@@ -17,8 +17,16 @@
             reject_reason    AS rejectReason,
             contractfile_url AS contractFileUrl,
             created_at       AS createdAt
-        FROM partner
-        ORDER BY created_at DESC
+        FROM (
+	        SELECT p.*,
+	               ROW_NUMBER() OVER (
+	                   PARTITION BY p.member_id
+	                   ORDER BY p.created_at DESC
+	               ) AS rn
+		    FROM partner p
+			    )
+	    WHERE rn = 1
+	    ORDER BY created_at DESC
     </select>
  
     <!-- 활성 파트너 목록 (쿠폰 등록 select용) -->
