@@ -52,4 +52,25 @@
         FETCH FIRST 1 ROWS ONLY
     </select>
     
+    <insert id="insertEmptyPlace" parameterType="com.tripan.app.partner.domain.dto.PartnerApplyDto" useGeneratedKeys="true" keyProperty="placeId" keyColumn="place_id">
+	    INSERT INTO place (
+	        place_id, partner_id, category_id, place_name, created_at
+	    ) VALUES (
+	        place_seq.NEXTVAL, #{partnerId}, 'ACCOMMODATION', #{partnerName}, SYSDATE
+	    )
+	</insert>
+	
+	<insert id="insertEmptyAccommodationSet">
+	    <selectKey keyProperty="tempAfId" resultType="long" order="BEFORE">
+	        SELECT af_seq.NEXTVAL FROM DUAL
+	    </selectKey>
+	    
+	    BEGIN
+	        INSERT INTO accommodation_facility (af_id) VALUES (#{tempAfId});
+	        
+	        INSERT INTO accommodation (place_id, af_id, checkin_time, checkout_time) 
+	        VALUES (#{placeId}, #{tempAfId}, '15:00', '11:00');
+	    END;
+	</insert>
+    
 </mapper>

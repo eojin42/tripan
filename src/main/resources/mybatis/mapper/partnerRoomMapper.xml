@@ -29,6 +29,21 @@
         WHERE p.member_id = #{memberId}
         ORDER BY r.room_id DESC
     </select>
+    
+    <select id="getRoomsByPlaceId" resultType="com.tripan.app.partner.domain.dto.PartnerRoomDto">
+        SELECT
+            room_id AS roomId,
+            place_id AS placeId,
+            room_name AS roomName,
+            roombasecount AS roombasecount,
+            max_capacity AS maxCapacity,
+            room_count AS roomCount,
+            amount AS amount,
+            roomintro AS roomintro
+        FROM room
+        WHERE place_id = #{placeId}
+        ORDER BY room_id DESC
+    </select>
 	
 	
 </mapper>

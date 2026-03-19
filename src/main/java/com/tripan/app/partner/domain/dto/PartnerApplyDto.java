@@ -15,29 +15,34 @@ import java.util.List;
 @Builder
 public class PartnerApplyDto {
 
+    // 담당자 정보
     private String contactName;       // 담당자 성함 
     private String contactPhone;     // 담당자 전화번호 
-    private String contactEmail;     // 담당자 이메일 (생략 -> null)
-    private String expStatus;        // 숙박업 경험 유무 (생략 -> null)
+    private String contactEmail;     // 담당자 이메일
+    private String expStatus;        // 숙박업 경험 유무 (Y/N)
     
+    // 숙소 기본 정보
+    private String partnerName;      // 숙소 이름 (PARTNER & PLACE 테이블 공용)
+    private String address;          // 숙소 주소 (초기 신청 시 NULL 가능)
+    private String homepageUrl;      // 웹사이트 및 SNS 주소
+    private String partnerIntro;     // 숙소 소개글
 
-    private String partnerName;      // 스테이 이름 (JSP 매칭 됨)
-    private String address;          // 스테이 주소 (생략 -> null)
-    private String homepageUrl;      // 웹사이트 및 SNS 주소 (생략 -> null)
-    private String partnerIntro;     // 스테이 소개 (JSP 매칭 됨)
+    // 사업자 정보
+    private String bizStatus;        // 사업자 등록 여부
+    private String businessNumber;   // 사업자 등록 번호
+    private String accommodationType;// 업종 (호텔, 펜션 등)
 
-    private String bizStatus;        // 사업자 등록 여부 (생략 -> null)
-    private String businessNumber;   // 사업자 번호 (생략 -> null)
-    private String accommodationType;// 업종 (생략 -> null)
-
-    private List<MultipartFile> bizLicenseFiles; 
-
-    private Long partnerId;          // PK
-    private Long memberId;           // 로그인한 회원의 PK 
-    private String status;           // 상태 (기본값: PENDING) 
-    private String contractfileUrl;  // (대표 PDF 경로용으로 사용 가능)
-    private String logoImageUrl;     // (대표 이미지 경로용으로 사용 가능)
+    // 파일 및 시스템 정보
+    private List<MultipartFile> bizLicenseFiles; // 증빙 서류 파일 리스트
+    private Long partnerId;          // PARTNER 테이블 PK
+    private Long memberId;           // 신청한 회원의 PK
+    private String status;           // 신청 상태 (기본값: PENDING) 
+    private String contractfileUrl;  // 전자 계약서 경로
+    private String logoImageUrl;     // 숙소 로고/대표 이미지 경로
     private Date createdAt;          // 신청 일시
-    
-    private String rejectReason;
+    private String rejectReason;     // 심사 반려 사유
+
+    // 연관 테이블 생성을 위한 조각 
+    private Long placeId;            //  PLACE 생성 후 발급받을 PK 
+    private Long afId;               // ACCOMMODATION_FACILITY 생성 후 발급받을 PK 
 }
