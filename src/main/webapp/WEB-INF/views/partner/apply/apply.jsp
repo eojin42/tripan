@@ -116,8 +116,6 @@ body {
 
 			<form action="${pageContext.request.contextPath}/partner/apply" method="POST" enctype="multipart/form-data" onsubmit="return validateFiles(event)">
 
-				<form action="${pageContext.request.contextPath}/partner/apply" method="POST" enctype="multipart/form-data">
-
 					<div class="tp-form-card">
 						<h2 class="section-title">담당자 및 사업자 정보</h2>
 						

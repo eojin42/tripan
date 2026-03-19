@@ -125,11 +125,9 @@
                 <!--  <a href="#">나의 여행 지도 (국토 정복)</a>
                <a href="#">내 활동 배지 / 칭호</a>-->
                <hr style="border: none; border-top: 1px solid rgba(255, 255, 255, 0.4); margin: 8px 0;">
-	              <a href="${pageContext.request.contextPath}/member/logout" method="post" style="margin: 0; display: block;">
-                   <sec:csrfInput/> <button type="submit" style="width: 100%; text-align: left; padding: 12px 16px; border-radius: 12px; color: var(--error-pink); font-size: 14px; font-weight: 600; cursor: pointer; transition: all 0.2s; background: transparent; border: none; font-family: var(--font-sans);">
-                        로그아웃
-                   </button>
-               </a>
+				<a href="#" onclick="document.getElementById('logoutForm').submit(); return false;" class="logout-link" style="margin: 0; display: block;">
+				    로그아웃
+				</a>
              </div>
           </div>
           
@@ -146,6 +144,10 @@
       </div>
     </div>
   </nav>
+  
+	  <form id="logoutForm" action="${pageContext.request.contextPath}/member/logout" method="post" style="display: none;">
+	    <sec:csrfInput/>
+	  </form>
   
 <script>
 function goMyTrips(isLoggedIn, tripCount) {
