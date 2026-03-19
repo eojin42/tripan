@@ -240,23 +240,27 @@
 	        REAL_TOTAL_AMOUNT, STATUS
 	    ) VALUES (
 	        #{merchantUid}, #{memberId}, SYSDATE, 
-	        (#{amount} + #{usedPoint}), 0, #{usedPoint}, #{amount}, 'SUCCESS'
+	        (#{amount} + #{usedPoint} + #{usedCoupon}), #{usedCoupon}, #{usedPoint}, #{amount}, 'SUCCESS'
 	    )
 	</insert>
 
     <insert id="insertReservation">
-        <selectKey keyProperty="reservationId" resultType="long" order="BEFORE">
-            SELECT RESERVATION_SEQ.NEXTVAL FROM DUAL
-        </selectKey>
-        INSERT INTO RESERVATION (
-            RESERVATION_ID, ROOM_ID, MEMBER_ID, PARTNER_ID, 
-            CHECK_IN_DATE, CHECK_OUT_DATE, GUEST_COUNT, 
-            STATUS, REQUEST, AMOUNT, COMMISSION_RATE, PARTNER_COUPON_FEE
-        ) VALUES (
-            #{reservationId}, #{roomId}, #{memberId}, 1,  TO_DATE(#{checkin}, 'YYYY-MM-DD'), TO_DATE(#{checkout}, 'YYYY-MM-DD'), 
-            (#{adult} + #{child}), 'SUCCESS', #{request}, #{amount}, 10, 0
-        )
-    </insert>
+	    <selectKey keyProperty="reservationId" resultType="long" order="BEFORE">
+	        SELECT RESERVATION_SEQ.NEXTVAL FROM DUAL
+	    </selectKey>
+	    INSERT INTO RESERVATION (
+	        RESERVATION_ID, ROOM_ID, MEMBER_ID, PARTNER_ID, 
+	        CHECK_IN_DATE, CHECK_OUT_DATE, GUEST_COUNT, 
+	        STATUS, REQUEST, AMOUNT, COMMISSION_RATE, PARTNER_COUPON_FEE
+	    ) VALUES (
+	        #{reservationId}, #{roomId}, #{memberId}, 
+	        
+	        NVL((SELECT p.partner_id FROM place p JOIN room r ON p.place_id = r.place_id WHERE r.room_id = #{roomId}), 0), 
+	        
+	        TO_DATE(#{checkin}, 'YYYY-MM-DD'), TO_DATE(#{checkout}, 'YYYY-MM-DD'), 
+	        (#{adult} + #{child}), 'SUCCESS', #{request}, #{amount}, 10, 0
+	    )
+	</insert>
 
     <insert id="insertOrderDetail">
         INSERT INTO ORDER_DETAIL (

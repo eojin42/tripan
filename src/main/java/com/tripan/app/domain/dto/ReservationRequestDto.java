@@ -24,7 +24,10 @@ public class ReservationRequestDto {
     
     private Long reservationId;
     
-    private long usedPoint;        
+    private long usedPoint;    
+    
     private Long memberCouponId;
+    
+    private long usedCoupon;
     
 }

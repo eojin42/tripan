@@ -107,45 +107,68 @@
         </div>
 
         <div class="info-group">
-          <div class="flex-header">
-            <div class="info-label">쿠폰</div>
-            <div class="sub-text">0개 쿠폰 사용 가능</div>
-          </div>
-          <select class="input-select">
-            <option>사용 가능한 쿠폰이 없습니다.</option>
-          </select>
-        </div>
-
+		  <div class="flex-header">
+		    <div class="info-label">쿠폰</div>
+		    <div class="sub-text">${myCoupons.size()}개 쿠폰 보유</div>
+		  </div>
+		  
+		  <select class="input-select" id="couponSelect" onchange="applyCoupon()">
+		    <option value="" data-discount="0">쿠폰을 선택해 주세요</option>
+		    
+		    <c:forEach var="c" items="${myCoupons}">
+		      <option value="${c.memberCouponId}" 
+		              data-discount="${c.calculatedDiscount}" 
+		              ${!c.applicable ? 'disabled' : ''}>
+		        
+		        ${c.couponName} 
+		        <c:if test="${!c.applicable}"> (사용 불가)</c:if>
+		        <c:if test="${c.applicable}"> (-<fmt:formatNumber value="${c.calculatedDiscount}" pattern="#,###"/>원)</c:if>
+		      </option>
+		    </c:forEach>
+		  </select>
+		</div>
+		
         <div class="info-group">
 		  <div class="flex-header">
 		    <div class="info-label">마일리지</div>
 		    <div class="sub-text">
 		        보유 마일리지 <fmt:formatNumber value="${currentPoint}" pattern="#,###"/>P 
-		        (최대 <fmt:formatNumber value="${maxUsablePoint}" pattern="#,###"/>P 사용 가능)
+		        
+		        <c:choose>
+		            <c:when test="${currentPoint >= 1000}">
+		                (최대 <fmt:formatNumber value="${maxUsablePoint}" pattern="#,###"/>P 사용 가능)
+		            </c:when>
+		            <c:otherwise>
+		                <span style="color: #E53E3E;">(1,000P 이상부터 사용 가능)</span>
+		            </c:otherwise>
+		        </c:choose>
 		    </div>
 		  </div>
 		  <div style="display: flex; gap: 12px;">
 		    <input type="number" id="usePointInput" class="input-text" placeholder="0" 
-		           max="${maxUsablePoint}" oninput="applyMileage()">
-		    <button type="button" class="btn-use-all" onclick="useAllMileage()">모두 사용</button>
+			       max="${maxUsablePoint}" step="100" 
+			       oninput="applyMileage()" onchange="checkPointUnit()"
+			       ${currentPoint < 1000 ? 'disabled' : ''}>
+		           
+		    <button type="button" class="btn-use-all" onclick="useAllMileage()"
+		            ${currentPoint < 1000 ? 'disabled' : ''}>모두 사용</button>
 		  </div>
 		</div>
 
         <div class="info-group">
-          <div class="info-label" style="margin-bottom: 16px;">요금 상세</div>
-          <div class="price-detail-box">
-             <div class="pd-row"><span>객실 요금</span><span>₩<fmt:formatNumber value="${room.amount}" pattern="#,###"/></span></div>
-             <div class="pd-sub-row"><span>└ ${checkin}</span><span>₩<fmt:formatNumber value="${room.amount}" pattern="#,###"/></span></div>
-             <div class="pd-row"><span>인원 추가</span><span>₩<fmt:formatNumber value="${(amount / nights) - room.amount}" pattern="#,###"/></span></div>
-             <div class="pd-row"><span>옵션</span><span>₩0</span></div>
-             <div class="pd-row"><span>요금 할인</span><span>- ₩0</span></div>
-             <div class="pd-sub-row"><span>└ 프로모션</span><span>- ₩0</span></div>
-             <div class="pd-row"><span>쿠폰</span><span>₩0</span></div>
-             <div class="pd-row"><span>마일리지</span><span id="displayMileageDiscount">₩0</span></div>
-             <hr style="border:0; border-top:1px solid #111; margin: 16px 0;">
-             <div class="pd-row total"><span>총 결제 금액</span><span class="displayTotalAmount">₩<fmt:formatNumber value="${amount}" pattern="#,###"/></span></div>
-          </div>
-        </div>
+		  <div class="info-label" style="margin-bottom: 16px;">요금 상세</div>
+		  <div class="price-detail-box">
+		     <div class="pd-row"><span>객실 요금</span><span>₩<fmt:formatNumber value="${room.amount}" pattern="#,###"/></span></div>
+		     <div class="pd-sub-row"><span>└ ${checkin}</span><span>₩<fmt:formatNumber value="${room.amount}" pattern="#,###"/></span></div>
+		     <div class="pd-row"><span>인원 추가</span><span>₩<fmt:formatNumber value="${(amount / nights) - room.amount}" pattern="#,###"/></span></div>
+		     
+		     <div class="pd-row"><span>쿠폰 할인</span><span id="displayCouponDiscount">- ₩0</span></div>
+		     <div class="pd-row"><span>마일리지</span><span id="displayMileageDiscount">- ₩0</span></div>
+		
+		     <hr style="border:0; border-top:1px solid #111; margin: 16px 0;">
+		     <div class="pd-row total"><span>총 결제 금액</span><span class="displayTotalAmount">₩<fmt:formatNumber value="${amount}" pattern="#,###"/></span></div>
+		  </div>
+		</div>
 
         <div class="info-group">
           <div class="info-label" style="margin-bottom: 16px;">결제 수단</div>
@@ -247,37 +270,30 @@
 <script src="https://cdn.iamport.kr/v1/iamport.js"></script>
 
 <script>
-  // 🌟 약관 아코디언 토글 (하나 열면 나머지는 닫힘)
   function toggleTerm(id) {
     const targetEl = document.getElementById(id);
     const isCurrentlyOpen = targetEl.style.display === 'block' || targetEl.style.display === 'table';
 
-    // 1. 모든 컨텐츠 닫기
     document.querySelectorAll('.term-content').forEach(el => {
       el.style.display = 'none';
     });
-    // 2. 모든 화살표 아래로 초기화
     document.querySelectorAll('.term-arrow').forEach(arrow => {
       arrow.innerText = '∨';
     });
 
-    // 3. 클릭한게 닫혀있었다면 열기
     if (!isCurrentlyOpen) {
       targetEl.style.display = (id === 'termRefund') ? 'table' : 'block';
       document.getElementById('arr-' + id).innerText = '∧';
     }
   }
 
-  // 🌟 약관 체크박스 동기화 로직
   const chkAll = document.getElementById('chkAllTerms');
   const chkItems = document.querySelectorAll('.chk-term');
 
-  // '전체 동의' 클릭 시 개별 항목 동기화
   chkAll.addEventListener('change', function() {
     chkItems.forEach(chk => chk.checked = chkAll.checked);
   });
 
-  // 개별 항목 클릭 시 '전체 동의' 상태 업데이트
   chkItems.forEach(chk => {
     chk.addEventListener('change', function() {
       const allChecked = Array.from(chkItems).every(c => c.checked);
@@ -285,7 +301,6 @@
     });
   });
 
-  // 페이지 이탈 시 락 릴리즈
   window.addEventListener("beforeunload", function (e) {
       const payload = JSON.stringify({ roomId: '${roomId}', checkin: '${checkin}' });
       const url = '${pageContext.request.contextPath}/accommodation/release-lock'; 
@@ -293,7 +308,6 @@
   });
 
   function requestPayment() {
-    // 🌟 결제 전 체크박스 검증 (chkAllTerms가 체크되어 있는지 확인)
     if(!document.getElementById('chkAllTerms').checked) {
       alert("필수 약관에 모두 동의해주세요.");
       return;
@@ -325,7 +339,9 @@
                     adult: ${adult},
                     child: ${child},
                     amount: finalAmount,       
-                    usedPoint: usedMileage,     
+                    usedPoint: usedMileage,
+                    usedCoupon: currentCouponDiscount,     
+                    memberCouponId: selectedMemberCouponId,
                     payMethod: payMethod,
                     request: document.getElementById('guestRequest').value
                 };
@@ -356,24 +372,34 @@
   const originalAmount = ${amount}; 
   let finalAmount = originalAmount;
   let usedMileage = 0;
-  const maxUsablePoint = ${maxUsablePoint}; 
+  const maxUsablePoint = ${maxUsablePoint};
+  let currentCouponDiscount = 0;
+  let selectedMemberCouponId = null;
+  
+  function applyCoupon() {
+	    const select = document.getElementById('couponSelect');
+	    const selectedOption = select.options[select.selectedIndex];
+	    
+	    currentCouponDiscount = parseInt(selectedOption.getAttribute('data-discount') || 0);
+	    selectedMemberCouponId = select.value ? select.value : null;
+
+	    calculateTotal(); 
+	}
 
   function applyMileage() {
-      let inputVal = parseInt(document.getElementById('usePointInput').value) || 0;
+	    let inputVal = parseInt(document.getElementById('usePointInput').value) || 0;
 
-      if (inputVal > maxUsablePoint) {
-          alert("마일리지는 최대 " + maxUsablePoint.toLocaleString() + "P까지만 사용 가능합니다. (상품 금액의 30%)");
-          inputVal = maxUsablePoint;
-          document.getElementById('usePointInput').value = inputVal;
-      } else if (inputVal < 0) { // 음수 입력 방지
-          inputVal = 0;
-          document.getElementById('usePointInput').value = '';
-      }
+	    if (inputVal > maxUsablePoint) {
+	        inputVal = maxUsablePoint;
+	        document.getElementById('usePointInput').value = inputVal;
+	    } else if (inputVal < 0) {
+	        inputVal = 0;
+	        document.getElementById('usePointInput').value = '';
+	    }
 
-      usedMileage = inputVal;
-      
-      calculateTotal();
-  }
+	    usedMileage = inputVal;
+	    calculateTotal();
+	}
 
   function useAllMileage() {
       if (maxUsablePoint === 0) {
@@ -385,17 +411,37 @@
   }
 
   function calculateTotal() {
-      finalAmount = originalAmount - usedMileage; 
-      if (finalAmount < 0) finalAmount = 0;
+	    finalAmount = originalAmount - usedMileage - currentCouponDiscount; 
+	    if (finalAmount < 0) finalAmount = 0;
+	
+	    let displayPointObj = document.getElementById('displayMileageDiscount');
+	    if(displayPointObj) displayPointObj.innerText = '- ₩' + usedMileage.toLocaleString();
+	    
+	    let displayCouponObj = document.getElementById('displayCouponDiscount');
+	    if(displayCouponObj) displayCouponObj.innerText = '- ₩' + currentCouponDiscount.toLocaleString();
+	
+	    const totalDisplays = document.querySelectorAll('.displayTotalAmount');
+	    totalDisplays.forEach(el => {
+	        el.innerText = '₩' + finalAmount.toLocaleString();
+	    });
+	}
+  
+  function checkPointUnit() {
+	    let inputVal = parseInt(document.getElementById('usePointInput').value) || 0;
 
-      let displayObj = document.getElementById('displayMileageDiscount');
-      if(displayObj) displayObj.innerText = '- ₩' + usedMileage.toLocaleString();
+	    if (inputVal > 0 && inputVal < 1000) {
+	        alert("마일리지는 최소 1,000P부터 사용할 수 있습니다.");
+	        inputVal = 0;
+	    } 
+	    else if (inputVal > 0 && inputVal % 100 !== 0) {
+	        alert("마일리지는 100P 단위로만 사용할 수 있습니다.");
+	        inputVal = Math.floor(inputVal / 100) * 100;
+	    }
 
-      const totalDisplays = document.querySelectorAll('.displayTotalAmount');
-      totalDisplays.forEach(el => {
-          el.innerText = '₩' + finalAmount.toLocaleString();
-      });
-  }
+	    document.getElementById('usePointInput').value = inputVal === 0 ? '' : inputVal;
+	    usedMileage = inputVal;
+	    calculateTotal();
+	}
 </script>
 
 <jsp:include page="../layout/footer.jsp" />
