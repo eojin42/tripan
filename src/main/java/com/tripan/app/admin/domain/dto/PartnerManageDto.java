@@ -45,4 +45,5 @@ public class PartnerManageDto {
     private String  result;      // APPROVED / REJECTED
     private String  message;     // 반려 사유 또는 처리 메시지
     private boolean sendNotify;  // 알림 발송 여부
+    private String accommodationExperience;
 }

@@ -91,7 +91,7 @@ public class PartnerManageRestController {
  
     /* ── 차단 ── */
     @PostMapping("/suspend/{partnerId}")
-    public ResponseEntity<String> suspend(@PathVariable Long partnerId) {
+    public ResponseEntity<String> suspend(@PathVariable("partnerId") Long partnerId) {
         partnerService.suspendPartner(partnerId);
         return ResponseEntity.ok("차단 완료");
     }
@@ -113,6 +113,4 @@ public class PartnerManageRestController {
         
         return ResponseEntity.ok(docs);
     }
-	
-	
 }
