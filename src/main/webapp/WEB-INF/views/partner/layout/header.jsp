@@ -1,10 +1,29 @@
 <%@ page contentType="text/html; charset=UTF-8"%>
 <%@ taglib prefix="c" uri="jakarta.tags.core" %>
 
-<header class="top-header">
+<style>
+  /* 🌟 드롭다운 스르륵 나타나는 애니메이션 추가! */
+  .profile-dropdown {
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(-10px);
+    transition: all 0.2s ease-in-out;
+    pointer-events: none; /* 숨겨졌을 때 클릭 방지 */
+  }
   
-  <div class="header-left" style="display: flex; align-items: center; gap: 12px;">
-  	<div class="property-switcher" style="position: relative;">
+  /* .show 클래스가 붙으면 나타남! */
+  .profile-dropdown.show {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
+    pointer-events: auto; /* 보일 때 클릭 활성화 */
+  }
+</style>
+
+<header class="top-header" style="display:flex; justify-content:space-between; align-items:center; padding: 0 24px; background:#fff; border-bottom:1px solid var(--border); height:64px; z-index: 10;">
+  
+  <div class="header-left" style="display: flex; align-items: center; gap: 16px;">
+    <div class="property-switcher" style="position: relative;">
       <button class="property-btn" onclick="document.getElementById('propertyDrop').classList.toggle('show')" 
               style="border:1px solid #E2E8F0; background:#F8FAFC; padding:8px 16px; border-radius:10px; display:flex; align-items:center; gap:10px; cursor:pointer; font-weight:800; font-size:14px; color:#1E293B; transition:all 0.2s;">
         <span style="font-size:16px;">🏢</span> 
@@ -12,7 +31,7 @@
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
       </button>
       
-      <div id="propertyDrop" class="profile-dropdown" style="display: none; position: absolute; left: 0; top: 48px; width: 240px; background: white; border: 1px solid #E2E8F0; border-radius: 14px; box-shadow: 0 10px 30px rgba(0,0,0,0.08); padding: 12px; z-index: 100;">
+      <div id="propertyDrop" class="profile-dropdown" style="position: absolute; left: 0; top: 48px; width: 240px; background: white; border: 1px solid #E2E8F0; border-radius: 14px; box-shadow: 0 10px 30px rgba(0,0,0,0.08); padding: 12px; z-index: 100;">
         <div style="padding: 4px 12px 8px; font-size: 11px; color: #94A3B8; font-weight: 800; letter-spacing: -0.5px;">운영 중인 숙소</div>
         
         <a href="#" class="dropdown-item" style="display:flex; align-items:center; gap:8px; padding:10px 12px; text-decoration:none; color:#1E293B; font-weight:800; font-size:13px; border-radius:8px; background:#F1F5F9; margin-bottom:4px;">
@@ -35,7 +54,7 @@
     </div>
   </div>
 
- <div class="nav-right" style="display: flex; align-items: center; gap: 12px;">
+  <div class="nav-right" style="display: flex; align-items: center; gap: 12px;">
     <div class="profile-wrapper" style="position: relative;">
       <button class="profile-btn" style="border:none; background:none; display:flex; align-items:center; gap:8px; cursor:pointer;" onclick="document.getElementById('partnerProfileDrop').classList.toggle('show')">
         <div class="avatar" style="width:36px; height:36px; border-radius:50%; background:var(--primary); color:white; display:flex; align-items:center; justify-content:center; font-weight:900; font-size:16px;">P</div>
@@ -47,16 +66,10 @@
         </div>
       </button>
       
-      <div id="partnerProfileDrop" class="profile-dropdown" style="display: none; position: absolute; right: 0; top: 48px; background: white; border: 1px solid #E2E8F0; border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.08); padding: 10px; width: 160px; z-index: 100;">
+      <div id="partnerProfileDrop" class="profile-dropdown" style="position: absolute; right: 0; top: 48px; background: white; border: 1px solid #E2E8F0; border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.08); padding: 10px; width: 160px; z-index: 100;">
         <a href="#" style="display:block; padding:10px; color:#1E293B; font-weight:700; text-decoration:none; font-size:13px;">⚙️ 계정 설정</a>
-        <form action="${pageContext.request.contextPath}/logout" method="post" style="margin:0;">
-          <button type="submit" style="width:100%; text-align:left; padding:10px; border:none; background:none; color:#EF4444; font-weight:700; font-size:13px; cursor:pointer;">🚪 로그아웃</button>
-        </form>
+        <a href="${pageContext.request.contextPath}/member/logout" style="display:block; padding:10px; color:#EF4444; font-weight:700; text-decoration:none; font-size:13px;">🚪 로그아웃</a>
       </div>
     </div>
   </div>
 </header>
-
-<style>
-  .profile-dropdown.show { display: block !important; }
-</style>
