@@ -257,56 +257,165 @@
     </div>
 
     <%-- 가계부 패널 --%>
-    <div class="sidebar-panel" id="panel-expense">
-      <div class="expense-panel-inner">
+   <div class="sidebar-panel" id="panel-expense">
 
-        <%-- 총액 카드 [DB] expense 테이블 SUM --%>
-        <div class="expense-summary">
-          <div class="expense-summary__label">총 지출</div>
-          <div class="expense-summary__amount" id="summaryAmt">₩ 0</div>
-          <div class="expense-summary__split">${fn:length(tripDto.members)}인 기준</div>
-          <div class="expense-summary__per" id="summaryPer">1인당 약 ₩ 0</div>
+  <%-- ── 내부 탭바 ── --%>
+  <div style="display:flex;flex-shrink:0;background:var(--white);border-bottom:1.5px solid var(--border);">
+    <button class="exp-itab"
+      onclick="switchExpTab('home', this)"
+      style="flex:1;padding:13px 0;border:none;border-bottom:2.5px solid #89CFF0;
+             background:transparent;font-family:'Pretendard',sans-serif;
+             font-size:12px;font-weight:800;color:#2D3748;cursor:pointer;transition:all .18s;">
+      🏠 홈
+    </button>
+    <button class="exp-itab"
+      onclick="switchExpTab('list', this)"
+      style="flex:1;padding:13px 0;border:none;border-bottom:2px solid transparent;
+             background:transparent;font-family:'Pretendard',sans-serif;
+             font-size:12px;font-weight:700;color:var(--light);cursor:pointer;transition:all .18s;">
+      🧾 내역
+    </button>
+    <button class="exp-itab"
+      onclick="switchExpTab('settle', this)"
+      style="flex:1;padding:13px 0;border:none;border-bottom:2px solid transparent;
+             background:transparent;font-family:'Pretendard',sans-serif;
+             font-size:12px;font-weight:700;color:var(--light);cursor:pointer;transition:all .18s;">
+      💸 정산
+    </button>
+  </div>
+
+  <%-- ══════════════════════
+       탭 1: 홈
+  ══════════════════════ --%>
+  <div class="exp-tab-pane" id="exp-tab-home" style="display:flex;flex-direction:column;overflow-y:auto;">
+
+    <%-- 히어로 카드 --%>
+    <div class="exp-home-hero">
+      <div class="exp-home-hero__top">
+        <span class="exp-home-hero__label">여행 총 지출</span>
+      </div>
+      <div class="exp-home-hero__amount" id="summaryAmt">₩ 0</div>
+
+      <%-- 내 결제 / 내 부담 --%>
+      <div class="exp-home-hero__stats">
+        <div class="exp-home-hero__stat">
+          <div class="exp-home-hero__stat-label">내가 결제</div>
+          <div class="exp-home-hero__stat-val" id="myPaidAmt">₩ 0</div>
         </div>
-
-        <%-- 카테고리별 지출 - JS 동적 렌더 --%>
-        <div class="expense-cats" id="expenseCats">
-          <%-- 초기: 로딩 상태 --%>
-          <div class="expense-cat" style="grid-column:1/-1;justify-content:center;padding:16px;">
-            <span style="color:#A0AEC0;font-size:13px;">로딩 중…</span>
-          </div>
+        <div class="exp-home-hero__stat-divider"></div>
+        <div class="exp-home-hero__stat">
+          <div class="exp-home-hero__stat-label">내 부담</div>
+          <div class="exp-home-hero__stat-val" id="myShareAmt">₩ 0</div>
         </div>
+      </div>
 
-        <%-- 최근 지출 내역 - JS로 동적 로드 (GET /api/trip/{tripId}/expense) --%>
-        <div class="expense-section-head">
-          <span class="expense-list-title">최근 지출 내역</span>
-          <button class="expense-list-more" onclick="showToast('전체 내역 기능 준비 중')">전체 보기 →</button>
-        </div>
-        <div id="expenseList">
-          <div class="expense-empty-msg" style="text-align:center;padding:20px;color:#999;font-size:13px">
-            지출 내역을 불러오는 중...
-          </div>
-        </div>
+      <%-- 나의 정산 상태 --%>
+      <div id="myBalanceLine" class="exp-home-hero__balance"></div>
+    </div>
 
-        <button class="btn-add-expense" onclick="openModal('addExpenseModal')">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-          지출 추가
-        </button>
+    <%-- 정산 대기 현황 칩 (나한테 온 요청만) --%>
+    <div id="expSettleStatus" style="padding:0 16px;margin-top:8px;"></div>
 
-        <%-- 정산 현황 - JS로 동적 로드 (POST /api/trip/{tripId}/settlement/calculate) --%>
-        <div class="settle-section">
-          <div class="settle-head">
-            <span class="settle-title">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
-              정산 현황
-            </span>
-          </div>
-          <div id="settleList">
-            <div style="text-align:center;padding:16px;color:#999;font-size:13px">정산 내역을 불러오는 중...</div>
-          </div>
-        </div>
+    <%-- 카테고리별 지출 --%>
+    <div id="expenseCatsSection" style="display:none;padding:12px 16px 0;">
+      <div class="exp-home-section-title">📊 카테고리별 지출</div>
+      <div class="expense-cats" id="expenseCats"></div>
+    </div>
 
+    <%-- 내 지출 요약 (JS가 채움) --%>
+    <div id="expMemberBalance" style="padding:12px 16px 20px;"></div>
+
+  </div><%-- /exp-tab-home --%>
+
+  <%-- ══════════════════════
+       탭 2: 지출 내역
+  ══════════════════════ --%>
+  <div class="exp-tab-pane expense-panel-inner" id="exp-tab-list"
+       style="display:none;flex-direction:column;">
+
+    <div class="expense-section-head" style="padding:14px 16px 8px;">
+      <span class="expense-list-title">지출 내역</span>
+      <span id="expenseCount" style="font-size:11px;color:var(--light);font-weight:600;"></span>
+    </div>
+
+    <%-- JS가 동적으로 렌더 --%>
+    <div id="expenseList" style="padding:0 8px;"></div>
+
+    <%-- VIEWER 권한은 추가 버튼 숨김 --%>
+    <c:if test="${memberRole != 'VIEWER'}">
+      <button class="btn-add-expense" onclick="openModal('addExpenseModal')" style="margin:0 16px 16px;">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
+             stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+          <line x1="12" y1="5" x2="12" y2="19"/>
+          <line x1="5"  y1="12" x2="19" y2="12"/>
+        </svg>
+        지출 추가
+      </button>
+    </c:if>
+
+  </div><%-- /exp-tab-list --%>
+
+  <%-- ══════════════════════
+       탭 3: 정산
+  ══════════════════════ --%>
+  <div class="exp-tab-pane expense-panel-inner" id="exp-tab-settle"
+       style="display:none;flex-direction:column;">
+
+    <%-- 정산 예상 섹션 — 미리보기 (정산요청 전) --%>
+    <div id="settleSection" class="settle-section" style="display:none;">
+      <div class="settle-head">
+        <span class="settle-title">정산 현황</span>
+        <button class="settle-card__detail-btn" onclick="loadSavedSettlements()"
+                style="font-size:11px;">정산 완료 내역 →</button>
+      </div>
+      <div id="settleList" style="padding:0 16px 16px;"></div>
+    </div>
+
+    <%-- 정산 완료 내역 섹션 (정산요청 후) --%>
+    <div id="settleDoneSection" style="display:none;">
+      <div class="settle-head">
+        <span class="settle-title">정산 완료 내역</span>
+        <button class="settle-card__detail-btn" onclick="_loadSettleTab()"
+                style="font-size:11px;">← 현황으로</button>
+      </div>
+      <div id="settleDoneList" style="padding:0 16px 16px;"></div>
+      <%-- 완료 내역 없을 때 --%>
+      <div id="settleDoneEmpty" style="display:none;text-align:center;padding:32px 20px;">
+        <div style="font-size:36px;margin-bottom:12px;">📭</div>
+        <div style="font-size:14px;font-weight:800;color:#2D3748;margin-bottom:6px;">정산 완료 내역이 없어요</div>
+        <div style="font-size:12px;color:#A0AEC0;line-height:1.7;">정산 요청 후 각 멤버가 송금 완료 처리하면<br>여기에 표시돼요</div>
       </div>
     </div>
+
+    <%-- 정산 요청 받은 내역 (toMemberId = 나) — JS가 채움 --%>
+    <div id="settleReceivedSection" style="display:none;">
+      <div class="settle-head">
+        <span class="settle-title">📬 받은 정산 요청</span>
+      </div>
+      <div id="settleReceivedList" style="padding:0 16px 16px;"></div>
+    </div>
+
+    <%-- 빈 상태 (지출 없음) — JS가 show/hide --%>
+    <div id="settleEmpty" class="expense-empty-state" style="display:none;">
+      <div class="expense-empty-state__emoji">💰</div>
+      <div class="expense-empty-state__title">아직 정산할 내역이 없어요</div>
+      <div class="expense-empty-state__sub">지출이 쌓이면 자동으로 정산 현황을 확인하고 정산을 진행할 수 있어요</div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;justify-content:center;">
+        <button class="expense-empty-state__btn"
+                onclick="switchExpTab('list', document.querySelectorAll('.exp-itab')[1])">
+          지출 내역 보기
+        </button>
+        <button class="expense-empty-state__btn expense-empty-state__btn--ghost"
+                onclick="_loadSettleTab()">
+          새로고침
+        </button>
+      </div>
+    </div>
+
+  </div><%-- /exp-tab-settle --%>
+
+</div><%-- /panel-expense --%>
+
 
     <%-- 투표 패널 --%>
     <div class="sidebar-panel" id="panel-vote">
@@ -1166,74 +1275,213 @@
   </div>
 </div>
 
-<%-- 지출 추가 모달 [DB] expense INSERT --%>
+<%-- ══════════════════════════════
+     지출 추가 모달 — 전면 재설계
+     POST /api/trips/{tripId}/expenses
+══════════════════════════════ --%>
 <div class="modal-overlay" id="addExpenseModal">
-  <div class="modal-box expense-modal-box">
+  <div class="modal-box expense-modal-box-v2">
+
+    <%-- ── 헤더 ── --%>
+    <div class="exp-v2-header">
+      <button class="exp-v2-close" onclick="closeModal('addExpenseModal')">✕</button>
+      <span class="exp-v2-title">지출 등록</span>
+      <div style="width:32px;"></div>
+    </div>
+
+    <div class="exp-v2-body" id="expV2Body">
+
+      <%-- ── 1) 카테고리 가로 스크롤 칩 ── --%>
+      <div class="exp-v2-cats-wrap">
+        <div class="exp-v2-cats" id="expCatChips" ondragstart="return false;">
+          <button class="exp-cat-chip active" data-val="FOOD"         onclick="selectExpCat('FOOD',this)">        🍽️ 식사</button>
+          <button class="exp-cat-chip"        data-val="CAFE"         onclick="selectExpCat('CAFE',this)">        ☕ 카페</button>
+          <button class="exp-cat-chip"        data-val="SNACK"        onclick="selectExpCat('ETC',this)">         🍩 간식</button>
+          <button class="exp-cat-chip"        data-val="DRINK"        onclick="selectExpCat('ETC',this)">         🍺 술</button>
+          <button class="exp-cat-chip"        data-val="TRANSPORT"    onclick="selectExpCat('TRANSPORT',this)">   🚗 교통</button>
+          <button class="exp-cat-chip"        data-val="ACCOMMODATION" onclick="selectExpCat('ACCOMMODATION',this)">🏨 숙소</button>
+          <button class="exp-cat-chip"        data-val="SHOPPING"     onclick="selectExpCat('SHOPPING',this)">    🛍️ 쇼핑</button>
+          <button class="exp-cat-chip"        data-val="TOUR"         onclick="selectExpCat('TOUR',this)">        🎯 관광</button>
+          <button class="exp-cat-chip"        data-val="ETC"          onclick="selectExpCat('ETC',this)">         📦 기타</button>
+        </div>
+        <input type="hidden" id="exp-cat" value="FOOD">
+      </div>
+
+      <%-- ── 2) 금액 입력 ── --%>
+      <div class="exp-v2-amount-section">
+        <div class="exp-v2-amount-label">얼마를 나눌까요?</div>
+        <div class="exp-v2-amount-wrap">
+          <span class="exp-v2-amount-prefix">₩</span>
+          <input type="number" class="exp-v2-amount-input" id="exp-amt"
+                 placeholder="0" min="0" step="1">
+        </div>
+      </div>
+
+      <%-- ── 3) 항목명 + 날짜 ── --%>
+      <div class="exp-v2-row">
+        <div class="exp-v2-field">
+          <label class="exp-v2-label">항목명 <span style="color:#FC8181">*</span></label>
+          <input type="text" class="exp-v2-input" id="exp-name"
+                 placeholder="어떤 지출인가요?" maxlength="100">
+        </div>
+        <div class="exp-v2-field" style="flex:0 0 120px;">
+          <label class="exp-v2-label">날짜 <span style="color:#FC8181">*</span></label>
+          <input type="date" class="exp-v2-input" id="exp-date">
+        </div>
+      </div>
+
+      <%-- ── 4) 결제자 + 결제수단 ── --%>
+      <div class="exp-v2-row">
+        <div class="exp-v2-field">
+          <label class="exp-v2-label">결제자 <span style="color:#FC8181">*</span></label>
+          <div class="exp-payer-dropdown" id="expPayerDropdown">
+            <button type="button" class="exp-payer-btn" onclick="togglePayerMenu()" id="expPayerBtn">
+              <div class="exp-payer-btn__left">
+                <div class="exp-payer-btn__avatar" id="expPayerBtnAvatar">나</div>
+                <span id="expPayerBtnLabel">선택</span>
+              </div>
+              <svg class="exp-payer-btn__chevron" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
+            </button>
+            <div class="exp-payer-menu" id="expPayerMenu">
+              <c:forEach var="m" items="${tripDto.members}">
+                <c:if test="${m.invitationStatus == 'ACCEPTED' || m.role == 'OWNER'}">
+                  <div class="exp-payer-option${m.memberId == myMemberId ? ' selected' : ''}"
+                       data-id="${m.memberId}"
+                       onclick="selectPayer(${m.memberId},'${fn:escapeXml(m.nickname)}',${m.memberId == myMemberId})">
+                    <div class="exp-payer-option__avatar">${fn:substring(m.nickname,0,2)}</div>
+                    <span class="exp-payer-option__name">${fn:escapeXml(m.nickname)}</span>
+                    <c:if test="${m.memberId == myMemberId}">
+                      <span class="exp-payer-option__me">나</span>
+                      <span class="exp-payer-option__check">✓</span>
+                    </c:if>
+                  </div>
+                </c:if>
+              </c:forEach>
+            </div>
+            <input type="hidden" id="exp-payer-value" value="${myMemberId}">
+          </div>
+        </div>
+        <div class="exp-v2-field" style="flex:0 0 120px;">
+          <label class="exp-v2-label">결제수단</label>
+          <select class="exp-v2-input" id="exp-payment-type" style="cursor:pointer;">
+            <option value="">미선택</option>
+            <option value="카드">💳 카드</option>
+            <option value="현금">💵 현금</option>
+            <option value="계좌이체">🏦 이체</option>
+          </select>
+        </div>
+      </div>
+
+      <%-- ── 5) 분담자 목록 (카카오페이 스타일) ── --%>
+      <div class="exp-v2-split-section">
+        <div class="exp-v2-split-head">
+          <span id="expSplitCount" class="exp-v2-split-count">친구 0명</span>
+          <button type="button" class="exp-v2-edit-btn" onclick="openParticipantEditor()">✏️ 편집</button>
+        </div>
+        <%-- 분담자 리스트 — JS가 동적 렌더 --%>
+        <div id="exp-split-list" class="exp-v2-split-list"></div>
+        <%-- 1원 나머지 처리 안내 --%>
+        <div id="exp-remainder-note" class="exp-v2-remainder-note" style="display:none;"></div>
+      </div>
+
+      <%-- ── 6) 메모 + 영수증 ── --%>
+      <div class="exp-v2-extras">
+        <input type="text" class="exp-v2-input" id="exp-memo"
+               placeholder="📝 메모 (선택)" maxlength="200">
+        <label class="exp-v2-receipt-btn" onclick="document.getElementById('exp-receipt').click()">
+          📷 영수증 사진
+        </label>
+        <input type="file" id="exp-receipt" accept="image/*" style="display:none;"
+               onchange="previewReceiptImage(this)">
+      </div>
+      <div id="exp-receipt-preview" style="display:none;margin:0 0 12px;"></div>
+
+      <%-- ── 확인 버튼 ── --%>
+      <button class="exp-v2-submit" id="expSubmitBtn" onclick="submitExpense()" disabled>확인</button>
+
+    </div><%-- /exp-v2-body --%>
+  </div>
+</div><%-- /addExpenseModal --%>
+
+
+<%-- ── 분담자 편집 모달 ── --%>
+<div class="modal-overlay" id="participantEditorModal">
+  <div class="modal-box" style="width:min(440px,96vw);max-height:85vh;overflow-y:auto;">
     <div class="modal-box__head">
-      <span class="modal-box__title">💸 지출 추가</span>
-      <button class="modal-close-btn" onclick="closeModal('addExpenseModal')">✕</button>
+      <span class="modal-box__title">함께 나눌 사람</span>
+      <button class="modal-close-btn" onclick="closeModal('participantEditorModal')">✕</button>
     </div>
     <div class="modal-box__body">
-
-      <%-- 금액 + 항목명 --%>
-      <div class="form-row">
-        <div class="form-group">
-          <label class="form-label-sm">항목명</label>
-          <input type="text" class="form-input" placeholder="예: 흑돼지 맛집" id="exp-name">
-        </div>
-        <div class="form-group half">
-          <label class="form-label-sm">금액 (₩)</label>
-          <input type="number" class="form-input" placeholder="0" id="exp-amt">
-        </div>
+      <p style="font-size:12px;color:var(--light);margin-bottom:14px;">워크스페이스 밖 친구도 추가할 수 있어요</p>
+      <%-- 워크스페이스 멤버 목록 --%>
+      <div id="peWsMembers"></div>
+      <%-- 외부 추가 인원 --%>
+      <div id="peExtraMembers" style="margin-top:12px;"></div>
+      <%-- 이름 입력 추가 --%>
+      <div class="pe-add-row">
+        <input type="text" id="peExtraNameInput" class="form-input"
+               placeholder="이름 입력 (예: 민수, 현장합류1)" maxlength="20"
+               onkeydown="if(event.key==='Enter')addExtraPerson()">
+        <button class="pe-add-btn" onclick="addExtraPerson()">추가</button>
       </div>
-
-      <%-- 카테고리 + 결제자 --%>
-      <div class="form-row">
-        <div class="form-group">
-          <label class="form-label-sm">카테고리</label>
-          <select class="form-select" id="exp-cat">
-            <option value="FOOD">🍽️ 식비</option>
-            <option value="ACCOMMODATION">🏨 숙소</option>
-            <option value="TRANSPORT">🚗 교통</option>
-            <option value="TOUR">🎯 관광</option>
-            <option value="CAFE">☕ 카페</option>
-            <option value="SHOPPING">🛍️ 쇼핑</option>
-            <option value="ETC">📦 기타</option>
-          </select>
-        </div>
-        <div class="form-group">
-          <label class="form-label-sm">결제자 (payer)</label>
-          <%-- [DB] trip_member 목록으로 동적 렌더 --%>
-          <select class="form-select" id="exp-payer">
-            <c:forEach var="m" items="${tripDto.members}">
-              <c:if test="${m.invitationStatus == 'ACCEPTED' || m.role == 'OWNER'}">
-                <option value="${m.memberId}">${m.nickname}</option>
-              </c:if>
-            </c:forEach>
-          </select>
-        </div>
-      </div>
-
-      <%-- 날짜 --%>
-      <div class="form-group" style="margin-bottom:12px">
-        <label class="form-label-sm">날짜</label>
-        <input type="date" class="form-input" id="exp-date">
-      </div>
-
-      <%-- 🔒 나만 보기 [DB] expense.is_private --%>
-      <div class="form-toggle-row">
-        <div>
-          <div class="form-toggle-label">🔒 나만 보기</div>
-          <div class="form-toggle-sub">다른 동행자에게 이 지출이 표시되지 않아요</div>
-        </div>
-        <label class="toggle-switch">
-          <input type="checkbox" id="exp-private">
-          <span class="toggle-slider"></span>
-        </label>
-      </div>
-
-      <button class="btn-primary" onclick="submitExpense()">지출 추가하기</button>
+      <button class="btn-primary" style="margin-top:16px;" onclick="applyParticipants()">적용하기</button>
     </div>
+  </div>
+</div>
+
+
+<%-- ══════════════════════════════
+     지출 상세 모달 (메모/영수증 보기)
+══════════════════════════════ --%>
+<div class="modal-overlay" id="expenseDetailModal">
+  <div class="modal-box" style="width:min(460px,96vw);max-height:85vh;overflow-y:auto;">
+    <div class="modal-box__head">
+      <span class="modal-box__title">지출 상세</span>
+      <button class="modal-close-btn" onclick="closeModal('expenseDetailModal')">✕</button>
+    </div>
+    <div class="modal-box__body" id="expenseDetailBody"></div>
+  </div>
+</div>
+
+<%-- ══════════════════════════════
+     정산 상세 모달 (카카오페이 스타일)
+══════════════════════════════ --%>
+<div class="modal-overlay" id="settleDetailModal">
+  <div class="modal-box settle-detail-modal" style="width:min(500px,96vw);max-height:88vh;overflow-y:auto;">
+    <div class="modal-box__head">
+      <span class="modal-box__title">📊 정산 상세</span>
+      <button class="modal-close-btn" onclick="closeModal('settleDetailModal')">✕</button>
+    </div>
+    <div class="modal-box__body" id="settleDetailBody"></div>
+  </div>
+</div>
+
+
+
+
+<%-- ══════════════════════════════
+     카테고리 상세 모달
+══════════════════════════════ --%>
+<div class="modal-overlay" id="catDetailModal">
+  <div class="modal-box" style="width:min(460px,96vw);max-height:85vh;overflow-y:auto;">
+    <div class="modal-box__head">
+      <span class="modal-box__title" id="catDetailTitle">카테고리 상세</span>
+      <button class="modal-close-btn" onclick="closeModal('catDetailModal')">✕</button>
+    </div>
+    <div class="modal-box__body" id="catDetailBody"></div>
+  </div>
+</div>
+
+<%-- ══════════════════════════════
+     멤버 정산 상세 모달
+══════════════════════════════ --%>
+<div class="modal-overlay" id="memberSettleModal">
+  <div class="modal-box" style="width:min(480px,96vw);max-height:88vh;overflow-y:auto;">
+    <div class="modal-box__head">
+      <span class="modal-box__title" id="memberSettleTitle">멤버 정산 현황</span>
+      <button class="modal-close-btn" onclick="closeModal('memberSettleModal')">✕</button>
+    </div>
+    <div class="modal-box__body" id="memberSettleBody"></div>
   </div>
 </div>
 

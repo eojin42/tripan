@@ -1038,6 +1038,77 @@ body.resizing .ws-resizer { pointer-events: all !important; }
 .toggle-switch input:checked + .toggle-slider { background: var(--blue); }
 .toggle-switch input:checked + .toggle-slider::before { transform: translateX(18px); }
 
+
+/* 분담자 선택 wrap */
+.exp-participants-wrap {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 10px 0 6px;
+}
+
+/* 개별 멤버 체크박스 칩 */
+.exp-participant-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border: 1.5px solid var(--border);
+  border-radius: 50px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--mid);
+  background: var(--bg);
+  cursor: pointer;
+  transition: all .15s;
+  user-select: none;
+}
+.exp-participant-chip input[type=checkbox] {
+  display: none; /* 실제 체크박스 숨기고 칩으로 표현 */
+}
+/* 체크된 상태 */
+.exp-participant-chip:has(input:checked) {
+  border-color: var(--blue);
+  background: rgba(137, 207, 240, 0.12);
+  color: #2b7ba1;
+}
+.exp-participant-chip:hover {
+  border-color: var(--blue);
+  background: rgba(137, 207, 240, 0.08);
+}
+
+/* 균등 분배 미리보기 텍스트 */
+.exp-share-preview {
+  margin-top: 6px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--blue);
+  min-height: 16px;
+}
+
+/* 정산 확정 버튼 (settleList 하단) */
+.btn-settle-confirm {
+  display: block;
+  width: 100%;
+  margin-top: 14px;
+  padding: 11px;
+  border: none;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #89CFF0, #C2B8D9);
+  color: #fff;
+  font-family: 'Pretendard', sans-serif;
+  font-size: 13px;
+  font-weight: 800;
+  cursor: pointer;
+  transition: all .2s;
+  letter-spacing: -0.2px;
+}
+.btn-settle-confirm:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 18px rgba(137, 207, 240, 0.4);
+}
+
+
 /* ══════════════════════════════
    투표 패널
 ══════════════════════════════ */
@@ -1627,7 +1698,7 @@ textarea.form-textarea:focus { border-color: var(--blue); background: var(--whit
   background: var(--white);
   border-right: 1px solid var(--border);
   overflow-y: auto;
-  overflow-x: hidden;
+  overflow-x: clip;  /* 세로 스크롤 유지하면서 가로 clip */
   padding: 0;
   flex-direction: column;
   gap: 0;
@@ -3202,7 +3273,7 @@ body { font-family: 'Pretendard Variable', 'Pretendard', -apple-system, BlinkMac
 }
 
 /* ── 지출 항목 삭제 버튼 ── */
-.expense-item { position: relative; }
+.expense-item { position: relative; padding-right: 42px; }  /* ← absolute 삭제버튼 공간 확보 */
 .expense-del-btn {
   display: none;
   position: absolute; right: 8px; top: 50%; transform: translateY(-50%);
@@ -3221,7 +3292,7 @@ body { font-family: 'Pretendard Variable', 'Pretendard', -apple-system, BlinkMac
 }
 .settle-item:last-child { border-bottom: none; }
 .settle-from, .settle-to { font-weight: 700; color: var(--dark); }
-.settle-to { color: #89CFF0; }
+.settle-to { color: #2B6CB0; }  /* ← 가독성: 더 진한 블루 */
 .settle-item .settle-amt { margin-left: auto; font-weight: 900; color: var(--dark); }
 
 
@@ -4584,4 +4655,2026 @@ body.role-viewer .map-add-btn {
 /* 반응형 */
 @media (max-width: 600px) {
   .apm-main-tab { padding: 15px 14px; font-size: 13px; }
+}
+
+
+/* ═══════════════════════════════════════════════════════════
+   가계부 빈 상태 (Empty State) — expense-empty-state
+   ※ CSS에 정의가 없어서 Image 1·2처럼 날것으로 보이던 문제 수정
+═══════════════════════════════════════════════════════════ */
+.expense-empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: 40px 24px 32px;
+  margin: 16px;
+  background: linear-gradient(135deg, rgba(137,207,240,.06) 0%, rgba(194,184,217,.06) 100%);
+  border: 1.5px dashed rgba(137,207,240,.35);
+  border-radius: 20px;
+}
+.expense-empty-state__emoji {
+  font-size: 44px;
+  margin-bottom: 14px;
+  line-height: 1;
+}
+.expense-empty-state__icon {
+  font-size: 38px;
+  margin-bottom: 12px;
+  line-height: 1;
+}
+.expense-empty-state__title {
+  font-size: 15px;
+  font-weight: 800;
+  color: #2D3748;
+  margin-bottom: 6px;
+  letter-spacing: -.2px;
+}
+.expense-empty-state__sub {
+  font-size: 12px;
+  color: #A0AEC0;
+  line-height: 1.7;
+  margin-bottom: 20px;
+  max-width: 220px;
+}
+.expense-empty-state__btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 22px;
+  background: linear-gradient(135deg, #89CFF0, #C2B8D9);
+  color: #fff;
+  border: none;
+  border-radius: 50px;
+  font-family: 'Pretendard', sans-serif;
+  font-size: 13px;
+  font-weight: 800;
+  cursor: pointer;
+  letter-spacing: -.1px;
+  box-shadow: 0 4px 14px rgba(137,207,240,.35);
+  transition: all .2s;
+}
+.expense-empty-state__btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(137,207,240,.45);
+}
+.expense-empty-state__btn--ghost {
+  background: transparent;
+  border: 1.5px solid rgba(137,207,240,.45);
+  color: #3a8fb7;
+  box-shadow: none;
+  margin-left: 8px;
+}
+.expense-empty-state__btn--ghost:hover {
+  background: rgba(137,207,240,.08);
+  transform: translateY(-1px);
+  box-shadow: none;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   지출 내역 카드 재디자인
+   기존 .expense-item 보완 — 금액 강조, 정보 위계 개선
+═══════════════════════════════════════════════════════════ */
+.expense-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 16px;
+  background: var(--white);
+  border: 1.5px solid var(--border);
+  border-radius: 14px;
+  margin-bottom: 8px;
+  transition: all .18s;
+  position: relative;
+  padding-right: 44px; /* 삭제버튼 공간 */
+  cursor: pointer;
+}
+.expense-item:hover {
+  border-color: rgba(137,207,240,.4);
+  box-shadow: 0 4px 16px rgba(137,207,240,.12);
+  transform: translateY(-1px);
+}
+
+/* 카테고리 아이콘 래퍼 */
+.expense-item__icon-wrap {
+  width: 42px;
+  height: 42px;
+  border-radius: 13px;
+  background: var(--bg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+  flex-shrink: 0;
+  border: 1px solid var(--border);
+}
+
+/* 텍스트 영역 */
+.expense-item__info { flex: 1; min-width: 0; }
+.expense-item__name {
+  font-size: 14px;
+  font-weight: 800;
+  color: #1A202C;
+  margin-bottom: 5px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.expense-item__detail {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  flex-wrap: wrap;
+}
+.expense-item__date {
+  font-size: 11px;
+  color: #A0AEC0;
+  font-weight: 600;
+}
+
+/* 금액 — 오른쪽 강조 */
+.expense-item__amt {
+  font-size: 16px;
+  font-weight: 900;
+  color: #1A202C;
+  white-space: nowrap;
+  letter-spacing: -.5px;
+  flex-shrink: 0;
+}
+
+/* 결제자 칩 */
+.expense-payer-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 10px;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 50px;
+  background: rgba(137,207,240,.1);
+  color: #3a8fb7;
+  border: 1px solid rgba(137,207,240,.25);
+}
+
+/* 카테고리 칩 */
+.expense-cat-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 10px;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 50px;
+  background: rgba(194,184,217,.1);
+  color: #8B7BAE;
+  border: 1px solid rgba(194,184,217,.25);
+}
+
+/* 내가 결제 배지 */
+.expense-mine-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  font-size: 10px;
+  font-weight: 700;
+  padding: 2px 7px;
+  border-radius: 50px;
+  background: rgba(137,207,240,.15);
+  color: #2B6CB0;
+  border: 1px solid rgba(137,207,240,.3);
+}
+
+/* 삭제 버튼 */
+.expense-del-btn {
+  display: none;
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: #FED7D7;
+  border: none;
+  color: #C53030;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+  align-items: center;
+  justify-content: center;
+  transition: all .15s;
+}
+.expense-item:hover .expense-del-btn { display: flex; }
+.expense-del-btn:hover { background: #FC8181; color: white; }
+
+/* ═══════════════════════════════════════════════════════════
+   정산 현황 카드 재디자인 (settle-card)
+   기존 settle-item 라인형 → 카드형으로 업그레이드
+═══════════════════════════════════════════════════════════ */
+.settle-section {
+  margin-top: 0;
+  background: transparent;
+  border: none;
+  border-radius: 0;
+  overflow: visible;
+}
+.settle-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 16px 10px;
+  border-bottom: none;
+  background: transparent;
+}
+.settle-title {
+  font-size: 14px;
+  font-weight: 900;
+  color: #2D3748;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* 정산 카드 */
+.settle-card {
+  background: #fff;
+  border: 1.5px solid var(--border);
+  border-radius: 16px;
+  padding: 16px;
+  margin: 0 0 10px 0;
+  transition: all .18s;
+  position: relative;
+  overflow: hidden;
+}
+.settle-card::before {
+  content: '';
+  position: absolute;
+  left: 0; top: 0; bottom: 0;
+  width: 4px;
+  background: linear-gradient(to bottom, #89CFF0, #C2B8D9);
+  border-radius: 0 0 0 0;
+}
+.settle-card:hover {
+  border-color: rgba(137,207,240,.4);
+  box-shadow: 0 4px 16px rgba(137,207,240,.1);
+  transform: translateY(-1px);
+}
+.settle-card--done {
+  border-color: rgba(104,211,145,.3);
+  background: rgba(104,211,145,.03);
+}
+.settle-card--done::before {
+  background: linear-gradient(to bottom, #68D391, #38A169);
+}
+
+/* 카드 내부 레이아웃 */
+.settle-card__main {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+.settle-card__avatars {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
+}
+.settle-card__avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #89CFF0, #FFB6C1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: 800;
+  color: white;
+  border: 2px solid white;
+}
+.settle-card__avatar--to {
+  background: linear-gradient(135deg, #C2B8D9, #89CFF0);
+}
+.settle-card__arrow-icon {
+  color: #CBD5E0;
+  flex-shrink: 0;
+}
+.settle-card__info { flex: 1; min-width: 0; }
+.settle-card__names {
+  font-size: 13px;
+  font-weight: 700;
+  color: #2D3748;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 3px;
+  flex-wrap: wrap;
+}
+.settle-card__from { color: #718096; }
+.settle-card__to { color: #2B6CB0; font-weight: 800; }
+.settle-card__arrow { color: #CBD5E0; }
+.settle-card__amt {
+  font-size: 18px;
+  font-weight: 900;
+  color: #1A202C;
+  letter-spacing: -1px;
+  flex-shrink: 0;
+}
+.settle-card__footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-top: 10px;
+  border-top: 1px solid #F0F4F8;
+}
+
+/* 상태 배지 */
+.settle-status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 4px 10px;
+  border-radius: 50px;
+}
+.settle-status-badge--pending {
+  background: rgba(255,182,100,.12);
+  color: #B7791F;
+  border: 1px solid rgba(255,182,100,.3);
+}
+.settle-status-badge--done {
+  background: rgba(104,211,145,.12);
+  color: #276749;
+  border: 1px solid rgba(104,211,145,.3);
+}
+
+/* 액션 버튼 그룹 */
+.settle-card__actions { display: flex; gap: 6px; }
+.settle-card__detail-btn {
+  font-size: 11px;
+  font-weight: 700;
+  padding: 5px 12px;
+  border-radius: 8px;
+  border: 1.5px solid var(--border);
+  background: transparent;
+  color: var(--mid);
+  cursor: pointer;
+  font-family: 'Pretendard', sans-serif;
+  transition: all .15s;
+}
+.settle-card__detail-btn:hover {
+  border-color: var(--blue);
+  color: var(--blue);
+  background: #EBF8FF;
+}
+.settle-card__pay-btn {
+  font-size: 11px;
+  font-weight: 700;
+  padding: 5px 12px;
+  border-radius: 8px;
+  border: none;
+  background: linear-gradient(135deg, #89CFF0, #C2B8D9);
+  color: white;
+  cursor: pointer;
+  font-family: 'Pretendard', sans-serif;
+  transition: all .15s;
+  box-shadow: 0 2px 8px rgba(137,207,240,.3);
+}
+.settle-card__pay-btn:hover {
+  box-shadow: 0 4px 12px rgba(137,207,240,.4);
+  transform: translateY(-1px);
+}
+
+/* 정산 확정 버튼 (미리보기 하단) */
+.btn-settle-confirm {
+  display: block;
+  width: 100%;
+  margin-top: 8px;
+  padding: 13px;
+  border: none;
+  border-radius: 14px;
+  background: linear-gradient(135deg, #89CFF0, #C2B8D9);
+  color: #fff;
+  font-family: 'Pretendard', sans-serif;
+  font-size: 14px;
+  font-weight: 800;
+  cursor: pointer;
+  letter-spacing: -.2px;
+  transition: all .2s;
+  box-shadow: 0 4px 14px rgba(137,207,240,.3);
+}
+.btn-settle-confirm:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 22px rgba(137,207,240,.45);
+}
+
+/* ═══════════════════════════════════════════════════════════
+   정산 상세 모달
+═══════════════════════════════════════════════════════════ */
+.settle-detail-modal { width: min(500px, 96vw); max-height: 80vh; overflow-y: auto; }
+.settle-detail-summary {
+  background: linear-gradient(135deg, #89CFF0, #C2B8D9);
+  border-radius: 14px;
+  padding: 18px 20px;
+  color: white;
+  margin-bottom: 18px;
+}
+.settle-detail-summary__label { font-size: 11px; opacity: .8; margin-bottom: 4px; }
+.settle-detail-summary__names {
+  font-size: 18px;
+  font-weight: 900;
+  letter-spacing: -.3px;
+  margin-bottom: 6px;
+}
+.settle-detail-summary__amt {
+  font-size: 28px;
+  font-weight: 900;
+  letter-spacing: -2px;
+}
+.settle-detail-expense-list { display: flex; flex-direction: column; gap: 8px; }
+.settle-detail-expense-item {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 12px 14px;
+}
+.settle-detail-expense-item__name {
+  font-size: 13px;
+  font-weight: 700;
+  color: #2D3748;
+  margin-bottom: 4px;
+}
+.settle-detail-expense-item__meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 11px;
+  color: #A0AEC0;
+}
+.settle-detail-expense-item__share {
+  font-size: 13px;
+  font-weight: 800;
+  color: #2D3748;
+}
+.settle-detail-section-title {
+  font-size: 12px;
+  font-weight: 800;
+  color: #718096;
+  text-transform: uppercase;
+  letter-spacing: .6px;
+  margin-bottom: 10px;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   지출 추가 모달 전면 재디자인
+═══════════════════════════════════════════════════════════ */
+.expense-modal-box { width: min(540px, 96vw); }
+
+/* 새 헤더 스타일 */
+.exp-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 22px 24px 18px;
+  border-bottom: 1px solid #F0F4F8;
+}
+.exp-modal-header__left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.exp-modal-header__icon {
+  width: 38px;
+  height: 38px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #89CFF0, #FFB6C1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  flex-shrink: 0;
+}
+.exp-modal-header__title {
+  font-size: 17px;
+  font-weight: 900;
+  color: #1A202C;
+  letter-spacing: -.3px;
+}
+.exp-modal-header__sub {
+  font-size: 11px;
+  color: #A0AEC0;
+  margin-top: 2px;
+  font-weight: 500;
+}
+.exp-modal-close {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: 1.5px solid #E2E8F0;
+  background: transparent;
+  color: #718096;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  transition: all .15s;
+}
+.exp-modal-close:hover { background: #F7FAFC; border-color: #CBD5E0; color: #2D3748; }
+
+/* 모달 바디 */
+.exp-modal-body { padding: 20px 24px 24px; }
+
+/* 섹션 구분 */
+.exp-form-section { margin-bottom: 20px; }
+.exp-form-section-title {
+  font-size: 11px;
+  font-weight: 800;
+  color: #A0AEC0;
+  text-transform: uppercase;
+  letter-spacing: .7px;
+  margin-bottom: 10px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.exp-form-section-title::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: #F0F4F8;
+}
+
+/* 금액 입력 — 눈에 띄게 */
+.exp-amount-input-wrap {
+  position: relative;
+}
+.exp-amount-prefix {
+  position: absolute;
+  left: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 18px;
+  font-weight: 800;
+  color: #CBD5E0;
+  pointer-events: none;
+}
+.exp-amount-input {
+  width: 100%;
+  padding: 14px 14px 14px 32px;
+  border: 2px solid #E2E8F0;
+  border-radius: 12px;
+  font-family: 'Pretendard', sans-serif;
+  font-size: 22px;
+  font-weight: 900;
+  color: #1A202C;
+  background: #F7FAFC;
+  outline: none;
+  letter-spacing: -1px;
+  transition: all .2s;
+}
+.exp-amount-input:focus {
+  border-color: #89CFF0;
+  background: white;
+  box-shadow: 0 0 0 4px rgba(137,207,240,.12);
+}
+.exp-amount-input::placeholder { color: #CBD5E0; font-size: 22px; }
+
+/* 결제자 드롭다운 */
+.exp-payer-dropdown {
+  position: relative;
+}
+.exp-payer-btn {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 14px;
+  border: 1.5px solid #E2E8F0;
+  border-radius: 10px;
+  background: #F7FAFC;
+  cursor: pointer;
+  font-family: 'Pretendard', sans-serif;
+  font-size: 14px;
+  font-weight: 600;
+  color: #2D3748;
+  transition: all .15s;
+}
+.exp-payer-btn:hover { border-color: #89CFF0; background: white; }
+.exp-payer-btn.open { border-color: #89CFF0; background: white; box-shadow: 0 0 0 3px rgba(137,207,240,.15); }
+.exp-payer-btn__left { display: flex; align-items: center; gap: 8px; }
+.exp-payer-btn__avatar {
+  width: 26px; height: 26px; border-radius: 50%;
+  background: linear-gradient(135deg, #89CFF0, #FFB6C1);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 10px; font-weight: 800; color: white; flex-shrink: 0;
+}
+.exp-payer-btn__chevron {
+  transition: transform .2s;
+  color: #CBD5E0;
+}
+.exp-payer-btn.open .exp-payer-btn__chevron { transform: rotate(180deg); }
+
+.exp-payer-menu {
+  display: none;
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0; right: 0;
+  background: white;
+  border: 1.5px solid #E2E8F0;
+  border-radius: 12px;
+  box-shadow: 0 8px 24px rgba(0,0,0,.1);
+  z-index: 50;
+  overflow: hidden;
+  animation: slideupSmall .15s ease;
+}
+@keyframes slideupSmall {
+  from { opacity: 0; transform: translateY(-6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.exp-payer-menu.open { display: block; }
+
+.exp-payer-option {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 11px 14px;
+  cursor: pointer;
+  transition: background .12s;
+  border-bottom: 1px solid #F7FAFC;
+}
+.exp-payer-option:last-child { border-bottom: none; }
+.exp-payer-option:hover { background: #EBF8FF; }
+.exp-payer-option.selected { background: rgba(137,207,240,.08); }
+.exp-payer-option__avatar {
+  width: 30px; height: 30px; border-radius: 50%;
+  background: linear-gradient(135deg, #89CFF0, #FFB6C1);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 11px; font-weight: 800; color: white; flex-shrink: 0;
+}
+.exp-payer-option__name { font-size: 14px; font-weight: 700; color: #2D3748; flex: 1; }
+.exp-payer-option__me {
+  font-size: 10px; font-weight: 700;
+  background: rgba(137,207,240,.18); color: #3a8fb7;
+  padding: 2px 7px; border-radius: 50px;
+}
+.exp-payer-option__check { color: #89CFF0; font-size: 14px; font-weight: 900; }
+
+/* 분담자 균등분배 강조 박스 */
+.exp-share-preview {
+  margin-top: 8px;
+  min-height: 0;
+}
+
+/* 제출 버튼 */
+.exp-submit-btn {
+  width: 100%;
+  padding: 14px;
+  border: none;
+  border-radius: 14px;
+  background: linear-gradient(135deg, #89CFF0, #C2B8D9, #FFB6C1);
+  color: white;
+  font-family: 'Pretendard', sans-serif;
+  font-size: 15px;
+  font-weight: 800;
+  cursor: pointer;
+  letter-spacing: -.2px;
+  box-shadow: 0 6px 20px rgba(137,207,240,.35);
+  transition: all .2s;
+  margin-top: 20px;
+}
+.exp-submit-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 28px rgba(137,207,240,.45);
+}
+.exp-submit-btn:disabled {
+  opacity: .6;
+  cursor: not-allowed;
+  transform: none;
+}
+
+
+/* ═══════════════════════════════════════════════════════════
+   정산 카드 KakaoPay 스타일 (settle-card__kp-*)
+   금액 강조 + "A님이 B님께" 방향 표시
+═══════════════════════════════════════════════════════════ */
+.settle-card__kp {
+  padding: 16px 16px 12px;
+}
+.settle-card__kp-amt {
+  font-size: 24px;
+  font-weight: 900;
+  color: #1A202C;
+  letter-spacing: -1.5px;
+  margin-bottom: 10px;
+  line-height: 1;
+}
+.settle-card__kp-amt--done {
+  color: #276749;
+}
+.settle-card__kp-desc {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.settle-card__avatar--from {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #89CFF0, #C2B8D9);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  font-weight: 800;
+  color: white;
+  flex-shrink: 0;
+  border: 2px solid white;
+}
+.settle-card__kp-names {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  flex-wrap: wrap;
+}
+.settle-card__kp-from {
+  font-size: 14px;
+  font-weight: 800;
+  color: #2D3748;
+}
+.settle-card__kp-arrow {
+  font-size: 13px;
+  color: #CBD5E0;
+}
+.settle-card__kp-to {
+  font-size: 14px;
+  font-weight: 800;
+  color: #2B6CB0;
+}
+.settle-card__kp-action-label {
+  font-size: 13px;
+  color: #A0AEC0;
+  font-weight: 500;
+}
+
+/* 완료됨 라벨 크게 */
+.settle-done-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 13px;
+  font-weight: 800;
+  color: #276749;
+  padding: 6px 14px;
+  background: rgba(104,211,145,.12);
+  border: 1.5px solid rgba(104,211,145,.35);
+  border-radius: 50px;
+}
+
+/* 완료된 카드 전체 강조 */
+.settle-card--done .settle-card__kp {
+  background: linear-gradient(135deg, rgba(104,211,145,.04), rgba(56,161,105,.04));
+}
+
+/* ═══════════════════════════════════════════════════════════
+   영수증 업로드 버튼
+═══════════════════════════════════════════════════════════ */
+.exp-receipt-upload-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 16px;
+  border: 2px dashed #CBD5E0;
+  border-radius: 10px;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 600;
+  color: #A0AEC0;
+  background: #F7FAFC;
+  transition: all .18s;
+  width: 100%;
+  justify-content: center;
+}
+.exp-receipt-upload-label:hover {
+  border-color: #89CFF0;
+  color: #2B6CB0;
+  background: rgba(137,207,240,.06);
+}
+
+/* ═══════════════════════════════════════════════════════════
+   settle-card 기존 hover 업데이트 (kp 구조 반영)
+═══════════════════════════════════════════════════════════ */
+.settle-card {
+  overflow: hidden;
+}
+.settle-card__footer {
+  padding: 10px 16px 12px;
+}
+
+
+/* ═══════════════════════════════════════════════════════════
+   지출 상세 모달 (exp-detail-*)
+═══════════════════════════════════════════════════════════ */
+.exp-detail-hero {
+  text-align: center;
+  padding: 24px 20px 20px;
+  background: linear-gradient(135deg, rgba(137,207,240,.08), rgba(194,184,217,.08));
+  border-radius: 14px;
+  margin-bottom: 16px;
+}
+.exp-detail-hero__icon { font-size: 36px; margin-bottom: 8px; }
+.exp-detail-hero__amt {
+  font-size: 30px;
+  font-weight: 900;
+  color: #1A202C;
+  letter-spacing: -2px;
+  margin-bottom: 4px;
+}
+.exp-detail-hero__name {
+  font-size: 14px;
+  color: #718096;
+  font-weight: 600;
+}
+
+.exp-detail-rows {
+  background: #F7FAFC;
+  border-radius: 12px;
+  overflow: hidden;
+  margin-bottom: 16px;
+}
+.exp-detail-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 11px 14px;
+  border-bottom: 1px solid #EDF2F7;
+}
+.exp-detail-row:last-child { border-bottom: none; }
+.exp-detail-row__label {
+  font-size: 12px;
+  color: #A0AEC0;
+  font-weight: 700;
+}
+.exp-detail-row__value {
+  font-size: 13px;
+  color: #2D3748;
+  font-weight: 600;
+}
+
+.exp-detail-section-label {
+  font-size: 11px;
+  font-weight: 800;
+  color: #A0AEC0;
+  text-transform: uppercase;
+  letter-spacing: .7px;
+  margin-bottom: 8px;
+  margin-top: 4px;
+}
+
+.exp-detail-memo {
+  background: #F7FAFC;
+  border: 1px solid #EDF2F7;
+  border-left: 3px solid rgba(137,207,240,.5);
+  border-radius: 10px;
+  padding: 12px 14px;
+  font-size: 13px;
+  color: #4A5568;
+  line-height: 1.7;
+  white-space: pre-wrap;
+  margin-bottom: 16px;
+}
+
+.exp-detail-receipt {
+  margin-bottom: 8px;
+}
+.exp-detail-receipt__img {
+  width: 100%;
+  max-height: 240px;
+  object-fit: cover;
+  border-radius: 12px;
+  border: 1.5px solid #EDF2F7;
+  cursor: zoom-in;
+  transition: opacity .15s;
+}
+.exp-detail-receipt__img:hover { opacity: .88; }
+.exp-detail-receipt__hint {
+  font-size: 11px;
+  color: #A0AEC0;
+  text-align: center;
+  margin-top: 6px;
+}
+
+/* 지출 카드 메모/영수증 배지 */
+.expense-extra-badge {
+  display: inline-flex;
+  align-items: center;
+  font-size: 10px;
+  font-weight: 700;
+  padding: 2px 7px;
+  border-radius: 50px;
+  background: rgba(255,182,193,.12);
+  color: #E8849A;
+  border: 1px solid rgba(255,182,193,.3);
+}
+.expense-extra-badge--img {
+  background: rgba(104,211,145,.12);
+  color: #276749;
+  border-color: rgba(104,211,145,.3);
+}
+
+/* ═══════════════════════════════════════════════════════════
+   정산 상세 모달 — 카카오페이 스타일 (settle-detail-kp-*)
+═══════════════════════════════════════════════════════════ */
+.settle-detail-kp-header {
+  text-align: center;
+  padding: 24px 20px 20px;
+  background: linear-gradient(135deg, #1A202C, #2D3748);
+  border-radius: 14px;
+  color: white;
+  margin-bottom: 20px;
+}
+.settle-detail-kp-total {
+  font-size: 12px;
+  opacity: .65;
+  margin-bottom: 8px;
+  font-weight: 600;
+}
+.settle-detail-kp-amt {
+  font-size: 34px;
+  font-weight: 900;
+  letter-spacing: -2px;
+  margin-bottom: 10px;
+  color: white;
+}
+.settle-detail-kp-desc {
+  font-size: 14px;
+  color: rgba(255,255,255,.85);
+  font-weight: 600;
+}
+.settle-detail-kp-from { color: #A0AEC0; }
+.settle-detail-kp-arrow { color: #4A5568; }
+.settle-detail-kp-to { color: #89CFF0; font-weight: 800; }
+
+/* 카테고리 그룹 */
+.settle-cat-group {
+  background: white;
+  border: 1.5px solid #EDF2F7;
+  border-radius: 14px;
+  overflow: hidden;
+  margin-bottom: 10px;
+}
+.settle-cat-group__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 14px;
+  background: #F7FAFC;
+  border-bottom: 1px solid #EDF2F7;
+  font-size: 13px;
+  font-weight: 800;
+  color: #2D3748;
+}
+.settle-cat-group__total {
+  font-size: 13px;
+  font-weight: 900;
+  color: #2B6CB0;
+}
+
+.settle-cat-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 11px 14px;
+  border-bottom: 1px solid #F0F4F8;
+}
+.settle-cat-item:last-child { border-bottom: none; }
+.settle-cat-item__avatar {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #89CFF0, #C2B8D9);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: 800;
+  color: white;
+  flex-shrink: 0;
+}
+.settle-cat-item__info { flex: 1; min-width: 0; }
+.settle-cat-item__name {
+  font-size: 13px;
+  font-weight: 700;
+  color: #2D3748;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.settle-cat-item__sub {
+  font-size: 11px;
+  color: #A0AEC0;
+  margin-top: 2px;
+}
+.settle-cat-item__amt {
+  font-size: 14px;
+  font-weight: 800;
+  color: #1A202C;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.settle-cat-item__img-btn {
+  background: transparent;
+  border: none;
+  font-size: 16px;
+  cursor: pointer;
+  padding: 2px 4px;
+  border-radius: 6px;
+  transition: background .12s;
+}
+.settle-cat-item__img-btn:hover { background: #EDF2F7; }
+
+/* 영수증 모아보기 썸네일 그리드 */
+.settle-detail-img-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+.settle-receipt-thumb {
+  aspect-ratio: 1;
+  border-radius: 10px;
+  overflow: hidden;
+  cursor: zoom-in;
+  border: 1.5px solid #EDF2F7;
+  transition: opacity .15s;
+}
+.settle-receipt-thumb:hover { opacity: .85; }
+.settle-receipt-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+
+/* ═══════════════════════════════════════════════════════════
+   지출 모달 v2 — 카카오페이 스타일
+═══════════════════════════════════════════════════════════ */
+.expense-modal-box-v2 {
+  width: min(480px, 96vw);
+  max-height: 92vh;
+  overflow-y: auto;
+  border-radius: 20px;
+  display: flex;
+  flex-direction: column;
+  scrollbar-width: thin;
+}
+
+/* 헤더 */
+.exp-v2-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 18px 20px 14px;
+  border-bottom: 1px solid #F0F4F8;
+  position: sticky;
+  top: 0;
+  background: white;
+  z-index: 10;
+}
+.exp-v2-title {
+  font-size: 16px;
+  font-weight: 900;
+  color: #1A202C;
+  letter-spacing: -.3px;
+}
+.exp-v2-close {
+  width: 30px; height: 30px;
+  border-radius: 50%;
+  border: 1.5px solid #E2E8F0;
+  background: transparent;
+  color: #718096;
+  cursor: pointer;
+  font-size: 14px;
+  display: flex; align-items: center; justify-content: center;
+  transition: all .15s;
+}
+.exp-v2-close:hover { background: #F7FAFC; }
+
+.exp-v2-body { padding: 0 20px 24px; }
+
+/* 카테고리 칩 스크롤 */
+.exp-v2-cats-wrap {
+  padding: 16px 0 0;
+  margin: 0 -20px;
+  border-bottom: 1px solid #F0F4F8;
+  overflow: hidden;  /* 세로 넘침만 숨김 */
+}
+.exp-v2-cats {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  padding: 0 20px 14px;
+  scrollbar-width: none;
+}
+.exp-v2-cats::-webkit-scrollbar { display: none; }
+.exp-cat-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 9px 16px;
+  border: 1.5px solid #E2E8F0;
+  border-radius: 50px;
+  background: white;
+  font-family: 'Pretendard', sans-serif;
+  font-size: 13px;
+  font-weight: 700;
+  color: #718096;
+  cursor: pointer;
+  white-space: nowrap;
+  flex-shrink: 0;
+  transition: all .15s;
+}
+.exp-cat-chip:hover { border-color: #89CFF0; color: #2B6CB0; }
+.exp-cat-chip.active {
+  background: linear-gradient(135deg, #89CFF0, #C2B8D9);
+  border-color: transparent;
+  color: white;
+  box-shadow: 0 3px 10px rgba(137,207,240,.35);
+}
+
+/* 금액 입력 */
+.exp-v2-amount-section {
+  padding: 20px 0 16px;
+  border-bottom: 1px solid #F0F4F8;
+}
+.exp-v2-amount-label {
+  font-size: 13px;
+  color: #A0AEC0;
+  font-weight: 600;
+  margin-bottom: 6px;
+}
+.exp-v2-amount-wrap { position: relative; }
+.exp-v2-amount-prefix {
+  position: absolute;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 28px;
+  font-weight: 900;
+  color: #CBD5E0;
+  pointer-events: none;
+}
+.exp-v2-amount-input {
+  width: 100%;
+  padding: 6px 0 6px 32px;
+  border: none;
+  border-bottom: 2.5px solid #E2E8F0;
+  font-family: 'Pretendard', sans-serif;
+  font-size: 32px;
+  font-weight: 900;
+  color: #1A202C;
+  background: transparent;
+  outline: none;
+  letter-spacing: -2px;
+  transition: border-color .2s;
+}
+.exp-v2-amount-input:focus { border-bottom-color: #89CFF0; }
+.exp-v2-amount-input::placeholder { color: #E2E8F0; }
+
+/* 필드 행 */
+.exp-v2-row {
+  display: flex;
+  gap: 12px;
+  padding: 14px 0 0;
+  border-bottom: 1px solid #F0F4F8;
+  padding-bottom: 14px;
+}
+.exp-v2-field { flex: 1; display: flex; flex-direction: column; gap: 5px; }
+.exp-v2-label {
+  font-size: 11px;
+  font-weight: 800;
+  color: #A0AEC0;
+  text-transform: uppercase;
+  letter-spacing: .5px;
+}
+.exp-v2-input {
+  width: 100%;
+  padding: 9px 12px;
+  border: 1.5px solid #E2E8F0;
+  border-radius: 10px;
+  font-family: 'Pretendard', sans-serif;
+  font-size: 13px;
+  color: #2D3748;
+  background: #F7FAFC;
+  outline: none;
+  transition: border-color .15s, background .15s;
+}
+.exp-v2-input:focus { border-color: #89CFF0; background: white; }
+
+/* 분담자 섹션 */
+.exp-v2-split-section {
+  padding: 16px 0 14px;
+  border-bottom: 1px solid #F0F4F8;
+}
+.exp-v2-split-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+.exp-v2-split-count {
+  font-size: 14px;
+  font-weight: 800;
+  color: #2D3748;
+}
+.exp-v2-edit-btn {
+  font-size: 12px;
+  font-weight: 700;
+  color: #2B6CB0;
+  background: rgba(137,207,240,.1);
+  border: 1px solid rgba(137,207,240,.3);
+  border-radius: 50px;
+  padding: 5px 14px;
+  cursor: pointer;
+  font-family: 'Pretendard', sans-serif;
+  transition: all .15s;
+}
+.exp-v2-edit-btn:hover { background: rgba(137,207,240,.2); }
+
+/* 분담자 리스트 아이템 */
+.exp-v2-split-list { display: flex; flex-direction: column; gap: 2px; }
+.exp-v2-split-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 0;
+  border-bottom: 1px solid #F7FAFC;
+}
+.exp-v2-split-item:last-child { border-bottom: none; }
+.exp-v2-split-avatar {
+  width: 36px; height: 36px; border-radius: 50%;
+  background: linear-gradient(135deg, #89CFF0, #FFB6C1);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 12px; font-weight: 800; color: white; flex-shrink: 0;
+}
+.exp-v2-split-avatar.ext {
+  background: linear-gradient(135deg, #CBD5E0, #A0AEC0);
+}
+.exp-v2-split-name {
+  flex: 1;
+  font-size: 14px;
+  font-weight: 700;
+  color: #2D3748;
+}
+.ext-badge {
+  font-size: 10px;
+  font-weight: 700;
+  background: #EDF2F7;
+  color: #718096;
+  padding: 1px 6px;
+  border-radius: 50px;
+  margin-left: 4px;
+}
+.exp-v2-split-amt {
+  font-size: 15px;
+  font-weight: 900;
+  color: #1A202C;
+  white-space: nowrap;
+}
+.exp-v2-remainder-note {
+  font-size: 11px;
+  color: #A0AEC0;
+  padding-top: 8px;
+  text-align: center;
+}
+
+/* 메모 + 영수증 */
+.exp-v2-extras {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 14px 0 8px;
+}
+.exp-v2-extras .exp-v2-input { margin-bottom: 0; }
+.exp-v2-receipt-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 9px 14px;
+  border: 1.5px solid #E2E8F0;
+  border-radius: 10px;
+  background: #F7FAFC;
+  font-size: 12px;
+  font-weight: 700;
+  color: #718096;
+  cursor: pointer;
+  white-space: nowrap;
+  flex-shrink: 0;
+  transition: all .15s;
+}
+.exp-v2-receipt-btn:hover { border-color: #89CFF0; color: #2B6CB0; }
+
+/* 확인 버튼 */
+.exp-v2-submit {
+  width: 100%;
+  padding: 16px;
+  margin-top: 16px;
+  border: none;
+  border-radius: 50px;
+  background: linear-gradient(135deg, #89CFF0, #C2B8D9, #FFB6C1);
+  color: white;
+  font-family: 'Pretendard', sans-serif;
+  font-size: 15px;
+  font-weight: 900;
+  cursor: pointer;
+  letter-spacing: -.2px;
+  box-shadow: 0 6px 20px rgba(137,207,240,.35);
+  transition: all .2s;
+}
+.exp-v2-submit:not(:disabled):hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 28px rgba(137,207,240,.45);
+}
+.exp-v2-submit:disabled {
+  opacity: .45;
+  cursor: not-allowed;
+  background: #CBD5E0;
+  box-shadow: none;
+}
+
+/* 분담자 편집 모달 */
+.pe-member-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 0;
+  border-bottom: 1px solid #F7FAFC;
+}
+.pe-avatar {
+  width: 34px; height: 34px; border-radius: 50%;
+  background: linear-gradient(135deg, #89CFF0, #FFB6C1);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 11px; font-weight: 800; color: white;
+}
+.pe-avatar.ext { background: linear-gradient(135deg, #CBD5E0, #A0AEC0); }
+.pe-add-row {
+  display: flex; gap: 8px; margin-top: 12px; padding-top: 12px;
+  border-top: 1.5px dashed #E2E8F0;
+}
+.pe-add-btn {
+  padding: 9px 18px;
+  border: none;
+  border-radius: 10px;
+  background: linear-gradient(135deg, #89CFF0, #C2B8D9);
+  color: white;
+  font-family: 'Pretendard', sans-serif;
+  font-size: 13px; font-weight: 700;
+  cursor: pointer; white-space: nowrap;
+}
+
+
+
+
+/* ═══════════════════════════════════════════════════════════
+   홈 탭 재설계 — exp-home-*
+═══════════════════════════════════════════════════════════ */
+
+/* 히어로 카드 */
+.exp-home-hero {
+  margin: 16px 16px 8px;
+  background: linear-gradient(135deg, #2D3748 0%, #1A202C 100%);
+  border-radius: 20px;
+  padding: 22px 20px 18px;
+  color: white;
+  position: relative;
+  overflow: hidden;
+}
+.exp-home-hero::before {
+  content: '';
+  position: absolute;
+  top: -30px; right: -30px;
+  width: 120px; height: 120px;
+  border-radius: 50%;
+  background: rgba(137,207,240,.08);
+}
+.exp-home-hero::after {
+  content: '';
+  position: absolute;
+  bottom: -20px; left: -20px;
+  width: 80px; height: 80px;
+  border-radius: 50%;
+  background: rgba(194,184,217,.08);
+}
+.exp-home-hero__top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 6px;
+}
+.exp-home-hero__label {
+  font-size: 12px;
+  color: rgba(255,255,255,.6);
+  font-weight: 600;
+  letter-spacing: .3px;
+}
+.exp-home-hero__add-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 5px 12px;
+  background: rgba(137,207,240,.18);
+  border: 1px solid rgba(137,207,240,.3);
+  border-radius: 50px;
+  color: rgba(255,255,255,.9);
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+  font-family: 'Pretendard', sans-serif;
+  transition: all .15s;
+}
+.exp-home-hero__add-btn:hover { background: rgba(137,207,240,.28); }
+.exp-home-hero__amount {
+  font-size: 32px;
+  font-weight: 900;
+  color: white;
+  letter-spacing: -2px;
+  line-height: 1;
+  margin-bottom: 16px;
+}
+.exp-home-hero__stats {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  background: rgba(255,255,255,.08);
+  border-radius: 12px;
+  overflow: hidden;
+  margin-bottom: 12px;
+}
+.exp-home-hero__stat {
+  flex: 1;
+  padding: 10px 14px;
+  text-align: center;
+}
+.exp-home-hero__stat-divider {
+  width: 1px;
+  height: 32px;
+  background: rgba(255,255,255,.12);
+}
+.exp-home-hero__stat-label {
+  font-size: 10px;
+  color: rgba(255,255,255,.55);
+  font-weight: 600;
+  margin-bottom: 3px;
+  letter-spacing: .3px;
+}
+.exp-home-hero__stat-val {
+  font-size: 15px;
+  font-weight: 900;
+  color: white;
+  letter-spacing: -.5px;
+}
+.exp-home-hero__balance {
+  min-height: 22px;
+}
+
+/* 잔액 칩 */
+.exp-home-balance-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 12px;
+  font-weight: 700;
+  padding: 5px 12px;
+  border-radius: 50px;
+}
+.exp-home-balance-chip--recv {
+  background: rgba(104,211,145,.2);
+  color: #9AE6B4;
+  border: 1px solid rgba(104,211,145,.25);
+}
+.exp-home-balance-chip--send {
+  background: rgba(252,129,129,.2);
+  color: #FEB2B2;
+  border: 1px solid rgba(252,129,129,.25);
+}
+.exp-home-balance-chip--done {
+  background: rgba(255,255,255,.1);
+  color: rgba(255,255,255,.7);
+  border: 1px solid rgba(255,255,255,.15);
+}
+
+/* 정산 대기 칩 */
+.exp-home-settle-chip {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 14px;
+  background: rgba(255,182,100,.08);
+  border: 1.5px solid rgba(255,182,100,.25);
+  border-radius: 12px;
+  cursor: pointer;
+  margin-bottom: 4px;
+  transition: all .15s;
+}
+.exp-home-settle-chip:hover { background: rgba(255,182,100,.14); }
+
+/* 섹션 타이틀 */
+.exp-home-section-title {
+  font-size: 12px;
+  font-weight: 800;
+  color: #A0AEC0;
+  text-transform: uppercase;
+  letter-spacing: .6px;
+  margin-bottom: 10px;
+}
+
+/* 멤버 리스트 */
+.exp-home-member-list { display: flex; flex-direction: column; gap: 6px; }
+.exp-home-member-card {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 11px 14px;
+  background: white;
+  border: 1.5px solid #EDF2F7;
+  border-radius: 14px;
+  transition: all .15s;
+}
+.exp-home-member-card--me {
+  border-color: rgba(137,207,240,.4);
+  background: rgba(137,207,240,.04);
+}
+.exp-home-member-avatar {
+  width: 34px; height: 34px; border-radius: 50%;
+  background: linear-gradient(135deg, #89CFF0, #FFB6C1);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 11px; font-weight: 800; color: white; flex-shrink: 0;
+}
+.exp-home-member-info { flex: 1; min-width: 0; }
+.exp-home-member-name {
+  font-size: 13px;
+  font-weight: 700;
+  color: #2D3748;
+  margin-bottom: 2px;
+}
+.exp-home-member-sub {
+  font-size: 11px;
+  color: #A0AEC0;
+  font-weight: 500;
+}
+.exp-home-member-balance {
+  font-size: 13px;
+  font-weight: 800;
+  white-space: nowrap;
+  text-align: right;
+  flex-shrink: 0;
+}
+
+/* expense-cats 내 카드 간격 */
+.expense-cats { display: flex; flex-direction: column; gap: 6px; }
+
+/* 카테고리 칩 스크롤 강제 */
+.exp-v2-cats { display:flex!important; flex-wrap:nowrap!important; overflow-x:scroll!important; overflow-y:hidden!important; -webkit-overflow-scrolling:touch; touch-action:pan-x; overscroll-behavior-x:contain; scrollbar-width:none; }
+
+
+/* ═══════════════════════════════════════════════════════════
+   홈 탭 히어로 카드 overflow 수정 (짤림 방지)
+═══════════════════════════════════════════════════════════ */
+.exp-home-hero {
+  overflow: visible !important;
+  position: relative;
+  z-index: 1;
+}
+/* 히어로 금액 — 긴 숫자도 짤리지 않게 */
+.exp-home-hero__amount {
+  font-size: 28px !important;
+  letter-spacing: -1.5px !important;
+  overflow: visible;
+  white-space: nowrap;
+}
+
+/* 홈 탭 전체 overflow */
+#exp-tab-home {
+  overflow-y: auto !important;
+  overflow-x: hidden;
+  padding-bottom: 20px;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   카테고리별 지출 — 가로 스크롤 가능하게 (홈탭)
+   클릭 시 커서 포인터
+═══════════════════════════════════════════════════════════ */
+#expenseCatsSection {
+  overflow: visible;
+}
+.expense-cats {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 4px !important;
+  overflow-y: auto;
+  max-height: 180px;
+  scrollbar-width: thin;
+  scrollbar-color: var(--border) transparent;
+  padding-right: 4px;
+}
+.expense-cat {
+  cursor: pointer;
+  border-radius: 10px;
+  padding: 8px 10px !important;
+  transition: background .12s;
+  flex-shrink: 0;
+}
+.expense-cat:hover { background: var(--bg); }
+.expense-cat__row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 4px;
+}
+.expense-cat__icon { font-size: 14px; }
+.expense-cat__name { font-size: 12px; font-weight: 700; color: #2D3748; flex: 1; }
+.expense-cat__pct  { font-size: 11px; color: #A0AEC0; font-weight: 600; }
+.expense-cat__amt  { font-size: 13px; font-weight: 900; color: #1A202C; white-space: nowrap; }
+.expense-cat__bar  {
+  height: 4px;
+  background: #EDF2F7;
+  border-radius: 2px;
+  overflow: hidden;
+}
+.expense-cat__bar-fill { height: 100%; border-radius: 2px; }
+
+/* ═══════════════════════════════════════════════════════════
+   멤버 정산 상세 모달 (ms-*)
+═══════════════════════════════════════════════════════════ */
+.ms-section-head {
+  font-size: 13px;
+  font-weight: 800;
+  color: #2D3748;
+  padding: 8px 0 6px;
+  border-bottom: 2px solid #EDF2F7;
+  margin-bottom: 8px;
+}
+.ms-section-total {
+  font-size: 12px;
+  font-weight: 700;
+  color: #718096;
+  margin-bottom: 8px;
+}
+.ms-expense-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 10px;
+  border-radius: 10px;
+  margin-bottom: 4px;
+  background: #F7FAFC;
+  cursor: pointer;
+  transition: background .12s;
+}
+.ms-expense-item:hover { background: #EDF2F7; }
+.ms-cat-icon { font-size: 18px; flex-shrink: 0; }
+.ms-item-info { flex: 1; min-width: 0; }
+.ms-item-name {
+  font-size: 13px;
+  font-weight: 700;
+  color: #2D3748;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.ms-item-date { font-size: 11px; color: #A0AEC0; margin-top: 1px; }
+.ms-item-amt {
+  font-size: 13px;
+  font-weight: 800;
+  color: #1A202C;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+/* 멤버 카드 클릭 커서 */
+.exp-home-member-card { cursor: pointer; }
+.exp-home-member-card:hover {
+  border-color: rgba(137,207,240,.5) !important;
+  box-shadow: 0 2px 10px rgba(137,207,240,.12);
+}
+.exp-home-member-state { text-align: right; flex-shrink: 0; }
+
+
+/* ═══════════════════════════════════════════════════════════
+   내 지출 요약 카드 (exp-my-summary-*)
+═══════════════════════════════════════════════════════════ */
+.exp-my-summary-card {
+  background: white;
+  border: 1.5px solid #EDF2F7;
+  border-radius: 16px;
+  overflow: hidden;
+  margin-bottom: 10px;
+}
+.exp-my-summary-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 11px 16px;
+  border-bottom: 1px solid #F7FAFC;
+}
+.exp-my-summary-row--result {
+  background: #F7FAFC;
+  padding: 13px 16px;
+  border-bottom: none;
+}
+.exp-my-summary-label { font-size: 13px; color: #718096; font-weight: 500; }
+.exp-my-summary-val   { font-size: 14px; font-weight: 800; color: #2D3748; }
+.exp-my-summary-result { font-size: 14px; font-weight: 900; }
+.exp-my-summary-divider { height: 6px; background: #F7FAFC; }
+
+.exp-my-detail-btn {
+  width: 100%;
+  padding: 10px 0;
+  background: transparent;
+  border: 1.5px solid #E2E8F0;
+  border-radius: 12px;
+  font-family: 'Pretendard', sans-serif;
+  font-size: 13px;
+  font-weight: 700;
+  color: #3a8fb7;
+  cursor: pointer;
+  transition: all .15s;
+}
+.exp-my-detail-btn:hover { background: #EBF8FF; border-color: #89CFF0; }
+
+/* stat bar in member settle modal */
+.ms-stat-bar {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+.ms-stat {
+  flex: 1;
+  background: #F7FAFC;
+  border-radius: 10px;
+  padding: 10px 12px;
+  text-align: center;
+}
+.ms-stat-label { font-size: 11px; color: #A0AEC0; font-weight: 600; margin-bottom: 3px; }
+.ms-stat-val   { font-size: 16px; font-weight: 900; color: #2D3748; }
+
+/* ═══════════════════════════════════════════════════════════
+   지출 내역 리스트 재설계
+═══════════════════════════════════════════════════════════ */
+.exp-list-date-group { margin-bottom: 6px; }
+.exp-list-date-label {
+  font-size: 11px;
+  font-weight: 800;
+  color: #A0AEC0;
+  padding: 6px 8px 4px;
+  letter-spacing: .3px;
+}
+
+/* 지출 카드 */
+.expense-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 11px 12px;
+  background: white;
+  border-radius: 12px;
+  margin-bottom: 4px;
+  cursor: pointer;
+  transition: all .15s;
+  position: relative;
+  border: 1px solid transparent;
+}
+.expense-item:hover {
+  border-color: #EDF2F7;
+  box-shadow: 0 2px 8px rgba(0,0,0,.06);
+}
+
+/* 카테고리 아이콘 (그라데이션 배경) */
+.expense-item__cat-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  flex-shrink: 0;
+}
+
+.expense-item__info { flex: 1; min-width: 0; }
+.expense-item__name {
+  font-size: 14px;
+  font-weight: 700;
+  color: #1A202C;
+  margin-bottom: 3px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.expense-item__meta {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-wrap: wrap;
+}
+.expense-item__cat   { font-size: 11px; color: #A0AEC0; font-weight: 600; }
+.expense-item__payer { font-size: 11px; color: #718096; font-weight: 600; }
+.expense-item__meta-dot { font-size: 10px; color: #CBD5E0; }
+
+.expense-item__right {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 4px;
+  flex-shrink: 0;
+}
+.expense-item__amt {
+  font-size: 15px;
+  font-weight: 900;
+  color: #1A202C;
+  letter-spacing: -.5px;
+}
+
+/* 섹션 타이틀 재정의 */
+.settle-section-title {
+  font-size: 13px;
+  font-weight: 800;
+  color: #1A202C;
+  padding: 12px 16px 6px;
+  letter-spacing: -.1px;
+}
+
+/* 받을 정산 카드 */
+.settle-card--recv {
+  border-color: rgba(104,211,145,.3);
+  background: rgba(104,211,145,.03);
+}
+.settle-card--recv::before {
+  background: linear-gradient(to bottom, #68D391, #38A169) !important;
+}
+.settle-card__kp-amt--recv {
+  color: #276749 !important;
+}
+.settle-status-badge--recv {
+  background: rgba(104,211,145,.12);
+  color: #276749;
+  border: 1px solid rgba(104,211,145,.3);
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 4px 10px;
+  border-radius: 50px;
+}
+
+/* 정산 요청 버튼 강조 */
+.settle-card__pay-btn--request {
+  background: linear-gradient(135deg, #2D3748, #4A5568) !important;
+  font-size: 12px !important;
+  padding: 6px 14px !important;
+}
+.settle-card__pay-btn--request:hover {
+  box-shadow: 0 4px 12px rgba(45,55,72,.3) !important;
+}
+
+/* 카테고리 섹션 제목 리셋 */
+.exp-home-section-title {
+  font-size: 13px;
+  font-weight: 800;
+  color: #1A202C;
+  margin-bottom: 8px;
+  letter-spacing: -.2px;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   카테고리별 지출 — 가로 스크롤 칩 카드 (홈탭)
+═══════════════════════════════════════════════════════════ */
+.expense-cats {
+  display: flex !important;
+  flex-direction: row !important;
+  gap: 8px !important;
+  overflow-x: auto !important;
+  overflow-y: hidden;
+  -webkit-overflow-scrolling: touch;
+  touch-action: pan-x;
+  padding: 0 0 8px !important;
+  scrollbar-width: none;
+  max-height: none !important;
+}
+.expense-cats::-webkit-scrollbar { display: none; }
+
+.expense-cat {
+  flex: 0 0 auto;
+  min-width: 100px;
+  background: white;
+  border: 1.5px solid #EDF2F7;
+  border-radius: 14px;
+  padding: 12px 14px !important;
+  cursor: pointer;
+  transition: all .15s;
+  text-align: center;
+}
+.expense-cat:hover {
+  border-color: rgba(137,207,240,.5);
+  box-shadow: 0 3px 10px rgba(137,207,240,.15);
+  transform: translateY(-1px);
+}
+.expense-cat__row {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  margin-bottom: 6px;
+}
+.expense-cat__icon {
+  font-size: 22px;
+  line-height: 1;
+}
+.expense-cat__name {
+  font-size: 11px;
+  font-weight: 700;
+  color: #4A5568;
+  white-space: nowrap;
+}
+.expense-cat__pct {
+  font-size: 10px;
+  color: #A0AEC0;
+  font-weight: 600;
+  margin-bottom: 2px;
+}
+.expense-cat__amt {
+  font-size: 13px;
+  font-weight: 900;
+  color: #1A202C;
+  white-space: nowrap;
+}
+.expense-cat__bar {
+  height: 3px;
+  background: #EDF2F7;
+  border-radius: 2px;
+  overflow: hidden;
+  margin-top: 4px;
+}
+.expense-cat__bar-fill {
+  height: 100%;
+  border-radius: 2px;
+}
+
+
+/* ═══════════════════════════════════════════════════════════
+   정산 섹션 설명 텍스트
+═══════════════════════════════════════════════════════════ */
+.settle-section-desc {
+  font-size: 11px;
+  color: #A0AEC0;
+  padding: 0 16px 8px;
+  line-height: 1.5;
+}
+
+/* 정산 삭제 버튼 */
+.settle-card__del-btn {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  font-size: 14px;
+  padding: 4px 6px;
+  border-radius: 6px;
+  color: #CBD5E0;
+  transition: all .15s;
+  flex-shrink: 0;
+}
+.settle-card__del-btn:hover { background: #FED7D7; color: #C53030; }
+
+/* ═══════════════════════════════════════════════════════════
+   편집 모드 개선 — 더 넓고 쾌적하게
+═══════════════════════════════════════════════════════════ */
+.ws-layout.mode-edit #panel-expense {
+  background: #F7FAFC;
+}
+.ws-layout.mode-edit .exp-home-hero {
+  max-width: 600px;
+  margin: 0 auto 16px;
+  border-radius: 20px;
+}
+.ws-layout.mode-edit .expense-cats {
+  justify-content: center;
+  flex-wrap: wrap;
+  overflow-x: visible;
+}
+.ws-layout.mode-edit .exp-my-summary-card {
+  max-width: 600px;
+  margin: 0 auto 12px;
+}
+.ws-layout.mode-edit .expense-item {
+  max-width: 600px;
+  margin-left: auto;
+  margin-right: auto;
+}
+.ws-layout.mode-edit .settle-card {
+  max-width: 600px;
+  margin-left: auto;
+  margin-right: auto;
+  margin-bottom: 10px;
 }

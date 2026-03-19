@@ -1,0 +1,492 @@
+@charset "UTF-8";
+
+/* ═══════════════════════════════════════════════
+   home.css — Tripan v5
+   ONGOING   : linear-gradient(120deg, #a1c4fd 0%, #c2e9fb 100%)
+   COMPLETED : linear-gradient(to top, #9795f0 0%, #fbc8d4 100%)
+   EMPTY     : linear-gradient(45deg, #ee9ca7 0%, #ffdde1 100%)
+   GUEST/PRI : #89CFF0 → #FFB6C1
+   text      : #2D3748
+═══════════════════════════════════════════════ */
+
+/* ── 히어로 카피 ── */
+.hero-eyebrow {
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: 2.5px;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.7);
+  margin-bottom: 14px;
+}
+.hero-title { letter-spacing: -2px; }
+
+/* ══════════════════════════════════════════════
+   위젯 섹션 — 가로 더 넓게
+══════════════════════════════════════════════ */
+.widget-section {
+  max-width: 1300px;         /* ↑ 1100 → 1300 */
+  margin: -44px auto 80px;
+  padding: 0 4%;
+  position: relative;
+  z-index: 10;
+}
+.widget-container { width: 100%; }
+
+/* ══════════════════════════════════════════════
+   공통 위젯 카드
+══════════════════════════════════════════════ */
+.trip-widget {
+  background: #fff;
+  border-radius: 28px;
+  border: 1px solid #E8EEF4;
+  box-shadow: 0 4px 28px rgba(45,55,72,0.08), 0 1px 4px rgba(45,55,72,0.04);
+  display: flex;
+  align-items: center;       /* 세로 중앙 정렬 */
+  overflow: hidden;
+  min-height: 210px;
+  transition: box-shadow 0.3s ease, transform 0.3s ease;
+}
+.trip-widget:hover {
+  box-shadow: 0 14px 52px rgba(45,55,72,0.12);
+  transform: translateY(-2px);
+}
+
+/* ── 왼쪽 액센트 스트립 ── */
+.widget-accent {
+  width: 6px;
+  flex-shrink: 0;
+  align-self: stretch;
+}
+.accent-brand    { background: linear-gradient(180deg, #89CFF0, #FFB6C1); }
+.accent-planning { background: linear-gradient(180deg, #fde68a, #fbbf68); }
+.accent-ongoing  { background: linear-gradient(180deg, #a1c4fd, #c2e9fb); }
+.accent-complete { background: linear-gradient(180deg, #9795f0, #fbc8d4); }
+.accent-empty    { background: linear-gradient(180deg, #ee9ca7, #ffdde1); }
+
+/* ══════════════════════════════════════════════
+   썸네일 — 좌측 고정, cover로 예쁘게
+══════════════════════════════════════════════ */
+.widget-thumb {
+  width: 220px;
+  min-width: 220px;
+  align-self: stretch;
+  position: relative;
+  overflow: hidden;
+  flex-shrink: 0;
+  border-top-left-radius: 22px;
+  border-bottom-left-radius: 22px;
+}
+
+.widget-thumb img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+  display: block;
+  transition: transform 0.5s ease;
+}
+.trip-widget:hover .widget-thumb img { transform: scale(1.04); }
+
+/* 좌→우 페이드 오버레이로 본문과 자연스럽게 이어짐 */
+.widget-thumb::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to right, transparent 60%, rgba(255,255,255,0.18) 100%);
+  pointer-events: none;
+  z-index: 1;
+}
+
+/* 플레이스홀더 이모지 */
+.thumb-placeholder {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 64px;
+  z-index: 1;
+}
+
+/* 플레이스홀더 이모지 */
+.thumb-placeholder {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 64px;
+  z-index: 1;
+}
+
+/* 상태별 플레이스홀더 배경 */
+.planning-bg  { background: linear-gradient(135deg, #FEF3C7, #FDE68A); }
+.ongoing-bg   { background: linear-gradient(120deg, #a1c4fd 0%, #c2e9fb 100%); }
+.completed-bg { background: linear-gradient(to top, #9795f0 0%, #fbc8d4 100%); }
+
+/* 상태 뱃지 — 썸네일 하단 */
+.widget-badge {
+  position: absolute;
+  bottom: 10px;
+  left: 10px;
+  z-index: 2;
+  padding: 5px 12px;
+  border-radius: 100px;
+  font-size: 11.5px;
+  font-weight: 800;
+  letter-spacing: 0.3px;
+  white-space: nowrap;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+.planning-badge  { background: rgba(255,255,255,0.92); color: #3B82F6; }
+.ongoing-badge   { background: rgba(255,255,255,0.92); color: #2563EB; display:flex; align-items:center; gap:5px; }
+.completed-badge { background: rgba(255,255,255,0.88); color: #7C3AED; }
+
+/* 라이브 점 */
+.live-dot {
+  width: 7px; height: 7px;
+  background: #3B82F6;
+  border-radius: 50%;
+  display: inline-block;
+  animation: livePulse 1.4s ease-in-out infinite;
+}
+@keyframes livePulse {
+  0%,100% { opacity: 1; transform: scale(1); }
+  50%      { opacity: 0.3; transform: scale(0.55); }
+}
+
+/* ══════════════════════════════════════════════
+   상태별 카드 배경 (아주 연하게)
+══════════════════════════════════════════════ */
+.planning-widget {
+  background: linear-gradient(135deg, rgba(253,230,138,0.14) 0%, rgba(251,191,136,0.13) 100%);
+}
+.ongoing-widget {
+  background: linear-gradient(120deg, rgba(161,196,253,0.12) 0%, rgba(194,233,251,0.15) 100%);
+}
+.completed-widget {
+  background: linear-gradient(to top, rgba(151,149,240,0.1) 0%, rgba(251,200,212,0.13) 100%);
+}
+.empty-widget {
+  background: linear-gradient(45deg, rgba(238,156,167,0.1) 0%, rgba(255,221,225,0.15) 100%);
+}
+
+/* ══════════════════════════════════════════════
+   위젯 본문
+══════════════════════════════════════════════ */
+.widget-body {
+  flex: 1;
+  padding: 28px 40px;        /* ↑ 가로 패딩 확대 */
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 14px;
+  min-width: 0;
+}
+.widget-body.centered {
+  align-items: center;
+  text-align: center;
+  padding: 44px 40px;
+}
+
+/* ── 상태 eyebrow ── */
+.widget-eyebrow {
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: 1.4px;
+  text-transform: uppercase;
+  margin: 0;
+  color: #89CFF0;
+}
+.ongoing-widget   .widget-eyebrow { color: #60A5FA; }
+.completed-widget .widget-eyebrow { color: #9795f0; }
+.empty-widget     .widget-eyebrow { color: #ee9ca7; }
+.guest-widget     .widget-eyebrow { color: #89CFF0; }
+.planning-widget  .widget-eyebrow { color: #F59E0B; }
+
+/* ── 여행명 ── */
+.widget-title {
+  font-size: 30px;           /* ↑ 28→30 */
+  font-weight: 900;
+  color: #2D3748;
+  line-height: 1.2;
+  letter-spacing: -0.8px;
+  margin: 0;
+  word-break: keep-all;
+}
+
+/* ── 보조 설명 ── */
+.widget-desc {
+  font-size: 15px;
+  font-weight: 500;
+  color: #4A5568;
+  line-height: 1.7;
+  margin: 0;
+  word-break: keep-all;
+}
+
+/* ── 메타 칩 ── */
+.widget-meta-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+.meta-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(255,255,255,0.75);
+  color: #4A5568;
+  font-size: 14px;
+  font-weight: 600;
+  padding: 7px 16px;
+  border-radius: 100px;
+  border: 1px solid rgba(200,220,240,0.6);
+  line-height: 1;
+  backdrop-filter: blur(4px);
+}
+.meta-chip svg { color: #89CFF0; flex-shrink: 0; }
+.planning-widget  .meta-chip svg { color: #F59E0B; }
+.ongoing-widget   .meta-chip svg { color: #60A5FA; }
+.completed-widget .meta-chip svg { color: #9795f0; }
+
+/* ── D-day ── */
+.dday-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.dday-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 6px 16px;
+  border-radius: 100px;
+  font-size: 14px;
+  font-weight: 900;
+  letter-spacing: -0.2px;
+  background: linear-gradient(135deg, #fde68a, #fbbf68);
+  color: #2D3748;
+  box-shadow: 0 3px 10px rgba(251,191,104,0.35);
+}
+.dday-badge.dday-today {
+  background: linear-gradient(135deg, #89CFF0, #FFB6C1);
+  box-shadow: 0 3px 12px rgba(255,182,193,0.4);
+}
+.dday-badge.dday-soon {
+  background: linear-gradient(135deg, #FFD580, #FFB347);
+  box-shadow: 0 3px 10px rgba(255,179,71,0.35);
+}
+.dday-label { font-size: 14px; font-weight: 500; color: #718096; }
+
+/* ── CTA 버튼 ── */
+.widget-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 2px;
+  flex-wrap: wrap;
+}
+.widget-actions.centered { justify-content: center; }
+
+.btn-widget-primary {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 14px 30px;
+  border-radius: 100px;
+  font-size: 15px;
+  font-weight: 800;
+  font-family: var(--font-sans);
+  color: white;
+  background: linear-gradient(135deg, #89CFF0, #FFB6C1);
+  text-decoration: none;
+  transition: all 0.3s var(--bounce);
+  box-shadow: 0 4px 18px rgba(137,207,240,0.42);
+  white-space: nowrap;
+  border: none;
+}
+.btn-widget-primary:hover {
+  transform: translateY(-2px) scale(1.02);
+  box-shadow: 0 8px 28px rgba(137,207,240,0.55);
+  filter: brightness(1.04);
+}
+
+/* ONGOING — 파란 그라데이션 버튼 */
+.ongoing-widget .btn-widget-primary {
+  background: linear-gradient(120deg, #a1c4fd, #c2e9fb);
+  color: #2D3748;
+  box-shadow: 0 4px 18px rgba(161,196,253,0.45);
+}
+.ongoing-widget .btn-widget-primary:hover {
+  box-shadow: 0 8px 28px rgba(161,196,253,0.6);
+}
+
+/* PLANNING — 웜 앰버/골드 그라데이션 버튼 */
+.planning-widget .btn-widget-primary {
+  background: linear-gradient(135deg, #fde68a, #fbbf68);
+  color: #2D3748;
+  box-shadow: 0 4px 18px rgba(251,191,104,0.42);
+}
+.planning-widget .btn-widget-primary:hover {
+  box-shadow: 0 8px 28px rgba(251,191,104,0.6);
+}
+
+/* COMPLETED — 퍼플 그라데이션 버튼 */
+.completed-widget .btn-widget-primary {
+  background: linear-gradient(to top, #9795f0, #fbc8d4);
+  box-shadow: 0 4px 18px rgba(151,149,240,0.4);
+}
+
+/* EMPTY — 코랄 그라데이션 버튼 */
+.empty-widget .btn-widget-primary {
+  background: linear-gradient(45deg, #ee9ca7, #ffdde1);
+  color: #2D3748;
+  box-shadow: 0 4px 18px rgba(238,156,167,0.4);
+}
+
+.btn-widget-secondary {
+  display: inline-flex;
+  align-items: center;
+  padding: 14px 24px;
+  border-radius: 100px;
+  font-size: 14px;
+  font-weight: 700;
+  font-family: var(--font-sans);
+  color: #4A5568;
+  background: rgba(255,255,255,0.7);
+  text-decoration: none;
+  border: 1.5px solid #DDE6EF;
+  transition: all 0.3s var(--bounce);
+  white-space: nowrap;
+  backdrop-filter: blur(4px);
+}
+.btn-widget-secondary:hover {
+  background: rgba(255,255,255,0.9);
+  border-color: #C5D5E8;
+  color: #2D3748;
+  transform: translateY(-2px);
+}
+
+/* ══════════════════════════════════════════════
+   A. GUEST 위젯 — 정사각형 + 구름 크게
+══════════════════════════════════════════════ */
+.guest-widget {
+  background: linear-gradient(135deg, #F0F9FF 0%, #FDF2F8 100%);
+  border-color: #E0EEF8;
+}
+
+.widget-visual.guest-visual {
+  width: 240px;              /* ↑ 220 → 240 */
+  min-width: 240px;
+  height: 240px;             /* 정사각형 */
+  align-self: center;
+  margin: 20px 0 20px 20px;
+  border-radius: 22px;
+  background: linear-gradient(145deg, #BEE3F8 0%, #E9D5F4 50%, #F9D6E4 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  overflow: hidden;
+  position: relative;
+  box-shadow: 0 6px 24px rgba(137,207,240,0.22);
+}
+
+/* 구름 1 — 왼쪽 상단, 크게 */
+.guest-visual::before {
+  content: '';
+  position: absolute;
+  width: 160px; height: 64px;  /* ↑ 120×48 → 160×64 */
+  border-radius: 60px;
+  background: rgba(255,255,255,0.7);
+  filter: blur(12px);
+  top: 28px; left: -40px;
+  animation: cloudDrift1 7s ease-in-out infinite;
+}
+/* 구름 2 — 오른쪽 하단, 크게 */
+.guest-visual::after {
+  content: '';
+  position: absolute;
+  width: 130px; height: 52px;  /* ↑ 90×36 → 130×52 */
+  border-radius: 60px;
+  background: rgba(255,255,255,0.58);
+  filter: blur(10px);
+  bottom: 36px; right: -28px;
+  animation: cloudDrift2 9s ease-in-out infinite;
+}
+
+@keyframes cloudDrift1 {
+  0%,100% { transform: translateX(0); }
+  50%      { transform: translateX(34px); }
+}
+@keyframes cloudDrift2 {
+  0%,100% { transform: translateX(0); }
+  50%      { transform: translateX(-28px); }
+}
+
+/* 로고 — 구름 사이 비행 */
+.guest-logo-img {
+  width: 130px;              /* ↑ 100 → 130 */
+  height: auto;
+  object-fit: contain;
+  display: block;
+  position: relative;
+  z-index: 2;
+  filter: drop-shadow(0 8px 22px rgba(137,207,240,0.45));
+  animation: logoFly 5s ease-in-out infinite;
+}
+
+@keyframes logoFly {
+  0%   { transform: translateX(-18px) translateY(5px)  rotate(-7deg); }
+  50%  { transform: translateX( 18px) translateY(-8px) rotate( 5deg); }
+  100% { transform: translateX(-18px) translateY(5px)  rotate(-7deg); }
+}
+
+/* ══════════════════════════════════════════════
+   B. EMPTY 위젯
+══════════════════════════════════════════════ */
+.empty-widget { min-height: 200px; }
+.empty-icon {
+  width: 80px;
+  height: auto;
+  object-fit: contain;
+  display: block;
+  filter: drop-shadow(0 6px 16px rgba(238,156,167,0.35));
+  animation: logoFly 5s ease-in-out infinite;
+}
+
+/* ══════════════════════════════════════════════
+   반응형 — 700px 미만에서만 세로 전환
+══════════════════════════════════════════════ */
+@media (max-width: 700px) {
+  .trip-widget { flex-direction: column; min-height: auto; }
+  .widget-accent { width: 100%; height: 5px; }
+  .widget-thumb {
+    width: 100%;
+    min-width: unset;
+    height: 200px;
+    border-radius: 0;
+    border-top-left-radius: 22px;
+    border-top-right-radius: 22px;
+  }
+  .widget-visual.guest-visual {
+    width: 100%;
+    height: 180px;
+    margin: 0;
+    border-radius: 0;
+    border-top-left-radius: 22px;
+    border-top-right-radius: 22px;
+  }
+  .widget-body { padding: 24px 22px; gap: 12px; }
+  .widget-title { font-size: 22px; }
+  .widget-section { margin-top: -18px; }
+}
+@media (max-width: 480px) {
+  .widget-actions { flex-direction: column; align-items: stretch; }
+  .btn-widget-primary, .btn-widget-secondary { justify-content: center; }
+  .widget-title { font-size: 19px; }
+}
