@@ -52,7 +52,10 @@ public class PartnerMainController {
 
         if ("info".equals(tab)) {
             PartnerInfoDto partnerInfo = partnerInfoService.getPartnerInfo(memberId);
+            Long placeId = partnerInfoService.getPlaceIdByMemberId(memberId);
+            
             model.addAttribute("partnerInfo", partnerInfo);
+            model.addAttribute("placeId", placeId);
         }
 
         if ("room".equals(tab)) {

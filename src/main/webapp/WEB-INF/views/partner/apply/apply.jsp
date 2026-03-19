@@ -114,74 +114,119 @@ body {
 				<p>트리판의 몽환적인 감성 여행 코스에 당신의 스테이를 제안해 보세요.</p>
 			</header>
 
-			<form action="${pageContext.request.contextPath}/partner/apply" method="POST" enctype="multipart/form-data">
+			<form action="${pageContext.request.contextPath}/partner/apply" method="POST" enctype="multipart/form-data" onsubmit="return validateFiles(event)">
 
-				<div class="tp-form-card">
-					<h2 class="section-title">담당자 정보</h2>
-					<div class="row mb-4 align-items-center">
-						<label class="col-md-3 form-label">담당자 성함<span class="ms-1" style="color: var(--tp-orchid);">*</span></label>
-						<div class="col-md-9">
-							<input type="text" name="contactName" class="form-control" placeholder="담당자 성함을 입력해 주세요." required>
+				<form action="${pageContext.request.contextPath}/partner/apply" method="POST" enctype="multipart/form-data">
+
+					<div class="tp-form-card">
+						<h2 class="section-title">담당자 및 사업자 정보</h2>
+						
+						<div class="row mb-4 align-items-center">
+							<label class="col-md-3 form-label">담당자 성함<span class="ms-1" style="color: var(--tp-orchid);">*</span></label>
+							<div class="col-md-9">
+		                        <input type="text" name="contactName" class="form-control" value="${myApply.contactName}" placeholder="담당자 성함을 입력해 주세요." required>
+							</div>
+						</div>
+						
+						<div class="row mb-4 align-items-center">
+							<label class="col-md-3 form-label">연락처<span class="ms-1" style="color: var(--tp-orchid);">*</span></label>
+							<div class="col-md-9">
+		                        <input type="tel" name="contactPhone" class="form-control" value="${myApply.contactPhone}" placeholder="'-'를 제외한 휴대전화번호를 입력해 주세요." required>
+							</div>
+						</div>
+	
+						<div class="row mb-0 align-items-center">
+							<label class="col-md-3 form-label">사업자등록번호<span class="ms-1" style="color: var(--tp-orchid);">*</span></label>
+							<div class="col-md-9">
+		                        <input type="text" name="businessNumber" class="form-control" value="${myApply.businessNumber}" placeholder="예: 123-45-67890" required>
+							</div>
 						</div>
 					</div>
-					<div class="row mb-0 align-items-center">
-						<label class="col-md-3 form-label">연락처<span class="ms-1" style="color: var(--tp-orchid);">*</span></label>
-						<div class="col-md-9">
-							<input type="tel" name="contactPhone" class="form-control" placeholder="'-'를 제외한 휴대전화번호를 입력해 주세요." required>
+		
+					<div class="tp-form-card">
+						<h2 class="section-title">스테이 정보</h2>
+						
+						<div class="row mb-4 align-items-center">
+							<label class="col-md-3 form-label">스테이 이름<span class="ms-1" style="color: var(--tp-orchid);">*</span></label>
+							<div class="col-md-9">
+		                        <input type="text" name="partnerName" class="form-control" value="${myApply.partnerName}" placeholder="스테이 이름을 입력해 주세요." required>
+							</div>
+						</div>
+						
+						<div class="tp-form-card">
+							<h2 class="section-title">스테이 정보</h2>
+							
+							<div class="row mb-4 align-items-center">
+								<label class="col-md-3 form-label">스테이 이름<span class="ms-1" style="color: var(--tp-orchid);">*</span></label>
+								<div class="col-md-9">
+			                        <input type="text" name="partnerName" class="form-control" value="${myApply.partnerName}" placeholder="스테이 이름을 입력해 주세요." required>
+								</div>
+							</div>
+	
+							<div class="row mb-4 align-items-center">
+								<label class="col-md-3 form-label">카테고리<span class="ms-1" style="color: var(--tp-orchid);">*</span></label>
+								<div class="col-md-9">
+									<select name="accommodationType" class="form-select" required>
+										<option value="" disabled ${empty myApply.accommodationType ? 'selected' : ''}>숙소 유형을 선택해 주세요</option>
+										<option value="HOTEL" ${myApply.accommodationType == 'HOTEL' ? 'selected' : ''}>호텔/리조트</option>
+										<option value="MOTEL" ${myApply.accommodationType == 'MOTEL' ? 'selected' : ''}>모텔</option>
+										<option value="PENSION" ${myApply.accommodationType == 'PENSION' ? 'selected' : ''}>펜션/풀빌라</option>
+										<option value="GUESTHOUSE" ${myApply.accommodationType == 'GUESTHOUSE' ? 'selected' : ''}>게스트하우스/한옥</option>
+									</select>
+								</div>
+							</div>
+							
+							<div class="row mb-0 align-items-start">
+								<label class="col-md-3 form-label pt-2">공간 소개<span class="ms-1" style="color: var(--tp-orchid);">*</span></label>
+								<div class="col-md-9">
+			                        <textarea name="partnerIntro" class="form-control" style="height: 140px; resize: none;" placeholder="공간의 컨셉과 스토리를 들려주세요. (최소 50자)" required>${myApply.partnerIntro}</textarea>
+								</div>
+							</div>
+						</div>
+						
+						<div class="row mb-0 align-items-start">
+							<label class="col-md-3 form-label pt-2">공간 소개<span class="ms-1" style="color: var(--tp-orchid);">*</span></label>
+							<div class="col-md-9">
+		                        <textarea name="partnerIntro" class="form-control" style="height: 140px; resize: none;" placeholder="공간의 컨셉과 스토리를 들려주세요. (최소 50자)" required>${myApply.partnerIntro}</textarea>
+							</div>
 						</div>
 					</div>
-				</div>
-
-				<div class="tp-form-card">
-					<h2 class="section-title">스테이 정보</h2>
-					<div class="row mb-4 align-items-center">
-						<label class="col-md-3 form-label">스테이 이름<span class="ms-1" style="color: var(--tp-orchid);">*</span></label>
-						<div class="col-md-9">
-							<input type="text" name="partnerName" class="form-control" placeholder="스테이 이름을 입력해 주세요." required>
+	
+					<div class="tp-form-card">
+						<h2 class="section-title">증빙 서류 제출</h2>
+						<div class="tp-recessed-box text-center" id="fileDropzone"
+							style="border: 2px dashed #CCD5E0; cursor: pointer;"
+							onclick="document.getElementById('fileIn').click()">
+							<input type="file" id="fileIn" name="bizLicenseFiles" style="display: none;" multiple>
+							<span style="font-size: 32px; opacity: 0.5;">📂</span>
+							<p class="mt-2 mb-0 fw-bold text-secondary" id="fileNameText">
+								이곳을 클릭하거나 파일(PDF, 이미지)을 드래그하여 첨부해 주세요.
+							</p>
+						</div>
+						<div id="fileListContainer" class="mt-3"></div>
+					</div>
+	
+					<div class="tp-form-card text-center">
+						<h2 class="section-title text-start">개인정보 수집 동의</h2>
+						<div class="tp-recessed-box mb-4">
+							<div style="font-size: 14px; line-height: 1.8; color: #444;">
+								<p class="fw-bold mb-2">개인정보 수집 및 이용 동의</p>
+								<p>1. 수집 항목 : 스테이 이름, 주소, 담당자 성함, 연락처, 사업자등록번호 등</p>
+								<p>2. 수집 목적 : 입점 신청 정보 확인 및 안내, 정산 및 세무 처리</p>
+								<p>3. 보유 기간 : 검토 완료 후 3개월 보관 후 파기 (입점 승인 시 계약 기간 동안 보관)</p>
+							</div>
+						</div>
+						<div class="form-check d-inline-block">
+							<input class="form-check-input" type="checkbox" id="agree" required
+								style="width: 22px; height: 22px; accent-color: var(--tp-orchid);">
+							<label class="form-check-label ms-2 fw-bold" for="agree">내용을 확인했으며, 이에 동의합니다.</label>
 						</div>
 					</div>
-					<div class="row mb-0 align-items-start">
-						<label class="col-md-3 form-label pt-2">공간 소개<span class="ms-1" style="color: var(--tp-orchid);">*</span></label>
-						<div class="col-md-9">
-							<textarea name="partnerIntro" class="form-control" style="height: 140px; resize: none;" placeholder="공간의 컨셉과 스토리를 들려주세요. (최소 50자)" required></textarea>
-						</div>
+	
+					<div class="text-center mt-5">
+						<button type="submit" class="btn-tp-submit">입점 제안서 제출하기 ✨</button>
 					</div>
-				</div>
-
-				<div class="tp-form-card">
-					<h2 class="section-title">증빙 서류 제출</h2>
-					<div class="tp-recessed-box text-center" id="fileDropzone"
-						style="border: 2px dashed #CCD5E0; cursor: pointer;"
-						onclick="document.getElementById('fileIn').click()">
-						<input type="file" id="fileIn" name="bizLicenseFiles" style="display: none;" multiple required> 
-						<span style="font-size: 32px; opacity: 0.5;">📄</span>
-						<p class="mt-2 mb-0 fw-bold text-secondary" id="fileNameText">
-							이곳을 클릭하거나 파일(PDF, 이미지)을 드래그하여 첨부해 주세요.
-						</p>
-					</div>
-					<div id="fileListContainer" class="mt-3"></div>
-				</div>
-
-				<div class="tp-form-card text-center">
-					<h2 class="section-title text-start">개인정보 수집 동의</h2>
-					<div class="tp-recessed-box mb-4">
-						<div style="font-size: 14px; line-height: 1.8; color: #444;">
-							<p class="fw-bold mb-2">개인정보 수집 및 이용 동의</p>
-							<p>1. 수집 항목 : 스테이 이름, 주소, 담당자 성함, 연락처 등</p>
-							<p>2. 수집 목적 : 입점 신청 정보 확인 및 안내</p>
-							<p>3. 보유 기간 : 검토 완료 후 3개월 보관 후 파기</p>
-						</div>
-					</div>
-					<div class="form-check d-inline-block">
-						<input class="form-check-input" type="checkbox" id="agree" required
-							style="width: 22px; height: 22px; accent-color: var(--tp-orchid);">
-						<label class="form-check-label ms-2 fw-bold" for="agree">내용을 확인했으며, 이에 동의합니다.</label>
-					</div>
-				</div>
-
-				<div class="text-center mt-5">
-					<button type="submit" class="btn-tp-submit">입점 제안서 제출하기 ✨</button>
-				</div>
+				</form>
 			</form>
 		</div>
 	</div>
@@ -268,6 +313,22 @@ body {
 				dropzone.style.backgroundColor = "var(--tp-bg-gray)";
 			}
 		};
+		
+		function validateFiles(e) {
+			if (dataTransfer.files.length === 0) {
+				alert('🚨 증빙 서류(PDF, 이미지)를 최소 1개 이상 첨부해 주세요!');
+				e.preventDefault(); 
+				return false;
+			}
+			return true;
+		}
+		
+		document.querySelector('form').addEventListener('submit', function(e) {
+					if (fileInput.files.length === 0) {
+						e.preventDefault(); 
+						alert('증빙 서류(PDF, 이미지)를 최소 1개 이상 첨부해 주세요.');
+					}
+				});
 	</script>
 
 </body>

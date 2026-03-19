@@ -44,18 +44,26 @@ public class PartnerApplyController {
         }
 
         Long memberId = userDetails.getMember().getMemberId();
-        String status = partnerApplyService.getPartnerStatus(memberId);
+        String entryPoint = "admin".equals(source) ? "ADMIN" : "MAIN";
+        model.addAttribute("entryPoint", entryPoint);
+
+        PartnerApplyDto myApply = partnerApplyService.getPartnerApplyByMemberId(memberId);
 
         if ("edit".equals(mode)) {
+            if (myApply != null) {
+                model.addAttribute("myApply", myApply); 
+            }
             return "partner/apply/apply";
         }
 
-        String entryPoint = "admin".equals(source) ? "ADMIN" : "MAIN";
-
-        if ("PENDING".equals(status) || "REJECTED".equals(status)) {
-            model.addAttribute("entryPoint", entryPoint); 
-            model.addAttribute("partnerStatus", status);
-            return "partner/apply/waiting"; 
+        if (myApply != null) {
+            String status = myApply.getStatus();
+            
+            if ("PENDING".equals(status) || "REJECTED".equals(status)) {
+                model.addAttribute("partnerStatus", status);
+                model.addAttribute("rejectReason", myApply.getRejectReason()); 
+                return "partner/apply/waiting"; 
+            }
         }
 
         return "partner/apply/apply";
@@ -66,7 +74,6 @@ public class PartnerApplyController {
             @AuthenticationPrincipal CustomUserDetails userDetails) {
         
         if (userDetails != null) {
-            // 🌟 이미 로그인된 파트너인 경우: /partner/main 으로 이동 (404 해결!)
             if (userDetails.getAuthorities().contains(new SimpleGrantedAuthority("ROLE_PARTNER"))) {
                 return "redirect:/partner/main"; 
             } else {
@@ -98,7 +105,7 @@ public class PartnerApplyController {
 
         return "redirect:/partner/apply_complete"; 
     }
-
+    
     @GetMapping("/apply_complete")
     public String completePage() {
         return "partner/apply/apply_complete"; 
