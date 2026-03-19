@@ -317,7 +317,7 @@
     let pgType = payMethod === 'kakaopay' ? "kakaopay.TC0ONETIME" : (payMethod === 'tosspay' ? "tosspay" : "html5_inicis");
 
     var IMP = window.IMP;
-    IMP.init("imp27678455"); 
+    IMP.init("${impCode}"); 
 
     IMP.request_pay({
         pg: pgType,

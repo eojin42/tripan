@@ -211,7 +211,7 @@
 	            var diffCancel = Math.ceil((checkIn - now) / (1000 * 60 * 60 * 24));
 	            var daysSinceCheckIn = Math.ceil((now - checkIn) / (1000 * 60 * 60 * 24));
 
-	            var canCancel = diffCancel >= 5 && checkIn >= now; 
+	            var canCancel = diffCancel >= 4 && checkIn >= now;
 	            var canWriteReview = daysSinceCheckIn >= 0 && daysSinceCheckIn <= 30; 
 
 	            var currentStatus = String(b.status || '').toUpperCase();
@@ -247,7 +247,7 @@
 	                
 	                '<div style="display: flex; gap: 8px; margin-top: 5px;">' +
 	                    '<button class="btn-edit-profile" style="' + cancelBtnStyle + '" ' + 
-	                        (isCancelable ? 'onclick="location.href=\'#\'"' : 'disabled') + '>' +
+	                    	(isCancelable ? 'onclick="cancelReservation(' + b.reservationId + ', ' + diffCancel + ')"' : 'disabled') + '>' +
 	                        '예약 취소' + 
 	                    '</button>' +
 	                    
@@ -290,6 +290,41 @@
   function escHtml(s) { if (!s) return ''; return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
 
   document.addEventListener('DOMContentLoaded', function() { loadStats(); loadTrips(); });
+  
+  async function cancelReservation(reservationId, diffCancel) {
+	  	let refundRate = 0;
+	    if (diffCancel >= 10) refundRate = 100;
+	    else if (diffCancel >= 4 && diffCancel <= 9) refundRate = diffCancel * 10; 
+
+	    let msg = '정말로 이 예약을 취소하시겠습니까?\n\n';
+	    msg += '※ 현재 체크인 기준 D-' + diffCancel + '일 전입니다.\n';
+	    msg += '※ 환불 규정에 따라 결제 금액의 [' + refundRate + '%]만 환불됩니다.\n';
+      msg += '(결제 취소 시 사용하신 마일리지와 쿠폰은 100% 즉시 복구됩니다.)';
+	  
+	    if (!confirm(msg)) {
+	        return;
+	    }
+
+	    try {
+	        const res = await fetch('/accommodation/cancel', {
+	            method: 'POST',
+	            headers: { 'Content-Type': 'application/json' },
+	            body: JSON.stringify({ reservationId: reservationId })
+	        });
+	        
+	        const data = await res.json();
+	        
+	        if (data.success) {
+	            alert('예약이 성공적으로 취소 및 환불되었습니다.');
+	            loadBookings();
+	        } else {
+	            alert('예약 취소에 실패했습니다.\n사유: ' + data.message);
+	        }
+	    } catch(e) {
+	        alert('서버와 통신 중 오류가 발생했습니다.');
+	        console.error(e);
+	    }
+	}
 </script>
 </body>
 </html>

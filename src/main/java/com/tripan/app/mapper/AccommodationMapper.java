@@ -80,4 +80,12 @@ public interface AccommodationMapper {
     void updateReview(ReviewDto dto);
     
     List<String> getReviewPhotosByPlaceId(@Param("placeId") Long placeId, @Param("roomId") String roomId);
+    
+    // 예약 취소 관련
+    Map<String, Object> getCancelInfo(Long reservationId);
+
+    void cancelReservationStatus(Long reservationId);
+    void cancelOrderStatus(String orderId);
+    void cancelOrderDetailStatus(String orderId);
+    void cancelPaymentStatus(String orderId);
 }

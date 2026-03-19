@@ -24,4 +24,12 @@ public interface CouponMapper2 {
     	    @Param("discountAmount") long discountAmount,
     	    @Param("roomId") String roomId
     	);
+    
+    // 예약 취소 관련
+    
+    // 쿠폰 상태 복구 
+    void restoreMemberCoupon(Long memberCouponId);
+
+    // 쿠폰 사용 내역 취소 
+    void cancelCouponUsage(@Param("orderId") String orderId, @Param("memberCouponId") Long memberCouponId);
 }

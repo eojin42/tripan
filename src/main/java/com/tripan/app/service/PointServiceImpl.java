@@ -51,4 +51,31 @@ public class PointServiceImpl implements PointService{
         }
 		
 	}
+	
+	@Override
+	public void processPointForCancel(Long memberId, String orderId, long usedPoint, long earnPoint) {
+	    long currentPoint = getLatestPoint(memberId);
+
+	    // 썼던 포인트 다시 돌려주기 (+)
+	    if (usedPoint > 0) {
+	        currentPoint += usedPoint;
+	        PointDto refundDto = new PointDto();
+	        refundDto.setMemberId(memberId); refundDto.setOrderId(orderId);
+	        refundDto.setChangeReason("예약취소(복구)");
+	        refundDto.setPointAmount(usedPoint); 
+	        refundDto.setRemPoint(currentPoint);
+	        pointMapper.insertPoint(refundDto);
+	    }
+
+	    // 결제로 얻었던 포인트 다시 회수 (-)
+	    if (earnPoint > 0) {
+	        currentPoint -= earnPoint;
+	        PointDto clawbackDto = new PointDto();
+	        clawbackDto.setMemberId(memberId); clawbackDto.setOrderId(orderId);
+	        clawbackDto.setChangeReason("예약취소(회수)");
+	        clawbackDto.setPointAmount(-earnPoint); 
+	        clawbackDto.setRemPoint(currentPoint);
+	        pointMapper.insertPoint(clawbackDto);
+	    }
+	}
 }

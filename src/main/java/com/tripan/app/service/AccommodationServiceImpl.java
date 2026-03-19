@@ -1,5 +1,8 @@
 package com.tripan.app.service;
 
+import java.time.LocalDate;
+import java.time.ZoneId;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -33,6 +36,8 @@ public class AccommodationServiceImpl implements AccommodationService{
 	private final AccommodationMapper mapper;
 	private final StorageService storageService;
 	private final PointService pointService;
+	private final PortOneService portOneService;
+	
 	@Autowired
 	@Qualifier("userCouponService")
 	private final CouponService couponService;
@@ -355,6 +360,88 @@ public class AccommodationServiceImpl implements AccommodationService{
 	@Override
 	public List<String> getReviewPhotos(Long placeId, String roomId) {
 		return mapper.getReviewPhotosByPlaceId(placeId, roomId);
+	}
+	
+	@Override
+	@Transactional(rollbackFor = Exception.class)
+	public void cancelReservation(Long reservationId, Long memberId) {
+	    Map<String, Object> info = mapper.getCancelInfo(reservationId);
+	    if (info == null) throw new RuntimeException("예약 정보를 찾을 수 없습니다.");
+	    
+	    Long ownerId = ((Number) info.get("memberId")).longValue();
+	    if (!ownerId.equals(memberId)) throw new RuntimeException("본인의 예약만 취소할 수 있습니다.");
+	    
+	    String orderId = (String) info.get("orderId");
+	    long usedPoint = ((Number) info.get("usedPoint")).longValue();
+	    long realAmount = ((Number) info.get("realAmount")).longValue();
+	    Long memberCouponId = info.get("memberCouponId") != null ? ((Number) info.get("memberCouponId")).longValue() : null;
+	    
+	    // -------------------------------------------------------------------
+	    // 1. 체크인 날짜와 오늘 날짜를 비교해 D-Day 계산
+	    // -------------------------------------------------------------------
+	    java.sql.Timestamp checkInTimestamp = (java.sql.Timestamp) info.get("checkInDate");
+	    LocalDate checkInDate = checkInTimestamp.toInstant().atZone(ZoneId.systemDefault()).toLocalDate();
+	    LocalDate today = LocalDate.now();
+	    long daysBefore = ChronoUnit.DAYS.between(today, checkInDate);
+
+	    // 3일 전부터는 환불 원천 차단
+	    if (daysBefore <= 3) {
+	        throw new RuntimeException("이용 3일 전부터는 환불이 불가합니다.");
+	    }
+
+	    // 환불 비율 계산 (10일 이상 1.0, 9일 0.9 ... 4일 0.4)
+	    double refundRate = 1.0;
+	    if (daysBefore <= 9 && daysBefore >= 4) {
+	        refundRate = daysBefore * 0.1;
+	    }
+
+	    // -------------------------------------------------------------------
+	    // 2. 🌟 포인트 100% 우선 복구 로직 🌟
+	    // -------------------------------------------------------------------
+	    long totalOriginalPrice = realAmount + usedPoint; // 원래 총 결제 가치
+	    long totalRefundAmount = (long) (totalOriginalPrice * refundRate); // 고객이 돌려받아야 할 총액
+
+	    long cancelPoint = 0;
+	    long cancelRealAmount = 0;
+
+	    if (totalRefundAmount >= usedPoint) {
+	        // 돌려줄 총액이 쓴 포인트보다 많으면: 포인트는 100% 돌려주고, 남은 금액을 카드로 환불
+	        cancelPoint = usedPoint;
+	        cancelRealAmount = totalRefundAmount - usedPoint;
+	    } else {
+	        // 돌려줄 총액이 쓴 포인트보다 적으면: 카드 환불은 0원, 돌려줄 총액만큼만 포인트로 복구
+	        cancelPoint = totalRefundAmount;
+	        cancelRealAmount = 0;
+	    }
+
+	    // -------------------------------------------------------------------
+	    // 3. DB 상태 업데이트 및 복구 처리
+	    // -------------------------------------------------------------------
+	    mapper.cancelReservationStatus(reservationId);
+	    mapper.cancelOrderStatus(orderId);
+	    mapper.cancelOrderDetailStatus(orderId);
+	    mapper.cancelPaymentStatus(orderId);
+
+	    // 쿠폰 복구
+	    if (memberCouponId != null && memberCouponId > 0) {
+	        couponService.restoreCoupon(memberCouponId, orderId);
+	    }
+
+	    // 적립되었던 마일리지 회수량 (기존 결제액 기준 1% 전액 뺏기)
+	    long earnPoint = (long) (realAmount * 0.01); 
+
+	    // 마일리지 복구(cancelPoint) 및 회수(earnPoint) 처리
+	    if (cancelPoint > 0 || earnPoint > 0) {
+	        pointService.processPointForCancel(memberId, orderId, cancelPoint, earnPoint);
+	    }
+	    
+	    // -------------------------------------------------------------------
+	    // 4. 포트원 실제 결제 취소 요청
+	    // -------------------------------------------------------------------
+	    if (cancelRealAmount > 0) {
+	        // 환불할 카드 금액이 있을 때만 포트원에 API 요청!
+	        portOneService.cancelPayment(orderId, "환불 규정에 따른 사용자 취소", cancelRealAmount);
+	    }
 	}
 	
 }

@@ -88,5 +88,16 @@
 	    JOIN coupon c ON mc.coupon_id = c.coupon_id
 	    WHERE mc.member_coupon_id = #{memberCouponId}
 	</insert>
-
+	
+	
+	<!-- 예약취소 관련 -->
+	<update id="restoreMemberCoupon">
+	    UPDATE member_coupon SET status = 'AVAILABLE' WHERE member_coupon_id = #{memberCouponId}
+	</update>
+	
+	<update id="cancelCouponUsage">
+	    UPDATE coupon_usage 
+	    SET status = 'CANCELED', cancelled_at = SYSDATE, cancel_reason = '사용자 예약 취소'
+	    WHERE order_id = #{orderId} AND member_coupon_id = #{memberCouponId}
+	</update>
 </mapper>

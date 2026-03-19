@@ -26,5 +26,15 @@ public class CouponServiceImpl implements CouponService{
 	    couponMapper.updateMemberCouponStatus(memberCouponId, "USED");
 	    couponMapper.insertCouponUsage(orderId, memberCouponId, discountAmount, roomId);
 	}
-
+	
+	@Override
+    @Transactional(rollbackFor = Exception.class)
+    public void restoreCoupon(Long memberCouponId, String orderId) {
+        
+        // 내 쿠폰함(member_coupon)의 상태를 'USED'에서 'AVAILABLE'로 변경
+        couponMapper.restoreMemberCoupon(memberCouponId);
+        
+        // 사용 내역(coupon_usage)에 취소일자와 사유 업데이트
+        couponMapper.cancelCouponUsage(orderId, memberCouponId);
+    }
 }
