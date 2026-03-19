@@ -7,6 +7,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -22,12 +24,14 @@ import com.tripan.app.common.PaginateUtil;
 import com.tripan.app.domain.dto.AccommodationDetailDto;
 import com.tripan.app.domain.dto.AccommodationDto;
 import com.tripan.app.domain.dto.AdSearchConditionDto;
+import com.tripan.app.domain.dto.CheckoutCouponDto;
 import com.tripan.app.domain.dto.MemberDto;
 import com.tripan.app.domain.dto.ReservationRequestDto;
 import com.tripan.app.domain.dto.ReviewDto;
 import com.tripan.app.domain.dto.ReviewStatsDto;
 import com.tripan.app.domain.dto.RoomDto;
 import com.tripan.app.service.AccommodationService;
+import com.tripan.app.service.CouponService;
 import com.tripan.app.service.PointService;
 
 import jakarta.servlet.http.HttpServletRequest;
@@ -40,6 +44,9 @@ import lombok.RequiredArgsConstructor;
 public class AccommodationController {
 	private final AccommodationService accommodationService;
 	private final PointService pointService;
+	@Autowired
+	@Qualifier("userCouponService") 
+	private final CouponService couponService;
 	private final PaginateUtil paginateUtil;
 	
 	@Value("${tripan.api.kakao-map-api-key}")
@@ -126,7 +133,6 @@ public class AccommodationController {
         RoomDto room = accommodationService.findRoomById(roomId);
         model.addAttribute("room", room);
         
-        // 숙박 일수(Nights) 계산 로직
         long nights = 1; 
         if (!checkin.isEmpty() && !checkout.isEmpty()) {
             DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
@@ -134,7 +140,7 @@ public class AccommodationController {
             LocalDate outDate = LocalDate.parse(checkout, formatter);
             
             nights = ChronoUnit.DAYS.between(inDate, outDate);
-            if (nights <= 0) nights = 1; // 오류 방지용 최소 1박
+            if (nights <= 0) nights = 1; 
         }
         
         int totalGuest = adult + child;
@@ -145,21 +151,28 @@ public class AccommodationController {
         
         MemberDto loginUser = (MemberDto) session.getAttribute("loginUser");
         if (loginUser != null) {
-            // 1. 내 마일리지 잔액 조회
+        	List<CheckoutCouponDto> myCoupons = couponService.getCouponsForCheckout(
+        	        loginUser.getMemberId(), room.getPlaceId(), roomId, totalAmount
+        	    );
+        	    model.addAttribute("myCoupons", myCoupons);
+        	
             long currentPoint = pointService.getLatestPoint(loginUser.getMemberId());
-            
-            // 2. 최대 사용 가능 마일리지 계산 (결제 금액의 30%)
             long limitPoint = (long) (totalAmount * 0.3);
             
-            // 3. 실제 쓸 수 있는 포인트 = (내 잔액)과 (30% 한도) 중 더 작은 값
-            long maxUsablePoint = Math.min(currentPoint, limitPoint);
+            long maxUsablePoint = 0;
+            
+            if (currentPoint >= 1000) {
+                maxUsablePoint = Math.min(currentPoint, limitPoint);
+                
+                maxUsablePoint = (maxUsablePoint / 100) * 100;
+            }
 
             model.addAttribute("currentPoint", currentPoint);
             model.addAttribute("maxUsablePoint", maxUsablePoint);
         }
         
         model.addAttribute("nights", nights);
-        model.addAttribute("amount", totalAmount); // 폼에서 보여줄 최종 금액
+        model.addAttribute("amount", totalAmount);
 
         return "accommodation/reservation";
     }

@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.tripan.app.mapper.CouponMapper2">
+
+    <select id="selectMyCouponsForCheckout" resultType="com.tripan.app.domain.dto.CheckoutCouponDto">
+	    SELECT 
+	        mc.member_coupon_id AS memberCouponId,
+	        c.coupon_id AS couponId,
+	        c.coupon_name AS couponName,
+	        c.discount_type AS discountType,
+	        c.discount_amount AS discountAmount,
+	        c.min_order_amount AS minOrderAmount,
+	        c.max_discount_amount AS maxDiscountAmount,
+	        TO_CHAR(mc.expired_at, 'YYYY-MM-DD HH24:MI') AS expiredAt,
+	
+	        CASE 
+	            WHEN c.min_order_amount IS NOT NULL AND #{totalAmount} &lt; c.min_order_amount THEN 0
+	            WHEN (SELECT COUNT(*) FROM coupon_target WHERE coupon_id = c.coupon_id) = 0 THEN 1
+	            WHEN (
+	                SELECT COUNT(*) FROM coupon_target ct
+	                JOIN accommodation a ON a.place_id = #{placeId}
+	                WHERE ct.coupon_id = c.coupon_id AND ct.is_exclude = 'N'
+	                  AND (
+	                      (ct.target_type = 'ACCOMMODATION' AND ct.target_value = TO_CHAR(#{placeId}))
+	                   OR (ct.target_type = 'ACC_TYPE' AND ct.target_value = a.accommodation_type)
+	                  )
+	            ) &gt; 0
+	            AND (
+	                SELECT COUNT(*) FROM coupon_target
+	                WHERE coupon_id = c.coupon_id AND is_exclude = 'Y'
+	                  AND target_type = 'ACCOMMODATION' AND target_value = TO_CHAR(#{placeId})
+	            ) = 0
+	            AND (
+	                SELECT COUNT(*) FROM coupon_target
+	                WHERE coupon_id = c.coupon_id AND is_exclude = 'Y'
+	                  AND target_type = 'ROOM' AND target_value = TO_CHAR(#{roomId})
+	            ) = 0
+	            THEN 1 ELSE 0 
+	        END AS isApplicable,
+	
+	        CASE 
+	            WHEN c.discount_type = 'FIXED' THEN c.discount_amount
+	            WHEN c.discount_type = 'PERCENT' THEN 
+	                CASE 
+	                    WHEN c.max_discount_amount IS NOT NULL AND (#{totalAmount} * (c.discount_amount / 100)) &gt; c.max_discount_amount 
+	                    THEN c.max_discount_amount
+	                    ELSE (#{totalAmount} * (c.discount_amount / 100))
+	                END
+	            ELSE 0 
+	        END AS calculatedDiscount
+	
+	    FROM member_coupon mc
+	    JOIN coupon c ON mc.coupon_id = c.coupon_id
+	    WHERE mc.member_id = #{memberId}
+	      AND mc.status = 'AVAILABLE'
+	      AND mc.expired_at &gt;= SYSDATE
+	    ORDER BY isApplicable DESC, calculatedDiscount DESC
+	</select>
+	
+	<update id="updateMemberCouponStatus">
+        UPDATE member_coupon 
+        SET status = #{status} 
+        WHERE member_coupon_id = #{memberCouponId}
+    </update>
+
+    <insert id="insertCouponUsage">
+	    INSERT INTO coupon_usage (
+	        usage_id, order_id, member_coupon_id, partner_id, place_id,
+	        discount_amount, platform_discount_amount, partner_discount_amount, status, used_at
+	    )
+	    SELECT 
+	        COUPON_USAGE_SEQ.NEXTVAL, 
+	        #{orderId}, 
+	        #{memberCouponId}, 
+	        NVL((SELECT p.partner_id FROM place p JOIN room r ON p.place_id = r.place_id WHERE r.room_id = #{roomId}), 0),
+	        (SELECT place_id FROM room WHERE room_id = #{roomId}),
+	        #{discountAmount}, 
+	        
+	        ROUND(#{discountAmount} * NVL(c.platform_share, 100) / 100), 
+	        
+	        (#{discountAmount} - ROUND(#{discountAmount} * NVL(c.platform_share, 100) / 100)), 
+	        
+	        'UNAVAILABLE', 
+	        SYSDATE
+	    FROM member_coupon mc
+	    JOIN coupon c ON mc.coupon_id = c.coupon_id
+	    WHERE mc.member_coupon_id = #{memberCouponId}
+	</insert>
+
+</mapper>

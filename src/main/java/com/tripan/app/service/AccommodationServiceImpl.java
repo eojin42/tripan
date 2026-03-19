@@ -6,6 +6,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -31,6 +33,9 @@ public class AccommodationServiceImpl implements AccommodationService{
 	private final AccommodationMapper mapper;
 	private final StorageService storageService;
 	private final PointService pointService;
+	@Autowired
+	@Qualifier("userCouponService")
+	private final CouponService couponService;
 	
 	@Value("${file.upload-root}/review")
     private String uploadPath;
@@ -141,6 +146,16 @@ public class AccommodationServiceImpl implements AccommodationService{
         mapper.insertPayment(dto);
         
         mapper.deleteRoomLock(dto.getRoomId(), dto.getCheckin(), sessionId);
+        
+        if (dto.getMemberCouponId() != null && dto.getMemberCouponId() > 0 && dto.getUsedCoupon() > 0) {
+            couponService.useCoupon(
+                dto.getMemberCouponId(), 
+                dto.getMerchantUid(), 
+                dto.getUsedCoupon(),
+                dto.getRoomId() 
+            );
+        }
+        
         
         long earnPoint = (long) (dto.getAmount() * 0.01);
         
