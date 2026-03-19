@@ -504,4 +504,36 @@
 	    WHERE p.PLACE_ID = #{placeId}
 	</select>
 	
+	
+	<!-- 예약 취소 관련 -->
+	<select id="getCancelInfo" resultType="map">
+	    SELECT 
+	        r.RESERVATION_ID as "reservationId", 
+	        r.MEMBER_ID as "memberId", 
+	        r.CHECK_IN_DATE as "checkInDate", o.ORDER_ID as "orderId", 
+	        o.POINT_DISCOUNT as "usedPoint", 
+	        o.REAL_TOTAL_AMOUNT as "realAmount",
+	        cu.MEMBER_COUPON_ID as "memberCouponId"
+	    FROM RESERVATION r
+	    JOIN ORDER_DETAIL od ON r.RESERVATION_ID = od.RESERVATION_ID
+	    JOIN ORDERS o ON od.ORDER_ID = o.ORDER_ID
+	    LEFT JOIN COUPON_USAGE cu ON o.ORDER_ID = cu.ORDER_ID
+	    WHERE r.RESERVATION_ID = #{reservationId}
+	</select>
+	
+	<update id="cancelReservationStatus">
+	    UPDATE RESERVATION SET STATUS = 'CANCELED' WHERE RESERVATION_ID = #{reservationId}
+	</update>
+	
+	<update id="cancelOrderStatus">
+	    UPDATE ORDERS SET STATUS = 'CANCELED' WHERE ORDER_ID = #{orderId}
+	</update>
+	
+	<update id="cancelOrderDetailStatus">
+	    UPDATE ORDER_DETAIL SET STATUS = 'CANCELED' WHERE ORDER_ID = #{orderId}
+	</update>
+	
+	<update id="cancelPaymentStatus">
+	    UPDATE PAYMENT SET STATUS = 'CANCELED' WHERE ORDER_ID = #{orderId}
+	</update>
 </mapper>

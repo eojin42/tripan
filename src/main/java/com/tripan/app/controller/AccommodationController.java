@@ -33,6 +33,7 @@ import com.tripan.app.domain.dto.RoomDto;
 import com.tripan.app.service.AccommodationService;
 import com.tripan.app.service.CouponService;
 import com.tripan.app.service.PointService;
+import com.tripan.app.service.PortOneService;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
@@ -44,6 +45,7 @@ import lombok.RequiredArgsConstructor;
 public class AccommodationController {
 	private final AccommodationService accommodationService;
 	private final PointService pointService;
+	private final PortOneService portOneService;
 	@Autowired
 	@Qualifier("userCouponService") 
 	private final CouponService couponService;
@@ -51,6 +53,9 @@ public class AccommodationController {
 	
 	@Value("${tripan.api.kakao-map-api-key}")
 	private String kakaoApiKey;
+	
+	@Value("${portone.imp.code}")
+	private String impCode;
 	
 	@GetMapping("home")
 	public String main() {
@@ -171,6 +176,7 @@ public class AccommodationController {
             model.addAttribute("maxUsablePoint", maxUsablePoint);
         }
         
+        model.addAttribute("impCode", impCode);
         model.addAttribute("nights", nights);
         model.addAttribute("amount", totalAmount);
 
@@ -233,12 +239,19 @@ public class AccommodationController {
             response.put("success", true); 
 
         } catch (Exception e) {
-            e.printStackTrace();
-            response.put("success", false);
-            response.put("message", "결제는 완료되었으나 서버 저장 중 에러가 발생했습니다.");
+            e.printStackTrace(); 
             
-            // 🚨 실무에서는 여기에 "포트원 결제 취소 API"를 호출하는 로직이 들어갑니다. (에러 났으니 환불해 줘야 함!)
-            // portoneService.cancelPayment(requestDto.getImpUid(), "서버 DB 저장 실패로 인한 자동 환불");
+            response.put("success", false);
+            response.put("message", "서버 저장 중 문제가 발생하여 결제가 자동 취소(환불) 처리됩니다.");
+            
+            try {
+                portOneService.cancelPayment(requestDto.getMerchantUid(), "서버 DB 저장 실패로 인한 자동 환불", requestDto.getAmount());
+                System.out.println("🚨 안전하게 자동 환불 처리 완료: " + requestDto.getMerchantUid());
+                
+            } catch (Exception cancelEx) {
+                cancelEx.printStackTrace();
+                response.put("message", "예약 처리 중 오류가 발생했습니다. 환불이 진행되지 않은 경우 고객센터로 문의해 주세요. (주문번호: " + requestDto.getMerchantUid() + ")");
+            }
         }
         
         return response;
@@ -386,7 +399,6 @@ public class AccommodationController {
         
         String paging = paginateUtil.paging(current_page, total_page, list_url);
         
-        // ==========================================
         
         model.addAttribute("placeId", placeId);
         model.addAttribute("placeInfo", placeInfo);
@@ -465,6 +477,30 @@ public class AccommodationController {
     public List<String> getReviewPhotos(@PathVariable("placeId") Long placeId, 
                                         @RequestParam(value = "roomId", required = false) String roomId) {
         return accommodationService.getReviewPhotos(placeId, roomId);
+    }
+    
+    @PostMapping("cancel")
+    @ResponseBody
+    public Map<String, Object> cancelReservation(@RequestBody Map<String, Long> payload, HttpSession session) {
+        Map<String, Object> response = new HashMap<>();
+        MemberDto loginUser = (MemberDto) session.getAttribute("loginUser");
+        
+        if (loginUser == null) {
+            response.put("success", false);
+            response.put("message", "로그인이 풀렸습니다. 다시 로그인해 주세요.");
+            return response;
+        }
+
+        Long reservationId = payload.get("reservationId");
+        try {
+            accommodationService.cancelReservation(reservationId, loginUser.getMemberId());
+            response.put("success", true);
+        } catch (Exception e) {
+            e.printStackTrace();
+            response.put("success", false);
+            response.put("message", e.getMessage());
+        }
+        return response;
     }
     
 }

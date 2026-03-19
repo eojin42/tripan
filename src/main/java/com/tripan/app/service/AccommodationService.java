@@ -48,5 +48,7 @@ public interface AccommodationService {
 	public void updateReview(ReviewDto dto);
 	
 	public List<String> getReviewPhotos(Long placeId, String roomId);
+
+	void cancelReservation(Long reservationId, Long memberId);
 	
 }
