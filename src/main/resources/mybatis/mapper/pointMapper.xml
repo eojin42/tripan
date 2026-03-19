@@ -18,7 +18,7 @@
         INSERT INTO point (
             point_id, member_id, order_id, change_reason, point_amount, rem_point, reg_date
         ) VALUES (
-            point_seq.NEXTVAL, #{memberId}, #{orderId, jdbcType=VARCHAR}, 
+            POINT_SEQ.NEXTVAL, #{memberId}, #{orderId, jdbcType=VARCHAR}, 
             #{changeReason}, #{pointAmount}, #{remPoint}, SYSDATE
         )
     </insert>

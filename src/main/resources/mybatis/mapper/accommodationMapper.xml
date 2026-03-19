@@ -234,9 +234,15 @@
     
     <!-- 결제완료 기능 -->
     <insert id="insertOrder">
-        INSERT INTO ORDERS (ORDER_ID, MEMBER_ID, ORDER_DATE, TOTAL_AMOUNT, COUPON_DISCOUNT, REAL_TOTAL_AMOUNT, STATUS)
-        VALUES (#{merchantUid}, #{memberId}, SYSDATE, #{amount}, 0, #{amount}, 'SUCCESS')
-    </insert>
+	    INSERT INTO ORDERS (
+	        ORDER_ID, MEMBER_ID, ORDER_DATE, 
+	        TOTAL_AMOUNT, COUPON_DISCOUNT, POINT_DISCOUNT, 
+	        REAL_TOTAL_AMOUNT, STATUS
+	    ) VALUES (
+	        #{merchantUid}, #{memberId}, SYSDATE, 
+	        (#{amount} + #{usedPoint}), 0, #{usedPoint}, #{amount}, 'SUCCESS'
+	    )
+	</insert>
 
     <insert id="insertReservation">
         <selectKey keyProperty="reservationId" resultType="long" order="BEFORE">
