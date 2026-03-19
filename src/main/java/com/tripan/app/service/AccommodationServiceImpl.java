@@ -30,6 +30,7 @@ import lombok.extern.slf4j.Slf4j;
 public class AccommodationServiceImpl implements AccommodationService{
 	private final AccommodationMapper mapper;
 	private final StorageService storageService;
+	private final PointService pointService;
 	
 	@Value("${file.upload-root}/review")
     private String uploadPath;
@@ -140,6 +141,17 @@ public class AccommodationServiceImpl implements AccommodationService{
         mapper.insertPayment(dto);
         
         mapper.deleteRoomLock(dto.getRoomId(), dto.getCheckin(), sessionId);
+        
+        long earnPoint = (long) (dto.getAmount() * 0.01);
+        
+        if (dto.getUsedPoint() > 0 || earnPoint > 0) {
+            pointService.processPointForOrder(
+                dto.getMemberId(), 
+                dto.getMerchantUid(), // orderId 용도
+                dto.getUsedPoint(), 
+                earnPoint
+            );
+        }
     }
 
 

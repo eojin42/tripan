@@ -141,9 +141,9 @@
              <div class="pd-row"><span>요금 할인</span><span>- ₩0</span></div>
              <div class="pd-sub-row"><span>└ 프로모션</span><span>- ₩0</span></div>
              <div class="pd-row"><span>쿠폰</span><span>₩0</span></div>
-             <div class="pd-row"><span>마일리지</span><span>₩0</span></div>
+             <div class="pd-row"><span>마일리지</span><span id="displayMileageDiscount">₩0</span></div>
              <hr style="border:0; border-top:1px solid #111; margin: 16px 0;">
-             <div class="pd-row total"><span>총 결제 금액</span><span>₩<fmt:formatNumber value="${amount}" pattern="#,###"/></span></div>
+             <div class="pd-row total"><span>총 결제 금액</span><span class="displayTotalAmount">₩<fmt:formatNumber value="${amount}" pattern="#,###"/></span></div>
           </div>
         </div>
 
@@ -232,9 +232,9 @@
           </div>
 
           <div class="s-total-price">
-            <span>총 결제금액</span>
-            <span><fmt:formatNumber value="${amount}" pattern="#,###"/>원</span>
-          </div>
+			  <span>총 결제금액</span>
+			  <span class="displayTotalAmount"><fmt:formatNumber value="${amount}" pattern="#,###"/>원</span>
+		  </div>
 
           <button class="btn-submit-pay" onclick="requestPayment()">결제하기</button>
         </div>
@@ -310,24 +310,25 @@
         pay_method: "card",
         merchant_uid: "ORDER_" + new Date().getTime(), 
         name: "${room.placeName} - ${room.roomName}",                           
-        amount: ${amount},             
+        amount: finalAmount,             
         buyer_name: "${sessionScope.loginUser.username}", 
         buyer_tel: "${sessionScope.loginUser.phoneNumber}", 
         buyer_email: "${sessionScope.loginUser.email}" 
     }, function (rsp) { 
         if (rsp.success) {
-            const requestData = {
-                impUid: rsp.imp_uid,
-                merchantUid: rsp.merchant_uid,
-                roomId: '${roomId}',
-                checkin: '${checkin}',
-                checkout: '${checkout}',
-                adult: ${adult},
-                child: ${child},
-                amount: ${amount},
-                payMethod: payMethod,
-                request: document.getElementById('guestRequest').value // textarea 값 넘기기
-            };
+        	const requestData = {
+                    impUid: rsp.imp_uid,
+                    merchantUid: rsp.merchant_uid,
+                    roomId: '${roomId}',
+                    checkin: '${checkin}',
+                    checkout: '${checkout}',
+                    adult: ${adult},
+                    child: ${child},
+                    amount: finalAmount,       
+                    usedPoint: usedMileage,     
+                    payMethod: payMethod,
+                    request: document.getElementById('guestRequest').value
+                };
 
             fetch('${pageContext.request.contextPath}/accommodation/complete', {
                 method: 'POST',
@@ -355,14 +356,11 @@
   const originalAmount = ${amount}; 
   let finalAmount = originalAmount;
   let usedMileage = 0;
-  // 컨트롤러에서 넘어온 최대 사용 가능 포인트
   const maxUsablePoint = ${maxUsablePoint}; 
 
-  // 마일리지 입력 시 실행되는 함수
   function applyMileage() {
       let inputVal = parseInt(document.getElementById('usePointInput').value) || 0;
 
-      // 1. 제한 로직: 한도(30% 또는 내 잔액) 초과 시
       if (inputVal > maxUsablePoint) {
           alert("마일리지는 최대 " + maxUsablePoint.toLocaleString() + "P까지만 사용 가능합니다. (상품 금액의 30%)");
           inputVal = maxUsablePoint;
@@ -374,7 +372,6 @@
 
       usedMileage = inputVal;
       
-      // 2. 통합 계산 함수 호출 (나중에 쿠폰 할인액과 합치기 좋게 분리)
       calculateTotal();
   }
 
@@ -388,15 +385,12 @@
   }
 
   function calculateTotal() {
-      // 나중에 쿠폰 작업하실 때 여기에 currentCouponDiscount 빼주시면 됩니다.
       finalAmount = originalAmount - usedMileage; 
       if (finalAmount < 0) finalAmount = 0;
 
-      // 요금 상세 - 마일리지 행 업데이트 (id="displayMileageDiscount" 추가 필요)
       let displayObj = document.getElementById('displayMileageDiscount');
       if(displayObj) displayObj.innerText = '- ₩' + usedMileage.toLocaleString();
 
-      // 총 결제 금액 업데이트 (class="displayTotalAmount" 추가 필요)
       const totalDisplays = document.querySelectorAll('.displayTotalAmount');
       totalDisplays.forEach(el => {
           el.innerText = '₩' + finalAmount.toLocaleString();
