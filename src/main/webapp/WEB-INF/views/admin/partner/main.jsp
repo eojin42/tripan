@@ -266,15 +266,15 @@
             </thead>
             <tbody>
               <tr v-if="!searched">
-				  <td colspan="10" style="text-align:center; padding:50px 0; color:var(--muted);">
-				    검색 조건을 선택하면 목록이 표시됩니다.
-				  </td>
-				</tr>
-				<tr v-else-if="partnerList.length === 0">
-				  <td colspan="10" style="text-align:center; padding:50px 0; color:var(--muted);">
-				    검색 결과가 없습니다.
-				  </td>
-				</tr>
+			  <td colspan="10" style="text-align:center; padding:50px 0; color:var(--muted);">
+			    검색 조건을 선택하면 목록이 표시됩니다.
+			  </td>
+			</tr>
+			<tr v-else-if="partnerList.length === 0">
+			  <td colspan="10" style="text-align:center; padding:50px 0; color:var(--muted);">
+			    검색 결과가 없습니다.
+			  </td>
+			</tr>
               <tr v-for="p in partnerList" :key="p.partnerId"
                   :style="(p.status === 'SUSPENDED' || p.status === 'BLOCKED') ? 'opacity:0.6;' : ''">
                 <td class="col-check">
