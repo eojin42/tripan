@@ -1,52 +1,305 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<!--
+    ※ 수정 사항 요약
+    1. namespace: com.tripan.expense.mapper → com.tripan.app.mapper
+    2. 모든 ResultMap type: com.tripan.expense.dto → com.tripan.app.domain.dto
+    3. selectTotalExpenseAmount 쿼리 추가 (TripServiceImpl.getTripDetails 에서 사용)
+    4. selectSettlementsByTripId, selectSettlementsByTripIdAndMember
+       → from_member_id / to_member_id nullable이므로 JOIN → LEFT JOIN 변경
+-->
 <mapper namespace="com.tripan.app.mapper.ExpenseMapper">
 
-	<select id="selectTotalExpenseAmount" parameterType="long" resultType="java.lang.Double">
-        SELECT COALESCE(SUM(amount), 0) 
-        FROM expense 
-        WHERE trip_id = #{tripId}
-    </select>
+    <!-- ════════════════════════════════════════
+         ResultMap 정의
+    ════════════════════════════════════════ -->
 
-    <select id="selectExpenseSummary" parameterType="long" resultType="map">
-        SELECT
-            COALESCE(SUM(e.amount), 0) AS totalAmount,
-            COALESCE(SUM(e.amount) / NULLIF((
-                SELECT COUNT(*) FROM trip_member 
-                WHERE trip_id = #{tripId} AND invitation_status = 'ACCEPTED'
-            ), 0), 0) AS avgPerPerson
+    <resultMap id="categorySummaryMap" type="com.tripan.app.domain.dto.ExpenseDto$CategorySummary">
+        <result property="category"     column="category"/>
+        <result property="totalAmount"  column="total_amount"/>
+    </resultMap>
+
+    <resultMap id="memberPaymentSummaryMap" type="com.tripan.app.domain.dto.ExpenseDto$MemberPaymentSummary">
+        <result property="memberId"     column="member_id"/>
+        <result property="nickname"     column="nickname"/>
+        <result property="paidAmount"   column="paid_amount"/>
+    </resultMap>
+
+    <resultMap id="memberShareSummaryMap" type="com.tripan.app.domain.dto.ExpenseDto$MemberShareSummary">
+        <result property="memberId"     column="member_id"/>
+        <result property="nickname"     column="nickname"/>
+        <result property="shareAmount"  column="share_amount"/>
+        <result property="balance"      column="balance"/>
+    </resultMap>
+
+    <resultMap id="expenseSummaryMap" type="com.tripan.app.domain.dto.ExpenseDto$SummaryResponse">
+        <result property="expenseId"        column="expense_id"/>
+        <result property="tripId"           column="trip_id"/>
+        <result property="payerId"          column="payer_id"/>
+        <result property="payerNickname"    column="payer_nickname"/>
+        <result property="category"         column="category"/>
+        <result property="amount"           column="amount"/>
+        <result property="description"      column="description"/>
+        <result property="expenseDate"      column="expense_date"/>
+        <result property="paymentType"      column="payment_type"/>
+        <result property="createdAt"        column="created_at"/>
+    </resultMap>
+
+    <resultMap id="expenseDetailMap" type="com.tripan.app.domain.dto.ExpenseDto$DetailResponse">
+        <result property="expenseId"        column="expense_id"/>
+        <result property="tripId"           column="trip_id"/>
+        <result property="payerId"          column="payer_id"/>
+        <result property="payerNickname"    column="payer_nickname"/>
+        <result property="category"         column="category"/>
+        <result property="amount"           column="amount"/>
+        <result property="description"      column="description"/>
+        <result property="expenseDate"      column="expense_date"/>
+        <result property="receiptUrl"       column="receipt_url"/>
+        <result property="paymentType"      column="payment_type"/>
+        <result property="memo"             column="memo"/>
+        <result property="createdAt"        column="created_at"/>
+    </resultMap>
+
+    <resultMap id="participantResponseMap" type="com.tripan.app.domain.dto.ExpenseDto$ParticipantResponse">
+        <result property="participantId"    column="participant_id"/>
+        <result property="memberId"         column="member_id"/>
+        <result property="memberNickname"   column="member_nickname"/>
+        <result property="nickname"         column="ext_nickname"/>
+        <result property="shareAmount"      column="share_amount"/>
+    </resultMap>
+
+    <resultMap id="settlementResponseMap" type="com.tripan.app.domain.dto.SettlementDto$Response">
+        <result property="settlementId"         column="settlement_id"/>
+        <result property="tripId"               column="trip_id"/>
+        <result property="fromMemberId"         column="from_member_id"/>
+        <result property="fromMemberNickname"   column="from_nickname"/>
+        <result property="toMemberId"           column="to_member_id"/>
+        <result property="toMemberNickname"     column="to_nickname"/>
+        <result property="amount"               column="amount"/>
+        <result property="status"               column="status"/>
+        <result property="batchId"              column="batch_id"/>
+        <result property="settledAt"            column="settled_at"/>
+        <result property="createdAt"            column="created_at"/>
+    </resultMap>
+
+    <!-- ════════════════════════════════════════
+         여행 전체 지출 합계
+         TripServiceImpl.getTripDetails() → dto.setCurrentExpense() 에서 사용
+    ════════════════════════════════════════ -->
+    <select id="selectTotalExpenseAmount" resultType="java.lang.Double">
+        SELECT NVL(SUM(e.amount), 0)
         FROM expense e
         WHERE e.trip_id = #{tripId}
     </select>
 
-    <select id="selectExpenseStatsByCategory" parameterType="long" resultType="map">
+    <!-- ════════════════════════════════════════
+         카테고리별 지출 합계
+    ════════════════════════════════════════ -->
+    <select id="selectCategorySummaryByTripId" resultMap="categorySummaryMap">
         SELECT
-            category,
-            SUM(amount) AS totalAmount,
-            COUNT(*)    AS count
-        FROM expense
-        WHERE trip_id = #{tripId}
-        GROUP BY category
-        ORDER BY totalAmount DESC
-    </select>
-
-    <select id="selectExpenseList" resultType="com.tripan.app.domain.dto.ExpenseDto">
-        SELECT
-            e.expense_id    AS expenseId,
-            e.description,
-            e.amount,
             e.category,
-            TO_CHAR(e.expense_date, 'YYYY-MM-DD') AS expenseDate,
-            e.payment_type  AS paymentType,
-            m.nickname      AS payerNickname,
-            ep.share_amount AS shareAmount,
-            ep.is_settled   AS isSettled
+            SUM(e.amount) AS total_amount
         FROM expense e
-        JOIN member m ON m.member_id = e.payer_id
-        JOIN expense_participant ep ON ep.expense_id = e.expense_id
         WHERE e.trip_id = #{tripId}
-          AND ep.member_id = #{myMemberId}
-        ORDER BY e.expense_date DESC
+        GROUP BY e.category
+        ORDER BY total_amount DESC
+    </select>
+
+    <!-- ════════════════════════════════════════
+         멤버별 결제 합계 (카드 긁은 사람 기준)
+    ════════════════════════════════════════ -->
+    <select id="selectMemberPaymentSummaryByTripId" resultMap="memberPaymentSummaryMap">
+        SELECT
+            e.payer_id       AS member_id,
+            m2.nickname      AS nickname,
+            SUM(e.amount)    AS paid_amount
+        FROM expense e
+        JOIN member2 m2 ON m2.member_id = e.payer_id
+        WHERE e.trip_id = #{tripId}
+        GROUP BY e.payer_id, m2.nickname
+        ORDER BY paid_amount DESC
+    </select>
+
+    <!-- ════════════════════════════════════════
+         멤버별 부담 합계 (expense_participant 기준)
+    ════════════════════════════════════════ -->
+    <select id="selectMemberShareSummaryByTripId" resultMap="memberShareSummaryMap">
+        SELECT
+            ep.member_id,
+            m2.nickname,
+            SUM(ep.share_amount) AS share_amount,
+            0                    AS balance
+        FROM expense_participant ep
+        JOIN expense e  ON e.expense_id = ep.expense_id
+        JOIN member2 m2 ON m2.member_id = ep.member_id
+        WHERE e.trip_id = #{tripId}
+        GROUP BY ep.member_id, m2.nickname
+        ORDER BY share_amount DESC
+    </select>
+
+    <!-- ════════════════════════════════════════
+         정산 계산 핵심 쿼리
+         balance = paid_amount - share_amount
+         양수 → 받을 돈 / 음수 → 보낼 돈
+    ════════════════════════════════════════ -->
+    <select id="calculateBalancesByTripId" resultMap="memberShareSummaryMap">
+        WITH
+        /* 각 멤버가 실제로 결제한 금액 합계 */
+        paid AS (
+            SELECT
+                e.payer_id    AS member_id,
+                SUM(e.amount) AS paid_amount
+            FROM expense e
+            WHERE e.trip_id = #{tripId}
+            GROUP BY e.payer_id
+        ),
+        /* 각 멤버가 부담해야 하는 금액 합계 (외부 인원 제외) */
+        shared AS (
+            SELECT
+                ep.member_id,
+                SUM(ep.share_amount) AS share_amount
+            FROM expense_participant ep
+            JOIN expense e ON e.expense_id = ep.expense_id
+            WHERE e.trip_id = #{tripId}
+              AND ep.member_id IS NOT NULL
+            GROUP BY ep.member_id
+        ),
+        /* 여행 참여 멤버 전체 (ACCEPTED 상태만) */
+        members AS (
+            SELECT DISTINCT tm.member_id
+            FROM trip_member tm
+            WHERE tm.trip_id = #{tripId}
+              AND tm.invitation_status = 'ACCEPTED'
+        )
+        SELECT
+            m.member_id,
+            m2.nickname,
+            NVL(p.paid_amount,  0) AS paid_amount,
+            NVL(s.share_amount, 0) AS share_amount,
+            NVL(p.paid_amount, 0) - NVL(s.share_amount, 0) AS balance
+        FROM members m
+        JOIN  member2 m2 ON m2.member_id = m.member_id
+        LEFT JOIN paid   p ON p.member_id = m.member_id
+        LEFT JOIN shared s ON s.member_id = m.member_id
+        ORDER BY balance DESC
+    </select>
+
+    <!-- ════════════════════════════════════════
+         지출 목록 요약 (Oracle ROWNUM 페이징)
+    ════════════════════════════════════════ -->
+    <select id="selectExpenseSummaryListByTripId" resultMap="expenseSummaryMap">
+        SELECT *
+        FROM (
+            SELECT
+                e.expense_id,
+                e.trip_id,
+                e.payer_id,
+                m2.nickname  AS payer_nickname,
+                e.category,
+                e.amount,
+                e.description,
+                e.expense_date,
+                e.payment_type,
+                e.created_at,
+                ROWNUM AS rn
+            FROM expense e
+            JOIN member2 m2 ON m2.member_id = e.payer_id
+            WHERE e.trip_id = #{tripId}
+            ORDER BY e.expense_date DESC, e.created_at DESC
+        )
+        WHERE rn > #{offset}
+          AND rn &lt;= #{offset} + #{limit}
+    </select>
+
+    <!-- ════════════════════════════════════════
+         지출 단건 상세 (payer 닉네임 포함)
+    ════════════════════════════════════════ -->
+    <select id="selectExpenseDetailById" resultMap="expenseDetailMap">
+        SELECT
+            e.expense_id,
+            e.trip_id,
+            e.payer_id,
+            m2.nickname  AS payer_nickname,
+            e.category,
+            e.amount,
+            e.description,
+            e.expense_date,
+            e.receipt_url,
+            e.payment_type,
+            e.memo,
+            e.created_at
+        FROM expense e
+        JOIN member2 m2 ON m2.member_id = e.payer_id
+        WHERE e.expense_id = #{expenseId}
+    </select>
+
+    <!-- ════════════════════════════════════════
+         지출별 분담자 목록 (멤버 닉네임 포함)
+    ════════════════════════════════════════ -->
+    <!-- 외부 인원(member_id IS NULL)도 포함 — LEFT JOIN + COALESCE -->
+    <select id="selectParticipantsByExpenseId" resultMap="participantResponseMap">
+        SELECT
+            ep.participant_id,
+            ep.member_id,
+            m2.nickname                          AS member_nickname,
+            ep.nickname                          AS ext_nickname,
+            COALESCE(m2.nickname, ep.nickname)   AS display_name,
+            ep.share_amount
+        FROM expense_participant ep
+        LEFT JOIN member2 m2 ON m2.member_id = ep.member_id
+        WHERE ep.expense_id = #{expenseId}
+        ORDER BY ep.participant_id
+    </select>
+
+    <!-- ════════════════════════════════════════
+         여행 정산 목록 조회 (멤버 닉네임 포함)
+         from_member_id / to_member_id nullable → LEFT JOIN 사용
+    ════════════════════════════════════════ -->
+    <select id="selectSettlementsByTripId" resultMap="settlementResponseMap">
+        SELECT
+            s.settlement_id,
+            s.trip_id,
+            s.from_member_id,
+            fm.nickname  AS from_nickname,
+            s.to_member_id,
+            tm.nickname  AS to_nickname,
+            s.amount,
+            s.status,
+            s.batch_id,
+            s.settled_at,
+            s.created_at
+        FROM settlement s
+        LEFT JOIN member2 fm ON fm.member_id = s.from_member_id
+        LEFT JOIN member2 tm ON tm.member_id = s.to_member_id
+        WHERE s.trip_id = #{tripId}
+        ORDER BY s.status ASC, s.amount DESC
+    </select>
+
+    <!-- ════════════════════════════════════════
+         내가 관련된 정산 조회 (보내는 것 + 받는 것)
+         from_member_id / to_member_id nullable → LEFT JOIN 사용
+    ════════════════════════════════════════ -->
+    <select id="selectSettlementsByTripIdAndMember" resultMap="settlementResponseMap">
+        SELECT
+            s.settlement_id,
+            s.trip_id,
+            s.from_member_id,
+            fm.nickname  AS from_nickname,
+            s.to_member_id,
+            tm.nickname  AS to_nickname,
+            s.amount,
+            s.status,
+            s.batch_id,
+            s.settled_at,
+            s.created_at
+        FROM settlement s
+        LEFT JOIN member2 fm ON fm.member_id = s.from_member_id
+        LEFT JOIN member2 tm ON tm.member_id = s.to_member_id
+        WHERE s.trip_id = #{tripId}
+          AND (s.from_member_id = #{memberId} OR s.to_member_id = #{memberId})
+        ORDER BY s.status ASC, s.amount DESC
     </select>
 
 </mapper>
