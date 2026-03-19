@@ -160,3 +160,18 @@ function saveFacilityInfo() {
     })
     .catch(error => console.error('Error:', error));
 }
+
+// 화면 바깥 클릭 시 드롭다운 닫기
+document.addEventListener('click', function(e) {
+    const propDrop = document.getElementById('propertyDrop');
+    const propBtn = document.querySelector('.property-btn');
+    const profDrop = document.getElementById('partnerProfileDrop');
+    const profBtn = document.querySelector('.profile-btn');
+
+    if (propDrop && propBtn && !propBtn.contains(e.target) && !propDrop.contains(e.target)) {
+        propDrop.classList.remove('show');
+    }
+    if (profDrop && profBtn && !profBtn.contains(e.target) && !profDrop.contains(e.target)) {
+        profDrop.classList.remove('show');
+    }
+});
