@@ -48,14 +48,13 @@ public class PartnerMainController {
         if (userDetails == null) return "redirect:/partner/login";
         if (!userDetails.getAuthorities().contains(new SimpleGrantedAuthority("ROLE_PARTNER"))) return "redirect:/partner/apply";
         
+        Long memberId = userDetails.getMember().getMemberId();
         PartnerInfoDto info = partnerInfoService.getPartnerInfo(memberId);
         if (info != null && ("SUSPENDED".equals(info.getStatus()) || "BLOCKED".equals(info.getStatus()))) {
             model.addAttribute("title", "접근 제한");
             model.addAttribute("message", "파트너사가 정지 또는 차단 상태입니다.<br>문의: support@tripan.com");
             return "error/error2";
         }
-
-        Long memberId = userDetails.getMember().getMemberId();
 
         if ("info".equals(tab)) {
             PartnerInfoDto partnerInfo = partnerInfoService.getPartnerInfo(memberId);
