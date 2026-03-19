@@ -276,7 +276,7 @@
 			  </td>
 			</tr>
               <tr v-for="p in partnerList" :key="p.partnerId"
-                  :style="(p.status === 'SUSPENDED' || p.status === 'BLOCKED') ? 'opacity:0.6;' : ''">
+                  :style="(p.statusCode === 'SUSPENDED' || p.statusCode === 'BLOCKED') ? 'opacity:0.6;' : ''">
                 <td class="col-check">
                   <input type="checkbox" :value="p.partnerId" v-model="selectedIds" @click.stop>
                 </td>
@@ -284,14 +284,17 @@
                   <strong>{{ p.partnerName }}</strong>
                 </td>
                 <td>
-                  <span v-if="p.status === 'ACTIVE'"      class="badge badge-active">활성</span>
-                  <span v-else-if="p.status === 'PENDING'"    class="badge badge-pending">승인 대기</span>
-                  <span v-else-if="p.status === 'APPROVED'"   class="badge badge-approved">승인완료</span>
-                  <span v-else-if="p.status === 'SUPPLEMENT'" class="badge" style="background:#EFF6FF;color:#1D4ED8;">보완요청</span>
-                  <span v-else-if="p.status === 'REJECTED'"   class="badge badge-suspended">반려</span>
-                  <span v-else-if="p.status === 'SUSPENDED'"  class="badge badge-suspended">정지</span>
-                  <span v-else-if="p.status === 'BLOCKED'"    class="badge badge-suspended">영구차단</span>
-                  <span v-else class="badge">{{ p.status }}</span>
+                  <!-- statusCode: partner_status 테이블 최신 status_code 기준 -->
+                  <span v-if="p.statusCode === 'ACTIVE'"      class="badge badge-active">활성</span>
+                  <span v-else-if="p.statusCode === 'PENDING'"    class="badge badge-pending">승인 대기</span>
+                  <span v-else-if="p.statusCode === 'REJECTED'"   class="badge badge-rejected">반려</span>
+                  <span v-else-if="p.statusCode === 'SUSPENDED'"  class="badge badge-suspended">이용정지</span>
+                  <span v-else-if="p.statusCode === 'BLOCKED'"    class="badge badge-suspended">영구차단</span>
+                  <span v-else-if="p.statusCode"                  class="badge">{{ p.statusCode }}</span>
+                  <!-- statusCode 없으면 partner.status 숫자로 폴백 -->
+                  <span v-else-if="String(p.status) === '1'"  class="badge badge-active">활성</span>
+                  <span v-else-if="String(p.status) === '0'"  class="badge badge-suspended">비활성</span>
+                  <span v-else class="badge">-</span>
                 </td>
                 <td>
                   <div class="sales-bar-wrap">
@@ -323,7 +326,7 @@
                   <button class="btn btn-primary btn-sm"
                           style="margin-right:4px;"
                           @click="openDetailModal(p)">상세</button>
-                  <button v-if="p.status !== 'SUSPENDED' && p.status !== 'BLOCKED'"
+                  <button v-if="p.statusCode !== 'SUSPENDED' && p.statusCode !== 'BLOCKED'"
                           class="btn btn-sm"
                           style="background:#FEF2F2;color:#DC2626;border:1px solid #FECACA;"
                           @click="openDeactivateModal(p)">차단</button>
@@ -354,159 +357,7 @@
 
     </main>
 
-    <!-- ══════════════ 파트너사 상세 모달 ══════════════ -->
-    <div class="modal-overlay" :class="{ open: showDetailModal }" @click.self="closeDetailModal">
-      <div class="modal-sheet modal-sheet-wide">
-        <div class="ms-head" style="display:flex;justify-content:space-between;align-items:flex-start;">
-          <div>
-            <h3>{{ detailData.partnerName || '-' }} <span v-if="detailData.status" style="font-size:13px;font-weight:600;margin-left:8px;">
-              <span v-if="detailData.status === 'ACTIVE'"    class="badge badge-active">활성</span>
-              <span v-else-if="detailData.status === 'PENDING'"  class="badge badge-pending">승인 대기</span>
-              <span v-else-if="detailData.status === 'APPROVED'" class="badge badge-approved">승인완료</span>
-              <span v-else class="badge badge-suspended">{{ detailData.status }}</span>
-            </span></h3>
-            <p>파트너사 상세 정보</p>
-          </div>
-          <button @click="closeDetailModal" style="background:none;border:none;cursor:pointer;padding:4px;color:var(--muted);">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-          </button>
-        </div>
-        <div class="ms-body" v-if="detailLoading" style="align-items:center;justify-content:center;min-height:200px;">
-          <span style="color:var(--muted);font-size:14px;">불러오는 중...</span>
-        </div>
-        <div class="ms-body" v-else>
-
-          <!-- 기본 정보 -->
-          <div class="detail-section-title">기본 정보</div>
-          <div class="info-grid">
-            <div class="info-item">
-              <span class="i-label">파트너 ID</span>
-              <span class="i-value">{{ detailData.partnerId || '-' }}</span>
-            </div>
-            <div class="info-item">
-              <span class="i-label">파트너사명</span>
-              <span class="i-value">{{ detailData.partnerName || '-' }}</span>
-            </div>
-            <div class="info-item">
-              <span class="i-label">사업자번호</span>
-              <span class="i-value">{{ detailData.businessNumber || '-' }}</span>
-            </div>
-            <div class="info-item">
-              <span class="i-label">수수료율</span>
-              <span class="i-value">{{ detailData.commissionRate != null ? Number(detailData.commissionRate).toFixed(1) + '%' : '-' }}</span>
-            </div>
-            <div class="info-item">
-              <span class="i-label">담당자명</span>
-              <span class="i-value">{{ detailData.contactName || '-' }}</span>
-            </div>
-            <div class="info-item">
-              <span class="i-label">담당자 연락처</span>
-              <span class="i-value">{{ detailData.contactPhone || '-' }}</span>
-            </div>
-            <div class="info-item">
-              <span class="i-label">등록일</span>
-              <span class="i-value">{{ detailData.createdAt ? String(detailData.createdAt).substring(0,10) : '-' }}</span>
-            </div>
-            <div class="info-item">
-              <span class="i-label">반려 사유</span>
-              <span class="i-value" style="color:#DC2626;">{{ detailData.rejectReason || '-' }}</span>
-            </div>
-          </div>
-
-          <!-- 계약서 / 입점신청서 -->
-          <div class="detail-section-title" style="margin-top:4px;">계약서 / 입점신청서</div>
-          <div style="display:flex;gap:10px;flex-wrap:wrap;">
-            <a v-if="detailData.contractFileUrl" :href="detailData.contractFileUrl" target="_blank"
-               style="display:inline-flex;align-items:center;gap:6px;padding:9px 16px;border:1.5px solid var(--border);border-radius:10px;font-size:13px;font-weight:700;color:var(--primary);text-decoration:none;">
-              📄 계약서 보기
-            </a>
-            <span v-else class="detail-empty" style="padding:0;font-size:13px;">등록된 계약서 없음</span>
-          </div>
-
-          <!-- 운영 현황 (숙소/상품) -->
-          <div class="detail-section-title" style="margin-top:4px;">운영 중인 상품</div>
-          <div v-if="detailData.products && detailData.products.length > 0">
-            <table style="width:100%;font-size:13px;border-collapse:collapse;">
-              <thead>
-                <tr style="background:var(--bg);">
-                  <th style="padding:8px 12px;text-align:left;font-weight:700;border-bottom:1px solid var(--border);">상품명</th>
-                  <th style="padding:8px 12px;text-align:center;font-weight:700;border-bottom:1px solid var(--border);">타입</th>
-                  <th style="padding:8px 12px;text-align:center;font-weight:700;border-bottom:1px solid var(--border);">가격</th>
-                  <th style="padding:8px 12px;text-align:center;font-weight:700;border-bottom:1px solid var(--border);">상태</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr v-for="prod in detailData.products" :key="prod.productId" style="border-bottom:1px solid var(--border);">
-                  <td style="padding:8px 12px;font-weight:600;">{{ prod.productName }}</td>
-                  <td style="padding:8px 12px;text-align:center;color:var(--muted);">{{ prod.productType || '-' }}</td>
-                  <td style="padding:8px 12px;text-align:center;">{{ prod.priceLabel || '-' }}</td>
-                  <td style="padding:8px 12px;text-align:center;">
-                    <span class="badge badge-active" v-if="prod.status === 'ACTIVE'">운영중</span>
-                    <span class="badge badge-suspended" v-else>{{ prod.status }}</span>
-                  </td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-          <div v-else class="detail-empty">등록된 상품이 없습니다.</div>
-
-          <!-- 예약 현황 -->
-          <div class="detail-section-title" style="margin-top:4px;">최근 예약 현황</div>
-          <div v-if="detailData.reservations && detailData.reservations.length > 0">
-            <table style="width:100%;font-size:13px;border-collapse:collapse;">
-              <thead>
-                <tr style="background:var(--bg);">
-                  <th style="padding:8px 12px;text-align:left;font-weight:700;border-bottom:1px solid var(--border);">예약번호</th>
-                  <th style="padding:8px 12px;text-align:left;font-weight:700;border-bottom:1px solid var(--border);">상품명</th>
-                  <th style="padding:8px 12px;text-align:center;font-weight:700;border-bottom:1px solid var(--border);">예약일</th>
-                  <th style="padding:8px 12px;text-align:center;font-weight:700;border-bottom:1px solid var(--border);">상태</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr v-for="rsv in detailData.reservations" :key="rsv.reservationId" style="border-bottom:1px solid var(--border);">
-                  <td style="padding:8px 12px;color:var(--muted);font-size:12px;">{{ rsv.reservationId }}</td>
-                  <td style="padding:8px 12px;font-weight:600;">{{ rsv.productName }}</td>
-                  <td style="padding:8px 12px;text-align:center;color:var(--muted);">{{ rsv.reservationDate }}</td>
-                  <td style="padding:8px 12px;text-align:center;">
-                    <span class="badge badge-active"    v-if="rsv.status === 'CONFIRMED'">확정</span>
-                    <span class="badge badge-pending"   v-else-if="rsv.status === 'PENDING'">대기</span>
-                    <span class="badge badge-suspended" v-else-if="rsv.status === 'CANCELLED'">취소</span>
-                    <span class="badge" v-else>{{ rsv.status }}</span>
-                  </td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-          <div v-else class="detail-empty">최근 예약 내역이 없습니다.</div>
-
-          <!-- 평점 & 리뷰 요약 -->
-          <div class="detail-section-title" style="margin-top:4px;">평점 요약</div>
-          <div style="display:flex;align-items:center;gap:24px;padding:12px 16px;background:var(--bg);border-radius:12px;">
-            <div style="text-align:center;">
-              <div style="font-size:32px;font-weight:900;color:#F59E0B;">{{ Number(detailData.avgRating ?? 0).toFixed(1) }}</div>
-              <div style="font-size:12px;color:var(--muted);">평균 평점</div>
-            </div>
-            <div style="height:40px;width:1px;background:var(--border);"></div>
-            <div style="text-align:center;">
-              <div style="font-size:22px;font-weight:900;">{{ detailData.reviewCount || 0 }}</div>
-              <div style="font-size:12px;color:var(--muted);">총 리뷰 수</div>
-            </div>
-            <div style="height:40px;width:1px;background:var(--border);"></div>
-            <div style="text-align:center;">
-              <div style="font-size:22px;font-weight:900;">{{ detailData.productCount || 0 }}</div>
-              <div style="font-size:12px;color:var(--muted);">등록 상품 수</div>
-            </div>
-          </div>
-
-        </div>
-        <div class="ms-foot">
-          <button class="btn-m btn-m-ghost" @click="closeDetailModal">닫기</button>
-          <button v-if="detailData.status !== 'SUSPENDED' && detailData.status !== 'BLOCKED'"
-                  class="btn-m btn-m-danger" style="flex:0.5;"
-                  @click="() => { closeDetailModal(); openDeactivateModal(detailData); }">차단</button>
-        </div>
-      </div>
-    </div>
+   
 
     <!-- ══════════════ 파트너사 등록 모달 ══════════════ -->
     <div class="modal-overlay" :class="{ open: showRegisterModal }" @click.self="closeRegisterModal">
@@ -687,13 +538,19 @@
 
 <script>
   const contextPath = '${pageContext.request.contextPath}';
+  const buildApiUrl = (path) => contextPath + path;
+  const normalizePartnerId = (value) => {
+    if (value === null || value === undefined) return null;
+    const s = String(value).trim();
+    return s ? s : null;
+  };
 </script>
 
-<jsp:include page="/WEB-INF/views/layout/vue_cdn.jsp" />
+<script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
 
-<script type="module">
-  import { createApp, ref, reactive, computed, onMounted } from 'vue';
-  import axios from 'axios';
+<script>
+  const { createApp, ref, reactive, computed, onMounted } = Vue;
 
   createApp({
     setup() {
@@ -714,7 +571,7 @@
       const totalCount  = ref(0);
       const pageNo      = ref(1);
       const pagination  = ref(null);
-      const searched    = ref(false);
+      const searched    = ref(false);  // 페이지 진입 시 바로 목록 미표시
       const sortAsc     = ref(false);
       const selectedIds = ref([]);
 
@@ -750,7 +607,7 @@
       /* ── KPI 조회 ── */
       const fetchKpi = async () => {
         try {
-          const res = await axios.get(`${contextPath}/api/admin/partner/kpi`);
+          const res = await axios.get(contextPath + '/api/admin/partner/kpi');
           Object.assign(kpi, res.data);
         } catch(e) { console.error('KPI 오류', e); }
       };
@@ -812,7 +669,7 @@
           // page=1 이면 항상 전체 목록 재조회 (필터 변경 포함)
           // page>1 이면 이미 캐시된 allPartners 재사용 (페이지 이동)
           if (page === 1 || allPartners.value.length === 0) {
-            const res = await axios.get(`${contextPath}/api/admin/partner/list`, {
+            const res = await axios.get(contextPath + '/api/admin/partner/list', {
               params: { page: 1, status: 'ALL', keyword: '' }
             });
             allPartners.value = res.data.list || [];
@@ -888,43 +745,16 @@
         document.body.appendChild(link); link.click(); document.body.removeChild(link);
       };
 
-      /* ── 상세 모달 ── */
-      const openDetailModal = async (p) => {
-        Object.assign(detailData, {});
-        detailLoading.value = true;
-        showDetailModal.value = true;
-        try {
-          Object.assign(detailData, {
-            partnerId:       p.partnerId,
-            partnerName:     p.partnerName,
-            businessNumber:  p.businessNumber,
-            contactName:     p.contactName,
-            contactPhone:    p.contactPhone,
-            status:          p.status,
-            commissionRate:  p.commissionRate,
-            createdAt:       p.createdAt,
-            rejectReason:    p.rejectReason,
-            contractFileUrl: p.contractFileUrl,
-            avgRating:       p.rating || 0,
-            reviewCount:     p.reviewCount || 0,
-            productCount:    p.productCount || 0,
-            products:        [],
-            reservations:    []
-          });
-          detailLoading.value = false;
-
-          // 추가 데이터 (상품, 예약) 비동기 로드 - API 있으면 활성화
-          // try {
-          //   const detailRes = await axios.get(`${contextPath}/api/admin/partner/detail/${p.partnerId}`);
-          //   Object.assign(detailData, detailRes.data);
-          // } catch(e) { console.warn('상세 추가 정보 로드 실패', e); }
-
-        } catch(e) {
-          detailLoading.value = false;
-          console.error('상세 오류', e);
+      /* ── 상세 페이지 이동 ── */
+      const openDetailModal = (p) => {
+        const partnerId = normalizePartnerId(p?.partnerId);
+        if (!partnerId) {
+          alert('partnerId가 없습니다.');
+          return;
         }
+        location.href = contextPath + '/admin/partner/detail?partnerId=' + partnerId;
       };
-      const closeDetailModal = () => { showDetailModal.value = false; };
+      const closeDetailModal = () => {};
 
       /* ── 등록 모달 ── */
       const openRegisterModal  = () => { showRegisterModal.value = true; };
@@ -938,7 +768,7 @@
           return;
         }
         try {
-          await axios.post(`${contextPath}/api/admin/partner/register`, register);
+          await axios.post(contextPath + '/api/admin/partner/register', register);
           alert('파트너사가 등록되었습니다. (승인 대기 상태)');
           closeRegisterModal();
           fetchList(1);
@@ -950,12 +780,23 @@
       const openBulkStatusModal  = () => { showBulkStatusModal.value = true; };
       const closeBulkStatusModal = () => { showBulkStatusModal.value = false; bulkStatus.reason = ''; };
       const submitBulkStatus = async () => {
+        if (selectedIds.value.length === 0) {
+          alert('선택된 파트너사가 없습니다.');
+          return;
+        }
         try {
-          await axios.post(`${contextPath}/api/admin/partner/bulk-status`, {
-            partnerIds: selectedIds.value,
-            status: bulkStatus.status,
-            reason: bulkStatus.reason
-          });
+          if (bulkStatus.status === 'ACTIVE') {
+            await Promise.all(selectedIds.value.map(id =>
+              axios.post(buildApiUrl('/api/admin/partner/activate'), {
+                partnerId: id,
+                reason: bulkStatus.reason
+              })
+            ));
+          } else {
+            await Promise.all(selectedIds.value.map(id =>
+              axios.post(contextPath + '/api/admin/partner/suspend/' + id)
+            ));
+          }
           alert('상태가 일괄 변경되었습니다.');
           closeBulkStatusModal();
           fetchList(pageNo.value);
@@ -965,6 +806,7 @@
 
       /* ── 단건 차단 모달 ── */
       const openDeactivateModal  = (p) => {
+    	  console.log('partnerId:', p.partnerId, '/ 전체키:', Object.keys(p));
         Object.assign(deactivateTarget, p);
         Object.assign(deactivate, { reason:'', detail:'' });
         showDeactivateModal.value = true;
@@ -973,13 +815,24 @@
       const submitDeactivate = async () => {
         if (!deactivate.reason)        { alert('차단 사유를 선택해주세요.'); return; }
         if (!deactivate.detail.trim()) { alert('상세 내용을 입력해주세요.'); return; }
+
+        const partnerId = normalizePartnerId(deactivateTarget.partnerId);
+        if (!partnerId) {
+          alert('partnerId가 없습니다.');
+          return;
+        }
+
         try {
-          await axios.post(`${contextPath}/api/admin/partner/suspend/${deactivateTarget.partnerId}`);
+          await axios.post(contextPath + '/api/admin/partner/suspend/' + partnerId);
           alert(deactivateTarget.partnerName + ' 파트너사가 차단되었습니다.');
           closeDeactivateModal();
           fetchList(pageNo.value);
           fetchKpi();
-        } catch(e) { console.error('차단 오류', e); alert('처리 중 오류가 발생했습니다.'); }
+        } catch(e) {
+          console.error('차단 오류', e?.response || e);
+          const msg = e?.response?.data || '처리 중 오류가 발생했습니다.';
+          alert(msg);
+        }
       };
 
       /* ── 단건 활성화 모달 ── */
@@ -991,7 +844,7 @@
       const closeActivateModal = () => { showActivateModal.value = false; };
       const submitActivate = async () => {
         try {
-          await axios.post(`${contextPath}/api/admin/partner/activate`, {
+          await axios.post(contextPath + '/api/admin/partner/activate', {
             partnerId: activateTarget.partnerId,
             reason:    activate.reason
           });
@@ -1010,20 +863,24 @@
       const closeBulkDeactivateModal = () => { showBulkDeactivateModal.value = false; };
       const submitBulkDeactivate = async () => {
         if (!bulkDeactivate.reason) { alert('차단 사유를 선택해주세요.'); return; }
+        if (selectedIds.value.length === 0) { alert('선택된 파트너사가 없습니다.'); return; }
+
         try {
-          await axios.post(`${contextPath}/api/admin/partner/bulk-deactivate`, {
-            partnerIds: selectedIds.value,
-            reason:     bulkDeactivate.reason,
-            detail:     bulkDeactivate.detail
-          });
+          await Promise.all(selectedIds.value.map(id =>
+            axios.post(contextPath + '/api/admin/partner/suspend/' + id)
+          ));
           alert(selectedIds.value.length + '개 파트너사가 일괄 차단되었습니다.');
           closeBulkDeactivateModal();
           fetchList(pageNo.value);
           fetchKpi();
-        } catch(e) { console.error('일괄 차단 오류', e); alert('처리 중 오류가 발생했습니다.'); }
+        } catch(e) {
+          console.error('일괄 차단 오류', e?.response || e);
+          const msg = e?.response?.data || '처리 중 오류가 발생했습니다.';
+          alert(msg);
+        }
       };
 
-      /* ── 최초 1회만 호출 (무한루프 방지: onMounted에서만 실행) ── */
+      /* ── 최초 1회 호출 ── */
       onMounted(() => {
         fetchKpi();
       });

@@ -189,14 +189,7 @@
         <!-- 검색 필터 -->
         <div class="filter-row">
           <div class="filter-label">신청사 검색</div>
-          <select class="filter-select" v-model="filter.category" style="width:130px;">
-            <option value="ALL">전체 카테고리</option>
-            <option value="HOTEL">호텔/숙박</option>
-            <option value="TOUR">투어/체험</option>
-            <option value="FLIGHT">항공</option>
-            <option value="RENT">렌터카</option>
-            <option value="ETC">기타</option>
-          </select>
+
           <input type="text" class="keyword-input" v-model="filter.keyword"
                  placeholder="파트너사명 또는 사업자번호 검색"
                  @keyup.enter="fetchList(1)"
@@ -243,9 +236,7 @@
                 <th class="col-check">
                   <input type="checkbox" @change="toggleCheckAll" :checked="isAllChecked">
                 </th>
-                <th>신청 번호</th>
                 <th>파트너사명</th>
-                <th>카테고리</th>
                 <th>사업자번호</th>
                 <th>담당자</th>
                 <th>심사 상태</th>
@@ -256,12 +247,12 @@
             </thead>
             <tbody>
               <tr v-if="!searched">
-                <td colspan="10" style="text-align:center; padding:50px 0; color:var(--muted);">
+                <td colspan="8" style="text-align:center; padding:50px 0; color:var(--muted);">
                   상단의 탭이나 검색 조건을 선택하면 목록이 표시됩니다.
                 </td>
               </tr>
               <tr v-else-if="applyList.length === 0">
-                <td colspan="10" style="text-align:center; padding:50px 0; color:var(--muted);">
+                <td colspan="8" style="text-align:center; padding:50px 0; color:var(--muted);">
                   해당 조건의 신청 내역이 없습니다.
                 </td>
               </tr>
@@ -269,16 +260,20 @@
                 <td class="col-check">
                   <input type="checkbox" :value="item.partnerId" v-model="selectedIds" @click.stop>
                 </td>
-                <td class="num" style="color:var(--muted); font-size:12px;">{{ item.partnerId }}</td>
                 <td><strong>{{ item.partnerName }}</strong></td>
-                <td><span class="category-chip" style="display:inline-block;padding:2px 10px;border-radius:20px;font-size:12px;font-weight:700;background:#EFF6FF;color:#1D4ED8;">{{ item.categoryLabel || '-' }}</span></td>
                 <td>{{ item.businessNumber }}</td>
                 <td>{{ item.contactName }}</td>
                 <td>
-                  <span v-if="item.status === 'PENDING'"    class="badge badge-pending">심사 대기</span>
-                  <span v-else-if="item.status === 'APPROVED'"  class="badge badge-approved">승인</span>
-                  <span v-else-if="item.status === 'REJECTED'"  class="badge badge-rejected">반려</span>
-                  <span v-else-if="item.status === 'ACTIVE'"    class="badge badge-approved">승인</span>
+                  <!-- statusCode: partner_status 최신 status_code 기준 -->
+                  <span v-if="item.statusCode === 'PENDING'"    class="badge badge-pending">심사 대기</span>
+                  <span v-else-if="item.statusCode === 'ACTIVE' || item.statusCode === 'APPROVED'" class="badge badge-approved">승인</span>
+                  <span v-else-if="item.statusCode === 'REJECTED'"  class="badge badge-rejected">반려</span>
+                  <span v-else-if="item.statusCode === 'SUSPENDED'" class="badge badge-suspended">이용정지</span>
+                  <span v-else-if="item.statusCode"                 class="badge">{{ item.statusCode }}</span>
+                  <!-- statusCode 없으면 partner.status 숫자 폴백 -->
+                  <span v-else-if="String(item.status) === '1'" class="badge badge-approved">활성</span>
+                  <span v-else-if="String(item.status) === '0'" class="badge badge-suspended">비활성</span>
+                  <span v-else class="badge">-</span>
                 </td>
                 <td>
                   <button class="btn btn-outline btn-sm"
@@ -293,7 +288,14 @@
                 </td>
                 <td class="num date-cell">{{ item.createdAt ? String(item.createdAt).substring(0,10) : '-' }}</td>
                 <td class="right">
-                  <button class="btn btn-primary btn-sm" @click="openReviewModal(item)">심사 처리</button>
+                  <!-- 이미 승인/반려 처리된 경우 버튼 비활성화 -->
+                  <button class="btn btn-primary btn-sm"
+                          @click="openReviewModal(item)"
+                          :disabled="item.statusCode === 'ACTIVE' || item.statusCode === 'APPROVED' || item.statusCode === 'REJECTED' || (item.statusCode == null && item.status == 1)"
+                          :style="(item.statusCode === 'ACTIVE' || item.statusCode === 'APPROVED' || item.statusCode === 'REJECTED' || (item.statusCode == null && item.status == 1)) ? 'opacity:0.4;cursor:not-allowed;' : ''"
+                          :title="(item.statusCode === 'ACTIVE' || item.statusCode === 'APPROVED' || (item.statusCode == null && item.status == 1)) ? '이미 승인된 파트너사입니다' : item.statusCode === 'REJECTED' ? '이미 반려된 파트너사입니다' : '심사 처리'">
+                    심사 처리
+                  </button>
                 </td>
               </tr>
             </tbody>
@@ -329,27 +331,46 @@
         </div>
         <div class="ms-body">
 
-          <!-- 기본 정보 -->
+          <!-- 신청 정보 -->
           <div class="info-grid">
             <div class="info-item">
-              <span class="i-label">파트너사명</span>
-              <span class="i-value">{{ reviewTarget.partnerName }}</span>
-            </div>
-            <div class="info-item">
-              <span class="i-label">카테고리</span>
-              <span class="i-value">{{ '-' }}</span>
+              <span class="i-label">스테이명</span>
+              <span class="i-value">{{ reviewTarget.partnerName || '-' }}</span>
             </div>
             <div class="info-item">
               <span class="i-label">사업자번호</span>
-              <span class="i-value">{{ reviewTarget.businessNumber }}</span>
+              <span class="i-value">{{ reviewTarget.businessNumber || '-' }}</span>
             </div>
             <div class="info-item">
-              <span class="i-label">담당자</span>
-              <span class="i-value">{{ reviewTarget.contactName }}</span>
+              <span class="i-label">담당자명</span>
+              <span class="i-value">{{ reviewTarget.contactName || '-' }}</span>
             </div>
             <div class="info-item">
-              <span class="i-label">담당자 연락처</span>
-              <span class="i-value">{{ reviewTarget.contactPhone }}</span>
+              <span class="i-label">연락처</span>
+              <span class="i-value">{{ reviewTarget.contactPhone || '-' }}</span>
+            </div>
+            <div class="info-item">
+              <span class="i-label">이메일</span>
+              <span class="i-value">{{ reviewTarget.contactEmail || '-' }}</span>
+            </div>
+            <div class="info-item">
+              <span class="i-label">운영 경험</span>
+              <span class="i-value">{{ reviewTarget.hasExp === 'Y' ? '있음' : reviewTarget.hasExp === 'N' ? '없음' : '-' }}</span>
+            </div>
+            <div class="info-item" style="grid-column: 1 / -1;">
+              <span class="i-label">공간 소개</span>
+              <span class="i-value" style="white-space:pre-wrap;">{{ reviewTarget.partnerIntro || '-' }}</span>
+            </div>
+            <div class="info-item" style="grid-column: 1 / -1;">
+              <span class="i-label">제출 서류 ({{ reviewTarget.docs ? reviewTarget.docs.length : 0 }}건)</span>
+              <div v-if="reviewTarget.docs && reviewTarget.docs.length > 0" style="display:flex;flex-direction:column;gap:4px;margin-top:4px;">
+                <a v-for="doc in reviewTarget.docs" :key="doc.docId"
+                   :href="doc.url" target="_blank"
+                   style="font-size:13px;color:var(--primary);font-weight:700;">
+                  📄 {{ doc.docName }}
+                </a>
+              </div>
+              <span v-else class="i-value">-</span>
             </div>
             <div class="info-item">
               <span class="i-label">신청일</span>
@@ -362,53 +383,52 @@
           <!-- 처리 결과 선택 -->
           <div class="fg">
             <label>심사 결과 <span style="color:var(--danger);">*</span></label>
-            <select v-model="review.result">
+            <select v-model="review.statusCode">
               <option value="">결과를 선택하세요</option>
               <option value="APPROVED">✅ 승인</option>
               <option value="REJECTED">❌ 반려</option>
             </select>
           </div>
 
-          <!-- 중개 수수료율 (승인 시만 표시) -->
-          <div class="fg" v-if="review.result === 'APPROVED'">
-            <label>중개 수수료율 <span style="color:var(--danger);">*</span></label>
-            <div class="rate-input-wrap">
-              <input type="number" v-model="review.commissionRate"
-                     placeholder="예) 5.0" min="0" max="50" step="0.1">
-              <span class="rate-unit">%</span>
+          <!-- 중개 수수료율 + 계약 종료일 (승인 시만 표시) -->
+          <div v-if="review.statusCode === 'APPROVED'" style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+            <div class="fg">
+              <label>중개 수수료율 <span style="color:var(--danger);">*</span></label>
+              <div class="rate-input-wrap">
+                <input type="number" v-model="review.commissionRate"
+                       placeholder="예) 5.0" min="0" max="50" step="0.1">
+                <span class="rate-unit">%</span>
+              </div>
             </div>
-            <span style="font-size:12px; color:var(--muted); margin-top:-2px;">
-              이 파트너에게 적용될 중개 수수료율입니다. (0 ~ 50%)
-            </span>
+            <div class="fg">
+              <label>계약 종료일 <span style="color:var(--danger);">*</span></label>
+              <input type="date" v-model="review.contractEndDate">
+            </div>
           </div>
 
           <!-- 사유/메시지 -->
           <div class="fg">
             <label>
-              <span v-if="review.result === 'APPROVED'">승인 메시지 (선택)</span>
-              <span v-else-if="review.result === 'REJECTED'">반려 사유 <span style="color:var(--danger);">*</span></span>
+              <span v-if="review.statusCode === 'APPROVED'">승인 메시지 (선택)</span>
+              <span v-else-if="review.statusCode === 'REJECTED'">반려 사유 <span style="color:var(--danger);">*</span></span>
               <span v-else>처리 메시지</span>
             </label>
             <textarea v-model="review.message"
-                      :placeholder="review.result === 'APPROVED' ? '승인 축하 메시지 (생략 가능)'
-                                  : review.result === 'REJECTED' ? '반려 사유를 구체적으로 입력하세요.'
+                      :placeholder="review.statusCode === 'APPROVED' ? '승인 축하 메시지 (생략 가능)'
+                                  : review.statusCode === 'REJECTED' ? '반려 사유를 구체적으로 입력하세요.'
                                   : '처리 메시지를 입력하세요.'">
             </textarea>
           </div>
 
-          <!-- 알림 발송 옵션 -->
-          <div style="display:flex; align-items:center; gap:8px; font-size:13px; font-weight:700;">
-            <input type="checkbox" v-model="review.sendNotify" id="chk-notify"
-                   style="width:16px;height:16px;accent-color:var(--primary);">
-            <label for="chk-notify" style="cursor:pointer;">
-              심사 결과를 파트너사 담당자에게 알림톡/이메일로 자동 발송
-            </label>
+          <!-- 알림 발송: contactEmail로 자동 발송 (별도 선택 불필요) -->
+          <div style="font-size:12px; color:var(--muted); padding:4px 0;">
+            📧 처리 완료 시 담당자 이메일({{ reviewTarget.contactEmail || '-' }})로 자동 발송됩니다.
           </div>
         </div>
         <div class="ms-foot">
           <button class="btn-m btn-m-ghost"    @click="closeReviewModal">취소</button>
-          <button class="btn-m btn-m-success"  v-if="review.result === 'APPROVED'"   @click="submitReview">승인 처리</button>
-          <button class="btn-m btn-m-danger"   v-else-if="review.result === 'REJECTED'"   @click="submitReview">반려 처리</button>
+          <button class="btn-m btn-m-success"  v-if="review.statusCode === 'APPROVED'"   @click="submitReview">승인 처리</button>
+          <button class="btn-m btn-m-danger"   v-else-if="review.statusCode === 'REJECTED'"   @click="submitReview">반려 처리</button>
           <button class="btn-m btn-m-primary"  v-else disabled style="opacity:0.4;">결과 선택 후 처리</button>
         </div>
       </div>
@@ -454,12 +474,12 @@
     <div class="modal-overlay" :class="{ open: showBulkReviewModal }" @click.self="closeBulkReviewModal">
       <div class="modal-sheet" style="max-width:480px;">
         <div class="ms-head">
-          <h3 v-if="bulkReview.result === 'APPROVED'">일괄 승인 처리</h3>
+          <h3 v-if="bulkReview.statusCode === 'APPROVED'">일괄 승인 처리</h3>
           <h3 v-else>일괄 반려 처리</h3>
           <p>선택된 파트너사 <strong>{{ selectedIds.length }}개</strong>를 일괄 처리합니다.</p>
         </div>
         <div class="ms-body">
-          <div class="fg" v-if="bulkReview.result === 'APPROVED'">
+          <div class="fg" v-if="bulkReview.statusCode === 'APPROVED'">
             <label>중개 수수료율 <span style="color:var(--danger);">*</span></label>
             <div class="rate-input-wrap">
               <input type="number" v-model="bulkReview.commissionRate"
@@ -468,16 +488,16 @@
             </div>
           </div>
           <div class="fg">
-            <label v-if="bulkReview.result === 'REJECTED'">반려 사유 <span style="color:var(--danger);">*</span></label>
+            <label v-if="bulkReview.statusCode === 'REJECTED'">반려 사유 <span style="color:var(--danger);">*</span></label>
             <label v-else>승인 메시지 (선택)</label>
             <textarea v-model="bulkReview.message"
-                      :placeholder="bulkReview.result === 'REJECTED' ? '반려 사유를 입력하세요.' : '승인 메시지 (생략 가능)'">
+                      :placeholder="bulkReview.statusCode === 'REJECTED' ? '반려 사유를 입력하세요.' : '승인 메시지 (생략 가능)'">
             </textarea>
           </div>
         </div>
         <div class="ms-foot">
           <button class="btn-m btn-m-ghost"    @click="closeBulkReviewModal">취소</button>
-          <button class="btn-m btn-m-success"  v-if="bulkReview.result === 'APPROVED'" @click="submitBulkReview">일괄 승인</button>
+          <button class="btn-m btn-m-success"  v-if="bulkReview.statusCode === 'APPROVED'" @click="submitBulkReview">일괄 승인</button>
           <button class="btn-m btn-m-danger"   v-else @click="submitBulkReview">일괄 반려</button>
         </div>
       </div>
@@ -489,13 +509,19 @@
 
 <script>
   const contextPath = '${pageContext.request.contextPath}';
+  const buildApiUrl = (path) => contextPath + path;
+  const normalizePartnerId = (value) => {
+    if (value === null || value === undefined) return null;
+    const s = String(value).trim();
+    return s ? s : null;
+  };
 </script>
 
-<jsp:include page="/WEB-INF/views/layout/vue_cdn.jsp" />
+<script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
 
-<script type="module">
-  import { createApp, ref, reactive, computed, onMounted } from 'vue';
-  import axios from 'axios';
+<script>
+  const { createApp, ref, reactive, computed, onMounted } = Vue;
 
   createApp({
     setup() {
@@ -503,10 +529,10 @@
       /* ── 상태 ── */
       const kpi = reactive({
         total: 0, pending: 0, supplement: 0,
-        approved: 0, rejected: 0, approvedThisMonth: 0
+        active: 0, approved: 0, rejected: 0, approvedThisMonth: 0
       });
 
-      const filter = reactive({ status: 'ALL', category: 'ALL', keyword: '' });
+      const filter = reactive({ status: 'ALL', keyword: '' });
 
       const selectedIds = ref([]);
       const isAllChecked = computed(() =>
@@ -520,21 +546,22 @@
       const totalCount = ref(0);
       const pageNo     = ref(1);
       const pagination = ref(null);
-      const searched   = ref(false);
+      const searched   = ref(false);  // 페이지 진입 시 바로 목록 표시
 
       /* 심사 처리 모달 */
       const showReviewModal = ref(false);
       const reviewTarget = reactive({
         partnerId: '', partnerName: '', businessNumber: '',
-        contactName: '', contactPhone: ''
+        contactName: '', contactPhone: '', contactEmail: '',
+        hasExp: '', partnerIntro: '', docs: []
       });
       const review = reactive({
-        result: '', commissionRate: '', message: '', sendNotify: true
+        statusCode: '', commissionRate: '', contractEndDate: '', message: ''
       });
 
       /* 일괄 심사 모달 */
       const showBulkReviewModal = ref(false);
-      const bulkReview = reactive({ result: '', commissionRate: '', message: '' });
+      const bulkReview = reactive({ statusCode: '', commissionRate: '', message: '' });
 
       /* 서류 확인 모달 */
       const showDocModal = ref(false);
@@ -543,9 +570,21 @@
       /* ── KPI ── */
       const fetchKpi = async () => {
         try {
-          const res = await axios.get(`${contextPath}/api/admin/partner/kpi`);
+          const res = await axios.get(buildApiUrl('/api/admin/partner/apply/kpi'));
           Object.assign(kpi, res.data);
         } catch(e) { console.error('KPI 오류', e); }
+      };
+
+      /* ── 탭 카운트 계산 (allApplies 기준) ── */
+      const updateTabCounts = () => {
+        const all = allApplies.value;
+        const getCode = (p) => p.statusCode ? p.statusCode.toUpperCase()
+                              : p.status === 1 || p.status === '1' ? 'ACTIVE'
+                              : p.status === 0 || p.status === '0' ? 'SUSPENDED' : '';
+        kpi.total    = all.length;
+        kpi.pending  = all.filter(p => getCode(p) === 'PENDING').length;
+        kpi.active   = all.filter(p => { const sc = getCode(p); return sc === 'ACTIVE' || sc === 'APPROVED'; }).length;
+        kpi.rejected = all.filter(p => getCode(p) === 'REJECTED').length;
       };
 
       /* ── 전체 목록 캐시 (프론트 페이징용) ── */
@@ -575,12 +614,14 @@
         pageNo.value = page;
         let list = [...allApplies.value];
 
-        // 상태 필터 (APPROVED 탭은 ACTIVE도 포함 — 승인 후 ACTIVE로 저장되므로)
+        // 상태 필터 — statusCode(partner_status) 기준, APPROVED 탭은 ACTIVE도 포함
         if (filter.status && filter.status !== 'ALL') {
           list = list.filter(p => {
-            const s = (p.status || '').toUpperCase();
-            if (filter.status === 'APPROVED') return s === 'APPROVED' || s === 'ACTIVE';
-            return s === filter.status.toUpperCase();
+            const sc = p.statusCode ? p.statusCode.toUpperCase()
+                     : p.status === 1 || p.status === '1' ? 'ACTIVE'
+                     : p.status === 0 || p.status === '0' ? 'SUSPENDED' : '';
+            if (filter.status === 'APPROVED') return sc === 'APPROVED' || sc === 'ACTIVE';
+            return sc === filter.status.toUpperCase();
           });
         }
         // 키워드 필터
@@ -609,17 +650,22 @@
       /* ── 목록 조회 (전체 1회 로드 후 캐시) ── */
       const fetchList = async (page = 1) => {
         try {
+          searched.value = true;
           if (page === 1 || allApplies.value.length === 0) {
-            const res = await axios.get(`${contextPath}/api/admin/partner/list`, {
-              params: { page: 1, status: 'ALL', keyword: '' }
-            });
-            allApplies.value = res.data.list || [];
+            const res = await axios.get(buildApiUrl('/api/admin/partner/list'));
+            const rawList = Array.isArray(res.data?.list) ? res.data.list : [];
+            allApplies.value = rawList.filter(item =>
+              ['PENDING', 'APPROVED', 'ACTIVE', 'REJECTED'].includes(String(item.statusCode || '').toUpperCase())
+              || String(item.statusCode || '').trim() === ''
+            );
+            updateTabCounts();
           }
           applyFilter(page);
           selectedIds.value = [];
         } catch(e) {
-          console.error('목록 오류', e);
-          alert('목록을 불러오는 중 오류가 발생했습니다.');
+          console.error('목록 오류', e?.response || e);
+          const msg = e?.response?.data || '목록을 불러오는 중 오류가 발생했습니다.';
+          alert(msg);
         }
       };
 
@@ -635,9 +681,26 @@
       };
 
       /* ── 심사 처리 모달 ── */
-      const openReviewModal = (item) => {
+      const openReviewModal = async (item) => {
+        // 이미 승인/반려된 건 모달 열지 않음
+        const sc = item.statusCode || '';
+        if (sc === 'ACTIVE' || sc === 'APPROVED' || (sc === '' && item.status == 1)) {
+          alert('이미 승인된 파트너사입니다.');
+          return;
+        }
+        if (sc === 'REJECTED') {
+          alert('이미 반려된 파트너사입니다.');
+          return;
+        }
         Object.assign(reviewTarget, item);
-        Object.assign(review, { result: '', commissionRate: '', message: '', sendNotify: true });
+        Object.assign(review, { statusCode: '', commissionRate: '', contractEndDate: '', message: '' });
+        // 서류 목록 로드
+        try {
+          const res = await axios.get(contextPath + '/api/admin/partner/apply/docs', {
+            params: { applyId: normalizePartnerId(item.partnerId) }
+          });
+          reviewTarget.docs = res.data || [];
+        } catch(e) { reviewTarget.docs = []; }
         showReviewModal.value = true;
       };
       const closeReviewModal = () => { showReviewModal.value = false; };
@@ -645,27 +708,27 @@
       /* ── 일괄 심사 처리 ── */
       const openBulkReviewModal = (result) => {
         if (selectedIds.value.length === 0) { alert('처리할 파트너사를 선택해주세요.'); return; }
-        Object.assign(bulkReview, { result, commissionRate: '', message: '' });
+        Object.assign(bulkReview, { statusCode: result, commissionRate: '', message: '' });
         showBulkReviewModal.value = true;
       };
       const closeBulkReviewModal = () => { showBulkReviewModal.value = false; };
       const submitBulkReview = async () => {
-        if (bulkReview.result === 'REJECTED' && !bulkReview.message.trim()) {
+        if (bulkReview.statusCode === 'REJECTED' && !bulkReview.message.trim()) {
           alert('반려 사유를 입력해주세요.'); return;
         }
-        if (bulkReview.result === 'APPROVED' && !bulkReview.commissionRate) {
+        if (bulkReview.statusCode === 'APPROVED' && !bulkReview.commissionRate) {
           alert('수수료율을 입력해주세요.'); return;
         }
         try {
           await Promise.all(selectedIds.value.map(id =>
             axios.post(contextPath + '/api/admin/partner/apply/review', {
-              applyId:        id,
-              result:         bulkReview.result,
+              applyId:        normalizePartnerId(id),
+              statusCode:     bulkReview.statusCode,
               commissionRate: bulkReview.commissionRate,
               message:        bulkReview.message
             })
           ));
-          const label = bulkReview.result === 'APPROVED' ? '승인' : '반려';
+          const label = bulkReview.statusCode === 'APPROVED' ? '승인' : '반려';
           alert(selectedIds.value.length + '개 파트너사 일괄 ' + label + ' 완료.');
           closeBulkReviewModal();
           allApplies.value = [];
@@ -678,20 +741,21 @@
       };
 
       const submitReview = async () => {
-        if (!review.result) return;
-        if (review.result === 'REJECTED' && !review.message.trim()) { alert('반려 사유를 입력해주세요.'); return; }
-        if (review.result === 'APPROVED' && !review.commissionRate)  { alert('수수료율을 입력해주세요.'); return; }
+        if (!review.statusCode) return;
+        if (review.statusCode === 'REJECTED' && !review.message.trim()) { alert('반려 사유를 입력해주세요.'); return; }
+        if (review.statusCode === 'APPROVED' && !review.commissionRate)  { alert('수수료율을 입력해주세요.'); return; }
+        if (review.statusCode === 'APPROVED' && !review.contractEndDate) { alert('계약 종료일을 입력해주세요.'); return; }
 
         try {
-          await axios.post(`${contextPath}/api/admin/partner/apply/review`, {
-            applyId:        reviewTarget.partnerId,
-            result:         review.result,
-            commissionRate: review.commissionRate,
-            message:        review.message,
-            sendNotify:     review.sendNotify
+          await axios.post(contextPath + '/api/admin/partner/apply/review', {
+            applyId:         normalizePartnerId(reviewTarget.partnerId),
+            statusCode:      review.statusCode,
+            commissionRate:  review.commissionRate,
+            contractEndDate: review.contractEndDate || null,
+            message:         review.message
           });
-          const label = { APPROVED:'승인', REJECTED:'반려' }[review.result] || '처리';
-          alert(label + ' 처리가 완료되었습니다.' + (review.sendNotify ? ' (알림톡/이메일이 발송됩니다.)' : ''));
+          const label = { APPROVED:'승인', REJECTED:'반려' }[review.statusCode] || '처리';
+          alert(label + ' 처리가 완료되었습니다. (담당자 이메일로 자동 발송됩니다.)');
           closeReviewModal();
           allApplies.value = []; // 캐시 초기화 → 목록 재조회
           fetchList(1);
@@ -709,8 +773,8 @@
         Object.assign(docTarget, item); // applyId 포함
         showDocModal.value = true;
         try {
-          const res = await axios.get(`${contextPath}/api/admin/partner/apply/docs`, {
-            params: { applyId: item.partnerId }
+          const res = await axios.get(contextPath + '/api/admin/partner/apply/docs', {
+            params: { applyId: normalizePartnerId(item.partnerId) }
           });
           docTarget.docs = res.data;
         } catch(e) { console.error('서류 조회 오류', e); }
@@ -727,11 +791,11 @@
         selectedIds, isAllChecked, toggleCheckAll,
         showReviewModal, reviewTarget, review,
         showDocModal, docTarget,
-        setTab, fetchList, copySelectedNames,
+        setTab, fetchList, copySelectedNames, updateTabCounts,
         openReviewModal, closeReviewModal, submitReview,
         openBulkReviewModal, closeBulkReviewModal, submitBulkReview, bulkReview, showBulkReviewModal,
         openDocModal, closeDocModal, openDoc,
-        resetFilter: () => { filter.category = 'ALL'; filter.keyword = ''; allApplies.value = []; fetchList(1); }
+        resetFilter: () => { filter.status = 'ALL'; filter.keyword = ''; allApplies.value = []; fetchList(1); }
       };
     }
   }).mount('#app');

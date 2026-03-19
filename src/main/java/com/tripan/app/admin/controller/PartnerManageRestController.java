@@ -11,12 +11,10 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.tripan.app.admin.domain.dto.PartnerKpiDto;
 import com.tripan.app.admin.domain.dto.PartnerManageDto;
-import com.tripan.app.admin.mapper.PartnerManageMapper;
 import com.tripan.app.admin.service.PartnerManageService;
 
 import lombok.RequiredArgsConstructor;
@@ -25,11 +23,10 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("api/admin/partner")
+@RequestMapping("/api/admin/partner")
 public class PartnerManageRestController {
 
 	private final PartnerManageService partnerService;
-	private final PartnerManageMapper partnerManageMapper;
 	 
     /* ── KPI ── */
     @GetMapping("/kpi")
@@ -71,46 +68,49 @@ public class PartnerManageRestController {
         return ResponseEntity.ok("등록 완료");
     }
  
+    /* ── 파트너 상세 조회 ── */
+    @GetMapping("/detail/{partnerId}")
+    public ResponseEntity<PartnerManageDto> getDetail(@PathVariable("partnerId") Long partnerId) {
+        return ResponseEntity.ok(partnerService.getPartnerDetail(partnerId));
+    }
+
     /* ── 심사 처리 (승인 / 반려) ── */
     @PostMapping("/apply/review")
     public ResponseEntity<String> review(@RequestBody PartnerManageDto req) {
-        if (req.getApplyId() == null || req.getResult() == null) {
-            return ResponseEntity.badRequest().body("applyId와 result는 필수입니다.");
+        if (req.getApplyId() == null || req.getStatusCode() == null) {
+            return ResponseEntity.badRequest().body("applyId와 statusCode는 필수입니다.");
         }
-        switch (req.getResult()) {
+        switch (req.getStatusCode().toUpperCase()) {
             case "APPROVED" -> {
                 double rate = req.getCommissionRate() != null
                     ? req.getCommissionRate().doubleValue() : 10.0;
-                partnerService.approvePartner(req.getApplyId(), rate);
+                partnerService.approvePartner(req.getApplyId(), rate, req.getContractEndDate());
             }
             case "REJECTED" -> partnerService.rejectPartner(req.getApplyId(), req.getMessage());
-            default -> { return ResponseEntity.badRequest().body("잘못된 result: " + req.getResult()); }
+            default -> { return ResponseEntity.badRequest().body("잘못된 statusCode: " + req.getStatusCode()); }
         }
         return ResponseEntity.ok("처리 완료");
     }
- 
+
     /* ── 차단 ── */
     @PostMapping("/suspend/{partnerId}")
     public ResponseEntity<String> suspend(@PathVariable("partnerId") Long partnerId) {
         partnerService.suspendPartner(partnerId);
         return ResponseEntity.ok("차단 완료");
     }
- 
+
     /* ── 활성화 (차단 해제) ── */
     @PostMapping("/activate")
     public ResponseEntity<String> activate(@RequestBody PartnerManageDto req) {
-        partnerService.approvePartner(req.getApplyId(), 10.0);
+        Long id = req.getPartnerId() != null ? req.getPartnerId() : req.getApplyId();
+        partnerService.approvePartner(id, 10.0, null);
         return ResponseEntity.ok("활성화 완료");
     }
     
 	
     
-	@ResponseBody
     @GetMapping("/apply/docs")
-    public ResponseEntity<?> getApplyDocs(@RequestParam("applyId") Long applyId) {
-        
-        List<Map<String, Object>> docs = partnerManageMapper.selectPartnerDocs(applyId);
-        
-        return ResponseEntity.ok(docs);
+    public ResponseEntity<List<Map<String, Object>>> getApplyDocs(@RequestParam("applyId") Long applyId) {
+        return ResponseEntity.ok(partnerService.getPartnerDocs(applyId));
     }
 }
