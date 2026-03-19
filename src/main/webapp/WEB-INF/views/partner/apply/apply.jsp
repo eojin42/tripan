@@ -134,6 +134,13 @@ body {
 		                        <input type="tel" name="contactPhone" class="form-control" value="${myApply.contactPhone}" placeholder="'-'를 제외한 휴대전화번호를 입력해 주세요." required>
 							</div>
 						</div>
+						
+						<div class="row mb-4 align-items-center">
+							<label class="col-md-3 form-label">이메일 주소<span class="ms-1" style="color: var(--tp-orchid);">*</span></label>
+							<div class="col-md-9">
+		                        <input type="email" name="contactEmail" class="form-control" value="${myApply.contactEmail}" placeholder="이메일 주소를 입력해 주세요." required>
+							</div>
+						</div>
 	
 						<div class="row mb-0 align-items-center">
 							<label class="col-md-3 form-label">사업자등록번호<span class="ms-1" style="color: var(--tp-orchid);">*</span></label>
@@ -152,45 +159,29 @@ body {
 		                        <input type="text" name="partnerName" class="form-control" value="${myApply.partnerName}" placeholder="스테이 이름을 입력해 주세요." required>
 							</div>
 						</div>
-						
-						<div class="tp-form-card">
-							<h2 class="section-title">스테이 정보</h2>
-							
 							<div class="row mb-4 align-items-center">
-								<label class="col-md-3 form-label">스테이 이름<span class="ms-1" style="color: var(--tp-orchid);">*</span></label>
+								<label class="col-md-3 form-label">숙박업 운영 경험 유무<span class="ms-1" style="color: var(--tp-orchid);">*</span></label>
 								<div class="col-md-9">
-			                        <input type="text" name="partnerName" class="form-control" value="${myApply.partnerName}" placeholder="스테이 이름을 입력해 주세요." required>
-								</div>
-							</div>
-	
-							<div class="row mb-4 align-items-center">
-								<label class="col-md-3 form-label">카테고리<span class="ms-1" style="color: var(--tp-orchid);">*</span></label>
-								<div class="col-md-9">
-									<select name="accommodationType" class="form-select" required>
-										<option value="" disabled ${empty myApply.accommodationType ? 'selected' : ''}>숙소 유형을 선택해 주세요</option>
-										<option value="HOTEL" ${myApply.accommodationType == 'HOTEL' ? 'selected' : ''}>호텔/리조트</option>
-										<option value="MOTEL" ${myApply.accommodationType == 'MOTEL' ? 'selected' : ''}>모텔</option>
-										<option value="PENSION" ${myApply.accommodationType == 'PENSION' ? 'selected' : ''}>펜션/풀빌라</option>
-										<option value="GUESTHOUSE" ${myApply.accommodationType == 'GUESTHOUSE' ? 'selected' : ''}>게스트하우스/한옥</option>
-									</select>
+									<div class="d-flex align-items-center" style="height: 100%; gap: 20px; padding-left: 10px;">
+										<div class="form-check mb-0">
+											<input class="form-check-input" type="radio" name="expStatus" id="expY" value="Y" ${myApply.expStatus == 'Y' ? 'checked' : ''} required style="accent-color: var(--tp-orchid); cursor: pointer;">
+											<label class="form-check-label fw-bold" for="expY" style="cursor: pointer;">있음</label>
+										</div>
+										<div class="form-check mb-0">
+											<input class="form-check-input" type="radio" name="expStatus" id="expN" value="N" ${myApply.expStatus == 'N' ? 'checked' : ''} required style="accent-color: var(--tp-orchid); cursor: pointer;">
+											<label class="form-check-label fw-bold" for="expN" style="cursor: pointer;">없음</label>
+										</div>
+									</div>
 								</div>
 							</div>
 							
 							<div class="row mb-0 align-items-start">
 								<label class="col-md-3 form-label pt-2">공간 소개<span class="ms-1" style="color: var(--tp-orchid);">*</span></label>
 								<div class="col-md-9">
-			                        <textarea name="partnerIntro" class="form-control" style="height: 140px; resize: none;" placeholder="공간의 컨셉과 스토리를 들려주세요. (최소 50자)" required>${myApply.partnerIntro}</textarea>
+			                        <textarea name="partnerIntro" class="form-control" style="height: 140px; resize: none;" placeholder="공간의 컨셉과 스토리를 들려주세요. &#13;&#10;스테이를 소개할 SNS나 홈페이지 정보를 입력해 주어도 좋아요. (최소 50자) " required>${myApply.partnerIntro}</textarea>
 								</div>
 							</div>
 						</div>
-						
-						<div class="row mb-0 align-items-start">
-							<label class="col-md-3 form-label pt-2">공간 소개<span class="ms-1" style="color: var(--tp-orchid);">*</span></label>
-							<div class="col-md-9">
-		                        <textarea name="partnerIntro" class="form-control" style="height: 140px; resize: none;" placeholder="공간의 컨셉과 스토리를 들려주세요. (최소 50자)" required>${myApply.partnerIntro}</textarea>
-							</div>
-						</div>
-					</div>
 	
 					<div class="tp-form-card">
 						<h2 class="section-title">증빙 서류 제출</h2>

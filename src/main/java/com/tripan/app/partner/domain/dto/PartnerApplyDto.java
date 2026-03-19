@@ -15,10 +15,11 @@ import java.util.List;
 @Builder
 public class PartnerApplyDto {
 
-    private String contactName;      // 담당자 성함 
+    private String contactName;       // 담당자 성함 
     private String contactPhone;     // 담당자 전화번호 
-    private String email;            // 담당자 이메일 (생략 -> null)
+    private String contactEmail;     // 담당자 이메일 (생략 -> null)
     private String expStatus;        // 숙박업 경험 유무 (생략 -> null)
+    
 
     private String partnerName;      // 스테이 이름 (JSP 매칭 됨)
     private String address;          // 스테이 주소 (생략 -> null)
