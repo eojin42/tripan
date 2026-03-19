@@ -9,4 +9,6 @@ public interface PartnerRoomMapper {
     List<PartnerRoomDto> getRoomListByMemberId(Long memberId);
     
     void insertRoom(PartnerRoomDto dto);
+    
+    List<PartnerRoomDto> getRoomsByPlaceId(Long placeId);
 }

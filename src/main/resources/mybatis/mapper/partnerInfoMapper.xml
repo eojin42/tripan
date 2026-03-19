@@ -2,6 +2,7 @@
 
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.tripan.app.partner.mapper.PartnerInfoMapper">
+
 	<select id="getPartnerInfoByMemberId" resultType="com.tripan.app.partner.domain.dto.PartnerInfoDto">
         SELECT
             partner_id AS partnerId,
@@ -35,4 +36,58 @@
         WHERE p.member_id = #{memberId}
         FETCH FIRST 1 ROWS ONLY
     </select>
+    
+    <select id="getPartnerListByMemberId" resultType="com.tripan.app.partner.domain.dto.PartnerInfoDto">
+        SELECT
+            partner_id AS partnerId,
+            partner_name AS partnerName,
+            status
+        FROM partner
+        WHERE member_id = #{memberId}
+        ORDER BY created_at ASC
+    </select>
+    
+    <select id="getPlaceIdByPartnerId" resultType="java.lang.Long">
+        SELECT place_id 
+        FROM place 
+        WHERE partner_id = #{partnerId}
+        FETCH FIRST 1 ROWS ONLY
+    </select>
+
+    <select id="getFacilityByAfId" resultType="map">
+        SELECT * FROM accommodation_facility WHERE af_id = #{afId}
+    </select>
+    
+    <insert id="insertEmptyPlace" parameterType="com.tripan.app.partner.domain.dto.PartnerApplyDto">
+    <selectKey keyProperty="placeId" resultType="long" order="BEFORE">
+        SELECT place_seq.NEXTVAL FROM DUAL
+    </selectKey>
+	    INSERT INTO place (
+	        place_id, partner_id, category_id, place_name, 
+	        address, latitude, longitude, created_at
+	    ) VALUES (
+	        #{placeId}, #{partnerId}, 'ACCOMMODATION', #{partnerName},
+	        NULL, NULL, NULL, SYSDATE
+	    )
+	</insert>
+
+	<insert id="insertEmptyFacility" parameterType="map">
+	    <selectKey keyProperty="afId" resultType="long" order="BEFORE">
+	        SELECT af_seq.NEXTVAL FROM DUAL
+	    </selectKey>
+	    INSERT INTO accommodation_facility (
+	        af_id, fitness, chkcooking, barbecue, beverage, karaoke, publicpc, sauna
+	    ) VALUES (
+	        #{afId}, 0, 0, 0, 0, 0, 0, 0
+	    )
+	</insert>
+	
+	<insert id="insertEmptyAccommodation" parameterType="map">
+	    INSERT INTO accommodation (
+	        place_id, af_id, checkin_time, checkout_time
+	    ) VALUES (
+	        #{placeId}, #{afId}, '15:00', '11:00'
+	    )
+	</insert>
+    
 </mapper>

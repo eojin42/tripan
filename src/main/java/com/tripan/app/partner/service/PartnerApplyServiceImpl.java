@@ -1,6 +1,8 @@
 package com.tripan.app.partner.service;
 
 import java.io.File;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.UUID;
 
 import org.springframework.beans.factory.annotation.Value;
@@ -29,7 +31,18 @@ public class PartnerApplyServiceImpl implements PartnerApplyService {
     @Transactional(rollbackFor = Exception.class) 
     public void applyPartner(PartnerApplyDto dto) throws Exception {
         
-        partnerApplyMapper.insertPartner(dto);
+    	partnerApplyMapper.insertPartner(dto); 
+        partnerApplyMapper.insertEmptyPlace(dto); 
+        
+        Map<String, Object> facMap = new HashMap<>();
+        partnerApplyMapper.insertEmptyFacility(facMap);
+        Long afId = (Long) facMap.get("afId");
+        
+        Map<String, Object> accMap = new HashMap<>();
+        accMap.put("placeId", dto.getPlaceId());
+        accMap.put("afId", afId);
+        partnerApplyMapper.insertEmptyAccommodation(accMap);
+        
         Long generatedPartnerId = dto.getPartnerId();
         
         log.info("파트너 DB 저장 완료. 생성된 ID: {}", generatedPartnerId);
