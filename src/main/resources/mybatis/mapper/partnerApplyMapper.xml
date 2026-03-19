@@ -4,16 +4,19 @@
 <mapper namespace="com.tripan.app.partner.mapper.PartnerApplyMapper">
 	
 	<insert id="insertPartner" parameterType="com.tripan.app.partner.domain.dto.PartnerApplyDto">
-	<selectKey keyProperty="partnerId" resultType="long" order="BEFORE">
-		SELECT partner_seq.NEXTVAL FROM DUAL 
-	</selectKey>
-	    INSERT INTO partner (
-	        partner_id, member_id, partner_name, contact_name, 
-	        contact_phone, partner_intro, status, created_at,
-	        business_number, accommodation_type ) VALUES (
-	        #{partnerId}, #{memberId}, #{partnerName}, #{contactName}, 
-	        #{contactPhone}, #{partnerIntro}, 'PENDING', SYSDATE,
-	        #{businessNumber}, #{accommodationType} )
+        <selectKey keyProperty="partnerId" resultType="long" order="BEFORE">
+            SELECT partner_seq.NEXTVAL FROM DUAL 
+        </selectKey>
+        
+        INSERT INTO partner (
+            partner_id, member_id, partner_name, contact_name, 
+            contact_phone, contact_email, partner_intro, status, created_at,
+            business_number, has_exp 
+        ) VALUES (
+            #{partnerId}, #{memberId}, #{partnerName}, #{contactName}, 
+            #{contactPhone}, #{contactEmail}, #{partnerIntro}, 'PENDING', SYSDATE,
+            #{businessNumber}, #{expStatus} 
+        )
     </insert>
 
     <insert id="insertPartnerFile" parameterType="com.tripan.app.partner.domain.dto.PartnerFileDto">
@@ -39,7 +42,7 @@
             partner_name as partnerName,
             contact_name as contactName,
             contact_phone as contactPhone,
-            partner_intro as partnerIntro,
+            contact_email as contactEmail,     has_exp as expStatus,              business_number as businessNumber, partner_intro as partnerIntro,
             status,
             reject_reason as rejectReason,
             created_at as createdAt
