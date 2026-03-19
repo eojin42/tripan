@@ -4,73 +4,241 @@
 
 <mapper namespace="com.tripan.app.admin.mapper.PartnerManageMapper">
 
-    <!-- 전체 파트너 목록 -->
-    <select id="selectAllPartners" resultType="map">
-        SELECT
-            partner_id       AS partnerId,
-            partner_name     AS partnerName,
-            business_number  AS businessNumber,
-            contact_name     AS contactName,
-            contact_phone    AS contactPhone,
-            status           AS status,
-            commission_rate  AS commissionRate,
-            reject_reason    AS rejectReason,
-            contractfile_url AS contractFileUrl,
-            created_at       AS createdAt
-        FROM (
-	        SELECT p.*,
-	               ROW_NUMBER() OVER (
-	                   PARTITION BY p.member_id
-	                   ORDER BY p.created_at DESC
-	               ) AS rn
-		    FROM partner p
-			    )
-	    WHERE rn = 1
-	    ORDER BY created_at DESC
-    </select>
- 
-    <!-- 활성 파트너 목록 (쿠폰 등록 select용) -->
-    <select id="selectActivePartners" resultType="map">
-        SELECT
-            partner_id   AS partnerId,
-            partner_name AS partnerName
-        FROM partner
-        WHERE status = 'ACTIVE'
-        ORDER BY partner_name ASC
-    </select>
- 
+    <!-- 전체 파트너 목록 (사업자번호 기준 최신 1건) -->
     <!--
-        상태 업데이트 공통
-        - 승인: status=ACTIVE  + commissionRate
-        - 반려: status=REJECTED + rejectReason
-        - 차단: status=SUSPENDED
+        변경: partner.status(문자열) → partner_status.status_code(최신 상태) 로 조회
+             partner_intro, reject_reason, updated_at 컬럼 제거
     -->
-    <update id="updatePartnerStatus" parameterType="map">
-        UPDATE partner 
+    <select id="selectAllPartners" resultType="com.tripan.app.admin.domain.dto.PartnerManageDto">
+        SELECT
+            p.partner_id       AS partnerId,
+            p.partner_name     AS partnerName,
+            p.business_number  AS businessNumber,
+            p.contact_name     AS contactName,
+            p.contact_phone    AS contactPhone,
+            p.contact_email    AS contactEmail,
+            p.has_exp          AS hasExp,
+            p.status           AS status,
+            p.commission_rate  AS commissionRate,
+            p.contractfile_url AS contractFileUrl,
+            p.created_at       AS createdAt,
+            ps.status_code     AS statusCode,
+            ps.memo            AS statusMemo
+        FROM (
+            SELECT p.*,
+                   ROW_NUMBER() OVER (
+                       PARTITION BY p.business_number
+                       ORDER BY p.created_at DESC
+                   ) AS rn
+            FROM partner p
+        )  p
+        LEFT JOIN (
+            SELECT partner_id, status_code, memo
+            FROM (
+                SELECT ps.*,
+                       ROW_NUMBER() OVER (PARTITION BY ps.partner_id ORDER BY ps.partner_status_id DESC) AS rn
+                FROM partner_status ps
+            )
+            WHERE rn = 1
+        ) ps ON ps.partner_id = p.partner_id
+        WHERE p.rn = 1
+        ORDER BY p.created_at DESC
+    </select>
+
+    <!-- 활성 파트너 목록 (쿠폰 등록 select용) -->
+    <!--
+        변경: status = 'ACTIVE' → partner_status.status_code = 'ACTIVE' AND partner.status = 1
+    -->
+    <select id="selectActivePartners" resultType="com.tripan.app.admin.domain.dto.PartnerManageDto">
+        SELECT
+            p.partner_id   AS partnerId,
+            p.partner_name AS partnerName
+        FROM partner p
+        JOIN (
+            SELECT partner_id, status_code
+            FROM (
+                SELECT ps.*,
+                       ROW_NUMBER() OVER (PARTITION BY ps.partner_id ORDER BY ps.partner_status_id DESC) AS rn
+                FROM partner_status ps
+            )
+            WHERE rn = 1
+        ) ps ON ps.partner_id = p.partner_id
+        WHERE p.status = 1
+          AND ps.status_code = 'ACTIVE'
+        ORDER BY p.partner_name ASC
+    </select>
+
+    <!--
+        상태 업데이트 공통 → partner_status INSERT 방식으로 변경
+        - 승인(ACTIVE)   : partner_status INSERT(ACTIVE) + partner.status = 1, commission_rate 업데이트
+        - 반려(REJECTED) : partner_status INSERT(REJECTED) + memo에 rejectReason 저장
+        - 차단(SUSPENDED/BLOCKED) : partner_status INSERT + partner.status = 0
+    -->
+    <insert id="updatePartnerStatus" parameterType="map">
+        INSERT INTO partner_status (
+            partner_status_id,
+            partner_id,
+            status_code,
+            memo,
+            reg_date,
+            register_id
+        ) VALUES (
+            seq_partner_status.NEXTVAL,
+            #{partnerId},
+            #{status},
+            #{memo},
+            SYSDATE,
+            #{registerId}
+        )
+    </insert>
+
+    <!-- 승인/차단 시 partner.status 숫자값 업데이트 -->
+    <!--
+        ACTIVE      → status = 1
+        SUSPENDED, BLOCKED → status = 0
+        PENDING, REJECTED  → status 변경 없음 (필요 시 호출)
+    -->
+    <update id="updatePartnerActiveStatus" parameterType="map">
+        UPDATE partner
         <set>
-            status = #{status},
+            status = #{activeStatus},
             <if test="commissionRate != null">
                 commission_rate = #{commissionRate},
             </if>
-            <if test="rejectReason != null">
-                reject_reason = #{rejectReason},
-            </if>
-            updated_at = SYSDATE
         </set>
         WHERE partner_id = #{partnerId}
     </update>
- 
-    <!-- 신규 등록 (status = PENDING) -->
+
+    <!-- 신규 등록 (partner_status: PENDING INSERT) -->
+    <!--
+        변경: partner INSERT 시 status 컬럼 제거 (partner_status 테이블로 이관)
+             partner_intro 컬럼 제거
+    -->
     <insert id="insertPartner" parameterType="map">
         INSERT INTO partner (
             partner_name, business_number, contact_name, contact_phone,
-            status, commission_rate, created_at
+            commission_rate, created_at
         ) VALUES (
             #{partnerName}, #{businessNumber}, #{contactName}, #{contactPhone},
-            'PENDING', #{commissionRate}, SYSDATE
+            #{commissionRate}, SYSDATE
         )
     </insert>
-    
+
+    <!-- 신규 등록 시 PENDING 상태 INSERT -->
+    <insert id="insertPartnerStatusPending" parameterType="map">
+        INSERT INTO partner_status (
+            partner_status_id,
+            partner_id,
+            status_code,
+            reg_date,
+            register_id
+        ) VALUES (
+            seq_partner_status.NEXTVAL,
+            #{partnerId},
+            'PENDING',
+            SYSDATE,
+            #{registerId}
+        )
+    </insert>
+
+    <!-- 파트너 상세 조회 (partner_status 최신 + partner_contract 최신 LEFT JOIN) -->
+    <!--
+        변경: partner_intro, reject_reason, updated_at 제거
+             partner_status 최신 1건 JOIN으로 statusCode, memo(rejectReason) 조회
+    -->
+    <select id="selectPartnerDetail" resultType="com.tripan.app.admin.domain.dto.PartnerManageDto">
+        SELECT
+            p.partner_id       AS partnerId,
+            p.member_id        AS memberId,
+            p.partner_name     AS partnerName,
+            p.logo_image_url   AS logoImageUrl,
+            p.business_number  AS businessNumber,
+            p.contact_name     AS contactName,
+            p.contact_phone    AS contactPhone,
+            p.contact_email    AS contactEmail,
+            p.has_exp          AS hasExp,
+            p.bank_name        AS bankName,
+            p.account_number   AS accountNumber,
+            p.status           AS status,
+            p.commission_rate  AS commissionRate,
+            p.created_at       AS createdAt,
+            ps.status_code     AS statusCode,
+            ps.memo            AS statusMemo,
+            ps.reg_date        AS statusUpdatedAt,
+            ps.register_id     AS statusRegisterId,
+            pc.contract_start_date AS contractStartDate,
+            pc.contract_end_date   AS contractEndDate,
+            pc.contractfile_url    AS contractFileUrl,
+            pc.contract_memo       AS contractMemo
+        FROM partner p
+        LEFT JOIN (
+            SELECT partner_id, status_code, memo, reg_date, register_id
+            FROM (
+                SELECT ps.*,
+                       ROW_NUMBER() OVER (PARTITION BY ps.partner_id ORDER BY ps.partner_status_id DESC) AS rn
+                FROM partner_status ps
+            )
+            WHERE rn = 1
+        ) ps ON ps.partner_id = p.partner_id
+        LEFT JOIN (
+            SELECT contract_id, partner_id, contract_start_date, contract_end_date,
+                   contractfile_url, contract_memo
+            FROM (
+                SELECT c.*,
+                       ROW_NUMBER() OVER (PARTITION BY c.partner_id ORDER BY c.contract_id DESC) AS rn
+                FROM partner_contract c
+            )
+            WHERE rn = 1
+        ) pc ON pc.partner_id = p.partner_id
+        WHERE p.partner_id = #{partnerId}
+    </select>
+
+    <!-- 이번달 승인 카운트 -->
+    <!--
+        변경: partner.updated_at 제거 → partner_status.reg_date 기준으로 변경
+    -->
+    <select id="selectApprovedThisMonth" resultType="int">
+        SELECT COUNT(DISTINCT ps.partner_id)
+        FROM partner_status ps
+        WHERE ps.status_code = 'ACTIVE'
+          AND TRUNC(ps.reg_date, 'MM') = TRUNC(SYSDATE, 'MM')
+    </select>
+
+    <!-- 계약 insert (승인 처리 시) -->
+    <insert id="insertPartnerContract" parameterType="map">
+        INSERT INTO partner_contract (
+            contract_id, partner_id, contract_start_date, contract_end_date, created_at
+        ) VALUES (
+            seq_partner_contract.NEXTVAL, #{partnerId}, SYSDATE, #{contractEndDate}, SYSDATE
+        )
+    </insert>
+
+    <!-- 계약 만료된 파트너 ID 목록 (스케줄러용) -->
+    <!--
+        변경: partner.status = 'ACTIVE' → partner.status = 1 AND partner_status 최신 = 'ACTIVE'
+    -->
+    <select id="selectExpiredPartnerIds" resultType="long">
+        SELECT DISTINCT p.partner_id
+        FROM partner p
+        JOIN partner_contract pc ON pc.partner_id = p.partner_id
+        JOIN (
+            SELECT partner_id, status_code
+            FROM (
+                SELECT ps.*,
+                       ROW_NUMBER() OVER (PARTITION BY ps.partner_id ORDER BY ps.partner_status_id DESC) AS rn
+                FROM partner_status ps
+            )
+            WHERE rn = 1
+        ) ps ON ps.partner_id = p.partner_id
+        WHERE p.status = 1
+          AND ps.status_code = 'ACTIVE'
+          AND pc.contract_end_date &lt; SYSDATE
+          AND pc.contract_id = (
+              SELECT MAX(c2.contract_id) FROM partner_contract c2
+              WHERE c2.partner_id = p.partner_id
+          )
+    </select>
+
     <!-- 입점 심사용 파일 multi 조회용 쿼리 -->
     <select id="selectPartnerDocs" resultType="map">
         SELECT 
@@ -82,5 +250,5 @@
         WHERE partner_id = #{applyId}
         ORDER BY file_id ASC
     </select>
-    
+
 </mapper>
