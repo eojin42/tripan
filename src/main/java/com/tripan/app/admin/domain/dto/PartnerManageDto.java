@@ -32,6 +32,9 @@ public class PartnerManageDto {
     private String     partnerIntro;    // partner_intro
     private String     rejectReason;    // reject_reason
     private String     updatedAt;       // updated_at
+    
+    private String accommodationType; // 영문 코드 (HOTEL 등)
+    private String categoryLabel;     // 한글 표시명 (호텔/숙박 등)
  
     private String statusLabel;  // 상태 한글 라벨 (toDto에서 세팅)
  

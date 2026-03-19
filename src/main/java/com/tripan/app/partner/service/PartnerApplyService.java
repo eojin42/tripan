@@ -6,5 +6,5 @@ public interface PartnerApplyService {
     
     void applyPartner(PartnerApplyDto dto) throws Exception;
     String getPartnerStatus(Long memberId);
-    
+    PartnerApplyDto getPartnerApplyByMemberId(Long memberId);
 }

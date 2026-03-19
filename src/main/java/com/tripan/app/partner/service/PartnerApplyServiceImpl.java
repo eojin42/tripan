@@ -68,5 +68,10 @@ public class PartnerApplyServiceImpl implements PartnerApplyService {
         return partnerApplyMapper.findPartnerStatusByMemberId(memberId);
     }
     
+    @Override
+    public PartnerApplyDto getPartnerApplyByMemberId(Long memberId) {
+        return partnerApplyMapper.findPartnerApplyByMemberId(memberId);
+    }
+    
     
 }

@@ -235,14 +235,14 @@
 	      <div class="card" style="margin-bottom: 0;">
 	        <h2 style="font-size: 16px; font-weight: 800; margin-bottom: 20px;">👤 담당자 및 사업자 정보</h2>
 	        
-	        <div style="margin-bottom: 16px;">
+			<div style="margin-bottom: 16px;">
 	          <label>사업장명 (수정 불가)</label>
 	          <input type="text" class="form-control" value="${partnerInfo.partnerName}" disabled style="width:100%; padding:10px; border:1px solid var(--border); border-radius:8px; background: #F8FAFC; color: #8B92A5;">
 	        </div>
 	        
 	        <div style="margin-bottom: 16px;">
 	          <label>사업자등록번호 (수정 불가)</label>
-	          <input type="text" class="form-control" value="${partnerInfo.businessNumber}" disabled style="width:100%; padding:10px; border:1px solid var(--border); border-radius:8px; background: #F8FAFC; color: #8B92A5;">
+	          <input type="text" class="form-control" value="${partnerInfo.businessNumber != null ? partnerInfo.businessNumber : '심사중'}" disabled style="width:100%; padding:10px; border:1px solid var(--border); border-radius:8px; background: #F8FAFC; color: #8B92A5;">
 	        </div>
 
 	        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px;">
@@ -255,7 +255,6 @@
 	            <input type="text" id="contactPhone" class="form-control" value="${partnerInfo.contactPhone}" style="width:100%; padding:10px; border:1px solid var(--border); border-radius:8px;">
 	          </div>
 	        </div>
-	        
 	        <div style="padding-top: 16px; border-top: 1px dashed var(--border);">
 	          <h3 style="font-size: 14px; font-weight: 800; margin-bottom: 12px; color: var(--primary);">💰 정산 계좌 정보</h3>
 	          <div style="display: grid; grid-template-columns: 1fr 2fr; gap: 12px;">

@@ -41,6 +41,19 @@ public class PartnerManageServiceImpl implements PartnerManageService {
             case "BLOCKED"   -> "영구차단";
             default          -> status;
         };
+        
+        String accType = strNull(row, "accommodationType", "ACCOMMODATION_TYPE");
+        
+        String categoryLabel = "-";
+        if (accType != null) {
+            categoryLabel = switch (accType.toUpperCase()) {
+                case "HOTEL"      -> "호텔/리조트";
+                case "MOTEL"      -> "모텔";
+                case "PENSION"    -> "펜션/풀빌라";
+                case "GUESTHOUSE" -> "게스트하우스/한옥";
+                default           -> accType;
+            };
+        }
 
         Long partnerIdVal = pid != null ? Long.valueOf(pid.toString()) : null;
 
@@ -58,6 +71,7 @@ public class PartnerManageServiceImpl implements PartnerManageService {
             .status(status)
             .statusLabel(statusLabel)
             .commissionRate(commRate)
+            .accommodationType(accType)
             .build();
     }
 

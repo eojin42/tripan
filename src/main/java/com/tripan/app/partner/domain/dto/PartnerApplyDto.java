@@ -37,4 +37,6 @@ public class PartnerApplyDto {
     private String contractfileUrl;  // (대표 PDF 경로용으로 사용 가능)
     private String logoImageUrl;     // (대표 이미지 경로용으로 사용 가능)
     private Date createdAt;          // 신청 일시
+    
+    private String rejectReason;
 }
