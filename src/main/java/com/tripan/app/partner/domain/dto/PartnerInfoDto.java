@@ -13,4 +13,5 @@ public class PartnerInfoDto {
     private String bankName;
     private String accountNumber;
     private String partnerIntro;
+    private String status;
 }
