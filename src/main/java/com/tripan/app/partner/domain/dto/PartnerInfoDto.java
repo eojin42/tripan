@@ -14,4 +14,6 @@ public class PartnerInfoDto {
     private String accountNumber;
     private String partnerIntro;
     private String status;
+    
+    private String accommodationType;
 }
