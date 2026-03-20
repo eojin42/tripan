@@ -36,13 +36,12 @@
     </insert>
     
     <select id="findPartnerStatusByMemberId" parameterType="long" resultType="string">
-	    SELECT ps.status_code 
-	    FROM partner p
-        JOIN partner_status ps ON p.partner_id = ps.partner_id
-	    WHERE p.member_id = #{memberId}
-        ORDER BY ps.reg_date DESC
-        FETCH FIRST 1 ROWS ONLY
-	</select>
+        SELECT ps.status_code 
+        FROM partner p
+        LEFT JOIN partner_status ps ON p.partner_id = ps.partner_id
+        WHERE p.member_id = #{memberId}
+        ORDER BY p.created_at DESC, ps.reg_date DESC FETCH FIRST 1 ROWS ONLY
+    </select>
 
     <select id="findPartnerApplyByMemberId" parameterType="long" resultType="com.tripan.app.partner.domain.dto.PartnerApplyDto">
         SELECT 
@@ -63,8 +62,7 @@
         FROM partner p
         LEFT JOIN partner_status ps ON p.partner_id = ps.partner_id
         WHERE p.member_id = #{memberId}
-        ORDER BY ps.reg_date DESC
-        FETCH FIRST 1 ROWS ONLY
+        ORDER BY p.created_at DESC, ps.reg_date DESC FETCH FIRST 1 ROWS ONLY
     </select>
     
     <insert id="insertEmptyPlace" parameterType="com.tripan.app.partner.domain.dto.PartnerApplyDto">
