@@ -105,15 +105,19 @@ public class PartnerMainController {
     @ResponseBody
     @PostMapping("/api/info/update")
     public ResponseEntity<?> updatePartnerInfo(
-            @RequestBody PartnerInfoDto dto,
-            @AuthenticationPrincipal CustomUserDetails userDetails) {
+            @ModelAttribute PartnerInfoDto dto, // 
+            jakarta.servlet.http.HttpSession session) {
         try {
-            PartnerInfoDto myInfo = partnerInfoService.getPartnerInfo(userDetails.getMember().getMemberId());
-            dto.setPartnerId(myInfo.getPartnerId()); 
+            Long currentPartnerId = (Long) session.getAttribute("currentPartnerId");
+            dto.setPartnerId(currentPartnerId);
+            
+            Long currentPlaceId = partnerInfoService.getPlaceIdByPartnerId(currentPartnerId);
+            dto.setPlaceId(currentPlaceId);
             
             partnerInfoService.updatePartnerInfo(dto);
             return ResponseEntity.ok(Map.of("message", "success"));
         } catch (Exception e) {
+            e.printStackTrace();
             return ResponseEntity.badRequest().body(Map.of("message", "fail"));
         }
     }

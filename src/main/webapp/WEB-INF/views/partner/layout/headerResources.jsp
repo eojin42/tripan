@@ -18,3 +18,4 @@
 <script src="${pageContext.request.contextPath}/dist/js/partner/partner_main.js" defer></script>
 <script src="${pageContext.request.contextPath}/dist/js/partner/partner_room.js" defer></script>
 <script src="${pageContext.request.contextPath}/dist/js/partner/partner_booking.js" defer></script>
+<script src="${pageContext.request.contextPath}/dist/js/partner/partner_info.js" defer></script>
