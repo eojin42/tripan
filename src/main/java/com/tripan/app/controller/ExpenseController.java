@@ -113,27 +113,26 @@ public class ExpenseController {
             Long fromMemberId = Long.valueOf(String.valueOf(body.get("fromMemberId")));
             java.math.BigDecimal amount = new java.math.BigDecimal(String.valueOf(body.get("amount")));
 
-            // 중복 요청 방지
-            int existing = expenseMapper.countActiveSettlement(tripId, myId, fromMemberId);
-            if (existing > 0) {
-                result.put("success", false);
-                result.put("message", "이미 요청한 정산입니다.");
-                return ResponseEntity.ok(result);
-            }
-
-            // settlement INSERT
+            // 기존 REQUESTED/PENDING 있으면 amount 업데이트, 없으면 INSERT
+            // (새 지출 추가 후 재요청 시 기존 정산 금액을 갱신)
             SettlementDto.SingleRequest req = SettlementDto.SingleRequest.builder()
                     .tripId(tripId)
                     .toMemberId(myId)
                     .fromMemberId(fromMemberId)
                     .amount(amount)
                     .build();
-            expenseMapper.insertSingleSettlement(req);
+
+            int existing = expenseMapper.countActiveSettlement(tripId, myId, fromMemberId);
+            if (existing > 0) {
+                expenseMapper.updateSingleSettlementAmount(req);
+            } else {
+                expenseMapper.insertSingleSettlement(req);
+            }
 
             // 알림 발송
             String message = "정산 요청이 도착했어요! ₩"
                     + String.format("%,d", amount.longValue()) + " 을 확인해주세요.";
-            expenseMapper.insertTripNotification(tripId, fromMemberId, myId, message, "SETTLEMENT");
+            expenseMapper.insertTripNotification(tripId, fromMemberId, myId, message, "EXPENSE");
             
             Map<String, Object> wsMsg = new HashMap<>();
             wsMsg.put("type", "NEW_NOTIFICATION");
@@ -287,6 +286,18 @@ public class ExpenseController {
 
         expenseService.completeSettlements(req);
         return ResponseEntity.ok().build();
+    }
+
+
+    /**
+     * 정산 완료 batch 상세 조회
+     * GET /api/trips/{tripId}/settlements/batch/{batchId}/detail
+     */
+    @GetMapping("/trips/{tripId}/settlements/batch/{batchId}/detail")
+    public ResponseEntity<SettlementDto.BatchDetailResponse> getBatchDetail(
+            @PathVariable("tripId")  Long tripId,
+            @PathVariable("batchId") Long batchId) {
+        return ResponseEntity.ok(expenseService.getBatchDetail(tripId, batchId));
     }
 
     /**

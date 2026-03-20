@@ -160,4 +160,27 @@ public class SettlementDto {
         private Long fromMemberId;  // debtor  = 상대방 (요청 받는 사람)
         private BigDecimal amount;
     }
+    /**
+     * 정산 완료 상세보기 응답
+     * batch 단위 완료 내역 전체 (transfer + 포함된 지출 + 계산 근거)
+     */
+    @Getter @Setter @NoArgsConstructor @AllArgsConstructor @Builder
+    public static class BatchDetailResponse {
+
+        private Long batchId;
+        private Long tripId;
+        private String status;
+        private java.time.LocalDateTime settledAt;
+        private BigDecimal totalAmount;
+
+        /** 누가 누구에게 얼마 */
+        private List<Response> transfers;
+
+        /** 이 정산에 포함된 지출 목록 (분담자 포함) */
+        private List<com.tripan.app.domain.dto.ExpenseDto.DetailResponse> expenses;
+
+        /** 멤버별 결제/부담/잔액 (계산 근거) */
+        private List<com.tripan.app.domain.dto.ExpenseDto.MemberShareSummary> memberSummary;
+    }
+
 }
