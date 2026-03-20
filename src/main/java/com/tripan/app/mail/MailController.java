@@ -5,6 +5,8 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import lombok.RequiredArgsConstructor;
@@ -25,11 +27,11 @@ public class MailController {
 	public String sendSubmit(Mail dto, 
 			final RedirectAttributes reAttr) throws Exception {
 
-		dto.setSenderEmail("지메일아이디@gmail.com");
+		dto.setSenderEmail("amandaejk@gmail.com");
 		// dto.setSenderEmail("네이버아이디@naver.com");
 
 		dto.setContent(dto.getContent().replaceAll("\n", "<br>"));
-		
+		 
 		boolean b = mailSender.mailSend(dto);
 		
 		String msg = "<span style='color:blue;'>" + dto.getReceiverEmail() + "</span> 님에게<br>";
@@ -54,5 +56,21 @@ public class MailController {
 			return "redirect:/";
 		
 		return "mail/complete";
+	}
+	
+	// 테스트용 임시 
+	@GetMapping("test-partner")
+	@ResponseBody
+	public String testPartnerMail(@RequestParam(name = "name", defaultValue = "테스트파트너") String name) {
+	    Mail dto = new Mail();
+	    dto.setSenderEmail("amandaejk@gmail.com");
+	    dto.setSenderName("TRIPAN");
+	    dto.setReceiverEmail("amandaejk@gmail.com"); 
+	    dto.setSubject(PartnerMailTemplates.approveSubject());
+	    dto.setContent(PartnerMailTemplates.approveContent(name, 5.0, new java.util.Date()));
+	    dto.setSavePathname(new java.util.ArrayList<>());
+	    
+	    boolean b = mailSender.mailSend(dto);
+	    return b ? "✅ 발송 성공" : "❌ 발송 실패";
 	}
 }

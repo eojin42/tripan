@@ -458,7 +458,7 @@
                       {{ i.partnerId ? i.partnerName : '플랫폼' }}
                     </span>
                   </td>
-                  <td>{{ i.memberId }}</td>
+                  <td>{{ i.loginId }}</td>
                   <td>
                     <span class="discount-chip" :class="i.discountType === 'FIXED' ? 'chip-fixed' : 'chip-percent'">
                       {{ i.discountType === 'FIXED' ? '정액' : '정률' }}

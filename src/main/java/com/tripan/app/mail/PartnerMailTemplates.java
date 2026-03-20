@@ -9,7 +9,7 @@ import java.util.Date;
  */
 public class PartnerMailTemplates {
 
-    private static final String SITE_URL    = "https://tripan.com/partner/main";
+    private static final String SITE_URL    = "http://localhost:9090/partner/main";
     private static final String SUPPORT     = "support@tripan.com";
     private static final String GRAD_START  = "#89CFF0";  // 파스텔 스카이 블루
     private static final String GRAD_END    = "#FFB6C1";  // 파스텔 라이트 핑크
@@ -30,28 +30,17 @@ public class PartnerMailTemplates {
                 <td style="background:linear-gradient(135deg,%s 0%%,%s 100%%);padding:44px 40px 36px;text-align:center;">
 
                   <!-- 로고 -->
-                  <table cellpadding="0" cellspacing="0" style="margin:0 auto 6px;">
-                    <tr>
-                      <td style="vertical-align:baseline;">
-                        <span style="font-size:34px;font-weight:900;color:#ffffff;letter-spacing:-1px;">Tri</span>
-                      </td>
-                      <td style="vertical-align:baseline;position:relative;">
-                        <span style="font-size:34px;font-weight:900;color:rgba(255,255,255,0.88);letter-spacing:-1px;">pan</span>
-                        <!-- 비행기 라인 (인라인 SVG) -->
-                        <div style="position:relative;height:5px;margin-top:2px;">
-                          <div style="height:3px;background:rgba(255,255,255,0.5);border-radius:2px;"></div>
-                          <span style="position:absolute;right:-2px;top:-9px;font-size:14px;">✈</span>
-                        </div>
-                      </td>
-                      <td style="vertical-align:baseline;padding-left:1px;">
-                        <span style="font-size:38px;font-weight:900;color:#FFB6C1;line-height:0;vertical-align:bottom;">.</span>
-                      </td>
-                    </tr>
-                  </table>
-
-                  <div style="font-size:12px;color:rgba(255,255,255,0.75);letter-spacing:1.5px;text-transform:uppercase;margin-top:2px;">
-                    Partner Management System
-                  </div>
+				<p style="margin:0 0 0px;padding:0;line-height:1;font-size:0;">
+				  <span style="font-size:38px;font-weight:900;color:#ffffff;letter-spacing:-0.5px;font-family:'Apple SD Gothic Neo',AppleSDGothic,'Noto Sans KR',Arial,sans-serif;">Tripan</span><span style="font-size:38px;font-weight:900;color:#FFB6C1;letter-spacing:-0.5px;font-family:'Apple SD Gothic Neo',AppleSDGothic,'Noto Sans KR',Arial,sans-serif;">.</span>
+				</p>
+				<p style="margin:4px 0 10px;padding:0;font-size:0;line-height:0;text-align:center;">
+				  <span style="display:inline-block;width:160px;height:3px;background:rgba(255,255,255,0.7);border-radius:2px;font-size:0;">&nbsp;</span>
+				</p>
+				
+				<!-- PARTNER MANAGEMENT SYSTEM -->
+				<div style="font-size:12px;color:rgba(255,255,255,0.75);letter-spacing:1.5px;text-transform:uppercase;margin-top:2px;">
+				  Partner Management System
+				</div>
 
                   <!-- 배지 -->
                   <div style="margin-top:24px;display:inline-block;background:rgba(255,255,255,0.22);
