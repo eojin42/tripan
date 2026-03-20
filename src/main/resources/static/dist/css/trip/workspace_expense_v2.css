@@ -1,0 +1,641 @@
+/* ═══════════════════════════════════════════════════════
+   workspace_expense_v2.css — 가계부/정산 UI 개편 스타일
+   ─ 홈 대시보드, 카테고리 카드, 내 지출 요약,
+     P2P 정산 워크플로우, 지출 상세 모달 개선
+═══════════════════════════════════════════════════════ */
+
+/* ─────────────────────────────
+   홈탭: 받을/보낼 예정 행
+────────────────────────────── */
+.exp-home-hero__settle-row {
+  display: flex; gap: 8px; margin-top: 10px;
+}
+.exp-home-hero__settle-item {
+  flex: 1; padding: 10px 12px; border-radius: 10px;
+  background: rgba(255,255,255,.06);
+}
+.exp-home-hero__settle-item--recv { border-left: 3px solid #48BB78; }
+.exp-home-hero__settle-item--send { border-left: 3px solid #FC8181; }
+.exp-home-hero__settle-label { font-size: 11px; font-weight: 600; opacity: .8; }
+.exp-home-hero__settle-val   { font-size: 15px; font-weight: 900; margin-top: 2px; }
+
+/* ─────────────────────────────
+   홈탭: 정산 대기 칩 (개선)
+────────────────────────────── */
+.exp-home-settle-chip {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 14px 16px; border-radius: 14px; cursor: pointer;
+  background: linear-gradient(135deg, rgba(255,182,100,.08), rgba(255,160,60,.12));
+  border: 1.5px solid rgba(255,182,100,.25);
+  transition: transform .15s, box-shadow .15s;
+}
+.exp-home-settle-chip:hover {
+  transform: translateY(-1px); box-shadow: 0 3px 12px rgba(255,182,100,.15);
+}
+.exp-home-settle-chip__left { display: flex; align-items: center; gap: 10px; }
+.exp-home-settle-chip__icon { font-size: 22px; }
+.exp-home-settle-chip__title { font-size: 13px; font-weight: 700; color: #2D3748; }
+.exp-home-settle-chip__sub { font-size: 11px; color: #718096; margin-top: 2px; }
+.exp-home-settle-chip__badge {
+  font-size: 12px; font-weight: 800; padding: 5px 14px; border-radius: 50px;
+  background: rgba(255,182,100,.22); color: #B7791F;
+  border: 1px solid rgba(255,182,100,.35);
+}
+
+/* ─────────────────────────────
+   홈탭: 카테고리 카드 (가로 스크롤)
+────────────────────────────── */
+.expense-cats::-webkit-scrollbar { display: none; }
+
+.exp-cat-card {
+  flex-shrink: 0; width: 130px; padding: 14px 12px;
+  border-radius: 14px; cursor: pointer;
+  background: var(--white); border: 1.5px solid var(--border);
+  transition: transform .15s, box-shadow .15s, border-color .15s;
+}
+.exp-cat-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 16px rgba(0,0,0,.08);
+  border-color: var(--cat-color);
+}
+.exp-cat-card__header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+.exp-cat-card__icon-wrap {
+  width: 36px; height: 36px; border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+  background: var(--cat-light); font-size: 18px;
+}
+.exp-cat-card__pct { font-size: 12px; font-weight: 800; color: var(--cat-color); }
+.exp-cat-card__name { font-size: 12px; font-weight: 700; color: #4A5568; margin-bottom: 4px; }
+.exp-cat-card__amt { font-size: 14px; font-weight: 900; color: #1A202C; margin-bottom: 8px; }
+.exp-cat-card__bar { height: 4px; border-radius: 2px; background: #EDF2F7; overflow: hidden; }
+.exp-cat-card__bar-fill { height: 100%; border-radius: 2px; background: var(--cat-bg); transition: width .4s ease; }
+
+/* ─────────────────────────────
+   홈탭: 내 지출 요약 섹션
+────────────────────────────── */
+.my-summary-grid {
+  display: flex; gap: 8px; margin-bottom: 12px;
+}
+.my-summary-item {
+  flex: 1; padding: 12px; border-radius: 12px;
+  background: var(--bg); border: 1px solid var(--border);
+}
+.my-summary-item__label { font-size: 11px; font-weight: 600; color: var(--light); margin-bottom: 4px; }
+.my-summary-item__val { font-size: 16px; font-weight: 900; color: #1A202C; }
+.my-summary-result {
+  padding: 10px 14px; border-radius: 10px; font-size: 13px; font-weight: 800;
+  text-align: center; margin-bottom: 14px;
+}
+.my-summary-result--recv { background: rgba(72,187,120,.08); color: #276749; }
+.my-summary-result--send { background: rgba(252,129,129,.08); color: #C53030; }
+.my-summary-result--done { background: rgba(160,174,192,.08); color: #718096; }
+
+/* 내 카테고리 분석 */
+.my-cat-bd__title {
+  font-size: 12px; font-weight: 800; color: #4A5568;
+  margin-bottom: 10px; letter-spacing: -.2px;
+}
+.my-cat-bd__row { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+.my-cat-bd__left { display: flex; align-items: center; gap: 6px; flex-shrink: 0; width: 90px; }
+.my-cat-bd__rank {
+  width: 18px; height: 18px; border-radius: 50%; font-size: 10px; font-weight: 800;
+  display: flex; align-items: center; justify-content: center;
+  background: #EDF2F7; color: #718096;
+}
+.my-cat-bd__icon {
+  width: 24px; height: 24px; border-radius: 6px; font-size: 12px;
+  display: flex; align-items: center; justify-content: center;
+}
+.my-cat-bd__name { font-size: 11px; font-weight: 700; color: #4A5568; }
+.my-cat-bd__right { display: flex; align-items: center; gap: 8px; flex: 1; }
+.my-cat-bd__bar { flex: 1; height: 6px; border-radius: 3px; background: #EDF2F7; overflow: hidden; }
+.my-cat-bd__bar-fill { height: 100%; border-radius: 3px; transition: width .4s ease; }
+.my-cat-bd__amt { font-size: 11px; font-weight: 800; color: #2D3748; white-space: nowrap; min-width: 60px; text-align: right; }
+
+/* 최근 내 결제 */
+.my-recent-item {
+  display: flex; align-items: center; gap: 10px; padding: 8px 0;
+  border-bottom: 1px solid var(--border); cursor: pointer;
+  transition: background .12s;
+}
+.my-recent-item:hover { background: rgba(137,207,240,.04); }
+.my-recent-item:last-child { border-bottom: none; }
+.my-recent-item__icon { width: 32px; height: 32px; border-radius: 8px; font-size: 14px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.my-recent-item__info { flex: 1; min-width: 0; }
+.my-recent-item__name { font-size: 12px; font-weight: 700; color: #2D3748; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.my-recent-item__meta { font-size: 10px; color: var(--light); margin-top: 2px; }
+.my-recent-item__amt { font-size: 12px; font-weight: 800; color: #1A202C; white-space: nowrap; }
+
+.exp-my-detail-btn {
+  display: block; width: 100%; margin-top: 14px; padding: 10px; border: none;
+  border-radius: 10px; background: #EDF2F7; color: #4A5568;
+  font-family: 'Pretendard',sans-serif; font-size: 12px; font-weight: 700;
+  cursor: pointer; transition: background .15s;
+}
+.exp-my-detail-btn:hover { background: #E2E8F0; }
+
+
+/* ─────────────────────────────
+   내역탭: 날짜 그룹 헤더
+────────────────────────────── */
+.exp-list-date-header {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 6px 8px; margin-bottom: 4px;
+}
+.exp-list-date-total { font-size: 11px; font-weight: 700; color: var(--light); }
+
+/* 내역탭: 카테고리 뱃지 (통일) */
+.expense-item__cat-badge {
+  display: inline-flex; align-items: center;
+  padding: 2px 8px; border-radius: 6px;
+  font-size: 10px; font-weight: 700; letter-spacing: -.2px;
+}
+
+/* ─────────────────────────────
+   정산탭: 현황/완료 토글 버튼 (강조)
+────────────────────────────── */
+.settle-view-toggle {
+  display: flex; gap: 6px; padding: 12px 12px 8px;
+  flex-shrink: 0; background: var(--white);
+}
+.settle-view-btn {
+  flex: 1; padding: 10px 0; border: 2px solid var(--border);
+  border-radius: 12px; background: var(--white); cursor: pointer;
+  font-family: 'Pretendard',sans-serif; font-size: 13px; font-weight: 700;
+  color: #718096; transition: all .18s; text-align: center;
+}
+.settle-view-btn.active {
+  border-color: #3B82F6; background: linear-gradient(135deg, rgba(59,130,246,.06), rgba(59,130,246,.12));
+  color: #2563EB; font-weight: 800;
+  box-shadow: 0 2px 8px rgba(59,130,246,.12);
+}
+.settle-view-btn:not(.active):hover {
+  border-color: #CBD5E1; background: #F8FAFC;
+}
+
+/* ─────────────────────────────
+   정산탭: 섹션 레이블
+────────────────────────────── */
+.settle-section-label {
+  font-size: 14px; font-weight: 800; color: #2D3748;
+  padding: 14px 4px 4px; letter-spacing: -.3px;
+}
+.settle-section-hint {
+  font-size: 11px; color: #A0AEC0; padding: 0 4px 10px; font-weight: 500;
+}
+.settle-none-msg {
+  text-align: center; padding: 16px; color: var(--light);
+  font-size: 12px; font-weight: 500;
+}
+.settle-all-done {
+  text-align: center; padding: 32px 16px;
+  font-size: 15px; font-weight: 800; color: #2D3748;
+}
+.settle-loading {
+  text-align: center; padding: 24px; color: var(--light); font-size: 13px;
+}
+.settle-empty-msg { text-align: center; padding: 16px; color: var(--light); font-size: 13px; }
+
+/* ─────────────────────────────
+   정산탭: 카드 (P2P)
+────────────────────────────── */
+.settle-card {
+  border-radius: 14px; border: 1.5px solid var(--border);
+  background: var(--white); margin-bottom: 10px; overflow: hidden;
+  transition: box-shadow .15s, border-color .15s;
+}
+.settle-card:hover { box-shadow: 0 2px 12px rgba(0,0,0,.06); }
+.settle-card--recv { border-left: 3px solid #48BB78; }
+.settle-card--send { border-left: 3px solid #FC8181; }
+.settle-card--done { border-left: 3px solid #A0AEC0; opacity: .85; }
+
+.settle-card__top { display: flex; align-items: center; gap: 10px; padding: 14px 14px 8px; }
+.settle-card__avatar {
+  width: 38px; height: 38px; border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 13px; font-weight: 800; flex-shrink: 0;
+  background: linear-gradient(135deg, #E2E8F0, #EDF2F7); color: #4A5568;
+}
+.settle-card__avatar--done { background: #F7FAFC; color: #A0AEC0; }
+.settle-card__info { flex: 1; min-width: 0; }
+.settle-card__direction { font-size: 13px; font-weight: 800; color: #2D3748; }
+.settle-card__hint { font-size: 11px; color: #A0AEC0; margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.settle-card__amt { font-size: 18px; font-weight: 900; white-space: nowrap; text-align: right; }
+.settle-card__amt--recv { color: #276749; }
+.settle-card__amt--send { color: #C53030; }
+.settle-card__amt--done { color: #A0AEC0; text-decoration: line-through; font-size: 15px; }
+
+.settle-card__bottom {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 8px 14px 12px; gap: 8px;
+}
+.settle-card__action { display: flex; gap: 6px; align-items: center; }
+
+/* 정산 뱃지 */
+.settle-badge {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 4px 10px; border-radius: 8px;
+  font-size: 11px; font-weight: 700;
+}
+.settle-badge--pending   { background: #EDF2F7; color: #718096; }
+.settle-badge--requested { background: rgba(59,130,246,.08); color: #2563EB; }
+.settle-badge--incoming  { background: rgba(255,182,100,.12); color: #B7791F; }
+.settle-badge--done      { background: rgba(72,187,120,.08); color: #276749; }
+
+/* 정산 액션 버튼 */
+.settle-action-btn {
+  padding: 7px 14px; border: none; border-radius: 10px;
+  font-family: 'Pretendard',sans-serif; font-size: 12px; font-weight: 700;
+  cursor: pointer; transition: all .15s;
+}
+.settle-action-btn--request {
+  background: linear-gradient(135deg, #3B82F6, #2563EB); color: white;
+  box-shadow: 0 2px 8px rgba(59,130,246,.2);
+}
+.settle-action-btn--request:hover { box-shadow: 0 4px 16px rgba(59,130,246,.3); transform: translateY(-1px); }
+.settle-action-btn--complete {
+  background: linear-gradient(135deg, #48BB78, #38A169); color: white;
+  box-shadow: 0 2px 8px rgba(72,187,120,.2);
+}
+.settle-action-btn--complete:hover { box-shadow: 0 4px 16px rgba(72,187,120,.3); transform: translateY(-1px); }
+
+.settle-sub-text { font-size: 11px; color: #A0AEC0; font-weight: 500; }
+.settle-done-dir { font-size: 11px; font-weight: 700; padding: 3px 8px; border-radius: 6px; }
+.settle-done-dir--sent { background: rgba(252,129,129,.08); color: #C53030; }
+.settle-done-dir--recv { background: rgba(72,187,120,.08); color: #276749; }
+.settle-del-btn {
+  background: none; border: none; cursor: pointer; font-size: 14px;
+  opacity: .5; transition: opacity .15s;
+}
+.settle-del-btn:hover { opacity: 1; }
+
+
+/* ─────────────────────────────
+   지출 상세 모달 (전면 개선)
+────────────────────────────── */
+.ed-hero {
+  text-align: center; padding: 20px 16px 16px;
+  border-bottom: 1px solid var(--border);
+}
+.ed-hero__icon {
+  width: 52px; height: 52px; border-radius: 14px;
+  display: inline-flex; align-items: center; justify-content: center;
+  font-size: 24px; margin-bottom: 10px;
+}
+.ed-hero__amt { font-size: 28px; font-weight: 900; color: #1A202C; letter-spacing: -1px; margin-bottom: 4px; }
+.ed-hero__name { font-size: 14px; font-weight: 600; color: #4A5568; }
+
+.ed-info-grid {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 1px;
+  background: var(--border); margin: 0; border-bottom: 1px solid var(--border);
+}
+.ed-info-item {
+  display: flex; align-items: center; gap: 10px;
+  padding: 12px 14px; background: var(--white);
+}
+.ed-info-item__icon { font-size: 16px; flex-shrink: 0; }
+.ed-info-item__label { font-size: 10px; font-weight: 600; color: var(--light); text-transform: uppercase; letter-spacing: .3px; }
+.ed-info-item__value { font-size: 13px; font-weight: 700; color: #2D3748; margin-top: 1px; }
+
+.ed-section { padding: 14px 16px 0; }
+.ed-section__title {
+  font-size: 12px; font-weight: 800; color: #4A5568;
+  margin-bottom: 10px; letter-spacing: -.2px;
+}
+
+.ed-participants { display: flex; flex-direction: column; gap: 0; }
+.ed-participant {
+  display: flex; align-items: center; gap: 10px; padding: 8px 0;
+  border-bottom: 1px solid var(--border);
+}
+.ed-participant:last-child { border-bottom: none; }
+.ed-participant__avatar {
+  width: 32px; height: 32px; border-radius: 8px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 11px; font-weight: 800;
+  background: linear-gradient(135deg, #E2E8F0, #EDF2F7); color: #4A5568;
+}
+.ed-participant__avatar--ext { background: linear-gradient(135deg, #FED7AA, #FEEBC8); color: #B7791F; }
+.ed-participant__name { flex: 1; font-size: 13px; font-weight: 600; color: #2D3748; }
+.ed-participant__amt { font-size: 13px; font-weight: 800; color: #1A202C; }
+.ed-ext-badge {
+  display: inline-block; font-size: 9px; font-weight: 700;
+  background: #EDF2F7; color: #718096; padding: 1px 6px; border-radius: 4px;
+  margin-left: 4px; vertical-align: middle;
+}
+
+.ed-memo {
+  padding: 12px 14px; border-radius: 10px;
+  background: var(--bg); font-size: 13px; color: #4A5568;
+  line-height: 1.6; white-space: pre-wrap;
+}
+
+.ed-receipt { }
+.ed-receipt__thumb {
+  position: relative; border-radius: 12px; overflow: hidden;
+  cursor: zoom-in; max-height: 220px;
+}
+.ed-receipt__thumb img {
+  width: 100%; max-height: 220px; object-fit: cover;
+  border-radius: 12px; display: block;
+}
+.ed-receipt__overlay {
+  position: absolute; inset: 0;
+  display: flex; align-items: center; justify-content: center;
+  background: rgba(0,0,0,.35); color: white;
+  font-size: 13px; font-weight: 700; opacity: 0;
+  transition: opacity .2s; border-radius: 12px;
+}
+.ed-receipt__thumb:hover .ed-receipt__overlay { opacity: 1; }
+.ed-receipt__err {
+  padding: 20px; text-align: center;
+  background: var(--bg); border-radius: 10px;
+  font-size: 12px; color: var(--light);
+}
+
+.ed-empty-attach {
+  text-align: center; padding: 16px 0 4px;
+  color: var(--light); font-size: 12px;
+}
+
+
+/* ─────────────────────────────
+   멤버 상세 모달 (ms-* 클래스)
+────────────────────────────── */
+.ms-stat-bar {
+  display: flex; gap: 8px; margin-bottom: 14px;
+}
+.ms-stat {
+  flex: 1; padding: 12px; border-radius: 10px;
+  background: var(--bg); text-align: center;
+}
+.ms-stat-label { font-size: 11px; font-weight: 600; color: var(--light); margin-bottom: 3px; }
+.ms-stat-val { font-size: 16px; font-weight: 900; color: #1A202C; }
+.ms-section-head {
+  font-size: 13px; font-weight: 800; color: #2D3748; padding: 10px 0 6px;
+  border-bottom: 1px solid var(--border); margin-bottom: 8px;
+}
+.ms-section-total { font-size: 12px; font-weight: 600; color: var(--light); margin-bottom: 10px; }
+.ms-expense-item {
+  display: flex; align-items: center; gap: 10px; padding: 8px 0;
+  border-bottom: 1px solid var(--border); cursor: pointer;
+  transition: background .12s;
+}
+.ms-expense-item:hover { background: rgba(137,207,240,.03); }
+.ms-expense-item:last-child { border-bottom: none; }
+.ms-cat-icon {
+  width: 32px; height: 32px; border-radius: 8px; font-size: 14px;
+  display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+}
+.ms-item-info { flex: 1; min-width: 0; }
+.ms-item-name { font-size: 13px; font-weight: 700; color: #2D3748; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ms-item-date { font-size: 10px; color: var(--light); margin-top: 2px; }
+.ms-item-amt { font-size: 13px; font-weight: 800; color: #1A202C; white-space: nowrap; }
+
+
+/* ─────────────────────────────
+   정산 상세 모달 (settle-detail-*)
+────────────────────────────── */
+.settle-detail-kp-header {
+  text-align: center; padding: 20px 16px 16px;
+  background: linear-gradient(180deg, rgba(59,130,246,.03), transparent);
+  border-bottom: 1px solid var(--border);
+}
+.settle-detail-kp-amt {
+  font-size: 28px; font-weight: 900; color: #1A202C;
+  letter-spacing: -1px; margin-bottom: 6px;
+}
+.settle-detail-kp-desc { font-size: 13px; color: #4A5568; }
+.settle-detail-kp-from { font-weight: 700; }
+.settle-detail-kp-arrow { color: var(--light); margin: 0 4px; }
+.settle-detail-kp-to { font-weight: 700; color: #2563EB; }
+
+.settle-detail-section-title {
+  font-size: 12px; font-weight: 800; color: #4A5568;
+  padding: 14px 16px 8px; letter-spacing: -.2px;
+}
+.settle-detail-expense-item {
+  padding: 10px 16px; border-bottom: 1px solid var(--border);
+  transition: background .12s;
+}
+.settle-detail-expense-item:hover { background: rgba(237,242,247,.5); }
+.settle-detail-expense-item__name { font-size: 13px; font-weight: 700; color: #2D3748; margin-bottom: 3px; }
+.settle-detail-expense-item__meta { display: flex; justify-content: space-between; align-items: center; }
+.settle-detail-expense-item__meta span { font-size: 11px; color: var(--light); }
+.settle-detail-expense-item__share { font-weight: 800; color: #2D3748 !important; }
+
+/* 카테고리 그룹 */
+.settle-cat-group { margin-bottom: 4px; }
+.settle-cat-group__head {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 8px 16px; background: var(--bg); font-size: 12px; font-weight: 700;
+}
+.settle-cat-group__total { font-weight: 800; color: #2D3748; }
+.settle-cat-item {
+  display: flex; align-items: center; gap: 10px;
+  padding: 8px 16px; border-bottom: 1px solid var(--border);
+}
+.settle-cat-item__avatar {
+  width: 30px; height: 30px; border-radius: 8px; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  background: #EDF2F7; font-size: 11px; font-weight: 800; color: #4A5568;
+}
+.settle-cat-item__info { flex: 1; min-width: 0; }
+.settle-cat-item__name { font-size: 12px; font-weight: 700; color: #2D3748; }
+.settle-cat-item__sub { font-size: 10px; color: var(--light); margin-top: 1px; }
+.settle-cat-item__amt { font-size: 12px; font-weight: 800; color: #1A202C; white-space: nowrap; }
+.settle-cat-item__img-btn {
+  background: none; border: none; cursor: pointer; font-size: 14px;
+  opacity: .6; transition: opacity .15s; padding: 4px;
+}
+.settle-cat-item__img-btn:hover { opacity: 1; }
+
+/* 영수증 그리드 */
+.settle-detail-img-grid {
+  display: flex; gap: 8px; padding: 0 16px 16px;
+  overflow-x: auto; scrollbar-width: none;
+}
+.settle-detail-img-grid::-webkit-scrollbar { display: none; }
+.settle-receipt-thumb {
+  flex-shrink: 0; width: 80px; height: 80px; border-radius: 10px;
+  overflow: hidden; cursor: pointer; border: 1.5px solid var(--border);
+  transition: transform .15s, box-shadow .15s;
+}
+.settle-receipt-thumb:hover { transform: scale(1.05); box-shadow: 0 3px 12px rgba(0,0,0,.1); }
+.settle-receipt-thumb img { width: 100%; height: 100%; object-fit: cover; }
+
+
+/* ─────────────────────────────
+   내역탭: 날짜 그룹 개선
+────────────────────────────── */
+.exp-list-date-group { margin-bottom: 6px; }
+.exp-list-date-label {
+  font-size: 12px; font-weight: 800; color: #4A5568;
+  letter-spacing: -.2px;
+}
+
+/* ─────────────────────────────
+   지출 아이템 카드 (내역탭)
+────────────────────────────── */
+.expense-item {
+  display: flex; align-items: center; gap: 10px;
+  padding: 10px 8px; border-radius: 10px; cursor: pointer;
+  transition: background .12s;
+}
+.expense-item:hover { background: rgba(237,242,247,.5); }
+.expense-item__cat-icon {
+  width: 38px; height: 38px; border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 16px; flex-shrink: 0;
+}
+.expense-item__info { flex: 1; min-width: 0; }
+.expense-item__name {
+  font-size: 13px; font-weight: 700; color: #2D3748;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.expense-item__meta {
+  display: flex; align-items: center; gap: 6px; margin-top: 3px;
+  flex-wrap: wrap;
+}
+.expense-item__payer { font-size: 10px; color: var(--light); font-weight: 500; }
+.expense-item__right { display: flex; flex-direction: column; align-items: flex-end; gap: 2px; }
+.expense-item__amt { font-size: 14px; font-weight: 900; color: #1A202C; white-space: nowrap; }
+.expense-del-btn {
+  background: none; border: none; cursor: pointer; font-size: 12px;
+  color: var(--light); opacity: 0; transition: opacity .15s;
+  padding: 2px 4px;
+}
+.expense-item:hover .expense-del-btn { opacity: .5; }
+.expense-del-btn:hover { opacity: 1 !important; color: #FC8181; }
+
+.expense-extra-badge {
+  font-size: 10px; opacity: .65;
+}
+.expense-extra-badge--img { }
+
+/* ─────────────────────────────
+   홈 섹션 타이틀
+────────────────────────────── */
+.exp-home-section-title {
+  font-size: 13px; font-weight: 800; color: #2D3748;
+  margin-bottom: 10px; letter-spacing: -.3px;
+}
+
+/* ─────────────────────────────
+   빈 상태
+────────────────────────────── */
+.expense-empty-state {
+  text-align: center; padding: 40px 20px;
+}
+.expense-empty-state__emoji { font-size: 40px; margin-bottom: 12px; }
+.expense-empty-state__title { font-size: 15px; font-weight: 800; color: #2D3748; margin-bottom: 6px; }
+.expense-empty-state__sub { font-size: 12px; color: #A0AEC0; line-height: 1.7; margin-bottom: 16px; }
+.expense-empty-state__btn {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 10px 20px; border: none; border-radius: 10px;
+  background: linear-gradient(135deg, #89CFF0, #a8d8f0); color: #1A365D;
+  font-family: 'Pretendard',sans-serif; font-size: 13px; font-weight: 700;
+  cursor: pointer; transition: all .15s;
+}
+.expense-empty-state__btn:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(137,207,240,.3); }
+.expense-empty-state__btn--ghost {
+  background: var(--bg); color: #4A5568; border: 1px solid var(--border);
+}
+
+/* ─────────────────────────────
+   홈: 잔액 칩
+────────────────────────────── */
+.exp-home-balance-chip {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 6px 14px; border-radius: 50px;
+  font-size: 12px; font-weight: 700; margin-top: 6px;
+}
+.exp-home-balance-chip--recv { background: rgba(72,187,120,.12); color: #276749; }
+.exp-home-balance-chip--send { background: rgba(252,129,129,.12); color: #C53030; }
+.exp-home-balance-chip--done { background: rgba(160,174,192,.1); color: #718096; }
+
+/* ─────────────────────────────
+   지출 추가 버튼
+────────────────────────────── */
+.btn-add-expense {
+  display: flex; align-items: center; justify-content: center; gap: 6px;
+  padding: 12px; border: 2px dashed var(--border); border-radius: 12px;
+  background: transparent; color: #4A5568;
+  font-family: 'Pretendard',sans-serif; font-size: 13px; font-weight: 700;
+  cursor: pointer; transition: all .15s;
+}
+.btn-add-expense:hover { border-color: #89CFF0; color: #2B6CB0; background: rgba(137,207,240,.04); }
+
+/* ─────────────────────────────
+   정산 카드: 상세보기 링크
+────────────────────────────── */
+.settle-detail-link {
+  background: none; border: none; cursor: pointer;
+  font-family: 'Pretendard',sans-serif; font-size: 11px;
+  font-weight: 600; color: #3B82F6; padding: 4px 8px;
+  border-radius: 6px; transition: background .12s;
+}
+.settle-detail-link:hover { background: rgba(59,130,246,.06); }
+
+/* ─────────────────────────────
+   정산 섹션 타이틀 (기존 호환)
+────────────────────────────── */
+.settle-head {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 14px 16px 8px;
+}
+.settle-title {
+  font-size: 14px; font-weight: 800; color: #2D3748;
+}
+
+/* ─────────────────────────────
+   지출 내역 타이틀 (기존 호환)
+────────────────────────────── */
+.expense-section-head {
+  display: flex; justify-content: space-between; align-items: center;
+}
+.expense-list-title {
+  font-size: 14px; font-weight: 800; color: #2D3748;
+}
+
+/* ─────────────────────────────
+   반응형 (사이드바 좁을 때)
+────────────────────────────── */
+@media (max-width: 420px) {
+  .exp-cat-card { width: 110px; padding: 10px; }
+  .exp-cat-card__icon-wrap { width: 30px; height: 30px; font-size: 14px; }
+  .exp-cat-card__amt { font-size: 12px; }
+  .my-summary-grid { flex-direction: column; }
+  .ed-info-grid { grid-template-columns: 1fr; }
+  .settle-card__amt { font-size: 15px; }
+  .settle-action-btn { padding: 6px 10px; font-size: 11px; }
+}
+
+/* 사이드바 너비 480px 미만일 때 */
+[data-wide="false"] .exp-cat-card { width: 110px; }
+[data-wide="false"] .settle-card__top { flex-wrap: wrap; }
+
+/* ─────────────────────────────
+   정산 카드: 포함된 지출 목록
+────────────────────────────── */
+.settle-card__expenses {
+  padding: 0 14px 8px;
+  border-top: 1px dashed var(--border);
+  margin-top: 4px;
+}
+.settle-card__exp-item {
+  display: flex; align-items: center; gap: 8px;
+  padding: 8px 0; border-bottom: 1px solid rgba(237,242,247,.6);
+  cursor: pointer; transition: background .12s;
+}
+.settle-card__exp-item:last-child { border-bottom: none; }
+.settle-card__exp-item:hover { background: rgba(237,242,247,.3); margin: 0 -4px; padding-left: 4px; padding-right: 4px; border-radius: 6px; }
+.settle-card__exp-icon {
+  width: 28px; height: 28px; border-radius: 7px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 13px; flex-shrink: 0;
+}
+.settle-card__exp-info { flex: 1; min-width: 0; }
+.settle-card__exp-name { font-size: 12px; font-weight: 700; color: #2D3748; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.settle-card__exp-meta { font-size: 10px; color: #A0AEC0; margin-top: 1px; }
+.settle-card__exp-share { font-size: 12px; font-weight: 800; color: #1A202C; white-space: nowrap; }

@@ -1,25 +1,32 @@
 package com.tripan.app.controller;
 
+import java.io.File;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.UUID;
 
 import org.springframework.http.ResponseEntity;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestAttribute;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.multipart.MultipartFile;
 
 import com.tripan.app.domain.dto.ExpenseDto;
 import com.tripan.app.domain.dto.SettlementDto;
+import com.tripan.app.mapper.ExpenseMapper;
 import com.tripan.app.service.ExpenseService;
+import com.tripan.app.service.NotificationService; // ★ 추가
 
+import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
 
 @RestController
@@ -28,6 +35,9 @@ import lombok.RequiredArgsConstructor;
 public class ExpenseController {
 
     private final ExpenseService expenseService;
+    private final ExpenseMapper expenseMapper;
+    private final SimpMessagingTemplate messagingTemplate;
+    private final NotificationService notificationService; // ★ 추가 (생성자 주입 자동 처리)
 
     // ════════════════════════════════════════════════════════
     //  지출 API
@@ -36,14 +46,107 @@ public class ExpenseController {
     /**
      * 지출 등록
      * POST /api/trips/{tripId}/expenses
+     *
+     * ★ Bug Fix: 지출 추가 시 알림 발송 + WebSocket 브로드캐스트 추가
      */
     @PostMapping("/trips/{tripId}/expenses")
     public ResponseEntity<ExpenseDto.DetailResponse> createExpense(
-            @PathVariable("tripId") Long tripId,           // ← 이름 명시
-            @RequestBody ExpenseDto.CreateRequest req) {
+            @PathVariable("tripId") Long tripId,
+            @RequestBody ExpenseDto.CreateRequest req,
+            HttpSession session) { // ★ session 추가 (senderId 추출용)
 
         req.setTripId(tripId);
-        return ResponseEntity.ok(expenseService.createExpense(req));
+        ExpenseDto.DetailResponse result = expenseService.createExpense(req);
+
+        // ★ 알림 발송 (결제자를 제외한 모든 멤버에게)
+        try {
+            Long senderId    = req.getPayerId();
+            String payerNick = result.getPayerNickname() != null ? result.getPayerNickname() : "누군가";
+            String desc      = result.getDescription()  != null ? result.getDescription()  : "";
+            long   amount    = result.getAmount() != null ? result.getAmount().longValue() : 0L;
+
+            String message = payerNick + "님이 새 지출을 추가했어요: "
+                    + desc + " ₩" + String.format("%,d", amount);
+
+            // DB 알림 저장 (결제자 제외 전체)
+            notificationService.notifyAll(tripId, senderId, message, "EXPENSE");
+
+            // WebSocket: 알림 벨 갱신
+            Map<String, Object> notifMsg = new HashMap<>();
+            notifMsg.put("type", "NEW_NOTIFICATION");
+            messagingTemplate.convertAndSend("/sub/trip/" + tripId, notifMsg);
+
+            // WebSocket: 지출 목록 실시간 갱신 (EXPENSE_ADDED는 workspace_ws.js에서 이미 처리됨)
+            Map<String, Object> expMsg = new HashMap<>();
+            expMsg.put("type", "EXPENSE_ADDED");
+            expMsg.put("senderNickname", payerNick);
+            messagingTemplate.convertAndSend("/sub/trip/" + tripId, expMsg);
+
+        } catch (Exception e) {
+            // 알림 실패가 지출 등록을 막으면 안 됨
+            e.printStackTrace();
+        }
+
+        return ResponseEntity.ok(result);
+    }
+    
+    /**
+     * 단건 정산 요청 생성
+     * POST /api/trips/{tripId}/settlements/request
+     * body: { fromMemberId, amount }
+     */
+    @PostMapping("/trips/{tripId}/settlements/request")
+    public ResponseEntity<Map<String, Object>> requestSingleSettlement(
+            @PathVariable("tripId") Long tripId,
+            @RequestBody Map<String, Object> body,
+            HttpSession session) {
+
+        Map<String, Object> result = new HashMap<>();
+        Long myId = getLoginMemberId(session);
+        if (myId == null) {
+            result.put("success", false);
+            result.put("message", "로그인이 필요합니다.");
+            return ResponseEntity.status(401).body(result);
+        }
+
+        try {
+            Long fromMemberId = Long.valueOf(String.valueOf(body.get("fromMemberId")));
+            java.math.BigDecimal amount = new java.math.BigDecimal(String.valueOf(body.get("amount")));
+
+            // 중복 요청 방지
+            int existing = expenseMapper.countActiveSettlement(tripId, myId, fromMemberId);
+            if (existing > 0) {
+                result.put("success", false);
+                result.put("message", "이미 요청한 정산입니다.");
+                return ResponseEntity.ok(result);
+            }
+
+            // settlement INSERT
+            SettlementDto.SingleRequest req = SettlementDto.SingleRequest.builder()
+                    .tripId(tripId)
+                    .toMemberId(myId)
+                    .fromMemberId(fromMemberId)
+                    .amount(amount)
+                    .build();
+            expenseMapper.insertSingleSettlement(req);
+
+            // 알림 발송
+            String message = "정산 요청이 도착했어요! ₩"
+                    + String.format("%,d", amount.longValue()) + " 을 확인해주세요.";
+            expenseMapper.insertTripNotification(tripId, fromMemberId, myId, message, "SETTLEMENT");
+            
+            Map<String, Object> wsMsg = new HashMap<>();
+            wsMsg.put("type", "NEW_NOTIFICATION");
+            messagingTemplate.convertAndSend("/sub/trip/" + tripId, wsMsg);
+            
+            result.put("success", true);
+            result.put("message", "정산을 요청했어요!");
+        } catch (Exception e) {
+        	e.printStackTrace();
+            result.put("success", false);
+            result.put("message", e.getMessage());
+        }
+        return ResponseEntity.ok(result);
     }
 
     /**
@@ -53,10 +156,31 @@ public class ExpenseController {
     @GetMapping("/trips/{tripId}/expenses")
     public ResponseEntity<List<ExpenseDto.SummaryResponse>> getExpenseList(
             @PathVariable("tripId") Long tripId,
-            @RequestParam(value = "page", defaultValue = "1")  int page,   // ← value 명시
+            @RequestParam(value = "page", defaultValue = "1")  int page,
             @RequestParam(value = "size", defaultValue = "20") int size) {
 
         return ResponseEntity.ok(expenseService.getExpenseList(tripId, page, size));
+    }
+
+    /**
+     * 지출 전체 조회 (참여자 포함) — 정산 계산용
+     * GET /api/trips/{tripId}/expenses/with-participants
+     */
+    @GetMapping("/trips/{tripId}/expenses/with-participants")
+    public ResponseEntity<List<ExpenseDto.DetailResponse>> getExpensesWithParticipants(
+            @PathVariable("tripId") Long tripId) {
+
+        List<ExpenseDto.SummaryResponse> summaries = expenseService.getExpenseList(tripId, 1, 500);
+        List<ExpenseDto.DetailResponse> result = new java.util.ArrayList<>();
+
+        for (ExpenseDto.SummaryResponse s : summaries) {
+            ExpenseDto.DetailResponse detail = expenseMapper.selectExpenseDetailById(s.getExpenseId());
+            if (detail != null) {
+                detail.setParticipants(expenseMapper.selectParticipantsByExpenseId(s.getExpenseId()));
+                result.add(detail);
+            }
+        }
+        return ResponseEntity.ok(result);
     }
 
     /**
@@ -96,7 +220,6 @@ public class ExpenseController {
     /**
      * 지출 삭제
      * DELETE /api/expenses/{expenseId}
-     * 응답: 204 No Content
      */
     @DeleteMapping("/expenses/{expenseId}")
     public ResponseEntity<Void> deleteExpense(
@@ -157,9 +280,8 @@ public class ExpenseController {
 
     /**
      * 정산 완료 처리 (송금 체크)
-     * PATCH /api/settlements/complete
      */
-    @PatchMapping("/settlements/complete")
+    @PostMapping("/settlements/complete")
     public ResponseEntity<Void> completeSettlements(
             @RequestBody SettlementDto.CompleteRequest req) {
 
@@ -177,5 +299,80 @@ public class ExpenseController {
 
         expenseService.deleteSettlement(settlementId);
         return ResponseEntity.noContent().build();
+    }
+    
+    /**
+     * 영수증 이미지 업로드
+     * POST /api/upload/receipt
+     */
+    @PostMapping("/upload/receipt")
+    public ResponseEntity<Map<String, Object>> uploadReceipt(
+            @RequestParam("file") MultipartFile file,
+            HttpSession session) {
+
+        Map<String, Object> result = new HashMap<>();
+        try {
+            String uploadDir = System.getProperty("user.home") + "/tripan-uploads/receipts/";
+            new File(uploadDir).mkdirs();
+
+            String originalFilename = file.getOriginalFilename() != null
+                    ? file.getOriginalFilename() : "receipt.jpg";
+            String ext = originalFilename.substring(originalFilename.lastIndexOf('.'));
+            String fileName = UUID.randomUUID().toString() + ext;
+
+            file.transferTo(new File(uploadDir + fileName));
+
+            String url = "/receipts/" + fileName;
+            result.put("success", true);
+            result.put("url", url);
+        } catch (Exception e) {
+            result.put("success", false);
+            result.put("message", e.getMessage());
+        }
+        return ResponseEntity.ok(result);
+    }
+
+    /**
+     * 나에게 온 정산 요청 건수 (홈탭 대기 칩용)
+     * GET /api/trips/{tripId}/settlements/incoming-count
+     */
+    @GetMapping("/trips/{tripId}/settlements/incoming-count")
+    public ResponseEntity<Map<String, Object>> getIncomingSettlementCount(
+            @PathVariable("tripId") Long tripId,
+            HttpSession session) {
+
+        Map<String, Object> result = new HashMap<>();
+        Long myId = getLoginMemberId(session);
+        if (myId == null) {
+            result.put("count", 0);
+            return ResponseEntity.ok(result);
+        }
+        int count = expenseMapper.countIncomingSettlementRequests(tripId, myId);
+        result.put("count", count);
+        result.put("memberId", myId);
+        return ResponseEntity.ok(result);
+    }
+
+    /**
+     * 내가 결제한 카테고리별 지출 합계
+     * GET /api/trips/{tripId}/expenses/my-categories
+     */
+    @GetMapping("/trips/{tripId}/expenses/my-categories")
+    public ResponseEntity<List<ExpenseDto.CategorySummary>> getMyCategorySummary(
+            @PathVariable("tripId") Long tripId,
+            HttpSession session) {
+
+        Long myId = getLoginMemberId(session);
+        if (myId == null) return ResponseEntity.ok(List.of());
+        return ResponseEntity.ok(expenseMapper.selectMyCategorySummaryByTripId(tripId, myId));
+    }
+
+    // 헬퍼 — session에서 memberId 추출
+    private Long getLoginMemberId(HttpSession session) {
+        try {
+            Object user = session.getAttribute("loginUser");
+            if (user == null) return null;
+            return (Long) user.getClass().getMethod("getMemberId").invoke(user);
+        } catch (Exception e) { return null; }
     }
 }

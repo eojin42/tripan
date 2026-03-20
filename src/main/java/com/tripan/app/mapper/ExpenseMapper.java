@@ -92,4 +92,45 @@ public interface ExpenseMapper {
             @Param("tripId") Long tripId,
             @Param("memberId") Long memberId
     );
+    
+    /** 단건 정산 요청 INSERT */
+    int insertSingleSettlement(SettlementDto.SingleRequest req);
+
+    /** 중복 요청 방지 체크 (PENDING/REQUESTED 상태인 건이 있는지) */
+    int countActiveSettlement(@Param("tripId") Long tripId,
+                              @Param("toMemberId") Long toMemberId,
+                              @Param("fromMemberId") Long fromMemberId);
+
+    /** 알림 INSERT */
+    int insertTripNotification(@Param("tripId")     Long tripId,
+                               @Param("receiverId") Long receiverId,
+                               @Param("senderId")   Long senderId,
+                               @Param("message")    String message,
+                               @Param("type")       String type);
+
+    /**
+     * 내가 결제한 지출의 카테고리별 합계 (홈탭 — 내 지출 요약용)
+     */
+    List<ExpenseDto.CategorySummary> selectMyCategorySummaryByTripId(
+            @Param("tripId") Long tripId,
+            @Param("memberId") Long memberId
+    );
+
+    /**
+     * 나에게 온 정산 요청 건수 (홈탭 대기 칩용)
+     * from_member_id = 나(debtor) + REQUESTED/PENDING 상태
+     */
+    int countIncomingSettlementRequests(
+            @Param("tripId") Long tripId,
+            @Param("memberId") Long memberId
+    );
+
+    /**
+     * 내가 가장 최근에 결제한 지출 (최대 N건)
+     */
+    List<ExpenseDto.SummaryResponse> selectMyRecentExpenses(
+            @Param("tripId") Long tripId,
+            @Param("memberId") Long memberId,
+            @Param("limit") int limit
+    );
 }

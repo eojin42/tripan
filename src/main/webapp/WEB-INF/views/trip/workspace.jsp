@@ -11,6 +11,7 @@
   <%-- CSS 로드 순서 중요: responsive.css는 반드시 마지막 --%>
   <link rel="stylesheet" href="${pageContext.request.contextPath}/dist/css/trip/trip.css">
   <link rel="stylesheet" href="${pageContext.request.contextPath}/dist/css/trip/workspace.festival.css">
+  <link rel="stylesheet" href="${pageContext.request.contextPath}/dist/css/trip/workspace_expense_v2.css">
   <link rel="preconnect" href="https://cdn.jsdelivr.net">
   <link href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/variable/pretendardvariable.css" rel="stylesheet">
   <%-- WebSocket: SockJS + STOMP --%>
@@ -256,7 +257,9 @@
       </div>
     </div>
 
-    <%-- 가계부 패널 --%>
+    <%-- ═══════════════════════════════════════════
+         가계부 패널 — 전면 개편 (P2P 정산 워크플로우)
+    ═══════════════════════════════════════════ --%>
    <div class="sidebar-panel" id="panel-expense">
 
   <%-- ── 내부 탭바 ── --%>
@@ -284,12 +287,12 @@
     </button>
   </div>
 
-  <%-- ══════════════════════
-       탭 1: 홈
-  ══════════════════════ --%>
+  <%-- ══════════════════════════════════
+       탭 1: 홈 — 대시보드 (개편)
+  ══════════════════════════════════ --%>
   <div class="exp-tab-pane" id="exp-tab-home" style="display:flex;flex-direction:column;overflow-y:auto;">
 
-    <%-- 히어로 카드 --%>
+    <%-- ── 히어로 카드 ── --%>
     <div class="exp-home-hero">
       <div class="exp-home-hero__top">
         <span class="exp-home-hero__label">여행 총 지출</span>
@@ -309,27 +312,42 @@
         </div>
       </div>
 
+      <%-- 받을 / 보낼 예정 --%>
+      <div class="exp-home-hero__settle-row">
+        <div class="exp-home-hero__settle-item exp-home-hero__settle-item--recv">
+          <div class="exp-home-hero__settle-label">💚 받을 예정</div>
+          <div class="exp-home-hero__settle-val" id="myReceiveAmt">₩ 0</div>
+        </div>
+        <div class="exp-home-hero__settle-item exp-home-hero__settle-item--send">
+          <div class="exp-home-hero__settle-label">💸 보낼 예정</div>
+          <div class="exp-home-hero__settle-val" id="mySendAmt">₩ 0</div>
+        </div>
+      </div>
+
       <%-- 나의 정산 상태 --%>
       <div id="myBalanceLine" class="exp-home-hero__balance"></div>
     </div>
 
-    <%-- 정산 대기 현황 칩 (나한테 온 요청만) --%>
+    <%-- ── 정산 대기 현황 칩 (나에게 온 정산 요청 건수) ── --%>
     <div id="expSettleStatus" style="padding:0 16px;margin-top:8px;"></div>
 
-    <%-- 카테고리별 지출 --%>
+    <%-- ── 카테고리별 지출 (가로 스크롤 카드형) ── --%>
     <div id="expenseCatsSection" style="display:none;padding:12px 16px 0;">
       <div class="exp-home-section-title">📊 카테고리별 지출</div>
-      <div class="expense-cats" id="expenseCats"></div>
+      <div class="expense-cats" id="expenseCats" style="display:flex;gap:10px;overflow-x:auto;padding-bottom:8px;scrollbar-width:none;-webkit-overflow-scrolling:touch;"></div>
     </div>
 
-    <%-- 내 지출 요약 (JS가 채움) --%>
-    <div id="expMemberBalance" style="padding:12px 16px 20px;"></div>
+    <%-- ── 내 지출 요약 섹션 ── --%>
+    <div id="expMySummarySection" style="display:none;padding:12px 16px 20px;">
+      <div class="exp-home-section-title">📋 이번 여행 내 지출 요약</div>
+      <div id="expMySummaryBody"></div>
+    </div>
 
   </div><%-- /exp-tab-home --%>
 
-  <%-- ══════════════════════
-       탭 2: 지출 내역
-  ══════════════════════ --%>
+  <%-- ══════════════════════════════════
+       탭 2: 지출 내역 (카테고리 UI 개선)
+  ══════════════════════════════════ --%>
   <div class="exp-tab-pane expense-panel-inner" id="exp-tab-list"
        style="display:none;flex-direction:column;">
 
@@ -339,7 +357,7 @@
     </div>
 
     <%-- JS가 동적으로 렌더 --%>
-    <div id="expenseList" style="padding:0 8px;"></div>
+    <div id="expenseList" style="padding:0 8px;overflow-y:auto;flex:1;"></div>
 
     <%-- VIEWER 권한은 추가 버튼 숨김 --%>
     <c:if test="${memberRole != 'VIEWER'}">
@@ -355,60 +373,54 @@
 
   </div><%-- /exp-tab-list --%>
 
-  <%-- ══════════════════════
-       탭 3: 정산
-  ══════════════════════ --%>
+  <%-- ══════════════════════════════════
+       탭 3: 정산 — P2P 워크플로우 (전면 재설계)
+  ══════════════════════════════════ --%>
   <div class="exp-tab-pane expense-panel-inner" id="exp-tab-settle"
        style="display:none;flex-direction:column;">
 
-    <%-- 정산 예상 섹션 — 미리보기 (정산요청 전) --%>
-    <div id="settleSection" class="settle-section" style="display:none;">
-      <div class="settle-head">
-        <span class="settle-title">정산 현황</span>
-        <button class="settle-card__detail-btn" onclick="loadSavedSettlements()"
-                style="font-size:11px;">정산 완료 내역 →</button>
-      </div>
-      <div id="settleList" style="padding:0 16px 16px;"></div>
+    <%-- ── 현황/완료 토글 버튼 (강조 디자인) ── --%>
+    <div class="settle-view-toggle">
+      <button id="settleBtnStatus" class="settle-view-btn active" onclick="switchSettleView('status')">
+        📊 정산 현황
+      </button>
+      <button id="settleBtnDone" class="settle-view-btn" onclick="switchSettleView('done')">
+        ✅ 완료 내역
+      </button>
     </div>
 
-    <%-- 정산 완료 내역 섹션 (정산요청 후) --%>
-    <div id="settleDoneSection" style="display:none;">
-      <div class="settle-head">
-        <span class="settle-title">정산 완료 내역</span>
-        <button class="settle-card__detail-btn" onclick="_loadSettleTab()"
-                style="font-size:11px;">← 현황으로</button>
+    <%-- ── 정산 현황 뷰 ── --%>
+    <div id="settleStatusView" style="overflow-y:auto;flex:1;">
+      <%-- 내가 받을 정산 --%>
+      <div id="settleRecvList" style="padding:0 12px;"></div>
+      <%-- 내가 줘야 할 정산 --%>
+      <div id="settleSendList" style="padding:0 12px;"></div>
+      <%-- 빈 상태 --%>
+      <div id="settleStatusEmpty" class="expense-empty-state" style="display:none;">
+        <div class="expense-empty-state__emoji">💰</div>
+        <div class="expense-empty-state__title">아직 정산할 내역이 없어요</div>
+        <div class="expense-empty-state__sub">지출이 쌓이면 자동으로 정산 현황을 확인할 수 있어요</div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;justify-content:center;">
+          <button class="expense-empty-state__btn"
+                  onclick="switchExpTab('list', document.querySelectorAll('.exp-itab')[1])">
+            지출 내역 보기
+          </button>
+          <button class="expense-empty-state__btn expense-empty-state__btn--ghost"
+                  onclick="_loadSettleTab()">
+            새로고침
+          </button>
+        </div>
       </div>
-      <div id="settleDoneList" style="padding:0 16px 16px;"></div>
+    </div>
+
+    <%-- ── 완료 내역 뷰 ── --%>
+    <div id="settleDoneView" style="display:none;overflow-y:auto;flex:1;">
+      <div id="settleDoneList" style="padding:0 12px;"></div>
       <%-- 완료 내역 없을 때 --%>
       <div id="settleDoneEmpty" style="display:none;text-align:center;padding:32px 20px;">
         <div style="font-size:36px;margin-bottom:12px;">📭</div>
         <div style="font-size:14px;font-weight:800;color:#2D3748;margin-bottom:6px;">정산 완료 내역이 없어요</div>
-        <div style="font-size:12px;color:#A0AEC0;line-height:1.7;">정산 요청 후 각 멤버가 송금 완료 처리하면<br>여기에 표시돼요</div>
-      </div>
-    </div>
-
-    <%-- 정산 요청 받은 내역 (toMemberId = 나) — JS가 채움 --%>
-    <div id="settleReceivedSection" style="display:none;">
-      <div class="settle-head">
-        <span class="settle-title">📬 받은 정산 요청</span>
-      </div>
-      <div id="settleReceivedList" style="padding:0 16px 16px;"></div>
-    </div>
-
-    <%-- 빈 상태 (지출 없음) — JS가 show/hide --%>
-    <div id="settleEmpty" class="expense-empty-state" style="display:none;">
-      <div class="expense-empty-state__emoji">💰</div>
-      <div class="expense-empty-state__title">아직 정산할 내역이 없어요</div>
-      <div class="expense-empty-state__sub">지출이 쌓이면 자동으로 정산 현황을 확인하고 정산을 진행할 수 있어요</div>
-      <div style="display:flex;gap:8px;flex-wrap:wrap;justify-content:center;">
-        <button class="expense-empty-state__btn"
-                onclick="switchExpTab('list', document.querySelectorAll('.exp-itab')[1])">
-          지출 내역 보기
-        </button>
-        <button class="expense-empty-state__btn expense-empty-state__btn--ghost"
-                onclick="_loadSettleTab()">
-          새로고침
-        </button>
+        <div style="font-size:12px;color:#A0AEC0;line-height:1.7;">정산 요청 후 상대방이 완료 처리하면<br>여기에 표시돼요</div>
       </div>
     </div>
 

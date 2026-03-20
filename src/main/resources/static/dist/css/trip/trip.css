@@ -873,23 +873,7 @@ body.resizing .ws-resizer { pointer-events: all !important; }
   background: rgba(255,255,255,.25); padding: 4px 12px;
   border-radius: 50px; font-size: 12px; font-weight: 700;
 }
-.expense-cats {
-  display: grid; grid-template-columns: 1fr 1fr 1fr 1fr;
-  gap: 8px; margin-bottom: 20px;
-}
-.expense-cat {
-  background: var(--white);
-  border: 1.5px solid var(--border);
-  border-radius: 14px; padding: 14px 10px;
-  display: flex; flex-direction: column; align-items: center; gap: 5px;
-  transition: all .18s;
-}
-.expense-cat:hover { border-color: var(--blue); box-shadow: 0 4px 12px rgba(137,207,240,.15); }
-.expense-cat__icon { font-size: 22px; }
-.expense-cat__name { font-size: 10px; font-weight: 700; color: var(--light); }
-.expense-cat__amt { font-size: 13px; font-weight: 900; color: var(--dark); }
-.expense-cat__bar { width: 100%; height: 3px; background: var(--border); border-radius: 50px; overflow: hidden; margin-top: 2px; }
-.expense-cat__bar-fill { height: 100%; background: var(--grad2); border-radius: 50px; }
+
 .expense-section-head {
   display: flex; justify-content: space-between; align-items: center;
   margin-bottom: 12px;
@@ -930,12 +914,6 @@ body.resizing .ws-resizer { pointer-events: all !important; }
   border: 1px solid rgba(137,207,240,.25);
 }
 /* 카테고리 칩 */
-.expense-cat-chip {
-  display: inline-flex; align-items: center; gap: 3px;
-  font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 50px;
-  background: rgba(194,184,217,.1); color: #8B7BAE;
-  border: 1px solid rgba(194,184,217,.25);
-}
 .btn-add-expense {
   width: 100%; padding: 13px;
   border: 1.5px dashed var(--border);
@@ -6231,18 +6209,15 @@ body.role-viewer .map-add-btn {
   flex-shrink: 0;
 }
 
-/* expense-cats 내 카드 간격 */
-.expense-cats { display: flex; flex-direction: column; gap: 6px; }
-
 /* 카테고리 칩 스크롤 강제 */
 .exp-v2-cats { display:flex!important; flex-wrap:nowrap!important; overflow-x:scroll!important; overflow-y:hidden!important; -webkit-overflow-scrolling:touch; touch-action:pan-x; overscroll-behavior-x:contain; scrollbar-width:none; }
 
 
 /* ═══════════════════════════════════════════════════════════
-   홈 탭 히어로 카드 overflow 수정 (짤림 방지)
+   홈 탭 히어로 카드
 ═══════════════════════════════════════════════════════════ */
 .exp-home-hero {
-  overflow: visible !important;
+  overflow: hidden;
   position: relative;
   z-index: 1;
 }
@@ -6250,8 +6225,20 @@ body.role-viewer .map-add-btn {
 .exp-home-hero__amount {
   font-size: 28px !important;
   letter-spacing: -1.5px !important;
-  overflow: visible;
   white-space: nowrap;
+}
+
+/* 홈 탭 섹션 간격 통일 */
+#expenseCatsSection {
+  padding: 14px 16px 0;
+  flex-shrink: 0;
+}
+#expSettleStatus {
+  padding: 8px 16px 0;
+  flex-shrink: 0;
+}
+#expMemberBalance {
+  padding: 14px 16px 24px;
 }
 
 /* 홈 탭 전체 overflow */
@@ -6268,42 +6255,6 @@ body.role-viewer .map-add-btn {
 #expenseCatsSection {
   overflow: visible;
 }
-.expense-cats {
-  display: flex !important;
-  flex-direction: column !important;
-  gap: 4px !important;
-  overflow-y: auto;
-  max-height: 180px;
-  scrollbar-width: thin;
-  scrollbar-color: var(--border) transparent;
-  padding-right: 4px;
-}
-.expense-cat {
-  cursor: pointer;
-  border-radius: 10px;
-  padding: 8px 10px !important;
-  transition: background .12s;
-  flex-shrink: 0;
-}
-.expense-cat:hover { background: var(--bg); }
-.expense-cat__row {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  margin-bottom: 4px;
-}
-.expense-cat__icon { font-size: 14px; }
-.expense-cat__name { font-size: 12px; font-weight: 700; color: #2D3748; flex: 1; }
-.expense-cat__pct  { font-size: 11px; color: #A0AEC0; font-weight: 600; }
-.expense-cat__amt  { font-size: 13px; font-weight: 900; color: #1A202C; white-space: nowrap; }
-.expense-cat__bar  {
-  height: 4px;
-  background: #EDF2F7;
-  border-radius: 2px;
-  overflow: hidden;
-}
-.expense-cat__bar-fill { height: 100%; border-radius: 2px; }
-
 /* ═══════════════════════════════════════════════════════════
    멤버 정산 상세 모달 (ms-*)
 ═══════════════════════════════════════════════════════════ */
@@ -6496,15 +6447,6 @@ body.role-viewer .map-add-btn {
   letter-spacing: -.5px;
 }
 
-/* 섹션 타이틀 재정의 */
-.settle-section-title {
-  font-size: 13px;
-  font-weight: 800;
-  color: #1A202C;
-  padding: 12px 16px 6px;
-  letter-spacing: -.1px;
-}
-
 /* 받을 정산 카드 */
 .settle-card--recv {
   border-color: rgba(104,211,145,.3);
@@ -6527,16 +6469,6 @@ body.role-viewer .map-add-btn {
   font-weight: 700;
   padding: 4px 10px;
   border-radius: 50px;
-}
-
-/* 정산 요청 버튼 강조 */
-.settle-card__pay-btn--request {
-  background: linear-gradient(135deg, #2D3748, #4A5568) !important;
-  font-size: 12px !important;
-  padding: 6px 14px !important;
-}
-.settle-card__pay-btn--request:hover {
-  box-shadow: 0 4px 12px rgba(45,55,72,.3) !important;
 }
 
 /* 카테고리 섹션 제목 리셋 */
@@ -6623,16 +6555,6 @@ body.role-viewer .map-add-btn {
 }
 
 
-/* ═══════════════════════════════════════════════════════════
-   정산 섹션 설명 텍스트
-═══════════════════════════════════════════════════════════ */
-.settle-section-desc {
-  font-size: 11px;
-  color: #A0AEC0;
-  padding: 0 16px 8px;
-  line-height: 1.5;
-}
-
 /* 정산 삭제 버튼 */
 .settle-card__del-btn {
   background: transparent;
@@ -6647,34 +6569,387 @@ body.role-viewer .map-add-btn {
 }
 .settle-card__del-btn:hover { background: #FED7D7; color: #C53030; }
 
-/* ═══════════════════════════════════════════════════════════
-   편집 모드 개선 — 더 넓고 쾌적하게
-═══════════════════════════════════════════════════════════ */
+/* ═══════════════════════════════════════════════════════════════
+   편집 모드 — 가계부 전체 리디자인
+   탭바 / 홈 / 내역 / 정산 모두 확대 + 가독성 개선
+═══════════════════════════════════════════════════════════════ */
+
+/* ── 패널 배경 ── */
 .ws-layout.mode-edit #panel-expense {
-  background: #F7FAFC;
+  background: #F0F4F8;
 }
-.ws-layout.mode-edit .exp-home-hero {
-  max-width: 600px;
-  margin: 0 auto 16px;
-  border-radius: 20px;
+
+/* ── 내부 탭바: 높이 키우고 폰트 키움 ── */
+.ws-layout.mode-edit #panel-expense > div:first-child {
+  background: #fff !important;
+  border-bottom: 2px solid #E2E8F0 !important;
+  box-shadow: 0 2px 8px rgba(0,0,0,.04);
 }
+.ws-layout.mode-edit .exp-itab {
+  font-size: 15px !important;
+  padding: 18px 0 !important;
+  font-weight: 700 !important;
+}
+
+/* ── 홈 탭 스크롤 영역 ── */
+.ws-layout.mode-edit #exp-tab-home {
+  padding: 0 0 60px;
+  overflow-y: auto !important;
+}
+
+/* ── 홈탭 콘텐츠 중앙 컬럼 (800px) ── */
+.ws-layout.mode-edit #exp-tab-home .exp-home-hero {
+  max-width: 800px;
+  width: calc(100% - 64px);
+  margin: 32px auto 0;
+  padding: 32px 28px 24px;
+  border-radius: 24px;
+  box-sizing: border-box;
+}
+/* 히어로 텍스트 키우기 */
+.ws-layout.mode-edit .exp-home-hero__label {
+  font-size: 14px !important;
+}
+.ws-layout.mode-edit .exp-home-hero__amount {
+  font-size: 44px !important;
+  letter-spacing: -2.5px !important;
+  margin-bottom: 20px !important;
+}
+.ws-layout.mode-edit .exp-home-hero__stats {
+  border-radius: 14px;
+  margin-bottom: 16px;
+}
+.ws-layout.mode-edit .exp-home-hero__stat {
+  padding: 14px 20px;
+}
+.ws-layout.mode-edit .exp-home-hero__stat-label {
+  font-size: 12px !important;
+  margin-bottom: 5px;
+}
+.ws-layout.mode-edit .exp-home-hero__stat-val {
+  font-size: 20px !important;
+}
+.ws-layout.mode-edit .exp-home-balance-chip {
+  font-size: 14px !important;
+  padding: 7px 16px !important;
+}
+
+/* ── 정산 대기 칩 ── */
+.ws-layout.mode-edit #expSettleStatus {
+  max-width: 800px;
+  width: calc(100% - 64px);
+  margin: 12px auto 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+.ws-layout.mode-edit .exp-home-settle-chip {
+  padding: 14px 18px;
+  border-radius: 14px;
+  font-size: 14px;
+}
+
+/* ── 카테고리 섹션 ── */
+.ws-layout.mode-edit #expenseCatsSection {
+  max-width: 800px;
+  width: calc(100% - 64px);
+  margin: 20px auto 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+.ws-layout.mode-edit .exp-home-section-title {
+  font-size: 15px !important;
+  color: #4A5568 !important;
+  text-transform: none !important;
+  letter-spacing: 0 !important;
+  margin-bottom: 14px !important;
+  font-weight: 800 !important;
+}
+/* 카테고리 칩: 가로 flex, wrap */
 .ws-layout.mode-edit .expense-cats {
-  justify-content: center;
-  flex-wrap: wrap;
-  overflow-x: visible;
+  flex-wrap: wrap !important;
+  overflow-x: visible !important;
+  max-height: none !important;
+  gap: 12px !important;
+  padding-bottom: 0 !important;
+}
+.ws-layout.mode-edit .expense-cat {
+  flex: 1 1 140px;
+  min-width: 140px;
+  max-width: 220px;
+  padding: 18px 16px !important;
+  border-radius: 18px !important;
+}
+.ws-layout.mode-edit .expense-cat__icon {
+  font-size: 28px !important;
+}
+.ws-layout.mode-edit .expense-cat__name {
+  font-size: 13px !important;
+}
+.ws-layout.mode-edit .expense-cat__pct {
+  font-size: 12px !important;
+}
+.ws-layout.mode-edit .expense-cat__amt {
+  font-size: 15px !important;
+}
+
+/* ── 내 지출 요약 카드 ── */
+.ws-layout.mode-edit #expMemberBalance {
+  max-width: 800px;
+  width: calc(100% - 64px);
+  margin: 20px auto 0;
+  padding: 0;
+  box-sizing: border-box;
 }
 .ws-layout.mode-edit .exp-my-summary-card {
-  max-width: 600px;
-  margin: 0 auto 12px;
+  max-width: 100%;
+  margin: 0 0 14px;
+  border-radius: 18px !important;
+  overflow: hidden;
+}
+.ws-layout.mode-edit .exp-my-summary-row {
+  padding: 15px 20px !important;
+}
+.ws-layout.mode-edit .exp-my-summary-label {
+  font-size: 15px !important;
+}
+.ws-layout.mode-edit .exp-my-summary-val {
+  font-size: 16px !important;
+}
+.ws-layout.mode-edit .exp-my-summary-result {
+  font-size: 16px !important;
+}
+.ws-layout.mode-edit .exp-my-detail-btn {
+  max-width: 100%;
+  margin: 0;
+  display: block;
+  padding: 13px 0 !important;
+  font-size: 14px !important;
+  border-radius: 14px !important;
+}
+
+/* ── 내역 탭 ── */
+.ws-layout.mode-edit #exp-tab-list {
+  padding: 0 0 60px;
+  overflow-y: auto !important;
+}
+.ws-layout.mode-edit #exp-tab-list .expense-section-head {
+  max-width: 800px;
+  width: calc(100% - 64px);
+  margin: 20px auto 8px;
+  padding: 0;
+  box-sizing: border-box;
+}
+.ws-layout.mode-edit .expense-list-title {
+  font-size: 16px !important;
+  font-weight: 900 !important;
+}
+.ws-layout.mode-edit #expenseList {
+  padding: 0 32px 8px;
+}
+.ws-layout.mode-edit .exp-list-date-group {
+  max-width: 800px;
+  margin: 0 auto 8px;
 }
 .ws-layout.mode-edit .expense-item {
-  max-width: 600px;
+  max-width: 800px;
   margin-left: auto;
   margin-right: auto;
+  padding: 14px 16px !important;
+  border-radius: 16px !important;
+  margin-bottom: 8px;
+}
+.ws-layout.mode-edit .expense-item__cat-icon {
+  width: 44px !important;
+  height: 44px !important;
+  font-size: 20px !important;
+  border-radius: 14px !important;
+}
+.ws-layout.mode-edit .expense-item__name {
+  font-size: 15px !important;
+}
+.ws-layout.mode-edit .expense-item__meta {
+  font-size: 13px !important;
+  margin-top: 4px !important;
+}
+.ws-layout.mode-edit .expense-item__amt {
+  font-size: 17px !important;
+}
+.ws-layout.mode-edit .btn-add-expense {
+  max-width: 800px;
+  margin: 8px auto 0;
+  display: flex;
+  font-size: 15px !important;
+  padding: 16px !important;
+  border-radius: 16px !important;
+}
+
+/* ── 정산 탭 ── */
+.ws-layout.mode-edit #exp-tab-settle {
+  padding: 0 0 60px;
+  overflow-y: auto !important;
+}
+.ws-layout.mode-edit #settleSection,
+.ws-layout.mode-edit #settleDoneSection,
+.ws-layout.mode-edit #settleEmpty {
+  max-width: 800px;
+  width: calc(100% - 64px);
+  margin-left: auto;
+  margin-right: auto;
+  box-sizing: border-box;
+}
+.ws-layout.mode-edit .settle-section-title {
+  font-size: 15px !important;
+  margin: 20px 0 4px !important;
+}
+.ws-layout.mode-edit .settle-section-desc {
+  font-size: 13px !important;
+  margin: 0 0 12px !important;
+}
+.ws-layout.mode-edit #settleList,
+.ws-layout.mode-edit #settleDoneList {
+  padding: 0 !important;
 }
 .ws-layout.mode-edit .settle-card {
-  max-width: 600px;
-  margin-left: auto;
-  margin-right: auto;
-  margin-bottom: 10px;
+  max-width: 100%;
+  margin-left: 0;
+  margin-right: 0;
+  margin-bottom: 12px !important;
+  padding: 18px 20px !important;
+  border-radius: 18px !important;
+}
+.ws-layout.mode-edit .settle-card__kp-amt {
+  font-size: 24px !important;
+}
+.ws-layout.mode-edit .settle-card__kp-from,
+.ws-layout.mode-edit .settle-card__kp-to {
+  font-size: 14px !important;
+  max-width: 140px !important;
+}
+.ws-layout.mode-edit .settle-card__pay-btn--request,
+.ws-layout.mode-edit .settle-card__pay-btn--complete {
+  font-size: 14px !important;
+  padding: 9px 18px !important;
+  border-radius: 10px !important;
+}
+.ws-layout.mode-edit .settle-status-badge,
+.ws-layout.mode-edit .settle-status-badge--recv,
+.ws-layout.mode-edit .settle-status-badge--send,
+.ws-layout.mode-edit .settle-status-badge--pending,
+.ws-layout.mode-edit .settle-status-badge--done {
+  font-size: 13px !important;
+  padding: 6px 14px !important;
+}
+.ws-layout.mode-edit .settle-head {
+  max-width: 100%;
+  padding: 20px 0 8px;
+}
+.ws-layout.mode-edit .settle-title {
+  font-size: 16px !important;
+}
+.ws-layout.mode-edit .settle-card__del-btn {
+  font-size: 18px !important;
+  padding: 6px 8px !important;
+}
+/* ═══════════════════════════════════════════
+   편집 모드 CSS 깨짐 방지
+   mode-edit에서 sidebar가 full-width가 되어
+   내부 input/select/button이 상속받아 늘어나는 문제 해결
+═══════════════════════════════════════════ */
+
+/* 가계부 패널 기본 레이아웃 — 부모에 영향받지 않도록 격리 */
+#panel-expense {
+  /* display는 .sidebar-panel / .sidebar-panel.active 에서 관리 (display:flex 제거 — 특이도 충돌 방지) */
+  flex-direction: column;
+  overflow: hidden;
+  height: 100%;
+  min-width: 0;
+  max-width: 100%;
+}
+
+/* 모달 오버레이는 fixed라 부모 영향 없음.
+   단, exp-v2-body 내부 요소가 부모 flex로 늘어나는 현상 방지 */
+.exp-v2-body,
+.exp-v2-body * {
+  box-sizing: border-box;
+  max-width: 100%;
+}
+
+.exp-v2-input,
+.exp-v2-amount-input {
+  width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+}
+
+/* 편집 모드에서 가계부 탭 패널들 레이아웃 보호 */
+.mode-edit #panel-expense .exp-tab-pane {
+  max-width: 100%;
+  overflow-x: hidden;
+}
+
+/* settle 카드 레이아웃 — flex가 넘치지 않게 */
+.settle-card {
+  min-width: 0;
+  box-sizing: border-box;
+}
+
+.settle-card__kp-names {
+  min-width: 0;
+  overflow: hidden;
+}
+
+.settle-card__kp-from,
+.settle-card__kp-to {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 80px;
+}
+
+/* 정산 완료 처리 버튼 스타일 */
+.settle-card__pay-btn--complete {
+  background: #22c55e !important;
+  color: #fff !important;
+  border: none;
+  border-radius: 8px;
+  padding: 6px 12px;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background .15s;
+}
+.settle-card__pay-btn--complete:hover {
+  background: #16a34a !important;
+}
+.settle-card__pay-btn--request {
+  background: #2563eb !important;
+  color: #fff !important;
+  border: none;
+  border-radius: 8px;
+  padding: 6px 12px;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background .15s;
+}
+.settle-card__pay-btn--request:hover {
+  background: #1d4ed8 !important;
+}
+.settle-card__pay-btn--request:disabled,
+.settle-card__pay-btn--complete:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+/* 정산 섹션 타이틀 */
+.settle-section-title {
+  font-size: 13px;
+  font-weight: 800;
+  color: #2D3748;
+  margin: 12px 16px 4px;
+}
+.settle-section-desc {
+  font-size: 11px;
+  color: #A0AEC0;
+  margin: 0 16px 8px;
 }

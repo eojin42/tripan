@@ -4,6 +4,7 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -35,13 +36,9 @@ public class ExpenseServiceImpl implements ExpenseService {
     private final ExpenseMapper expenseMapper;
 
     // ════════════════════════════════════════════════════════
-    //  지출 CRUD  (Repository 사용)
+    //  지출 CRUD
     // ════════════════════════════════════════════════════════
 
-    /**
-     * 지출 등록
-     * expense + expense_participant 동시 저장 (CascadeType.ALL)
-     */
     @Override
     @Transactional
     public ExpenseDto.DetailResponse createExpense(ExpenseDto.CreateRequest req) {
@@ -64,21 +61,17 @@ public class ExpenseServiceImpl implements ExpenseService {
             expense.getParticipants().add(
                     ExpenseParticipant.builder()
                             .expense(expense)
-                            .memberId(p.getMemberId())                    /* 외부 인원은 null */
-                            .nickname(p.getNickname())                    /* 외부 인원 이름 */
+                            .memberId(p.getMemberId())
+                            .nickname(p.getNickname())
                             .shareAmount(p.getShareAmount())
                             .build()
             );
         }
 
         Expense saved = expenseRepository.save(expense);
-        // 저장 후 닉네임 포함 상세 조회는 Mapper(XML) 사용
         return expenseMapper.selectExpenseDetailById(saved.getExpenseId());
     }
 
-    /**
-     * 지출 수정 (분담자 전체 교체)
-     */
     @Override
     @Transactional
     public ExpenseDto.DetailResponse updateExpense(Long expenseId, ExpenseDto.UpdateRequest req) {
@@ -96,26 +89,21 @@ public class ExpenseServiceImpl implements ExpenseService {
         expense.setPaymentType(req.getPaymentType());
         expense.setMemo(req.getMemo());
 
-        // orphanRemoval = true → clear() 후 add() 하면 기존 participant 자동 DELETE 후 INSERT
         expense.getParticipants().clear();
         for (ExpenseDto.ParticipantRequest p : req.getParticipants()) {
             expense.getParticipants().add(
                     ExpenseParticipant.builder()
                             .expense(expense)
-                            .memberId(p.getMemberId())                    /* 외부 인원은 null */
-                            .nickname(p.getNickname())                    /* 외부 인원 이름 */
+                            .memberId(p.getMemberId())
+                            .nickname(p.getNickname())
                             .shareAmount(p.getShareAmount())
                             .build()
             );
         }
 
-        // dirty checking으로 자동 저장, 응답은 Mapper로 조회
         return expenseMapper.selectExpenseDetailById(expenseId);
     }
 
-    /**
-     * 지출 삭제 (cascade → expense_participant 자동 삭제)
-     */
     @Override
     @Transactional
     public void deleteExpense(Long expenseId) {
@@ -125,7 +113,7 @@ public class ExpenseServiceImpl implements ExpenseService {
     }
 
     // ════════════════════════════════════════════════════════
-    //  지출 조회  (Mapper XML 사용)
+    //  지출 조회
     // ════════════════════════════════════════════════════════
 
     @Override
@@ -162,14 +150,13 @@ public class ExpenseServiceImpl implements ExpenseService {
     //  정산 계산 및 생성
     // ════════════════════════════════════════════════════════
 
-    /**
-     * 정산 미리보기 (DB 저장 없음)
-     * expense_participant 기반으로 최적 정산 경로 계산
-     */
     @Override
     public SettlementDto.PreviewResponse previewSettlement(Long tripId) {
-        List<ExpenseDto.MemberShareSummary> balances = expenseMapper.calculateBalancesByTripId(tripId);
-        List<SettlementDto.SettlementDetail> details = calculateOptimalSettlements(balances);
+        // 미리보기는 완료 정산 차감 적용 (실제 남은 정산만 보여줌)
+        List<ExpenseDto.MemberShareSummary> rawBalances = expenseMapper.calculateBalancesByTripId(tripId);
+        List<Settlement> completed = settlementRepository.findByTripIdAndStatus(tripId, "COMPLETED");
+        List<ExpenseDto.MemberShareSummary> adjusted = applyCompletedSettlements(rawBalances, completed);
+        List<SettlementDto.SettlementDetail> details = calculateOptimalSettlements(adjusted);
 
         return SettlementDto.PreviewResponse.builder()
                 .tripId(tripId)
@@ -178,8 +165,20 @@ public class ExpenseServiceImpl implements ExpenseService {
     }
 
     /**
-     * 정산 일괄 생성 → Repository로 저장
-     * 기존 PENDING 정산이 있으면 삭제 후 재생성
+     * 정산 일괄 생성
+     *
+     * ★ Bug Fix: 재정산 로직 수정
+     * - 기존: deleteByTripId() → 완료 이력까지 전부 삭제 후 전체 재계산 (❌)
+     * - 수정:
+     *   1) deleteNonCompletedByTripId() → COMPLETED 정산은 이력으로 보존
+     *   2) 완료된 정산 금액을 expense 기반 balance에서 차감
+     *   3) 차감된 잔여 balance로만 새 정산 생성
+     *
+     * [예시]
+     *   - A → B ₩30,000 COMPLETED (이미 송금 완료)
+     *   - 이후 새 공용 지출 ₩20,000 발생 (A 결제, A/B 반반)
+     *   → B가 A에게 갚아야 할 잔여 = ₩10,000 (새 건)
+     *   → ₩30,000 완료 건은 완료 이력에 그대로 남음
      */
     @Override
     @Transactional
@@ -188,19 +187,29 @@ public class ExpenseServiceImpl implements ExpenseService {
 
         Long tripId = req.getTripId();
 
-        // 기존 정산 초기화 (재정산)
-        settlementRepository.deleteByTripId(tripId);
+        // ① COMPLETED 제외하고 PENDING/REQUESTED 만 삭제
+        settlementRepository.deleteNonCompletedByTripId(tripId);
 
-        // balance 계산 → 최적 정산 목록 생성
-        List<ExpenseDto.MemberShareSummary> balances = expenseMapper.calculateBalancesByTripId(tripId);
-        List<SettlementDto.SettlementDetail> details = calculateOptimalSettlements(balances);
+        // ② expense 기반 raw balance 계산
+        List<ExpenseDto.MemberShareSummary> rawBalances = expenseMapper.calculateBalancesByTripId(tripId);
 
-        // batch_id 결정
+        // ③ 이미 완료된 정산 금액 차감 → 진짜 남은 미정산 금액 계산
+        List<Settlement> completedSettlements = settlementRepository.findByTripIdAndStatus(tripId, "COMPLETED");
+        List<ExpenseDto.MemberShareSummary> adjustedBalances = applyCompletedSettlements(rawBalances, completedSettlements);
+
+        // ④ 잔여 balance로 최적 정산 경로 계산
+        List<SettlementDto.SettlementDetail> details = calculateOptimalSettlements(adjustedBalances);
+
+        // 모든 정산이 완료된 경우 빈 결과 반환
+        if (details.isEmpty()) {
+            return getTripSettlements(tripId, requestMemberId);
+        }
+
+        // ⑤ batch_id 결정 후 저장
         Long batchId = req.getBatchId() != null
                 ? req.getBatchId()
                 : settlementRepository.generateNextBatchId();
 
-        // Settlement 엔티티 생성 → Repository로 저장
         List<Settlement> settlements = details.stream()
                 .map(d -> Settlement.builder()
                         .tripId(tripId)
@@ -217,7 +226,6 @@ public class ExpenseServiceImpl implements ExpenseService {
         return getTripSettlements(tripId, requestMemberId);
     }
 
-    /** 정산 완료 처리 → Repository로 상태 변경 */
     @Override
     @Transactional
     public void completeSettlements(SettlementDto.CompleteRequest req) {
@@ -229,14 +237,12 @@ public class ExpenseServiceImpl implements ExpenseService {
         }
     }
 
-    /** 정산 단건 삭제 */
     @Override
     @Transactional
     public void deleteSettlement(Long settlementId) {
         settlementRepository.findById(settlementId).ifPresent(settlementRepository::delete);
     }
 
-    /** 여행 전체 정산 현황 조회 → Mapper(XML)로 조회 */
     @Override
     public SettlementDto.TripSettlementResponse getTripSettlements(Long tripId, Long memberId) {
         List<SettlementDto.Response> all = expenseMapper.selectSettlementsByTripId(tripId);
@@ -262,9 +268,66 @@ public class ExpenseServiceImpl implements ExpenseService {
     // ════════════════════════════════════════════════════════
 
     /**
-     * 분담 금액 합계 검증
-     * participants의 shareAmount 합 == expense.amount 이어야 함
+     * ★ 신규: 완료된 정산을 balance에서 차감
+     *
+     * 완료된 settlement는 실제 송금이 끝난 것이므로:
+     * - fromMemberId (돈 보낸 사람): 그만큼 부채 갚음 → balance 증가 (덜 빚진 것)
+     * - toMemberId   (돈 받은 사람): 그만큼 채권 회수됨 → balance 감소 (덜 받을 것)
+     *
+     * @param rawBalances       expense 기반 순수 balance 목록
+     * @param completedList     이미 COMPLETED된 settlement 목록
+     * @return 완료 정산 차감 후 잔여 balance 목록
      */
+    /**
+     * 완료된 정산을 balance에서 차감
+     * ★ setter 방식 사용 — @Builder 없이 @Getter @Setter @NoArgsConstructor 구조에서도 동작
+     */
+    private List<ExpenseDto.MemberShareSummary> applyCompletedSettlements(
+            List<ExpenseDto.MemberShareSummary> rawBalances,
+            List<Settlement> completedList) {
+
+        if (completedList == null || completedList.isEmpty()) {
+            return rawBalances;
+        }
+
+        // memberId → balance 맵 구성
+        Map<Long, BigDecimal> balanceMap = new HashMap<>();
+        Map<Long, String>     nickMap    = new HashMap<>();
+
+        for (ExpenseDto.MemberShareSummary b : rawBalances) {
+            balanceMap.put(b.getMemberId(),
+                b.getBalance() != null ? b.getBalance() : BigDecimal.ZERO);
+            nickMap.put(b.getMemberId(), b.getNickname());
+        }
+
+        // 완료된 정산 차감
+        for (Settlement s : completedList) {
+            Long       from = s.getFromMemberId();
+            Long       to   = s.getToMemberId();
+            BigDecimal amt  = s.getAmount() != null ? s.getAmount() : BigDecimal.ZERO;
+            // 이미 보냈음 → 부채 줄어듦 (balance +)
+            if (from != null) balanceMap.merge(from, amt,           BigDecimal::add);
+            // 이미 받았음 → 채권 줄어듦 (balance -)
+            if (to   != null) balanceMap.merge(to,   amt.negate(),  BigDecimal::add);
+        }
+
+        // ★ stream().map() + builder() 대신 명시적 for-loop + setter 사용
+        //   → "Cannot infer type argument(s) for map()" 컴파일 에러 방지
+        List<ExpenseDto.MemberShareSummary> result = new ArrayList<>();
+        for (Map.Entry<Long, BigDecimal> entry : balanceMap.entrySet()) {
+            Long       mid    = entry.getKey();
+            BigDecimal newBal = entry.getValue();
+            ExpenseDto.MemberShareSummary item = new ExpenseDto.MemberShareSummary();
+            item.setMemberId(mid);
+            item.setNickname(nickMap.getOrDefault(mid, ""));
+            item.setBalance(newBal);
+            item.setShareAmount(BigDecimal.ZERO);
+            // paidAmount 필드 없음 (MemberShareSummary에 미정의) → 제거
+            result.add(item);
+        }
+        return result;
+    }
+
     private void validateParticipantsTotal(BigDecimal totalAmount,
                                            List<ExpenseDto.ParticipantRequest> participants) {
         if (participants == null || participants.isEmpty()) {
@@ -283,23 +346,23 @@ public class ExpenseServiceImpl implements ExpenseService {
     }
 
     /**
-     * 최적 정산 계산 알고리즘 (최소 이체 횟수)
+     * 최적 정산 계산 알고리즘 (최소 이체 횟수, greedy)
      * balance > 0 : 받을 사람 (채권자)
      * balance < 0 : 보낼 사람 (채무자)
-     * 가장 큰 채권자 ↔ 가장 큰 채무자부터 greedy 매칭
      */
     private List<SettlementDto.SettlementDetail> calculateOptimalSettlements(
             List<ExpenseDto.MemberShareSummary> balances) {
 
         List<SettlementDto.SettlementDetail> result = new ArrayList<>();
 
-        LinkedList<long[]> creditors = new LinkedList<>(); // [memberId, balance(+)]
-        LinkedList<long[]> debtors   = new LinkedList<>(); // [memberId, |balance|(-)]
+        LinkedList<long[]> creditors = new LinkedList<>();
+        LinkedList<long[]> debtors   = new LinkedList<>();
 
         Map<Long, String> nicknameMap = balances.stream()
                 .collect(Collectors.toMap(
                         ExpenseDto.MemberShareSummary::getMemberId,
-                        ExpenseDto.MemberShareSummary::getNickname
+                        ExpenseDto.MemberShareSummary::getNickname,
+                        (a, b) -> a  // 중복 키 발생 시 첫 번째 값 유지
                 ));
 
         for (ExpenseDto.MemberShareSummary b : balances) {

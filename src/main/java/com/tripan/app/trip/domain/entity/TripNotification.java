@@ -10,10 +10,11 @@ import java.time.LocalDateTime;
 @Getter @Setter
 public class TripNotification {
 
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "notification_id")
-    private Long notificationId;
+	@Id
+	@GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "noti_seq_gen")
+	@SequenceGenerator(name = "noti_seq_gen", sequenceName = "SEQ_NOTIFICATION", allocationSize = 1)
+	@Column(name = "notification_id")
+	private Long notificationId;
 
     @Column(name = "trip_id", nullable = false)
     private Long tripId;

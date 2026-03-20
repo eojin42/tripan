@@ -301,5 +301,110 @@
           AND (s.from_member_id = #{memberId} OR s.to_member_id = #{memberId})
         ORDER BY s.status ASC, s.amount DESC
     </select>
+	
+	<!-- ════════════════════════════════════════
+	     단건 정산 요청 INSERT
+	════════════════════════════════════════ -->
+	<insert id="insertSingleSettlement">
+	    INSERT INTO settlement (
+	        settlement_id,
+	        trip_id,
+	        to_member_id,
+	        from_member_id,
+	        amount,
+	        status,
+	        created_at
+	    ) VALUES (
+	        settlement_seq.NEXTVAL,
+	        #{tripId},
+	        #{toMemberId},
+	        #{fromMemberId},
+	        #{amount},
+	        'REQUESTED',
+	        CURRENT_TIMESTAMP
+	    )
+	</insert>
+	
+	<!-- 중복 요청 방지 -->
+	<select id="countActiveSettlement" resultType="int">
+	    SELECT COUNT(*)
+	    FROM   settlement
+	    WHERE  trip_id        = #{tripId}
+	      AND  to_member_id   = #{toMemberId}
+	      AND  from_member_id = #{fromMemberId}
+	      AND  status        != 'COMPLETED'
+	</select>
+	
+	<!-- 알림 INSERT -->
+	<insert id="insertTripNotification">
+	    INSERT INTO trip_notification (
+	        notification_id,   trip_id,
+	        receiver_id,
+	        sender_id,
+	        message,
+	        type,
+	        is_read,
+	        created_at
+	    ) VALUES (
+	        SEQ_NOTIFICATION.NEXTVAL,
+	        #{tripId},
+	        #{receiverId},
+	        #{senderId},
+	        #{message},
+	        #{type},
+	        0,
+	        CURRENT_TIMESTAMP
+	    )
+	</insert>
 
+    <!-- ════════════════════════════════════════
+         내가 결제한 지출의 카테고리별 합계
+         (홈탭 — 내 지출 요약 섹션용)
+    ════════════════════════════════════════ -->
+    <select id="selectMyCategorySummaryByTripId" resultMap="categorySummaryMap">
+        SELECT
+            e.category,
+            SUM(e.amount) AS total_amount
+        FROM expense e
+        WHERE e.trip_id = #{tripId}
+          AND e.payer_id = #{memberId}
+        GROUP BY e.category
+        ORDER BY total_amount DESC
+    </select>
+
+    <!-- ════════════════════════════════════════
+         나에게 온 정산 요청 건수 (홈탭 대기 칩용)
+         from_member_id = 나(debtor) + REQUESTED/PENDING 상태
+    ════════════════════════════════════════ -->
+    <select id="countIncomingSettlementRequests" resultType="int">
+        SELECT COUNT(*)
+        FROM settlement
+        WHERE trip_id = #{tripId}
+          AND from_member_id = #{memberId}
+          AND status IN ('REQUESTED', 'PENDING')
+    </select>
+
+    <!-- ════════════════════════════════════════
+         내가 가장 최근에 결제한 지출 (최대 N건)
+    ════════════════════════════════════════ -->
+    <select id="selectMyRecentExpenses" resultMap="expenseSummaryMap">
+        SELECT * FROM (
+            SELECT
+                e.expense_id,
+                e.trip_id,
+                e.payer_id,
+                m2.nickname  AS payer_nickname,
+                e.category,
+                e.amount,
+                e.description,
+                e.expense_date,
+                e.payment_type,
+                e.created_at
+            FROM expense e
+            JOIN member2 m2 ON m2.member_id = e.payer_id
+            WHERE e.trip_id = #{tripId}
+              AND e.payer_id = #{memberId}
+            ORDER BY e.expense_date DESC, e.created_at DESC
+        ) WHERE ROWNUM &lt;= #{limit}
+    </select>
 </mapper>

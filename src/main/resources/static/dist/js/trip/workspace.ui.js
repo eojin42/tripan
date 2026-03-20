@@ -333,22 +333,38 @@ function normalizeRow(row) {
   if (!row || typeof row !== 'object') return row;
   var known = {
     /* 체크리스트 */
-    'checklistid':'checklistId', 'tripid':'tripId',       'itemname':'itemName',
-    'ischecked':'isChecked',     'checkmanager':'checkManager',
+    'checklistid':'checklistId', 'tripid':'tripId', 'itemname':'itemName',
+    'ischecked':'isChecked', 'checkmanager':'checkManager',
     /* 투표 */
-    'voteid':'voteId',             'candidateid':'candidateId',
-    'candidatename':'candidateName','votecount':'voteCount',    'totalvotes':'totalVotes',
+    'voteid':'voteId', 'candidateid':'candidateId',
+    'candidatename':'candidateName', 'votecount':'voteCount', 'totalvotes':'totalVotes',
     'myvotedcandidateid':'myVotedCandidateId',
-    'isclosed':'isClosed',         'deadline':'deadline',       'voternames':'voterNames',
+    'isclosed':'isClosed', 'deadline':'deadline', 'voternames':'voterNames',
     /* 알림 */
     'notificationid':'notificationId', 'receiverid':'receiverId', 'senderid':'senderId',
-    'isread':'isRead',           'createdat':'createdAt',  'timeago':'timeAgo',
+    'isread':'isRead', 'createdat':'createdAt', 'timeago':'timeAgo',
     /* 지출 */
-    'expenseid':'expenseId',     'payerid':'payerId',      'expensedate':'expenseDate',
-    'isprivate':'isPrivate',     'payernickname':'payerNickname',
+    'expenseid':'expenseId', 'payerid':'payerId', 'expensedate':'expenseDate',
+    'isprivate':'isPrivate', 'payernickname':'payerNickname',
+    'receipturl':'receiptUrl',         
+    'paymenttype':'paymentType',
+    'receipt_url':'receiptUrl',
+    /* 분담자 */
+    'participantid':'participantId', 'memberid':'memberId',
+    'membernickname':'memberNickname', 'nickname':'nickname',
+    'shareamount':'shareAmount', 'paidamount':'paidAmount',
+    'shareamount':'shareAmount', 'totalamount':'totalAmount',
+    'displayname':'displayName', 'extnickname':'extNickname',
+    /* 정산 */
+    'settlementid':'settlementId', 'frommemberid':'fromMemberId',
+    'tomemberid':'toMemberId', 'settledat':'settledAt',
+    'frommembernickname':'fromMemberNickname', 'tomembernickname':'toMemberNickname',
+    'fromnickname':'fromNickname', 'tonickname':'toNickname',
+    'batchid':'batchId',
     /* 공통 */
     'title':'title', 'message':'message', 'type':'type', 'category':'category',
-    'amount':'amount', 'description':'description', 'status':'status'
+    'amount':'amount', 'description':'description', 'status':'status',
+    'memo':'memo', 'balance':'balance'  
   };
   var out = {};
   Object.keys(row).forEach(function (k) {

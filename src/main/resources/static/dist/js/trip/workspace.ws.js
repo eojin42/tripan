@@ -99,11 +99,18 @@ function _wsFlushOrders(day) {
 // ─────────────────────────────────────────────────────────
 
 function wsHandle(msg) {
+  // ★ 백엔드에서 action으로 보냈을 경우를 대비해 type으로 변환
+  if (msg.action && !msg.type) msg.type = msg.action;
+
   if (!msg || !msg.type) return;
 
-  // ★ 멤버 이벤트(강퇴/퇴장/입장)는 발신자 필터 예외 — 강퇴당한 본인도 수신해야 함
-  var MEMBER_EVENTS = { MEMBER_KICKED:1, MEMBER_LEFT:1, MEMBER_JOINED:1 };
-  if (!MEMBER_EVENTS[msg.type]) {
+  // ★ 멤버 이벤트 및 시스템 알림은 발신자 필터 예외 (본인이 보낸 알림/정산도 화면 갱신해야 함)
+  var BYPASS_EVENTS = { 
+      MEMBER_KICKED:1, MEMBER_LEFT:1, MEMBER_JOINED:1, 
+      NEW_NOTIFICATION:1, REFRESH_SETTLEMENT:1 
+  };
+  
+  if (!BYPASS_EVENTS[msg.type]) {
     // 일반 편집 이벤트: 내가 보낸 건 낙관적 업데이트로 이미 처리됨 → 무시
     if (msg.senderNickname && msg.senderNickname === _myNickname) return;
   }
@@ -112,20 +119,34 @@ function wsHandle(msg) {
 
   switch (msg.type) {
 
+    // ══════════════════════════════════════
+    // 👇 새로 추가된 정산 & 알림 실시간 동기화 👇
+    // ══════════════════════════════════════
+    case 'NEW_NOTIFICATION':
+      if (typeof showToast === 'function') {
+          showToast('🔔 새로운 알림이 도착했어요!');
+      } else if (typeof wsToast === 'function') {
+          wsToast('🔔 새로운 알림이 도착했어요!');
+      }
+      // 알림 목록(종 모양 아이콘) 몰래 새로고침
+      if (typeof loadNotifList === 'function') loadNotifList();
+      break;
+
+    case 'REFRESH_SETTLEMENT':
+      // 정산 완료 등 변경사항이 생기면 정산 탭 즉시 새로고침
+      if (typeof _loadSettleTab === 'function') _loadSettleTab();
+      break;
+    // ══════════════════════════════════════
+
     case 'ORDER_UPDATED':
-      // 짧은 시간 내 같은 day의 ORDER_UPDATED를 모아서 한 번에 정렬 (배치 처리)
       _wsEnqueueOrder(msg.targetId, p.dayNumber, p.visitOrder, msg.senderNickname);
       break;
 
     case 'LIST_REORDERED':
-      // ★ 핵심: 개별 N번 wsMoveCard 대신 전체 순서를 한 번에 DOM 재정렬
-      // p.items = [{itemId, visitOrder}, ...], p.dayNumber
       wsReorderList(p.dayNumber, p.items || []);
-      // 조용히 처리 (순서 변경 토스트는 발송자만 봄)
       break;
 
     case 'PLACE_ADDED':
-      //  카테고리 파라미터(p.categoryName) 추가 전달
       wsAddPlace(p.dayNumber, msg.targetId, p.placeName,
                  p.address || '', p.latitude || 0, p.longitude || 0, p.categoryName);
       wsToast(msg.senderNickname + '님이 장소를 추가했어요 📍');
@@ -133,10 +154,7 @@ function wsHandle(msg) {
 
     case 'PLACE_DELETED':
       wsRemoveCard(msg.targetId);
-      // 누군가 장소를 지웠을 때 지도 마커도 실시간으로 뽑아버림
-      if (typeof mapRemoveMarker === 'function') {
-          mapRemoveMarker(msg.targetId);
-      }
+      if (typeof mapRemoveMarker === 'function') mapRemoveMarker(msg.targetId);
       wsToast(msg.senderNickname + '님이 장소를 삭제했어요 🗑️');
       break;
 
@@ -187,59 +205,46 @@ function wsHandle(msg) {
 
     case 'MEMBER_JOINED':
       wsToast('🎉 ' + (p.nickname || '새 멤버') + '님이 여행에 참여했어요!');
-      // 알림 뱃지 갱신 (DB에 notifyAll로 저장된 알림 반영)
       if (typeof loadNotifList === 'function') setTimeout(loadNotifList, 600);
-      // 멤버 목록 갱신을 위해 1.5초 후 리로드
       setTimeout(function() { window.location.reload(); }, 1500);
       break;
-	
-  	  // 누군가 강퇴당했을 때
-	  case 'MEMBER_KICKED':
-        var kId = (msg.payload && msg.payload.targetId) ? msg.payload.targetId : msg.targetId;
-        
-        if (String(kId) === String(MY_MEMBER_ID)) {
-          // ★ 강퇴당한 본인:
-          // - wsToast로 즉시 화면에 표시 (alert는 location과 레이스 발생하므로 사용 안 함)
-          // - ?kicked=true 쿼리로 이동 → my_trips.jsp 인라인 스크립트에서 alert 표시
-          wsToast('🚨 방장에 의해 강퇴되었습니다. 이동합니다...');
-          setTimeout(function() {
-            window.location.replace(CTX_PATH + '/trip/my_trips?kicked=true');
-          }, 1200);
-        } else {
-          // ★ 다른 멤버들: 토스트 + 알림 뱃지 갱신 + 멤버 목록 리로드
-          var kickedNick = (typeof MEMBER_DICT !== 'undefined' && MEMBER_DICT[kId]) ? MEMBER_DICT[kId] : '멤버';
-          wsToast(kickedNick + ' 님이 여행에서 강퇴되었습니다 🚪');
-          // 알림 뱃지 갱신 (서버가 notifyAll로 저장한 알림 반영)
-          if (typeof loadNotifList === 'function') setTimeout(loadNotifList, 600);
-          setTimeout(function() { window.location.reload(); }, 1500);
-        }
-        break;
-			
-	   // 동행자가 스스로 나갔을 때
-	   case 'MEMBER_LEFT':
-         var lId = (msg.payload && msg.payload.targetId) ? msg.payload.targetId : msg.targetId;
-         if (String(lId) !== String(MY_MEMBER_ID)) {
-           var leftNick = (typeof MEMBER_DICT !== 'undefined' && MEMBER_DICT[lId]) ? MEMBER_DICT[lId] : '멤버';
-           wsToast(leftNick + ' 님이 여행에서 나갔습니다 🏃‍♂️');
-           // 알림 뱃지 갱신
-           if (typeof loadNotifList === 'function') setTimeout(loadNotifList, 600);
-           setTimeout(function() { window.location.reload(); }, 1500);
-         }
-         break;
+    
+    case 'MEMBER_KICKED':
+      var kId = (msg.payload && msg.payload.targetId) ? msg.payload.targetId : msg.targetId;
+      if (String(kId) === String(MY_MEMBER_ID)) {
+        wsToast('🚨 방장에 의해 강퇴되었습니다. 이동합니다...');
+        setTimeout(function() {
+          window.location.replace(CTX_PATH + '/trip/my_trips?kicked=true');
+        }, 1200);
+      } else {
+        var kickedNick = (typeof MEMBER_DICT !== 'undefined' && MEMBER_DICT[kId]) ? MEMBER_DICT[kId] : '멤버';
+        wsToast(kickedNick + ' 님이 여행에서 강퇴되었습니다 🚪');
+        if (typeof loadNotifList === 'function') setTimeout(loadNotifList, 600);
+        setTimeout(function() { window.location.reload(); }, 1500);
+      }
+      break;
+            
+    case 'MEMBER_LEFT':
+      var lId = (msg.payload && msg.payload.targetId) ? msg.payload.targetId : msg.targetId;
+      if (String(lId) !== String(MY_MEMBER_ID)) {
+        var leftNick = (typeof MEMBER_DICT !== 'undefined' && MEMBER_DICT[lId]) ? MEMBER_DICT[lId] : '멤버';
+        wsToast(leftNick + ' 님이 여행에서 나갔습니다 🏃‍♂️');
+        if (typeof loadNotifList === 'function') setTimeout(loadNotifList, 600);
+        setTimeout(function() { window.location.reload(); }, 1500);
+      }
+      break;
 
-		 case 'ROLE_CHANGED':
-	       if (String(msg.targetId) === String(MY_MEMBER_ID)) {
-	         var rName = (msg.payload && msg.payload.newRole === 'VIEWER') ? '👀 읽기 전용' : '✏️ 편집자';
-	         alert('🔄 방장에 의해 [' + rName + '] 권한으로 변경되었습니다.\n화면을 새로고침합니다.');
-	         window.location.reload();
-	       } else {
-	         //  닉네임 가져오기
-	         var roleNick = (typeof MEMBER_DICT !== 'undefined' && MEMBER_DICT[msg.targetId]) ? MEMBER_DICT[msg.targetId] : '멤버';
-	         
-	         if (typeof wsToast === 'function') wsToast(roleNick + ' 님의 권한이 변경되었습니다 🔄');
-	         setTimeout(function() { window.location.reload(); }, 1200);
-	       }
-	       break;
+    case 'ROLE_CHANGED':
+      if (String(msg.targetId) === String(MY_MEMBER_ID)) {
+        var rName = (msg.payload && msg.payload.newRole === 'VIEWER') ? '👀 읽기 전용' : '✏️ 편집자';
+        alert('🔄 방장에 의해 [' + rName + '] 권한으로 변경되었습니다.\n화면을 새로고침합니다.');
+        window.location.reload();
+      } else {
+        var roleNick = (typeof MEMBER_DICT !== 'undefined' && MEMBER_DICT[msg.targetId]) ? MEMBER_DICT[msg.targetId] : '멤버';
+        if (typeof wsToast === 'function') wsToast(roleNick + ' 님의 권한이 변경되었습니다 🔄');
+        setTimeout(function() { window.location.reload(); }, 1200);
+      }
+      break;
   }
 }
 
