@@ -1,6 +1,7 @@
 package com.tripan.app.service;
 
 import java.util.List;
+import java.util.Map;
 
 import com.tripan.app.domain.dto.CheckoutCouponDto;
 
@@ -10,4 +11,8 @@ public interface CouponService {
 	void useCoupon(Long memberCouponId, String orderId, long discountAmount, String roomId);
 
 	void restoreCoupon(Long memberCouponId, String orderId);
+
+	List<Map<String, Object>> getDownloadableCoupons(Long placeId, Long memberId);
+
+	void downloadCoupon(Long memberId, Long couponId);
 }

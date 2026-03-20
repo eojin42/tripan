@@ -120,6 +120,13 @@ public class AccommodationController {
         List<ReviewDto> topReviews = accommodationService.getReviewList(id, "high", null, 0, 3);
         model.addAttribute("topReviews", topReviews);
         
+        try {
+            List<Map<String, Object>> downloadableCoupons = couponService.getDownloadableCoupons(id, memberId);
+            model.addAttribute("couponCount", downloadableCoupons != null ? downloadableCoupons.size() : 0);
+        } catch (Exception e) {
+            model.addAttribute("couponCount", 0);
+        }
+        
         model.addAttribute("kakaoApiKey", kakaoApiKey);
         
         return "accommodation/detail";
@@ -511,6 +518,48 @@ public class AccommodationController {
             e.printStackTrace();
             response.put("success", false);
             response.put("message", e.getMessage());
+        }
+        return response;
+    }
+    
+    @GetMapping("coupons/{placeId}")
+    @ResponseBody
+    public Map<String, Object> getDownloadableCoupons(@PathVariable("placeId") Long placeId, HttpSession session) {
+        Map<String, Object> response = new HashMap<>();
+        MemberDto loginUser = (MemberDto) session.getAttribute("loginUser");
+        Long memberId = (loginUser != null) ? loginUser.getMemberId() : null;
+
+        try {
+            List<Map<String, Object>> coupons = couponService.getDownloadableCoupons(placeId, memberId);
+            response.put("success", true);
+            response.put("coupons", coupons);
+        } catch (Exception e) {
+            e.printStackTrace();
+            response.put("success", false);
+        }
+        return response;
+    }
+
+    @PostMapping("coupon/download")
+    @ResponseBody
+    public Map<String, Object> downloadCoupon(@RequestBody Map<String, Long> payload, HttpSession session) {
+        Map<String, Object> response = new HashMap<>();
+        MemberDto loginUser = (MemberDto) session.getAttribute("loginUser");
+
+        if (loginUser == null) {
+            response.put("success", false);
+            response.put("message", "로그인이 필요한 서비스입니다.");
+            return response;
+        }
+
+        Long couponId = payload.get("couponId");
+        try {
+            couponService.downloadCoupon(loginUser.getMemberId(), couponId);
+            response.put("success", true);
+            response.put("message", "쿠폰이 발급되었습니다! 🥳");
+        } catch (Exception e) {
+            response.put("success", false);
+            response.put("message", e.getMessage()); 
         }
         return response;
     }

@@ -262,18 +262,30 @@
             <span class="acc-tag">도심 속 휴식</span>
         </div>
 
-        <div class="coupon-section">
-            <div class="coupon-info">
-                <span class="coupon-label">쿠폰</span>
-                <span class="coupon-desc">1개 쿠폰 사용 가능</span>
-            </div>
-            <button class="btn-download-coupon" onclick="downloadCoupon()">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right:6px;">
-                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line>
-                </svg>
-                쿠폰 받기
-            </button>
-        </div>
+        <c:if test="${couponCount > 0}">
+		    <div class="coupon-section">
+		        <div class="coupon-info">
+		            <span class="coupon-label">쿠폰</span>
+		            <span class="coupon-desc">${couponCount}개 쿠폰 발급 가능</span>
+		        </div>
+		        <button class="btn-download-coupon" onclick="openCouponModal()">
+		            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right:6px;">
+		                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line>
+		            </svg>
+		            쿠폰 받기
+		        </button>
+		    </div>
+		</c:if>
+		
+		<div class="rm-overlay" id="cpOverlay" onclick="closeCouponModal()"></div>
+		<div class="rm-modal" id="cpModal">
+		  <div class="rm-header">
+		    쿠폰 다운로드
+		    <span class="rm-close" onclick="closeCouponModal()">✕</span>
+		  </div>
+		  <div class="rm-body" id="cpBody">
+		    </div>
+		</div>
 
         <div class="sticky-nav" id="stickyNav">
             <a href="#sec-intro" class="detail-tab active">스테이 소개</a>
@@ -541,6 +553,8 @@
   </div>
 </div>
 
+
+
 <script src="//dapi.kakao.com/v2/maps/sdk.js?appkey=${kakaoApiKey}&libraries=services"></script>
 
 <script type="text/javascript">
@@ -727,19 +741,6 @@ function submitReservation() {
     }).catch(err => alert("서버 통신 오류가 발생했습니다."));
 }
 
-function downloadCoupon() {
-    const isLoggedIn = ${not empty sessionScope.loginUser};
-    if (!isLoggedIn) {
-        alert("로그인이 필요한 서비스입니다.");
-        location.href = '${pageContext.request.contextPath}/member/login';
-        return; 
-    }
-    
-    // 2. 추후 백엔드(Fetch API)와 연결할 부분
-    // 백엔드 쿠폰 테이블에 INSERT 처리 후 성공하면 알림을 띄우는 로직이 들어갑니다.
-    alert("쿠폰이 발급되었습니다! 예약 결제 시 사용 가능합니다. 🎉");
-}
-
 document.addEventListener("DOMContentLoaded", () => {
     const lat = ${detail.latitude};
     const lng = ${detail.longitude};
@@ -825,6 +826,98 @@ function saveRecentAccom() {
     } catch(e) {}
 }
 saveRecentAccom();
+
+//--- 🌟 쿠폰 모달 및 다운로드 로직 ---
+
+function openCouponModal() {
+    const isLoggedIn = ${not empty sessionScope.loginUser};
+    if (!isLoggedIn) {
+        alert("로그인이 필요한 서비스입니다.");
+        location.href = '${pageContext.request.contextPath}/member/login';
+        return;
+    }
+
+    // 쿠폰 리스트 비동기 호출
+    fetch('${pageContext.request.contextPath}/accommodation/coupons/${detail.placeId}')
+    .then(res => res.json())
+    .then(data => {
+        if(data.success) {
+            renderCoupons(data.coupons);
+            document.getElementById('cpOverlay').classList.add('open');
+            document.getElementById('cpModal').classList.add('open');
+            document.body.style.overflow = 'hidden';
+        } else {
+            alert("쿠폰 정보를 불러오는데 실패했습니다.");
+        }
+    })
+    .catch(err => console.error("쿠폰 로드 에러:", err));
+}
+
+function closeCouponModal() {
+    document.getElementById('cpOverlay').classList.remove('open');
+    document.getElementById('cpModal').classList.remove('open');
+    document.body.style.overflow = '';
+}
+
+function renderCoupons(coupons) {
+    const cpBody = document.getElementById('cpBody');
+    let html = '';
+    
+    if(!coupons || coupons.length === 0) {
+        html = '<div style="padding:20px; text-align:center; color:var(--text-gray);">발급 가능한 쿠폰이 없습니다.</div>';
+    } else {
+        coupons.forEach(c => {
+            const isDownloaded = c.isDownloaded > 0;
+            
+            // 🚀 핵심 수정: JS 변수 앞에 모두 역슬래시(\)를 추가했습니다.
+            const amountTxt = c.discountType === 'FIXED' ? `₩\${c.discountAmount.toLocaleString()}` : `\${c.discountAmount}%`;
+            const minOrderTxt = c.minOrderAmount ? `최소 결제 ₩\${c.minOrderAmount.toLocaleString()}` : '조건 없음';
+            
+            html += `
+                <div class="rm-item" style="display:flex; justify-content:space-between; align-items:center;">
+                    <div style="flex:1;">
+                        <div style="font-size:16px; font-weight:800; color:var(--text-black);">\${c.couponName}</div>
+                        <div style="font-size:15px; color:var(--point-blue); font-weight:800; margin-top:4px;">\${amountTxt} 할인</div>
+                        <div style="font-size:13px; color:var(--text-gray); margin-top:2px;">\${minOrderTxt}</div>
+                    </div>
+                    <button onclick="downloadCoupon(\${c.couponId}, this)" 
+                            style="padding:10px 16px; border-radius:4px; font-weight:700; border:none; transition:all 0.2s;
+                                   cursor:\${isDownloaded ? 'not-allowed' : 'pointer'}; 
+                                   background:\${isDownloaded ? '#E2E8F0' : 'var(--text-black)'}; 
+                                   color:\${isDownloaded ? '#A0AEC0' : 'white'};"
+                            \${isDownloaded ? 'disabled' : ''}>
+                        \${isDownloaded ? '발급완료' : '다운로드'}
+                    </button>
+                </div>
+            `;
+        });
+    }
+    cpBody.innerHTML = html;
+}
+
+function downloadCoupon(couponId, btnElement) {
+    fetch('${pageContext.request.contextPath}/accommodation/coupon/download', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ couponId: couponId })
+    })
+    .then(res => res.json())
+    .then(data => {
+        if(data.success) {
+            alert(data.message);
+            
+            // 발급 성공 시 해당 버튼 UI 상태 즉시 변경
+            btnElement.innerText = '발급완료';
+            btnElement.style.background = '#E2E8F0';
+            btnElement.style.color = '#A0AEC0';
+            btnElement.style.cursor = 'not-allowed';
+            btnElement.disabled = true;
+        } else {
+            alert(data.message);
+        }
+    })
+    .catch(err => alert("서버 통신 오류가 발생했습니다."));
+}
 </script>
 
 <jsp:include page="../accommodation/searchModal.jsp">

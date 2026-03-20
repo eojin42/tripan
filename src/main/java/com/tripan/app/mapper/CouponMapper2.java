@@ -1,6 +1,7 @@
 package com.tripan.app.mapper;
 
 import java.util.List;
+import java.util.Map;
 
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
@@ -32,4 +33,19 @@ public interface CouponMapper2 {
 
     // 쿠폰 사용 내역 취소 
     void cancelCouponUsage(@Param("orderId") String orderId, @Param("memberCouponId") Long memberCouponId);
+    
+    List<Map<String, Object>> selectDownloadableCoupons(
+            @Param("placeId") Long placeId, 
+            @Param("memberId") Long memberId
+    );
+    
+    int checkCouponDownloaded(
+            @Param("memberId") Long memberId, 
+            @Param("couponId") Long couponId
+    );
+    
+    void insertMemberCoupon(
+            @Param("memberId") Long memberId, 
+            @Param("couponId") Long couponId
+    );
 }
