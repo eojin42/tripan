@@ -2,7 +2,7 @@ function previewImage(input) {
     if (input.files && input.files[0]) {
         var reader = new FileReader();
         reader.onload = function(e) {
-            document.getElementById('imgPreview').innerHTML = '<img src="' + e.target.result + '" style="width:100%; height:100%; object-fit:cover;">';
+            document.getElementById('imgPreview').innerHTML = '<img src="' + e.target.result + '" style="width:100%; height:100%; object-fit:cover; border-radius: 12px;">';
         };
         reader.readAsDataURL(input.files[0]);
     }
@@ -20,48 +20,6 @@ function execDaumPostcode() {
             document.getElementById("detailAddress").focus();
         }
     }).open();
-}
-
-// 정보 저장
-function savePartnerInfo() {
-    const baseAddr = document.getElementById("baseAddress").value;
-    const detailAddr = document.getElementById("detailAddress").value;
-    
-    if (detailAddr.trim() !== "") {
-        document.getElementById("realAddress").value = baseAddr + " " + detailAddr;
-    } else {
-        document.getElementById("realAddress").value = baseAddr;
-    }
-
-    const form = document.getElementById('partnerInfoForm');
-    const formData = new FormData(form);
-
-    formData.delete("baseAddress");
-    formData.delete("detailAddress");
-
-    fetch(TripanConfig.contextPath + '/partner/api/info/update', {
-        method: 'POST',
-        headers: { 'AJAX': 'true' },
-        body: formData
-    })
-    .then(res => {
-        if (res.status === 401) {
-            showToast('세션이 만료되었습니다.', 'error');
-            setTimeout(() => { location.href = TripanConfig.contextPath + '/partner/login'; }, 1500);
-            throw new Error('Session Expired');
-        }
-        return res.json();
-    })
-    .then(resData => {
-        if(resData.message === 'success') {
-            showToast('성공적으로 저장되었습니다! 🎉', 'success');
-        } else {
-            showToast('저장에 실패했습니다.', 'error');
-        }
-    })
-    .catch(error => {
-        console.error('Error:', error);
-    });
 }
 
 function initPartnerInfoEditor() {
@@ -84,17 +42,32 @@ function initPartnerInfoEditor() {
             var html = window.partnerQuill.root.innerHTML;
             document.getElementById('partnerIntro').value = (html === '<p><br></p>') ? '' : html;
         });
+        
         document.getElementById('partnerIntro').value = window.partnerQuill.root.innerHTML;
     }
 }
 document.addEventListener("DOMContentLoaded", initPartnerInfoEditor);
 initPartnerInfoEditor();
 
-
-
 function savePartnerInfo() {
+    const baseAddr = document.getElementById("baseAddress").value;
+    const detailAddr = document.getElementById("detailAddress").value;
+    
+    if (detailAddr.trim() !== "") {
+        document.getElementById("realAddress").value = baseAddr + ", " + detailAddr;
+    } else {
+        document.getElementById("realAddress").value = baseAddr;
+    }
+
+    if(window.partnerQuill) {
+        document.getElementById('partnerIntro').value = window.partnerQuill.root.innerHTML;
+    }
+
     const form = document.getElementById('partnerInfoForm');
     const formData = new FormData(form);
+
+    formData.delete("baseAddress");
+    formData.delete("detailAddress");
 
     fetch(TripanConfig.contextPath + '/partner/api/info/update', {
         method: 'POST',
@@ -110,7 +83,7 @@ function savePartnerInfo() {
         return res.json();
     })
     .then(resData => {
-        if(resData.message === 'success') {
+        if(resData.message === 'success' || resData.success) {
             showToast('성공적으로 저장되었습니다! 🎉', 'success');
         } else {
             showToast('저장에 실패했습니다.', 'error');
@@ -118,5 +91,23 @@ function savePartnerInfo() {
     })
     .catch(error => {
         console.error('Error:', error);
+        if(error.message !== 'Session Expired') {
+            showToast('서버 통신 중 오류가 발생했습니다.', 'error');
+        }
     });
 }
+
+document.addEventListener("DOMContentLoaded", () => {
+	const baseInput = document.getElementById("baseAddress");
+	const detailInput = document.getElementById("detailAddress");
+	
+	if (baseInput && baseInput.value && baseInput.value.includes(", ")) {
+		const parts = baseInput.value.split(", ");
+		const detail = parts.pop();
+		
+		baseInput.value = parts.join(", ");
+		if (detailInput) {
+			detailInput.value = detail;
+		}
+	}
+});
