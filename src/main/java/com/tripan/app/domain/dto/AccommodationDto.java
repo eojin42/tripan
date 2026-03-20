@@ -18,4 +18,7 @@ public class AccommodationDto {
     
     private int isBookmarked;
     
+    private int reviewCount;
+    private int bookmarkCount;
+    
 }

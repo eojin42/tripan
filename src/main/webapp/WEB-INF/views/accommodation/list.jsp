@@ -420,12 +420,27 @@
             </div>
           </div>
           <div class="accommodation-meta">
-            <h3>\${item.name}</h3>
-            <p class="accommodation-desc">\${regionName} · \${item.accommodationType || '숙소'}</p>
-            <div class="accommodation-price">₩\${formattedPrice}~</div>
-            
-            <button class="btn-view-location" onclick="panToMap(\${item.latitude}, \${item.longitude}, event)">위치보기</button>
-          </div>
+	          <h3>\${item.name}</h3>
+	          <p class="accommodation-desc">\${regionName} · \${item.accommodationType || '숙소'}</p>
+	          
+	          <div style="display:flex; gap:10px; font-size:13px; color:var(--text-gray); margin-bottom:12px; font-weight:600;">
+	          <span style="display:flex; align-items:center; gap:5px;">
+	              <svg width="15" height="15" viewBox="0 0 24 24" fill="#4A44F2" stroke="#4A44F2" stroke-width="2.2">
+	                  <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"></path>
+	              </svg>
+	              <span style="color:var(--text-black);">\${item.bookmarkCount || 0}</span>
+	          </span>
+	          <span style="display:flex; align-items:center; gap:4px;">
+	              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+	                  <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+	              </svg>
+	              \${item.reviewCount || 0}
+	          </span>
+	          </div>
+	          <div class="accommodation-price">₩\${formattedPrice}~</div>
+	          
+	          <button class="btn-view-location" onclick="panToMap(\${item.latitude}, \${item.longitude}, event)">위치보기</button>
+	      </div>
         </div>
       `;
     });
@@ -526,7 +541,7 @@
  	        }
  	        const svg = btnElement.querySelector('svg');
  	        if (data.isBookmarked) {
- 	            svg.setAttribute('fill', '#4A44F2'); svg.setAttribute('stroke', '#4A44F2');
+ 	            svg.setAttribute('fill', '##4A44F2'); svg.setAttribute('stroke', '##4A44F2');
  	        } else {
  	            svg.setAttribute('fill', 'none'); svg.setAttribute('stroke', 'white');
  	        }
