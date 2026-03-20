@@ -14,7 +14,7 @@
             business_number, has_exp, bank_name, account_number
         ) VALUES (
             #{partnerId}, #{memberId}, #{partnerName}, #{contactName}, 
-            #{contactPhone}, #{contactEmail}, #{partnerIntro}, 0, SYSDATE,
+            #{contactPhone}, #{contactEmail}, #{partnerIntro, jdbcType=CLOB}, 0, SYSDATE,
             #{businessNumber}, #{expStatus}, #{bankName}, #{accountNumber}
         )
     </insert>
@@ -36,12 +36,13 @@
     </insert>
     
     <select id="findPartnerStatusByMemberId" parameterType="long" resultType="string">
-        SELECT ps.status_code 
-        FROM partner p
+	    SELECT ps.status_code 
+	    FROM partner p
         LEFT JOIN partner_status ps ON p.partner_id = ps.partner_id
-        WHERE p.member_id = #{memberId}
-        ORDER BY p.created_at DESC, ps.reg_date DESC FETCH FIRST 1 ROWS ONLY
-    </select>
+	    WHERE p.member_id = #{memberId}
+        ORDER BY p.created_at DESC, ps.reg_date DESC
+        FETCH FIRST 1 ROWS ONLY
+	</select>
 
     <select id="findPartnerApplyByMemberId" parameterType="long" resultType="com.tripan.app.partner.domain.dto.PartnerApplyDto">
         SELECT 
@@ -62,7 +63,8 @@
         FROM partner p
         LEFT JOIN partner_status ps ON p.partner_id = ps.partner_id
         WHERE p.member_id = #{memberId}
-        ORDER BY p.created_at DESC, ps.reg_date DESC FETCH FIRST 1 ROWS ONLY
+        ORDER BY p.created_at DESC, ps.reg_date DESC
+        FETCH FIRST 1 ROWS ONLY
     </select>
     
     <insert id="insertEmptyPlace" parameterType="com.tripan.app.partner.domain.dto.PartnerApplyDto">
@@ -70,19 +72,17 @@
             SELECT SEQ_PLACE.NEXTVAL FROM DUAL
         </selectKey>
 	    INSERT INTO place (
-	        place_id, partner_id, place_name, category, address, latitude, longitude, createdtime
+	        place_id, partner_id, category, place_name, 
+            address, latitude, longitude, createdtime
 	    ) VALUES (
-	        #{placeId}, #{partnerId}, #{partnerName}, 'ACCOMMODATION', '주소 심사중', 0.0, 0.0, SYSDATE
+	        #{placeId}, #{partnerId}, 'ACCOMMODATION', #{partnerName}, 
+            '심사 중', 0, 0, SYSDATE
 	    )
-	</insert>
-	
-    <insert id="insertEmptyFacility" parameterType="map">
-        INSERT INTO accommodation_facility (af_id) VALUES (#{afId})
 	</insert>
 
     <insert id="insertEmptyAccommodation" parameterType="map">
-        INSERT INTO accommodation (place_id, af_id, checkintime, checkouttime) 
-        VALUES (#{placeId}, #{afId}, '15:00', '11:00')
+        INSERT INTO accommodation (place_id, checkintime, checkouttime) 
+        VALUES (#{placeId}, '15:00', '11:00')
     </insert>
     
 </mapper>
