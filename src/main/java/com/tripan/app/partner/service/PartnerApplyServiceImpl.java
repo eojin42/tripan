@@ -32,20 +32,23 @@ public class PartnerApplyServiceImpl implements PartnerApplyService {
     public void applyPartner(PartnerApplyDto dto) throws Exception {
         
     	partnerApplyMapper.insertPartner(dto); 
+        Long generatedPartnerId = dto.getPartnerId();
+
+        partnerApplyMapper.insertPartnerStatus(generatedPartnerId);
+        
         partnerApplyMapper.insertEmptyPlace(dto); 
         
+        String generatedAfId = UUID.randomUUID().toString();
         Map<String, Object> facMap = new HashMap<>();
+        facMap.put("afId", generatedAfId);
         partnerApplyMapper.insertEmptyFacility(facMap);
-        Long afId = (Long) facMap.get("afId");
         
         Map<String, Object> accMap = new HashMap<>();
         accMap.put("placeId", dto.getPlaceId());
-        accMap.put("afId", afId);
+        accMap.put("afId", generatedAfId);
         partnerApplyMapper.insertEmptyAccommodation(accMap);
         
-        Long generatedPartnerId = dto.getPartnerId();
-        
-        log.info("파트너 DB 저장 완료. 생성된 ID: {}", generatedPartnerId);
+        log.info("파트너 DB 저장 및 임시 객체 세팅 완료. 생성된 ID: {}", generatedPartnerId);
 
         if (dto.getBizLicenseFiles() != null && !dto.getBizLicenseFiles().isEmpty()) {
             
@@ -85,6 +88,4 @@ public class PartnerApplyServiceImpl implements PartnerApplyService {
     public PartnerApplyDto getPartnerApplyByMemberId(Long memberId) {
         return partnerApplyMapper.findPartnerApplyByMemberId(memberId);
     }
-    
-    
 }
