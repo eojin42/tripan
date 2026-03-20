@@ -1,6 +1,7 @@
 package com.tripan.app.mapper;
 
 import java.util.List;
+import java.util.Map;
 
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
@@ -16,89 +17,66 @@ import com.tripan.app.domain.dto.SettlementDto;
 @Mapper
 public interface ExpenseMapper {
 
-    /**
-     * 여행 전체 지출 합계 (TripServiceImpl에서 사용)
-     * getTripDetails → dto.setCurrentExpense() 에 사용됨
-     */
+    /** 여행 전체 지출 합계 */
     Double selectTotalExpenseAmount(@Param("tripId") Long tripId);
 
-    /**
-     * 여행 전체 지출 통계 (카테고리별 합계)
-     */
+    /** 카테고리별 지출 합계 */
     List<ExpenseDto.CategorySummary> selectCategorySummaryByTripId(
-            @Param("tripId") Long tripId
-    );
+            @Param("tripId") Long tripId);
 
-    /**
-     * 멤버별 결제 합계 (누가 카드 긁었는지)
-     * member 닉네임 조인 포함
-     */
+    /** 멤버별 결제 합계 */
     List<ExpenseDto.MemberPaymentSummary> selectMemberPaymentSummaryByTripId(
-            @Param("tripId") Long tripId
-    );
+            @Param("tripId") Long tripId);
 
-    /**
-     * 멤버별 부담 합계 (누가 얼마 내야 하는지)
-     * expense_participant 기준, member 닉네임 조인 포함
-     */
+    /** 멤버별 부담 합계 */
     List<ExpenseDto.MemberShareSummary> selectMemberShareSummaryByTripId(
-            @Param("tripId") Long tripId
-    );
+            @Param("tripId") Long tripId);
 
-    /**
-     * 여행 지출 목록 (요약, 페이징 포함)
-     * payer 닉네임 조인
-     */
+    /** 지출 목록 요약 (페이징, settleStatus/settledBatchId 포함) */
     List<ExpenseDto.SummaryResponse> selectExpenseSummaryListByTripId(
             @Param("tripId") Long tripId,
             @Param("offset") int offset,
-            @Param("limit") int limit
-    );
+            @Param("limit")  int limit);
 
-    /**
-     * 지출 상세 조회 (payer 닉네임 포함)
-     */
+    /** 지출 상세 단건 */
     ExpenseDto.DetailResponse selectExpenseDetailById(
-            @Param("expenseId") Long expenseId
-    );
+            @Param("expenseId") Long expenseId);
 
-    /**
-     * 지출별 분담자 목록 조회 (멤버 닉네임 조인)
-     */
+    /** 지출별 분담자 목록 */
     List<ExpenseDto.ParticipantResponse> selectParticipantsByExpenseId(
-            @Param("expenseId") Long expenseId
-    );
+            @Param("expenseId") Long expenseId);
 
     /**
-     * 정산 계산을 위한 핵심 쿼리
-     * 여행 내 각 멤버의 (총 결제액 - 총 부담액) = balance 계산
-     * 반환: memberId, nickname, paidAmount, shareAmount, balance
+     * 전체 balance 계산 (기존 — 홈탭 통계용으로만 유지)
      */
     List<ExpenseDto.MemberShareSummary> calculateBalancesByTripId(
-            @Param("tripId") Long tripId
-    );
+            @Param("tripId") Long tripId);
 
     /**
-     * 특정 여행의 정산 목록 조회 (멤버 닉네임 포함)
+     * ★ 재정산용 balance 계산
+     * COMPLETED batch에 연결된 expense를 제외하고 계산
      */
+    List<ExpenseDto.MemberShareSummary> calculateBalancesForUnlinkedExpenses(
+            @Param("tripId") Long tripId);
+
+    /** 정산 목록 조회 (멤버 닉네임 포함) */
     List<SettlementDto.Response> selectSettlementsByTripId(
-            @Param("tripId") Long tripId
-    );
+            @Param("tripId") Long tripId);
 
-    /**
-     * 내가 보내야 할 정산 / 받아야 할 정산 조회
-     */
+    /** 내가 관련된 정산 조회 */
     List<SettlementDto.Response> selectSettlementsByTripIdAndMember(
-            @Param("tripId") Long tripId,
-            @Param("memberId") Long memberId
-    );
-    
+            @Param("tripId")   Long tripId,
+            @Param("memberId") Long memberId);
+
     /** 단건 정산 요청 INSERT */
     int insertSingleSettlement(SettlementDto.SingleRequest req);
 
-    /** 중복 요청 방지 체크 (PENDING/REQUESTED 상태인 건이 있는지) */
-    int countActiveSettlement(@Param("tripId") Long tripId,
-                              @Param("toMemberId") Long toMemberId,
+    /** 기존 REQUESTED/PENDING 정산 amount 업데이트 (새 지출 추가 후 재계산용) */
+    int updateSingleSettlementAmount(SettlementDto.SingleRequest req);
+
+    /** 중복 요청 방지 체크 */
+    int countActiveSettlement(@Param("tripId")       Long tripId,
+                              @Param("toMemberId")   Long toMemberId,
                               @Param("fromMemberId") Long fromMemberId);
 
     /** 알림 INSERT */
@@ -108,29 +86,51 @@ public interface ExpenseMapper {
                                @Param("message")    String message,
                                @Param("type")       String type);
 
-    /**
-     * 내가 결제한 지출의 카테고리별 합계 (홈탭 — 내 지출 요약용)
-     */
+    /** 내가 결제한 카테고리별 합계 */
     List<ExpenseDto.CategorySummary> selectMyCategorySummaryByTripId(
-            @Param("tripId") Long tripId,
-            @Param("memberId") Long memberId
-    );
+            @Param("tripId")   Long tripId,
+            @Param("memberId") Long memberId);
 
-    /**
-     * 나에게 온 정산 요청 건수 (홈탭 대기 칩용)
-     * from_member_id = 나(debtor) + REQUESTED/PENDING 상태
-     */
+    /** 나에게 온 정산 요청 건수 */
     int countIncomingSettlementRequests(
-            @Param("tripId") Long tripId,
-            @Param("memberId") Long memberId
-    );
+            @Param("tripId")   Long tripId,
+            @Param("memberId") Long memberId);
+
+    /** 내가 최근 결제한 지출 */
+    List<ExpenseDto.SummaryResponse> selectMyRecentExpenses(
+            @Param("tripId")   Long tripId,
+            @Param("memberId") Long memberId,
+            @Param("limit")    int limit);
+
+    // ════════════════════════════════════════════════════════
+    //  settlement_expense_link 관련 (★ 신규)
+    // ════════════════════════════════════════════════════════
+
+    /** settlement_expense_link batch INSERT */
+    int insertSettlementExpenseLinks(List<Map<String, Object>> list);
 
     /**
-     * 내가 가장 최근에 결제한 지출 (최대 N건)
+     * COMPLETED batch에 연결된 expense_id 목록
+     * createSettlements() 에서 이번 batch 대상 산출에 사용
      */
-    List<ExpenseDto.SummaryResponse> selectMyRecentExpenses(
-            @Param("tripId") Long tripId,
-            @Param("memberId") Long memberId,
-            @Param("limit") int limit
-    );
+    List<Long> selectSettledExpenseIdsByTripId(@Param("tripId") Long tripId);
+
+    // ════════════════════════════════════════════════════════
+    //  정산 완료 상세보기 (★ 신규)
+    // ════════════════════════════════════════════════════════
+
+    /** batch의 settlement(transfer) 목록 */
+    List<SettlementDto.Response> selectBatchTransfers(
+            @Param("tripId")  Long tripId,
+            @Param("batchId") Long batchId);
+
+    /** batch에 연결된 expense 목록 */
+    List<ExpenseDto.DetailResponse> selectExpensesByBatchId(
+            @Param("tripId")  Long tripId,
+            @Param("batchId") Long batchId);
+
+    /** batch 멤버별 결제/부담/잔액 요약 (계산 근거용) */
+    List<ExpenseDto.MemberShareSummary> selectBatchMemberSummary(
+            @Param("tripId")  Long tripId,
+            @Param("batchId") Long batchId);
 }

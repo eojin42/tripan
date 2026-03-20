@@ -23,4 +23,7 @@ public interface ExpenseService {
     void completeSettlements(SettlementDto.CompleteRequest req);
     void deleteSettlement(Long settlementId);
     SettlementDto.TripSettlementResponse getTripSettlements(Long tripId, Long memberId);
+
+    /** 정산 완료 batch 상세 조회 */
+    SettlementDto.BatchDetailResponse getBatchDetail(Long tripId, Long batchId);
 }

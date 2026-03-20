@@ -45,6 +45,9 @@
         <result property="expenseDate"      column="expense_date"/>
         <result property="paymentType"      column="payment_type"/>
         <result property="createdAt"        column="created_at"/>
+        <!-- ★ 정산 상태 (UNSETTLED / PENDING / SETTLED) -->
+        <result property="settleStatus"     column="settle_status"/>
+        <result property="settledBatchId"   column="settled_batch_id"/>
     </resultMap>
 
     <resultMap id="expenseDetailMap" type="com.tripan.app.domain.dto.ExpenseDto$DetailResponse">
@@ -188,6 +191,7 @@
 
     <!-- ════════════════════════════════════════
          지출 목록 요약 (Oracle ROWNUM 페이징)
+         ★ settle_status: SETTLED / PENDING / UNSETTLED
     ════════════════════════════════════════ -->
     <select id="selectExpenseSummaryListByTripId" resultMap="expenseSummaryMap">
         SELECT *
@@ -203,6 +207,28 @@
                 e.expense_date,
                 e.payment_type,
                 e.created_at,
+                /* ★ 정산 상태 판단 (settlement_expense_link 연동) */
+                CASE
+                  WHEN EXISTS (
+                    SELECT 1 FROM settlement_expense_link sel
+                    JOIN settlement s ON sel.batch_id = s.batch_id
+                    WHERE sel.expense_id = e.expense_id
+                      AND s.status = 'COMPLETED'
+                  ) THEN 'SETTLED'
+                  WHEN EXISTS (
+                    SELECT 1 FROM settlement_expense_link sel
+                    JOIN settlement s ON sel.batch_id = s.batch_id
+                    WHERE sel.expense_id = e.expense_id
+                      AND s.status IN ('PENDING','REQUESTED')
+                  ) THEN 'PENDING'
+                  ELSE 'UNSETTLED'
+                END AS settle_status,
+                /* ★ 완료된 batch_id (SETTLED인 경우) */
+                (SELECT MIN(sel2.batch_id)
+                 FROM settlement_expense_link sel2
+                 JOIN settlement s2 ON sel2.batch_id = s2.batch_id
+                 WHERE sel2.expense_id = e.expense_id
+                   AND s2.status = 'COMPLETED') AS settled_batch_id,
                 ROWNUM AS rn
             FROM expense e
             JOIN member2 m2 ON m2.member_id = e.payer_id
@@ -325,6 +351,16 @@
 	    )
 	</insert>
 	
+	<!-- 기존 REQUESTED/PENDING 정산 금액 업데이트 (새 지출 추가 시 재계산) -->
+	<update id="updateSingleSettlementAmount">
+	    UPDATE settlement
+	    SET    amount = #{amount}
+	    WHERE  trip_id        = #{tripId}
+	      AND  to_member_id   = #{toMemberId}
+	      AND  from_member_id = #{fromMemberId}
+	      AND  status        != 'COMPLETED'
+	</update>
+
 	<!-- 중복 요청 방지 -->
 	<select id="countActiveSettlement" resultType="int">
 	    SELECT COUNT(*)
@@ -406,5 +442,178 @@
               AND e.payer_id = #{memberId}
             ORDER BY e.expense_date DESC, e.created_at DESC
         ) WHERE ROWNUM &lt;= #{limit}
+    </select>
+
+
+    <!-- ════════════════════════════════════════
+         정산 batch 상세 조회
+         GET /api/trips/{tripId}/settlements/batch/{batchId}/detail
+    ════════════════════════════════════════ -->
+
+    <!-- batch에 포함된 settlement 목록 (transfer 목록용) -->
+    <select id="selectBatchTransfers" resultMap="settlementResponseMap">
+        SELECT
+            s.settlement_id,
+            s.trip_id,
+            s.from_member_id,
+            fm.nickname  AS from_nickname,
+            s.to_member_id,
+            tm.nickname  AS to_nickname,
+            s.amount,
+            s.status,
+            s.batch_id,
+            s.settled_at,
+            s.created_at
+        FROM settlement s
+        LEFT JOIN member2 fm ON fm.member_id = s.from_member_id
+        LEFT JOIN member2 tm ON tm.member_id = s.to_member_id
+        WHERE s.trip_id  = #{tripId}
+          AND s.batch_id = #{batchId}
+        ORDER BY s.amount DESC
+    </select>
+
+    <!-- batch에 연결된 expense 목록 -->
+    <select id="selectExpensesByBatchId" resultMap="expenseDetailMap">
+        SELECT
+            e.expense_id,
+            e.trip_id,
+            e.payer_id,
+            m2.nickname  AS payer_nickname,
+            e.category,
+            e.amount,
+            e.description,
+            e.expense_date,
+            e.receipt_url,
+            e.payment_type,
+            e.memo,
+            e.created_at
+        FROM expense e
+        JOIN settlement_expense_link sel ON sel.expense_id = e.expense_id
+        JOIN member2 m2 ON m2.member_id = e.payer_id
+        WHERE sel.batch_id = #{batchId}
+          AND sel.trip_id  = #{tripId}
+        ORDER BY e.expense_date ASC, e.created_at ASC
+    </select>
+
+    <!-- batch 멤버별 결제/부담 합계 (계산 근거용) -->
+    <select id="selectBatchMemberSummary" resultMap="memberShareSummaryMap">
+        WITH batch_expenses AS (
+            SELECT sel.expense_id
+            FROM settlement_expense_link sel
+            WHERE sel.batch_id = #{batchId}
+              AND sel.trip_id  = #{tripId}
+        ),
+        paid AS (
+            SELECT e.payer_id AS member_id, SUM(e.amount) AS paid_amount
+            FROM expense e
+            WHERE e.expense_id IN (SELECT expense_id FROM batch_expenses)
+            GROUP BY e.payer_id
+        ),
+        shared AS (
+            SELECT ep.member_id, SUM(ep.share_amount) AS share_amount
+            FROM expense_participant ep
+            WHERE ep.expense_id IN (SELECT expense_id FROM batch_expenses)
+              AND ep.member_id IS NOT NULL
+            GROUP BY ep.member_id
+        ),
+        members AS (
+            SELECT DISTINCT tm.member_id
+            FROM trip_member tm
+            WHERE tm.trip_id = #{tripId}
+              AND tm.invitation_status = 'ACCEPTED'
+        )
+        SELECT
+            m.member_id,
+            m2.nickname,
+            NVL(p.paid_amount,  0) AS paid_amount,
+            NVL(s.share_amount, 0) AS share_amount,
+            NVL(p.paid_amount, 0) - NVL(s.share_amount, 0) AS balance
+        FROM members m
+        JOIN member2 m2 ON m2.member_id = m.member_id
+        LEFT JOIN paid   p ON p.member_id = m.member_id
+        LEFT JOIN shared s ON s.member_id = m.member_id
+        WHERE (p.paid_amount IS NOT NULL OR s.share_amount IS NOT NULL)
+        ORDER BY balance DESC
+    </select>
+
+    <!--
+        settlement_expense_link INSERT
+        ★ Oracle INSERT ALL + NEXTVAL = 모든 행에 동일 시퀀스값 → PK 중복
+          SELECT UNION ALL 서브쿼리 방식으로 교체: 행마다 시퀀스 증가 보장
+    -->
+    <insert id="insertSettlementExpenseLinks">
+        INSERT INTO settlement_expense_link (
+            link_id, batch_id, expense_id, trip_id, created_at
+        )
+        SELECT sel_link_seq.NEXTVAL, t.batch_id, t.expense_id, t.trip_id, CURRENT_TIMESTAMP
+        FROM (
+            <foreach collection="list" item="item" separator=" UNION ALL ">
+                SELECT
+                    #{item.batchId}   AS batch_id,
+                    #{item.expenseId} AS expense_id,
+                    #{item.tripId}    AS trip_id
+                FROM DUAL
+            </foreach>
+        ) t
+        WHERE NOT EXISTS (
+            SELECT 1 FROM settlement_expense_link sel2
+            WHERE sel2.batch_id   = t.batch_id
+              AND sel2.expense_id = t.expense_id
+        )
+    </insert>
+
+    <!-- 완료된 batch에 연결된 expense_id 목록 조회 (재정산 제외용) -->
+    <select id="selectSettledExpenseIdsByTripId" resultType="java.lang.Long">
+        SELECT DISTINCT sel.expense_id
+        FROM settlement_expense_link sel
+        JOIN settlement s ON sel.batch_id = s.batch_id
+        WHERE sel.trip_id = #{tripId}
+          AND s.status = 'COMPLETED'
+    </select>
+
+    <!-- ★ 재정산용 balance 계산: COMPLETED batch 포함 expense 제외 -->
+    <select id="calculateBalancesForUnlinkedExpenses" resultMap="memberShareSummaryMap">
+        WITH
+        settled_expenses AS (
+            SELECT DISTINCT sel.expense_id
+            FROM settlement_expense_link sel
+            JOIN settlement s ON sel.batch_id = s.batch_id
+            WHERE sel.trip_id = #{tripId}
+              AND s.status = 'COMPLETED'
+        ),
+        paid AS (
+            SELECT e.payer_id AS member_id, SUM(e.amount) AS paid_amount
+            FROM expense e
+            WHERE e.trip_id = #{tripId}
+              AND e.expense_id NOT IN (SELECT expense_id FROM settled_expenses)
+            GROUP BY e.payer_id
+        ),
+        shared AS (
+            SELECT ep.member_id, SUM(ep.share_amount) AS share_amount
+            FROM expense_participant ep
+            JOIN expense e ON e.expense_id = ep.expense_id
+            WHERE e.trip_id = #{tripId}
+              AND ep.member_id IS NOT NULL
+              AND e.expense_id NOT IN (SELECT expense_id FROM settled_expenses)
+            GROUP BY ep.member_id
+        ),
+        members AS (
+            SELECT DISTINCT tm.member_id
+            FROM trip_member tm
+            WHERE tm.trip_id = #{tripId}
+              AND tm.invitation_status = 'ACCEPTED'
+        )
+        SELECT
+            m.member_id,
+            m2.nickname,
+            NVL(p.paid_amount,  0) AS paid_amount,
+            NVL(s.share_amount, 0) AS share_amount,
+            NVL(p.paid_amount, 0) - NVL(s.share_amount, 0) AS balance
+        FROM members m
+        JOIN  member2 m2 ON m2.member_id = m.member_id
+        LEFT JOIN paid   p ON p.member_id = m.member_id
+        LEFT JOIN shared s ON s.member_id = m.member_id
+        WHERE (p.paid_amount IS NOT NULL OR s.share_amount IS NOT NULL)
+        ORDER BY balance DESC
     </select>
 </mapper>

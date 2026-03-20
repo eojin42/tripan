@@ -361,6 +361,8 @@ function normalizeRow(row) {
     'frommembernickname':'fromMemberNickname', 'tomembernickname':'toMemberNickname',
     'fromnickname':'fromNickname', 'tonickname':'toNickname',
     'batchid':'batchId',
+    'settlestatus':'settleStatus',
+    'settledbatchid':'settledBatchId',
     /* 공통 */
     'title':'title', 'message':'message', 'type':'type', 'category':'category',
     'amount':'amount', 'description':'description', 'status':'status',
