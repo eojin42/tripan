@@ -18,4 +18,6 @@ public interface PartnerInfoMapper {
     
     Long getPlaceIdByPartnerId(Long partnerId);
     Map<String, Object> getFacilityByAfId(String afId);
+    
+    void updatePlaceInfo(PartnerInfoDto dto);
 }

@@ -70,43 +70,6 @@ function closeCouponModal() {
     document.getElementById('couponModal').classList.remove('open');
 }
 
-function savePartnerInfo() {
-    const data = {
-        contactName: document.getElementById('contactName').value,
-        contactPhone: document.getElementById('contactPhone').value,
-        bankName: document.getElementById('bankName').value,
-        accountNumber: document.getElementById('accountNumber').value,
-        partnerIntro: document.getElementById('partnerIntro').value
-    };
-
-    fetch(TripanConfig.contextPath + '/partner/api/info/update', {
-        method: 'POST',
-        headers: { 
-            'Content-Type': 'application/json',
-            'AJAX': 'true' 
-        },
-        body: JSON.stringify(data)
-    })
-    .then(res => {
-        if (res.status === 401) {
-            showToast('세션이 만료되었습니다. 로그인 페이지로 이동합니다.', 'error');
-            setTimeout(() => { location.href = TripanConfig.contextPath + '/partner/login'; }, 1500);
-            throw new Error('Session Expired');
-        }
-        return res.json();
-    })
-    .then(resData => {
-        if(resData.message === 'success') {
-            showToast('성공적으로 저장되었습니다! 🎉', 'success');
-        } else {
-            showToast('저장에 실패했습니다.', 'error');
-        }
-    })
-    .catch(error => {
-        console.error('Error:', error);
-    });
-}
-
 function showToast(message, type = 'success') {
     let container = document.getElementById('toast-container');
     if (!container) {
