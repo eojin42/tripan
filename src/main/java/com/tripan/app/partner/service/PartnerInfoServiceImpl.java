@@ -12,6 +12,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.client.RestTemplate;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.tripan.app.common.StorageService;
 import com.tripan.app.partner.domain.dto.PartnerInfoDto;
 import com.tripan.app.partner.mapper.PartnerInfoMapper;
@@ -32,6 +34,9 @@ public class PartnerInfoServiceImpl implements PartnerInfoService {
 
     @Value("${tripan.api.kakao-map-api-key}") 
     private String kakaoApiKey;
+    
+	@Value("${tripan.api.kakao-rest-api-key}")
+    private String kakaoRestApiKey;
 
     @Override
     public PartnerInfoDto getPartnerInfo(Long memberId) {
@@ -78,30 +83,48 @@ public class PartnerInfoServiceImpl implements PartnerInfoService {
         }
     }
 
-    /**
-     * 카카오 주소 검색 API를 사용해 주소를 위경도로 변환
-     */
-    private void calculateLatLngFromAddress(PartnerInfoDto dto) {
-        try {
+    public void calculateLatLngFromAddress(PartnerInfoDto dto) {
+            
+            String searchAddress = dto.getAddress().replaceAll("^\\[.*?\\]\\s*", "");
+
+            String url = "https://dapi.kakao.com/v2/local/search/address.json?query={address}";
+
             RestTemplate restTemplate = new RestTemplate();
+            
             HttpHeaders headers = new HttpHeaders();
-            headers.set("Authorization", "KakaoAK " + kakaoApiKey); 
+            headers.set("Authorization", "KakaoAK " + kakaoRestApiKey);
+            
             HttpEntity<String> entity = new HttpEntity<>(headers);
 
-            String url = "https://dapi.kakao.com/v2/local/search/address.json?query=" + dto.getAddress();
-            ResponseEntity<Map> response = restTemplate.exchange(url, HttpMethod.GET, entity, Map.class);
-
-            Map<String, Object> body = response.getBody();
-            if (body != null && body.containsKey("documents")) {
-                List<Map<String, Object>> docs = (List<Map<String, Object>>) body.get("documents");
-                if (!docs.isEmpty()) {
-                    Map<String, Object> doc = docs.get(0);
-                    dto.setLongitude(Double.parseDouble(doc.get("x").toString())); // 경도
-                    dto.setLatitude(Double.parseDouble(doc.get("y").toString()));  // 위도
+            try {
+                ResponseEntity<String> response = restTemplate.exchange(
+                    url, 
+                    HttpMethod.GET, 
+                    entity, 
+                    String.class, 
+                    searchAddress 
+                );
+                
+                ObjectMapper mapper = new ObjectMapper();
+                JsonNode root = mapper.readTree(response.getBody());
+                JsonNode documents = root.path("documents");
+                
+                if (documents.isArray() && !documents.isEmpty()) {
+                    JsonNode firstDocument = documents.get(0);
+                    double lng = firstDocument.path("x").asDouble(); 
+                    double lat = firstDocument.path("y").asDouble(); 
+                    
+                    dto.setLongitude(lng);
+                    dto.setLatitude(lat);
+                    
+                    log.info("카카오 API 좌표 변환 성공 - 검색주소: {}, 위도: {}, 경도: {}", searchAddress, lat, lng);
+                } else {
+                    throw new RuntimeException("검색된 주소 결과가 없습니다. (API가 인식하지 못하는 주소입니다)");
                 }
+                
+            } catch (Exception e) {
+                log.error("카카오 API 호출 실패: {}", e.getMessage());
+                throw new RuntimeException("주소를 좌표로 변환하는 데 실패했습니다. 주소를 다시 확인해 주세요.");
             }
-        } catch (Exception e) {
-            log.error("카카오 지오코딩 API 호출 실패 (주소: {})", dto.getAddress(), e);
         }
-    }
 }

@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.tripan.app.partner.mapper.PartnerFacilityMapper">
+
+    <update id="updatePlaceIsActive">
+        UPDATE place SET is_active = #{isActive} WHERE place_id = #{placeId}
+    </update>
+
+    <select id="getAfIdByPlaceId" resultType="string">
+        SELECT af_id FROM accommodation WHERE place_id = #{placeId}
+    </select>
+
+    <update id="updateAccommodationRules">
+        UPDATE accommodation
+        SET checkintime = #{checkinTime}, checkouttime = #{checkoutTime}, parkinglodging = #{parkinglodging}
+        WHERE place_id = #{placeId}
+    </update>
+
+    <update id="updateAccommodationFacilities">
+        UPDATE accommodation_facility
+        SET fitness = #{dto.fitness}, chkcooking = #{dto.chkcooking}, barbecue = #{dto.barbecue},
+            beverage = #{dto.beverage}, karaoke = #{dto.karaoke}, publicpc = #{dto.publicpc}, sauna = #{dto.sauna}
+        WHERE af_id = #{afId}
+    </update>
+
+    <insert id="insertAccommodationFacilities">
+        INSERT INTO accommodation_facility (
+            af_id, fitness, chkcooking, barbecue, beverage, karaoke, publicpc, sauna
+        ) VALUES (
+            #{afId}, #{dto.fitness}, #{dto.chkcooking}, #{dto.barbecue}, 
+            #{dto.beverage}, #{dto.karaoke}, #{dto.publicpc}, #{dto.sauna}
+        )
+    </insert>
+
+    <insert id="insertAccommodationRules">
+        INSERT INTO accommodation (
+            place_id, checkintime, checkouttime, parkinglodging, af_id
+        ) VALUES (
+            #{dto.placeId}, #{dto.checkinTime}, #{dto.checkoutTime}, #{dto.parkinglodging}, #{afId}
+        )
+    </insert>
+
+    <delete id="deleteOtherFacilityByAfId">
+        DELETE FROM accommodation_other_facility WHERE af_id = #{afId}
+    </delete>
+    
+    <insert id="insertOtherFacilityByAfId">
+        INSERT INTO accommodation_other_facility (other_fac_id, af_id, facility_name)
+        VALUES (other_fac_seq.NEXTVAL, #{afId}, #{otherFacility})
+    </insert>
+
+</mapper>
