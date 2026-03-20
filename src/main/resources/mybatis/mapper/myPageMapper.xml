@@ -82,7 +82,7 @@
             b.CREATED_AT   AS createdAt
         FROM BOOKMARK b
         JOIN PLACE p ON b.PLACE_ID = p.PLACE_ID
-        WHERE b.MEMBER_ID = #{memberId}
+        WHERE b.MEMBER_ID = #{memberId} AND p.IS_ACTIVE = 1
         <if test="type != null and type != '' and type != 'ALL'">
             AND p.CATEGORY = #{type}
         </if>

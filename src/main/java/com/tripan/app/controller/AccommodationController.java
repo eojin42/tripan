@@ -98,6 +98,12 @@ public class AccommodationController {
 
         AccommodationDetailDto detail = accommodationService.getAccommodationDetail(id, memberId, checkin, checkout);
         model.addAttribute("detail", detail);
+        
+        // 비활성화된 숙소일 경우
+        if (detail == null) {
+            model.addAttribute("message", "현재 비활성화되었거나 존재하지 않는 숙소입니다.");
+            return "error/error2";
+        }
 
         List<String> bookedDates = accommodationService.getFullyBookedDates(id);
         model.addAttribute("bookedDates", bookedDates);
@@ -136,6 +142,12 @@ public class AccommodationController {
         model.addAttribute("child", child);
 
         RoomDto room = accommodationService.findRoomById(roomId);
+        
+        if (room == null) {
+            model.addAttribute("message", "현재 이용할 수 없는(비활성화된) 객실입니다.");
+            return "error/error2";
+        }
+        
         model.addAttribute("room", room);
         
         long nights = 1; 

@@ -9,7 +9,10 @@
             p.IMAGE_URL as imageUrl,
             p.ADDRESS as region, a.ACCOMMODATION_TYPE as accommodationType,
             p.LATITUDE as latitude,     p.LONGITUDE as longitude,
-            MIN(r.AMOUNT + (GREATEST(0, (#{adult} + #{child}) - r.ROOMBASECOUNT) * 20000)) as minPrice
+            MIN(r.AMOUNT + (GREATEST(0, (#{adult} + #{child}) - r.ROOMBASECOUNT) * 20000)) as minPrice,
+            
+            (SELECT COUNT(*) FROM PLACE_REVIEW pr WHERE pr.PLACE_ID = p.PLACE_ID) as reviewCount,
+            (SELECT COUNT(*) FROM BOOKMARK bk2 WHERE bk2.PLACE_ID = p.PLACE_ID) as bookmarkCount
             
             <choose>
                 <when test="memberId != null">
@@ -27,6 +30,7 @@
         LEFT JOIN ACCOMMODATION_FACILITY af ON a.AF_ID = af.AF_ID
         LEFT JOIN ROOM_FACILITY rf ON r.RF_ID = rf.RF_ID
         WHERE 1=1
+        AND p.IS_ACTIVE = 1  AND r.IS_ACTIVE = 1 
         
         <if test="checkin != null and checkin != '' and checkout != null and checkout != ''">
             AND r.ROOM_COUNT &gt; (
@@ -151,7 +155,8 @@
             
         FROM PLACE p
         JOIN ACCOMMODATION a ON p.PLACE_ID = a.PLACE_ID
-        LEFT JOIN ACCOMMODATION_FACILITY af ON a.AF_ID = af.AF_ID WHERE p.PLACE_ID = #{placeId}
+        LEFT JOIN ACCOMMODATION_FACILITY af ON a.AF_ID = af.AF_ID 
+        WHERE p.PLACE_ID = #{placeId} AND p.IS_ACTIVE = 1
     </select>
 
     <select id="selectAccommodationImages" resultType="string">
@@ -175,7 +180,7 @@
              WHERE ri.ROOM_ID = r.ROOM_ID) as roomImageUrl
              
         FROM ROOM r
-        WHERE r.PLACE_ID = #{placeId}
+        WHERE r.PLACE_ID = #{placeId} AND r.IS_ACTIVE = 1
         ORDER BY r.AMOUNT ASC
     </select>
     
@@ -196,7 +201,7 @@
             p.PLACE_ID as placeId
         FROM ROOM r
         JOIN PLACE p ON r.PLACE_ID = p.PLACE_ID
-        WHERE r.ROOM_ID = #{roomId}
+        WHERE r.ROOM_ID = #{roomId} AND p.IS_ACTIVE = 1
 	</select>
 	
 	
@@ -306,7 +311,7 @@
     <select id="getTotalRoomCountByPlace" resultType="int">
         SELECT NVL(SUM(ROOM_COUNT), 0) 
         FROM ROOM 
-        WHERE PLACE_ID = #{placeId}
+        WHERE PLACE_ID = #{placeId} AND IS_ACTIVE = 1
     </select>
 
     <select id="selectFutureReservationsByPlace" resultType="map">

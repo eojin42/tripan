@@ -233,7 +233,7 @@
             
             <div class="acc-stats">
               <span class="stat-item">
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="#2D3748" style="margin-right:-2px; margin-top:-1px;">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="#4A44F2" style="margin-right:-2px; margin-top:-1px;">
                     <path d="M17 3H7c-1.1 0-1.99.9-1.99 2L5 21l7-3 7 3V5c0-1.1-.9-2-2-2z"/>
                 </svg>
                 <fmt:formatNumber value="${bookmarkCount}" pattern="#,###"/>
