@@ -100,4 +100,50 @@
 	    SET status = 'CANCELED', cancelled_at = SYSDATE, cancel_reason = '사용자 예약 취소'
 	    WHERE order_id = #{orderId} AND member_coupon_id = #{memberCouponId}
 	</update>
+	
+	<!-- 쿠폰 다운로드 관련 -->
+	<select id="selectDownloadableCoupons" resultType="map">
+	    SELECT 
+	        c.coupon_id as "couponId",
+	        c.coupon_name as "couponName",
+	        c.discount_type as "discountType",
+	        c.discount_amount as "discountAmount",
+	        c.min_order_amount as "minOrderAmount",
+	        (SELECT COUNT(*) FROM member_coupon mc 
+	         WHERE mc.coupon_id = c.coupon_id AND mc.member_id = #{memberId}) as "isDownloaded"
+	    FROM coupon c
+	    WHERE (
+	        -- 1. 조건이 없는 공용 쿠폰이거나
+	        (SELECT COUNT(*) FROM coupon_target ct WHERE ct.coupon_id = c.coupon_id) = 0
+	        
+	        -- 2. 이 숙소 또는 숙소 타입이 타겟팅 된 쿠폰
+	        OR EXISTS (
+	            SELECT 1 FROM coupon_target ct 
+	            WHERE ct.coupon_id = c.coupon_id AND ct.is_exclude = 'N'
+	              AND (
+	                  (ct.target_type = 'ACCOMMODATION' AND ct.target_value = TO_CHAR(#{placeId}))
+	                  OR (ct.target_type = 'ACC_TYPE' AND ct.target_value = (SELECT accommodation_type FROM accommodation WHERE place_id = #{placeId}))
+	              )
+	        )
+	    )
+	    -- 3. 단, 제외 대상에 포함되지 않아야 함
+	    AND NOT EXISTS (
+	        SELECT 1 FROM coupon_target ct
+	        WHERE ct.coupon_id = c.coupon_id AND ct.is_exclude = 'Y'
+	          AND ct.target_type = 'ACCOMMODATION' AND ct.target_value = TO_CHAR(#{placeId})
+	    )
+	</select>
+
+	<select id="checkCouponDownloaded" resultType="int">
+	    SELECT COUNT(*) FROM member_coupon 
+	    WHERE member_id = #{memberId} AND coupon_id = #{couponId}
+	</select>
+
+	<insert id="insertMemberCoupon">
+	    INSERT INTO member_coupon (
+	        member_coupon_id, member_id, coupon_id, status, issued_at, expired_at
+	    ) VALUES (
+	        MEMBER_COUPON_SEQ.NEXTVAL, #{memberId}, #{couponId}, 'AVAILABLE', SYSDATE, SYSDATE + 30
+	    )
+	</insert>
 </mapper>

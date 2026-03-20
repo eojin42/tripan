@@ -1,6 +1,7 @@
 package com.tripan.app.service;
 
 import java.util.List;
+import java.util.Map;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -36,5 +37,22 @@ public class CouponServiceImpl implements CouponService{
         
         // 사용 내역(coupon_usage)에 취소일자와 사유 업데이트
         couponMapper.cancelCouponUsage(orderId, memberCouponId);
+    }
+	
+	@Override
+    public List<Map<String, Object>> getDownloadableCoupons(Long placeId, Long memberId) {
+        // 비로그인 상태일 때는 memberId를 0으로 넘겨서 목록만 보여주도록 처리
+        Long mId = (memberId != null) ? memberId : 0L;
+        return couponMapper.selectDownloadableCoupons(placeId, mId);
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void downloadCoupon(Long memberId, Long couponId) {
+        int count = couponMapper.checkCouponDownloaded(memberId, couponId);
+        if (count > 0) {
+            throw new RuntimeException("이미 발급받으신 쿠폰입니다.");
+        }
+        couponMapper.insertMemberCoupon(memberId, couponId);
     }
 }

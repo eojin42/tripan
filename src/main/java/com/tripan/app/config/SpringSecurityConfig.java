@@ -37,6 +37,7 @@ public class SpringSecurityConfig {
 				"/favicon.ico", "/WEB-INF/views/**",
 				"/oauth/kakao/callback", 
 				"/accommodation/home", "/accommodation/list", "/accommodation/search", "/accommodation/detail/*", "/accommodation/review/list/*", "/accommodation/review/photos/*",
+				"/accommodation/coupon/*", "/accommodation/coupon",
 				"/community/feed", "/community/fragment/feed", 
 				"/api/festivals/**", "/api/chat/rooms/region",
 				"/ws-tripan/**",
