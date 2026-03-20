@@ -3,91 +3,86 @@
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.tripan.app.partner.mapper.PartnerInfoMapper">
 
-	<select id="getPartnerInfoByMemberId" resultType="com.tripan.app.partner.domain.dto.PartnerInfoDto">
-        SELECT
-            partner_id AS partnerId,
-            member_id AS memberId,
-            partner_name AS partnerName,
-            business_number AS businessNumber,
-            contact_name AS contactName,
-            contact_phone AS contactPhone,
-            bank_name AS bankName,
-            account_number AS accountNumber,
-            partner_intro AS partnerIntro
-        FROM partner
-        WHERE member_id = #{memberId}
-    </select>
+	<insert id="insertPartner" parameterType="com.tripan.app.partner.domain.dto.PartnerApplyDto">
+        <selectKey keyProperty="partnerId" resultType="long" order="BEFORE">
+            SELECT PARTNER_SEQ.NEXTVAL FROM DUAL 
+        </selectKey>
+        
+        INSERT INTO partner (
+            partner_id, member_id, partner_name, contact_name, 
+            contact_phone, contact_email, partner_intro, status, created_at,
+            business_number, has_exp, bank_name, account_number
+        ) VALUES (
+            #{partnerId}, #{memberId}, #{partnerName}, #{contactName}, 
+            #{contactPhone}, #{contactEmail}, #{partnerIntro, jdbcType=CLOB}, 0, SYSDATE,
+            #{businessNumber}, #{expStatus}, #{bankName}, #{accountNumber}
+        )
+    </insert>
 
-    <update id="updatePartnerInfo">
-        UPDATE partner
-        SET
-            contact_name = #{contactName},
-            contact_phone = #{contactPhone},
-            bank_name = #{bankName},
-            account_number = #{accountNumber},
-            partner_intro = #{partnerIntro}
-        WHERE partner_id = #{partnerId}
-    </update>
+    <insert id="insertPartnerStatus" parameterType="long">
+        INSERT INTO partner_status (
+            partner_status_id, partner_id, status_code, reg_date
+        ) VALUES (
+            SEQ_PARTNER_STATUS.NEXTVAL, #{partnerId}, 'PENDING', SYSDATE
+        )
+    </insert>
 
-    <select id="getPlaceIdByMemberId" resultType="java.lang.Long">
-        SELECT pl.place_id
+    <insert id="insertPartnerFile" parameterType="com.tripan.app.partner.domain.dto.PartnerFileDto">
+        INSERT INTO partner_file (
+            file_id, partner_id, origin_file_name, file_url, file_type, created_at
+        ) VALUES (
+            PARTNER_FILE_SEQ.NEXTVAL, #{partnerId}, #{originFileName}, #{fileUrl}, #{fileType}, SYSDATE
+        )
+    </insert>
+    
+    <select id="findPartnerStatusByMemberId" parameterType="long" resultType="string">
+	    SELECT ps.status_code 
+	    FROM partner p
+        LEFT JOIN partner_status ps ON p.partner_id = ps.partner_id
+	    WHERE p.member_id = #{memberId}
+        ORDER BY p.created_at DESC, ps.reg_date DESC
+        FETCH FIRST 1 ROWS ONLY
+	</select>
+
+    <select id="findPartnerApplyByMemberId" parameterType="long" resultType="com.tripan.app.partner.domain.dto.PartnerApplyDto">
+        SELECT 
+            p.partner_id as partnerId,
+            p.member_id as memberId,
+            p.partner_name as partnerName,
+            p.contact_name as contactName,
+            p.contact_phone as contactPhone,
+            p.contact_email as contactEmail,     
+            p.has_exp as expStatus,              
+            p.business_number as businessNumber, 
+            p.partner_intro as partnerIntro,
+            p.bank_name as bankName,
+            p.account_number as accountNumber,
+            ps.status_code as status,
+            ps.memo as rejectReason,
+            p.created_at as createdAt
         FROM partner p
-        JOIN place pl ON p.partner_id = pl.partner_id
+        LEFT JOIN partner_status ps ON p.partner_id = ps.partner_id
         WHERE p.member_id = #{memberId}
+        ORDER BY p.created_at DESC, ps.reg_date DESC
         FETCH FIRST 1 ROWS ONLY
-    </select>
-    
-    <select id="getPartnerListByMemberId" resultType="com.tripan.app.partner.domain.dto.PartnerInfoDto">
-        SELECT
-            partner_id AS partnerId,
-            partner_name AS partnerName,
-            status
-        FROM partner
-        WHERE member_id = #{memberId}
-        ORDER BY created_at ASC
-    </select>
-    
-    <select id="getPlaceIdByPartnerId" resultType="java.lang.Long">
-        SELECT place_id 
-        FROM place 
-        WHERE partner_id = #{partnerId}
-        FETCH FIRST 1 ROWS ONLY
-    </select>
-
-    <select id="getFacilityByAfId" resultType="map">
-        SELECT * FROM accommodation_facility WHERE af_id = #{afId}
     </select>
     
     <insert id="insertEmptyPlace" parameterType="com.tripan.app.partner.domain.dto.PartnerApplyDto">
-    <selectKey keyProperty="placeId" resultType="long" order="BEFORE">
-        SELECT place_seq.NEXTVAL FROM DUAL
-    </selectKey>
+        <selectKey keyProperty="placeId" resultType="long" order="BEFORE">
+            SELECT SEQ_PLACE.NEXTVAL FROM DUAL
+        </selectKey>
 	    INSERT INTO place (
-	        place_id, partner_id, category_id, place_name, 
-	        address, latitude, longitude, created_at
+	        place_id, partner_id, category, place_name, 
+            address, latitude, longitude, createdtime
 	    ) VALUES (
-	        #{placeId}, #{partnerId}, 'ACCOMMODATION', #{partnerName},
-	        NULL, NULL, NULL, SYSDATE
+	        #{placeId}, #{partnerId}, 'ACCOMMODATION', #{partnerName}, 
+            '심사 중', 0, 0, SYSDATE
 	    )
 	</insert>
 
-	<insert id="insertEmptyFacility" parameterType="map">
-	    <selectKey keyProperty="afId" resultType="long" order="BEFORE">
-	        SELECT af_seq.NEXTVAL FROM DUAL
-	    </selectKey>
-	    INSERT INTO accommodation_facility (
-	        af_id, fitness, chkcooking, barbecue, beverage, karaoke, publicpc, sauna
-	    ) VALUES (
-	        #{afId}, 0, 0, 0, 0, 0, 0, 0
-	    )
-	</insert>
-	
-	<insert id="insertEmptyAccommodation" parameterType="map">
-	    INSERT INTO accommodation (
-	        place_id, af_id, checkin_time, checkout_time
-	    ) VALUES (
-	        #{placeId}, #{afId}, '15:00', '11:00'
-	    )
-	</insert>
+    <insert id="insertEmptyAccommodation" parameterType="map">
+        INSERT INTO accommodation (place_id, checkintime, checkouttime) 
+        VALUES (#{placeId}, '15:00', '11:00')
+    </insert>
     
 </mapper>
