@@ -13,12 +13,14 @@ public class WebMvcConfig implements WebMvcConfigurer {
 
     @Override
     public void addResourceHandlers(ResourceHandlerRegistry registry) {
-        // 업로드된 썸네일 이미지 서빙
-        // /dist/images/thumbnails/abc123.jpg → 서버 디스크 파일
+        // 기존 thumbnails
         registry.addResourceHandler("/dist/images/thumbnails/**")
                 .addResourceLocations("file:" + uploadDir + "/");
 
-        // 기본 정적 리소스 (classpath)
+        // 영수증 이미지 
+        registry.addResourceHandler("/receipts/**")
+                .addResourceLocations("file:" + System.getProperty("user.home") + "/tripan-uploads/receipts/");
+
         registry.addResourceHandler("/dist/**")
                 .addResourceLocations("classpath:/static/dist/");
     }

@@ -152,4 +152,12 @@ public class SettlementDto {
 
         private BigDecimal amount;
     }
+    
+    @Getter @Setter @NoArgsConstructor @AllArgsConstructor @Builder
+    public static class SingleRequest {
+        private Long tripId;
+        private Long toMemberId;    // creditor = 나 (요청 보내는 사람)
+        private Long fromMemberId;  // debtor  = 상대방 (요청 받는 사람)
+        private BigDecimal amount;
+    }
 }

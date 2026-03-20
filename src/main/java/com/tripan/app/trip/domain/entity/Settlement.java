@@ -21,10 +21,11 @@ import java.time.LocalDateTime;
 @Builder
 public class Settlement {
 
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "settlement_id")
-    private Long settlementId;
+	@Id
+	@GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "settlement_seq_gen")
+	@SequenceGenerator(name = "settlement_seq_gen", sequenceName = "settlement_seq", allocationSize = 1)
+	@Column(name = "settlement_id")
+	private Long settlementId;
 
     /** 어떤 여행의 정산인지 (trip.trip_id FK) */
     @Column(name = "trip_id", nullable = false)
@@ -36,11 +37,11 @@ public class Settlement {
 
     /**
      * 정산 상태
-     * PENDING(송금 전) / COMPLETED(송금 완료)
+     * REQUESTED(송금 요청) / PENDING(대기) / COMPLETED(송금 완료)
      */
     @Column(name = "status", nullable = false, length = 20)
     @Builder.Default
-    private String status = "PENDING";
+    private String status = "REQUESTED";
 
     /** 정산 완료 시각 (송금 완료 처리한 시점) */
     @Column(name = "settled_at")
