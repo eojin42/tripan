@@ -1,0 +1,325 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.tripan.app.admin.mapper.SettlementMapper">
+
+    <!-- ============================================================
+         1. 파트너 월별 정산 요약 목록 (main 리스트)
+         ============================================================ -->
+    <select id="selectSummaryList"
+            parameterType="com.tripan.app.admin.domain.dto.SettlementFilterDto"
+            resultType="com.tripan.app.admin.domain.dto.SettlementManageDto">
+        SELECT
+            m.member_id                                         AS memberId,
+            m.login_id                                          AS loginId,
+            m2.nickname,
+            TO_CHAR(o.order_date, 'YYYY-MM')                   AS settlementMonth,
+            COUNT(DISTINCT p.place_id)                         AS placeCount,
+
+            /* 총 결제액 : 결제완료 + 체크아웃완료 주문만 */
+            NVL(SUM(o.real_total_amount), 0)                   AS totalGmv,
+
+            /* 수수료 : 숙소별 commission_rate × 결제액 */
+            NVL(SUM(ROUND(o.real_total_amount
+                    * p.commission_rate / 100, 0)), 0)         AS totalCommission,
+
+            /* 쿠폰 파트너 부담액 합계 */
+            NVL(SUM(cu.partner_discount_amount), 0)            AS totalCouponPartner,
+
+            /* 최종 지급액 */
+            NVL(SUM(o.real_total_amount)
+                - SUM(ROUND(o.real_total_amount
+                    * p.commission_rate / 100, 0))
+                - SUM(NVL(cu.partner_discount_amount, 0)), 0)  AS totalNetPayout,
+
+            /* 대표 지역 */
+            MIN(p.region)                                      AS region,
+
+            /* 정산 상태 집계 */
+            CASE
+                WHEN COUNT(DISTINCT p.place_id) =
+                     SUM(CASE WHEN stl.status = 'APPROVED' THEN 1 ELSE 0 END)
+                     THEN 'DONE'
+                WHEN SUM(CASE WHEN stl.status = 'APPROVED' THEN 1 ELSE 0 END) > 0
+                     THEN 'PARTIAL'
+                ELSE 'PENDING'
+            END                                                AS settlementStatus,
+
+            SUM(CASE WHEN stl.status = 'APPROVED' THEN 1 ELSE 0 END)
+                                                               AS approvedPlaceCount
+
+        FROM member1 m
+        JOIN member2 m2  ON m.member_id   = m2.member_id
+        JOIN place   p   ON p.partner_id  = m.member_id
+        JOIN orders  o   ON o.place_id    = p.place_id    <!-- orders에 place_id가 있다고 가정, 없으면 order_detail 경유 -->
+        LEFT JOIN coupon_usage cu
+                         ON cu.order_id   = o.order_id
+                        AND cu.partner_id = m.member_id
+        LEFT JOIN settlement stl
+                         ON stl.place_id  = p.place_id
+                        AND TO_CHAR(stl.settlement_month, 'YYYY-MM')
+                            = TO_CHAR(o.order_date, 'YYYY-MM')
+        WHERE m.role = 'ROLE_PARTNER'
+          AND o.status IN ('결제완료', '체크아웃완료')
+
+        <if test="settlementMonth != null and settlementMonth != ''">
+            AND TO_CHAR(o.order_date, 'YYYY-MM') = #{settlementMonth}
+        </if>
+        <if test="status != null and status != ''">
+            AND (
+                <choose>
+                    <when test="status == 'DONE'">
+                        COUNT(DISTINCT p.place_id) =
+                        SUM(CASE WHEN stl.status = 'APPROVED' THEN 1 ELSE 0 END)
+                    </when>
+                    <when test="status == 'PARTIAL'">
+                        SUM(CASE WHEN stl.status = 'APPROVED' THEN 1 ELSE 0 END) > 0
+                        AND COUNT(DISTINCT p.place_id) >
+                            SUM(CASE WHEN stl.status = 'APPROVED' THEN 1 ELSE 0 END)
+                    </when>
+                    <otherwise>
+                        SUM(CASE WHEN stl.status = 'APPROVED' THEN 1 ELSE 0 END) = 0
+                    </otherwise>
+                </choose>
+            )
+        </if>
+        <if test="keyword != null and keyword != ''">
+            AND (m.login_id   LIKE '%' || #{keyword} || '%'
+              OR m2.nickname  LIKE '%' || #{keyword} || '%')
+        </if>
+        <if test="region != null and region != ''">
+            AND p.region = #{region}
+        </if>
+
+        GROUP BY m.member_id, m.login_id, m2.nickname,
+                 TO_CHAR(o.order_date, 'YYYY-MM')
+        ORDER BY settlementMonth DESC, totalGmv DESC
+        OFFSET #{offset} ROWS FETCH NEXT #{size} ROWS ONLY
+    </select>
+
+    <!-- 목록 총 건수 -->
+    <select id="selectSummaryCount"
+            parameterType="com.tripan.app.admin.domain.dto.SettlementFilterDto"
+            resultType="int">
+        SELECT COUNT(*) FROM (
+            SELECT m.member_id
+            FROM member1 m
+            JOIN member2 m2  ON m.member_id  = m2.member_id
+            JOIN place   p   ON p.partner_id = m.member_id
+            JOIN orders  o   ON o.place_id   = p.place_id
+            WHERE m.role = 'ROLE_PARTNER'
+              AND o.status IN ('결제완료', '체크아웃완료')
+            <if test="settlementMonth != null and settlementMonth != ''">
+                AND TO_CHAR(o.order_date, 'YYYY-MM') = #{settlementMonth}
+            </if>
+            <if test="keyword != null and keyword != ''">
+                AND (m.login_id  LIKE '%' || #{keyword} || '%'
+                  OR m2.nickname LIKE '%' || #{keyword} || '%')
+            </if>
+            <if test="region != null and region != ''">
+                AND p.region = #{region}
+            </if>
+            GROUP BY m.member_id, TO_CHAR(o.order_date, 'YYYY-MM')
+        )
+    </select>
+
+    <!-- ============================================================
+         2. 숙소별 정산 상세 목록 (detail 페이지 상단 테이블)
+         ============================================================ -->
+    <select id="selectDetailList"
+            parameterType="com.tripan.app.admin.domain.dto.SettlementFilterDto"
+            resultType="com.tripan.app.admin.domain.dto.SettlementManageDto">
+        SELECT
+            m.member_id                                             AS memberId,
+            m.login_id                                             AS loginId,
+            m2.nickname,
+            TO_CHAR(o.order_date, 'YYYY-MM')                      AS settlementMonth,
+            p.place_id                                             AS placeId,
+            p.place_name                                           AS placeName,
+            p.acc_type                                             AS placeType,
+            p.region                                               AS placeRegion,
+            p.commission_rate                                      AS commissionRate,
+
+            NVL(SUM(o.real_total_amount), 0)                      AS totalGmv,
+            NVL(SUM(ROUND(o.real_total_amount
+                    * p.commission_rate / 100, 0)), 0)             AS totalCommission,
+            NVL(SUM(cu.platform_discount_amount), 0)              AS totalCouponPlatform,
+            NVL(SUM(cu.partner_discount_amount), 0)               AS totalCouponPartner,
+            NVL(SUM(o.real_total_amount)
+                - SUM(ROUND(o.real_total_amount
+                    * p.commission_rate / 100, 0))
+                - SUM(NVL(cu.partner_discount_amount, 0)), 0)     AS totalNetPayout,
+
+            COUNT(DISTINCT o.order_id)                            AS orderCount,
+            NVL(stl.status, 'PENDING')                            AS settlementStatus,
+            stl.settlement_id                                      AS settlementId
+        FROM member1 m
+        JOIN member2 m2  ON m.member_id   = m2.member_id
+        JOIN place   p   ON p.partner_id  = m.member_id
+        JOIN orders  o   ON o.place_id    = p.place_id
+        LEFT JOIN coupon_usage cu
+                         ON cu.order_id   = o.order_id
+                        AND cu.partner_id = m.member_id
+        LEFT JOIN settlement stl
+                         ON stl.place_id  = p.place_id
+                        AND TO_CHAR(stl.settlement_month, 'YYYY-MM')
+                            = TO_CHAR(o.order_date, 'YYYY-MM')
+        WHERE m.member_id = #{memberId}
+          AND o.status IN ('결제완료', '체크아웃완료')
+
+        <if test="settlementMonth != null and settlementMonth != ''">
+            AND TO_CHAR(o.order_date, 'YYYY-MM') = #{settlementMonth}
+        </if>
+
+        GROUP BY m.member_id, m.login_id, m2.nickname,
+                 TO_CHAR(o.order_date, 'YYYY-MM'),
+                 p.place_id, p.place_name, p.acc_type, p.region, p.commission_rate,
+                 stl.status, stl.settlement_id
+        ORDER BY p.place_id
+    </select>
+
+    <!-- ============================================================
+         3. 예약 건별 라인 (detail 페이지 아코디언 내부 테이블)
+         ============================================================ -->
+    <select id="selectOrderLines"
+            parameterType="map"
+            resultType="com.tripan.app.admin.domain.dto.SettlementOrderDto">
+        SELECT
+            o.order_id,
+            od.reservation_id,
+            o.order_date,
+            m2.nickname                                            AS guestNickname,
+            o.total_amount,
+            o.coupon_discount,
+            o.point_discount,
+            o.real_total_amount,
+            NVL(cu.platform_discount_amount, 0)                   AS couponPlatformAmt,
+            NVL(cu.partner_discount_amount,  0)                   AS couponPartnerAmt,
+            p.commission_rate,
+            ROUND(o.real_total_amount * p.commission_rate / 100)  AS commissionAmount,
+            (o.real_total_amount
+             - ROUND(o.real_total_amount * p.commission_rate / 100)
+             - NVL(cu.partner_discount_amount, 0))                AS partnerPayout,
+            pay.status                                             AS paymentStatus,
+            o.status                                               AS orderStatus
+
+        FROM orders o
+        JOIN order_detail od   ON od.order_id      = o.order_id
+        JOIN member1 m         ON m.member_id       = o.member_id
+        JOIN member2 m2        ON m2.member_id      = m.member_id
+        JOIN place   p         ON p.place_id        = o.place_id
+        LEFT JOIN coupon_usage cu
+                               ON cu.order_id       = o.order_id
+                              AND cu.partner_id     = p.partner_id
+        LEFT JOIN payment pay  ON pay.order_id      = o.order_id
+        WHERE p.place_id = #{placeId}
+          AND TO_CHAR(o.order_date, 'YYYY-MM') = #{settlementMonth}
+          AND o.status IN ('결제완료', '체크아웃완료')
+        ORDER BY o.order_date DESC
+    </select>
+
+    <!-- ============================================================
+         4. 정산 승인 처리
+         ============================================================ -->
+    <!-- 이미 settlement row 존재하면 UPDATE, 없으면 INSERT -->
+    <insert id="upsertSettlement" parameterType="map">
+        MERGE INTO settlement stl
+        USING (SELECT #{placeId} AS place_id,
+                      TO_DATE(#{settlementMonth} || '-01', 'YYYY-MM-DD') AS settlement_month
+               FROM DUAL) src
+        ON (stl.place_id = src.place_id
+            AND TRUNC(stl.settlement_month, 'MM') = src.settlement_month)
+        WHEN MATCHED THEN
+            UPDATE SET stl.status       = 'APPROVED',
+                       stl.approved_at  = SYSDATE,
+                       stl.approved_by  = #{adminId}
+        WHEN NOT MATCHED THEN
+            INSERT (settlement_id, place_id, settlement_month,
+                    status, approved_at, approved_by)
+            VALUES (settlement_seq.NEXTVAL, #{placeId},
+                    TO_DATE(#{settlementMonth} || '-01', 'YYYY-MM-DD'),
+                    'APPROVED', SYSDATE, #{adminId})
+    </insert>
+
+    <!-- ============================================================
+         5. 엑셀용 쿼리 — 파트너 단위 (전체 숙소 flat)
+         ============================================================ -->
+    <select id="selectExcelByPartner"
+            parameterType="com.tripan.app.admin.domain.dto.SettlementFilterDto"
+            resultType="com.tripan.app.admin.domain.dto.SettlementOrderDto">
+        SELECT
+            o.order_id,
+            od.reservation_id,
+            o.order_date,
+            m2.nickname                                            AS guestNickname,
+            o.total_amount,
+            o.coupon_discount,
+            o.point_discount,
+            o.real_total_amount,
+            NVL(cu.platform_discount_amount, 0)                   AS couponPlatformAmt,
+            NVL(cu.partner_discount_amount,  0)                   AS couponPartnerAmt,
+            p.commission_rate,
+            ROUND(o.real_total_amount * p.commission_rate / 100)  AS commissionAmount,
+            (o.real_total_amount
+             - ROUND(o.real_total_amount * p.commission_rate / 100)
+             - NVL(cu.partner_discount_amount, 0))                AS partnerPayout,
+            pay.status                                             AS paymentStatus,
+            o.status                                               AS orderStatus
+        FROM orders o
+        JOIN order_detail od   ON od.order_id  = o.order_id
+        JOIN member1 m         ON m.member_id  = o.member_id
+        JOIN member2 m2        ON m2.member_id = m.member_id
+        JOIN place   p         ON p.place_id   = o.place_id
+        LEFT JOIN coupon_usage cu
+                               ON cu.order_id  = o.order_id
+                              AND cu.partner_id = p.partner_id
+        LEFT JOIN payment pay  ON pay.order_id = o.order_id
+        WHERE p.partner_id = #{memberId}
+          AND o.status IN ('결제완료', '체크아웃완료')
+        <if test="settlementMonth != null and settlementMonth != ''">
+            AND TO_CHAR(o.order_date, 'YYYY-MM') = #{settlementMonth}
+        </if>
+        ORDER BY p.place_id, o.order_date DESC
+    </select>
+
+    <!-- 숙소 단위 엑셀 -->
+    <select id="selectExcelByPlace"
+            parameterType="com.tripan.app.admin.domain.dto.SettlementFilterDto"
+            resultType="com.tripan.app.admin.domain.dto.SettlementOrderDto">
+        SELECT
+            o.order_id,
+            od.reservation_id,
+            o.order_date,
+            m2.nickname                                            AS guestNickname,
+            o.total_amount,
+            o.coupon_discount,
+            o.point_discount,
+            o.real_total_amount,
+            NVL(cu.platform_discount_amount, 0)                   AS couponPlatformAmt,
+            NVL(cu.partner_discount_amount,  0)                   AS couponPartnerAmt,
+            p.commission_rate,
+            ROUND(o.real_total_amount * p.commission_rate / 100)  AS commissionAmount,
+            (o.real_total_amount
+             - ROUND(o.real_total_amount * p.commission_rate / 100)
+             - NVL(cu.partner_discount_amount, 0))                AS partnerPayout,
+            pay.status                                             AS paymentStatus,
+            o.status                                               AS orderStatus
+        FROM orders o
+        JOIN order_detail od   ON od.order_id  = o.order_id
+        JOIN member1 m         ON m.member_id  = o.member_id
+        JOIN member2 m2        ON m2.member_id = m.member_id
+        JOIN place   p         ON p.place_id   = o.place_id
+        LEFT JOIN coupon_usage cu
+                               ON cu.order_id  = o.order_id
+                              AND cu.partner_id = p.partner_id
+        LEFT JOIN payment pay  ON pay.order_id = o.order_id
+        WHERE p.place_id = #{placeId}
+          AND o.status IN ('결제완료', '체크아웃완료')
+        <if test="settlementMonth != null and settlementMonth != ''">
+            AND TO_CHAR(o.order_date, 'YYYY-MM') = #{settlementMonth}
+        </if>
+        ORDER BY o.order_date DESC
+    </select>
+
+</mapper>

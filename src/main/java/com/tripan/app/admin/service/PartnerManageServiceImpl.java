@@ -196,7 +196,7 @@ public class PartnerManageServiceImpl implements PartnerManageService {
         if (to == null || to.isBlank()) return;
         Mail mail = new Mail();
         mail.setReceiverEmail(to);
-        mail.setSenderEmail("tripan@tripan.com");
+        mail.setSenderEmail("amandaejk@gmail.com");
         mail.setSenderName("TRIPAN 관리자");
         mail.setSubject(subject);
         mail.setContent(content);
