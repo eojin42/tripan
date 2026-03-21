@@ -88,4 +88,9 @@ public class TripChatServiceImpl implements TripChatService {
     public void markRead(Long chatRoomId, Long memberId) {
         chatMapper.updateLastConnected(chatRoomId, memberId);
     }
+
+    @Override
+    public Long getLastReadMessageId(Long chatRoomId, Long memberId) {
+        return chatMapper.selectLastReadMessageId(chatRoomId, memberId);
+    }
 }

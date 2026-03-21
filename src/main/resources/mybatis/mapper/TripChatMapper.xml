@@ -62,13 +62,22 @@
             'ONLINE',
             'NORMAL',
             CURRENT_TIMESTAMP,
-            CURRENT_TIMESTAMP
+            TIMESTAMP '1970-01-01 00:00:00'
         )
     </insert>
 
+    <!--
+        읽음 처리: last_connected_at을 "채팅방의 현재 최신 메시지 시각"으로 갱신.
+        CURRENT_TIMESTAMP로 갱신하면 아직 오지 않은 메시지까지 읽음 처리되어
+        unread가 0이 되는 문제가 생기므로, 실제 메시지 기준 시각을 사용.
+    -->
     <update id="updateLastConnected">
         UPDATE chat_member
-        SET    last_connected_at = CURRENT_TIMESTAMP
+        SET    last_connected_at = (
+                   SELECT NVL(MAX(created_at), TIMESTAMP '1970-01-01 00:00:00')
+                   FROM   chat_message
+                   WHERE  room_id = #{chatRoomId}
+               )
         WHERE  chat_room_id = #{chatRoomId}
           AND  member_id    = #{memberId}
     </update>
@@ -141,6 +150,24 @@
           AND  cm.created_at   &gt; mb.last_connected_at
           AND  cm.member_id   != #{memberId}
           AND  cm.message_type = 'TALK'
+    </select>
+
+    <!--
+        내가 마지막으로 읽은 시점(last_connected_at) 이전에 도착한
+        상대방 메시지 중 가장 최신 message_id.
+        이 ID 이후 메시지부터 "읽지 않은 메시지" 구간.
+        unread=0이거나 해당 메시지가 없으면 NULL 반환.
+    -->
+    <select id="selectLastReadMessageId" resultType="java.lang.Long">
+        SELECT MAX(cm.message_id)
+        FROM   chat_message cm
+        JOIN   chat_member  mb
+               ON mb.chat_room_id = cm.room_id
+              AND mb.member_id    = #{memberId}
+        WHERE  cm.room_id      = #{chatRoomId}
+          AND  cm.member_id   != #{memberId}
+          AND  cm.message_type  = 'TALK'
+          AND  cm.created_at  &lt;= mb.last_connected_at
     </select>
 
 </mapper>

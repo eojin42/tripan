@@ -87,7 +87,7 @@
 
 </div>
 
-<script src="${pageContext.request.contextPath}/dist/js/trip/workspace.chat.js"></script>
+<script src="${pageContext.request.contextPath}/dist/js/trip/workspace.chat.js?v=20260322"></script>
 <script>
   document.addEventListener('DOMContentLoaded', function() {
     // 아바타 색상은 WS 연결과 무관하게 즉시 주입
