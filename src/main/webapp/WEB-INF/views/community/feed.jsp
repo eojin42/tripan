@@ -1893,7 +1893,7 @@ function loadFeedComments(postId, isInit = false) {
     })
     .then(text => {
         if(text.trim().startsWith("<!DOCTYPE") || text.trim().startsWith("<html")) {
-            if(!isInit) showLoginModal(); // 자동 로딩 중엔 로그인 모달을 띄우지 않음
+            if(!isInit) showLoginModal(); 
             throw new Error("HTML 응답됨");
         }
         
@@ -1901,7 +1901,6 @@ function loadFeedComments(postId, isInit = false) {
         
         if (!comments || comments.length === 0) {
             if (isInit) return; 
-            
             listContainer.innerHTML = '<div style="text-align:center; font-size:12px; color:#999; padding:10px;">첫 번째 댓글을 남겨보세요! ✨</div>';
             return;
         }
@@ -1918,9 +1917,9 @@ function loadFeedComments(postId, isInit = false) {
             let profileImg = comment.profileImage ? `${pageContext.request.contextPath}/uploads/profile/\${comment.profileImage}` : `${pageContext.request.contextPath}/dist/images/default.png`;
             let isMyComment = (currentUserId !== '' && currentUserId == comment.memberId);
             
-		 let kebabMenu = isMyComment 
-		     ? `<button class="kebab-item danger" onclick="deleteFeedComment(\${comment.commentId}, \${postId})">🗑️ 삭제하기</button>`
-		     : `<button class="kebab-item danger" onclick="openReportModal('FEED_COMMENT', \${comment.commentId})">🚨 신고하기</button>`;
+            let kebabMenu = isMyComment 
+                ? `<button class="kebab-item danger" onclick="deleteFeedComment(\${comment.commentId}, \${postId})">🗑️ 삭제하기</button>`
+                : `<button class="kebab-item danger" onclick="openReportModal('FEED_COMMENT', \${comment.commentId}, \${comment.memberId})">🚨 신고하기</button>`;
 
             html += `
             <div style="display: flex; flex-direction: column; gap: 10px; border-bottom: 1px dashed var(--border-color); padding-bottom: 12px; margin-bottom: 12px;">
@@ -1949,9 +1948,9 @@ function loadFeedComments(postId, isInit = false) {
                 let cProfileImg = child.profileImage ? `${pageContext.request.contextPath}/uploads/profile/\${child.profileImage}` : `${pageContext.request.contextPath}/dist/images/default.png`;
                 let isMyChild = (currentUserId !== '' && currentUserId == child.memberId);
                 
-			 let childKebab = isMyChild 
-			     ? `<button class="kebab-item danger" onclick="deleteFeedComment(\${child.commentId}, \${postId})">🗑️ 삭제하기</button>`
-			     : `<button class="kebab-item danger" onclick="openReportModal('FEED_COMMENT', \${child.commentId})">🚨 신고하기</button>`;
+                let childKebab = isMyChild 
+                    ? `<button class="kebab-item danger" onclick="deleteFeedComment(\${child.commentId}, \${postId})">🗑️ 삭제하기</button>`
+                    : `<button class="kebab-item danger" onclick="openReportModal('FEED_COMMENT', \${child.commentId}, \${child.memberId})">🚨 신고하기</button>`;
 
                 html += `
                 <div style="display: flex; gap: 8px; margin-left: 36px; margin-top: 4px; padding: 10px 14px; background: rgba(137, 207, 240, 0.05); border-radius: 12px;">
@@ -2261,15 +2260,17 @@ function reportFreeboardComment(commentId, memberId) {
 }
 
  
- function openReportModal(targetType, targetId) {
+function openReportModal(targetType, targetId, reportedId) {
      if (typeof IS_LOGGED_IN !== 'undefined' && !IS_LOGGED_IN) {
          showLoginModal();
          return;
      }
      document.getElementById('reportTargetType').value = targetType;
      document.getElementById('reportTargetId').value = targetId;
-     document.getElementById('reportReasonSelect').value = ''; // 셀렉트박스 초기화
      
+     document.getElementById('reportReportedId').value = reportedId; 
+     
+     document.getElementById('reportReasonSelect').value = ''; 
      document.getElementById('commonReportModal').classList.add('active');
  }
 
@@ -2565,113 +2566,113 @@ window.switchProfileTab = function(element, tabName) {
  	 };
 	 
 	 
- window.loadMateComments = function(mateId, isInit = false) {
-      const listContainer = document.getElementById('comment-list-' + mateId);
-      if (!listContainer) return;
+	 window.loadMateComments = function(mateId, isInit = false) {
+	     const listContainer = document.getElementById('comment-list-' + mateId);
+	     if (!listContainer) return;
 
-      if (!isInit) listContainer.innerHTML = '<div style="text-align:center; font-size:12px; color:#999; padding:10px;">불러오는 중...⏳</div>';
+	     if (!isInit) listContainer.innerHTML = '<div style="text-align:center; font-size:12px; color:#999; padding:10px;">불러오는 중...⏳</div>';
 
-      const myId = '${sessionScope.loginUser != null ? sessionScope.loginUser.memberId : ""}';
+	     const myId = '${sessionScope.loginUser != null ? sessionScope.loginUser.memberId : ""}';
 
-      fetch(`${pageContext.request.contextPath}/community/api/mate/` + mateId + `/comments`)
-      .then(res => {
-          if (res.redirected || !res.ok) throw new Error("로그인 풀림");
-          return res.text();
-      })
-      .then(text => {
-          if(text.trim().startsWith("<!DOCTYPE") || text.trim().startsWith("<html")) {
-              if(!isInit) showLoginModal();
-              throw new Error("HTML 응답됨");
-          }
-          const comments = JSON.parse(text);
-          
-          const countSpan = document.getElementById('comment-count-' + mateId);
-          if(countSpan) countSpan.innerText = comments ? comments.length : 0;
+	     fetch(`${pageContext.request.contextPath}/community/api/mate/` + mateId + `/comments`)
+	     .then(res => {
+	         if (res.redirected || !res.ok) throw new Error("로그인 풀림");
+	         return res.text();
+	     })
+	     .then(text => {
+	         if(text.trim().startsWith("<!DOCTYPE") || text.trim().startsWith("<html")) {
+	             if(!isInit) showLoginModal();
+	             throw new Error("HTML 응답됨");
+	         }
+	         const comments = JSON.parse(text);
+	         
+	         const countSpan = document.getElementById('comment-count-' + mateId);
+	         if(countSpan) countSpan.innerText = comments ? comments.length : 0;
 
-          if (!comments || comments.length === 0) {
-              listContainer.innerHTML = '<div style="text-align:center; font-size:12px; color:#999; padding:10px;">첫 번째 댓글을 남겨보세요! ✨</div>';
-              return;
-          }
+	         if (!comments || comments.length === 0) {
+	             listContainer.innerHTML = '<div style="text-align:center; font-size:12px; color:#999; padding:10px;">첫 번째 댓글을 남겨보세요! ✨</div>';
+	             return;
+	         }
 
-          let html = '';
-          const parentComments = comments.filter(c => c.parentId === 0 || c.parentId === null);
-          const childComments = comments.filter(c => c.parentId !== 0 && c.parentId !== null);
+	         let html = '';
+	         const parentComments = comments.filter(c => c.parentId === 0 || c.parentId === null);
+	         const childComments = comments.filter(c => c.parentId !== 0 && c.parentId !== null);
 
-          parentComments.forEach(comment => {
-              let profileImg = comment.profilePhoto ? `${pageContext.request.contextPath}/uploads/profile/\${comment.profilePhoto}` : `${pageContext.request.contextPath}/dist/images/default.png`;
-              
-              let isMyComment = (myId !== '' && String(myId) === String(comment.memberId));
+	         parentComments.forEach(comment => {
+	             let profileImg = comment.profilePhoto ? `${pageContext.request.contextPath}/uploads/profile/\${comment.profilePhoto}` : `${pageContext.request.contextPath}/dist/images/default.png`;
+	             
+	             let isMyComment = (myId !== '' && String(myId) === String(comment.memberId));
 
-              let kebabMenu = isMyComment
-                  ? `<button class="kebab-item danger" onclick="window.deleteMateComment(\${comment.commentId}, \${mateId})">🗑️ 삭제하기</button>`
-                  : `<button class="kebab-item danger" onclick="openReportModal('MATE_COMMENT', \${comment.commentId})">🚨 신고하기</button>`;
+	             let kebabMenu = isMyComment
+	                 ? `<button class="kebab-item danger" onclick="window.deleteMateComment(\${comment.commentId}, \${mateId})">🗑️ 삭제하기</button>`
+	                 : `<button class="kebab-item danger" onclick="openReportModal('MATE_COMMENT', \${comment.commentId}, \${comment.memberId})">🚨 신고하기</button>`;
 
-              html += `
-              <div style="display: flex; flex-direction: column; gap: 10px; border-bottom: 1px dashed var(--border-color); padding-bottom: 12px; margin-bottom: 12px;">
-                  <div style="display: flex; gap: 10px;">
-                      <img src="\${profileImg}" style="width: 32px; height: 32px; border-radius: 50%; object-fit: cover; border: 1px solid var(--border-color);">
-                      <div style="flex: 1;">
-                          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
-                              <span style="font-size: 13px; font-weight: 800; color: var(--text-dark);">@\${comment.nickname || '여행자'}</span>
-                              <div style="display: flex; align-items: center; gap: 8px;">
-                                  <span style="font-size: 11px; color: var(--text-gray);">\${comment.createdAt}</span>
-                                  <span style="font-size: 11px; color: var(--sky-blue); font-weight: 900; cursor: pointer;" onclick="window.toggleMateReplyForm(\${comment.commentId})">↳ 답글</span>
+	             html += `
+	             <div style="display: flex; flex-direction: column; gap: 10px; border-bottom: 1px dashed var(--border-color); padding-bottom: 12px; margin-bottom: 12px;">
+	                 <div style="display: flex; gap: 10px;">
+	                     <img src="\${profileImg}" style="width: 32px; height: 32px; border-radius: 50%; object-fit: cover; border: 1px solid var(--border-color);">
+	                     <div style="flex: 1;">
+	                         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+	                             <span style="font-size: 13px; font-weight: 800; color: var(--text-dark);">@\${comment.nickname || '여행자'}</span>
+	                             <div style="display: flex; align-items: center; gap: 8px;">
+	                                 <span style="font-size: 11px; color: var(--text-gray);">\${comment.createdAt}</span>
+	                                 <span style="font-size: 11px; color: var(--sky-blue); font-weight: 900; cursor: pointer;" onclick="window.toggleMateReplyForm(\${comment.commentId})">↳ 답글</span>
 
-                                  <div class="comment-options" style="position: relative;">
-                                      <button class="btn-kebab" onclick="event.stopPropagation(); const menu = this.nextElementSibling; const isBlock = menu.style.display === 'block'; document.querySelectorAll('.kebab-menu-list').forEach(el => el.style.display = 'none'); if(!isBlock) menu.style.display = 'block';"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="pointer-events: none;"><circle cx="12" cy="5" r="1.5"></circle><circle cx="12" cy="12" r="1.5"></circle><circle cx="12" cy="19" r="1.5"></circle></svg></button>
-                                      <div class="kebab-menu-list" style="display: none; position: absolute; right: 0; top: 100%; background: white; border: 1px solid var(--border-color); border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); min-width: 110px; z-index: 99999; margin-top: 4px;">
-                                          \${kebabMenu}
-                                      </div>
-                                  </div>
-                              </div>
-                          </div>
-                          <div style="font-size: 13px; color: var(--text-black); line-height: 1.4; white-space: pre-wrap;">\${comment.content}</div>
-                      </div>
-                  </div>`;
+	                                 <div class="comment-options" style="position: relative;">
+	                                     <button class="btn-kebab" onclick="event.stopPropagation(); const menu = this.nextElementSibling; const isBlock = menu.style.display === 'block'; document.querySelectorAll('.kebab-menu-list').forEach(el => el.style.display = 'none'); if(!isBlock) menu.style.display = 'block';"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="pointer-events: none;"><circle cx="12" cy="5" r="1.5"></circle><circle cx="12" cy="12" r="1.5"></circle><circle cx="12" cy="19" r="1.5"></circle></svg></button>
+	                                     <div class="kebab-menu-list" style="display: none; position: absolute; right: 0; top: 100%; background: white; border: 1px solid var(--border-color); border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); min-width: 110px; z-index: 99999; margin-top: 4px;">
+	                                         \${kebabMenu}
+	                                     </div>
+	                                 </div>
+	                             </div>
+	                         </div>
+	                         <div style="font-size: 13px; color: var(--text-black); line-height: 1.4; white-space: pre-wrap;">\${comment.content}</div>
+	                     </div>
+	                 </div>`;
 
-              childComments.filter(child => child.parentId === comment.commentId).forEach(child => {
-                  let cProfileImg = child.profilePhoto ? `${pageContext.request.contextPath}/uploads/profile/\${child.profilePhoto}` : `${pageContext.request.contextPath}/dist/images/default.png`;
-                  
-                  let isMyChild = (myId !== '' && String(myId) === String(child.memberId));
+	             childComments.filter(child => child.parentId === comment.commentId).forEach(child => {
+	                 let cProfileImg = child.profilePhoto ? `${pageContext.request.contextPath}/uploads/profile/\${child.profilePhoto}` : `${pageContext.request.contextPath}/dist/images/default.png`;
+	                 
+	                 let isMyChild = (myId !== '' && String(myId) === String(child.memberId));
 
-                  let childKebab = isMyChild
-                      ? `<button class="kebab-item danger" onclick="window.deleteMateComment(\${child.commentId}, \${mateId})">🗑️ 삭제하기</button>`
-                      : `<button class="kebab-item danger" onclick="openReportModal('MATE_COMMENT', \${child.commentId})">🚨 신고하기</button>`;
+	                 let childKebab = isMyChild
+	                     ? `<button class="kebab-item danger" onclick="window.deleteMateComment(\${child.commentId}, \${mateId})">🗑️ 삭제하기</button>`
+	                     : `<button class="kebab-item danger" onclick="openReportModal('MATE_COMMENT', \${child.commentId}, \${child.memberId})">🚨 신고하기</button>`;
 
-                  html += `
-                  <div style="display: flex; gap: 8px; margin-left: 36px; margin-top: 4px; padding: 10px 14px; background: rgba(137, 207, 240, 0.05); border-radius: 12px;">
-                      <span style="color: var(--sky-blue); font-weight: 900; font-size: 14px;">↳</span>
-                      <img src="\${cProfileImg}" style="width: 28px; height: 28px; border-radius: 50%; object-fit: cover; border: 1px solid white;">
-                      <div style="flex: 1;">
-                          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2px;">
-                              <span style="font-size: 12px; font-weight: 800; color: var(--text-dark);">@\${child.nickname || '여행자'}</span>
-                              <div style="display: flex; align-items: center; gap: 4px;">
-                                  <span style="font-size: 10px; color: var(--text-gray);">\${child.createdAt}</span>
-                                  <div class="comment-options" style="position: relative;">
-                                      <button class="btn-kebab" onclick="event.stopPropagation(); const menu = this.nextElementSibling; const isBlock = menu.style.display === 'block'; document.querySelectorAll('.kebab-menu-list').forEach(el => el.style.display = 'none'); if(!isBlock) menu.style.display = 'block';"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="pointer-events: none;"><circle cx="12" cy="5" r="1.5"></circle><circle cx="12" cy="12" r="1.5"></circle><circle cx="12" cy="19" r="1.5"></circle></svg></button>
-                                      <div class="kebab-menu-list" style="display: none; position: absolute; right: 0; top: 100%; background: white; border: 1px solid var(--border-color); border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); min-width: 100px; z-index: 99999; margin-top: 4px;">
-                                          \${childKebab}
-                                      </div>
-                                  </div>
-                              </div>
-                          </div>
-                          <div style="font-size: 12px; color: var(--text-black); line-height: 1.4; white-space: pre-wrap;">\${child.content}</div>
-                      </div>
-                  </div>`;
-              });
+	                 html += `
+	                 <div style="display: flex; gap: 8px; margin-left: 36px; margin-top: 4px; padding: 10px 14px; background: rgba(137, 207, 240, 0.05); border-radius: 12px;">
+	                     <span style="color: var(--sky-blue); font-weight: 900; font-size: 14px;">↳</span>
+	                     <img src="\${cProfileImg}" style="width: 28px; height: 28px; border-radius: 50%; object-fit: cover; border: 1px solid white;">
+	                     <div style="flex: 1;">
+	                         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2px;">
+	                             <span style="font-size: 12px; font-weight: 800; color: var(--text-dark);">@\${child.nickname || '여행자'}</span>
+	                             <div style="display: flex; align-items: center; gap: 4px;">
+	                                 <span style="font-size: 10px; color: var(--text-gray);">\${child.createdAt}</span>
+	                                 <div class="comment-options" style="position: relative;">
+	                                     <button class="btn-kebab" onclick="event.stopPropagation(); const menu = this.nextElementSibling; const isBlock = menu.style.display === 'block'; document.querySelectorAll('.kebab-menu-list').forEach(el => el.style.display = 'none'); if(!isBlock) menu.style.display = 'block';"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="pointer-events: none;"><circle cx="12" cy="5" r="1.5"></circle><circle cx="12" cy="12" r="1.5"></circle><circle cx="12" cy="19" r="1.5"></circle></svg></button>
+	                                     <div class="kebab-menu-list" style="display: none; position: absolute; right: 0; top: 100%; background: white; border: 1px solid var(--border-color); border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); min-width: 100px; z-index: 99999; margin-top: 4px;">
+	                                         \${childKebab}
+	                                     </div>
+	                                 </div>
+	                             </div>
+	                         </div>
+	                         <div style="font-size: 12px; color: var(--text-black); line-height: 1.4; white-space: pre-wrap;">\${child.content}</div>
+	                     </div>
+	                 </div>`;
+	             });
 
-              html += `
-                  <div id="mate-reply-form-\${comment.commentId}" style="display: none; gap: 8px; margin-left: 36px; margin-top: 8px;">
-                      <input type="text" id="mate-reply-input-\${comment.commentId}" placeholder="@\${comment.nickname || '여행자'}님에게 답글 남기기..." style="flex: 1; border: 1px solid var(--border-color); border-radius: 20px; padding: 8px 14px; font-family: 'Pretendard', sans-serif; font-size: 12px; outline: none;">
-                      <button class="btn-submit-lounge" style="padding: 8px 16px; border-radius: 20px; font-size: 12px;" onclick="window.submitMateComment(\${mateId}, \${comment.commentId})">등록</button>
-                  </div>
-              </div>`;
-          });
-          listContainer.innerHTML = html;
-      }).catch(err => {
-          if(!isInit) listContainer.innerHTML = '<div style="text-align:center; font-size:13px; color:#FF6B6B; padding:10px; cursor:pointer;" onclick="showLoginModal()">세션이 만료되었습니다. 다시 로그인해주세요! 🔒</div>';
-      });
-  };
+	             html += `
+	                 <div id="mate-reply-form-\${comment.commentId}" style="display: none; gap: 8px; margin-left: 36px; margin-top: 8px;">
+	                     <input type="text" id="mate-reply-input-\${comment.commentId}" placeholder="@\${comment.nickname || '여행자'}님에게 답글 남기기..." style="flex: 1; border: 1px solid var(--border-color); border-radius: 20px; padding: 8px 14px; font-family: 'Pretendard', sans-serif; font-size: 12px; outline: none;">
+	                     <button class="btn-submit-lounge" style="padding: 8px 16px; border-radius: 20px; font-size: 12px;" onclick="window.submitMateComment(\${mateId}, \${comment.commentId})">등록</button>
+	                 </div>
+	             </div>`;
+	         });
+	         listContainer.innerHTML = html;
+	     }).catch(err => {
+	         if(!isInit) listContainer.innerHTML = '<div style="text-align:center; font-size:13px; color:#FF6B6B; padding:10px; cursor:pointer;" onclick="showLoginModal()">세션이 만료되었습니다. 다시 로그인해주세요! 🔒</div>';
+	     });
+	 };
 
   document.addEventListener('click', () => {
      document.querySelectorAll('.kebab-menu-list').forEach(d => d.style.display = 'none');

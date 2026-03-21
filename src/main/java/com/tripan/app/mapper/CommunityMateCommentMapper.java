@@ -22,4 +22,6 @@ public interface CommunityMateCommentMapper {
     
     Long selectCommentOwner(@Param("commentId") Long commentId);
     void deleteCommentAndChildren(@Param("commentId") Long commentId);
+    
+    void updateCommentBlindStatus(@Param("commentId") Long commentId, @Param("status") int status);
 }

@@ -23,8 +23,9 @@ public class CommunityMateDto {
     private int viewCount;
     private String createdAt;
 
-    // 🌟 JOIN으로 땡겨올 예쁜 껍데기(화면 표시용) 데이터
     private String nickname;
     private String profilePhoto;
     private String sidoName;    	
+    
+    private int postStatus;
 }

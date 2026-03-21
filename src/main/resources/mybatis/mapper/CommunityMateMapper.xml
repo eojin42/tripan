@@ -3,7 +3,7 @@
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.tripan.app.mapper.CommunityMateMapper">
 
-<select id="selectMateList" resultType="com.tripan.app.domain.dto.CommunityMateDto">
+	<select id="selectMateList" resultType="com.tripan.app.domain.dto.CommunityMateDto">
         SELECT 
             m.mate_id as mateId,
             m.member_id as memberId,
@@ -16,17 +16,16 @@
             m.content,
             m.tags,
             m.status,
-            m.view_count as viewCount,
+            m.post_status as postStatus, m.view_count as viewCount,
             TO_CHAR(m.created_at, 'YYYY-MM-DD HH24:MI') as createdAt,
             u.nickname,
             u.profile_image as profilePhoto,
             r.sido_name as sidoName
         FROM travel_mate m
         JOIN member2 u ON m.member_id = u.member_id
-        JOIN region r ON m.region_id = r.region_id
-        WHERE 1=1 AND m.post_status = 1
-        
-        <if test="regionId != null">
+        JOIN member1 m1 ON m.member_id = m1.member_id JOIN region r ON m.region_id = r.region_id
+        WHERE 1=1 
+          AND m.post_status = 1  AND m1.status = 1      <if test="regionId != null">
             AND m.region_id = #{regionId}
         </if>
         
@@ -72,15 +71,16 @@
             m.content,
             m.tags,
             m.status,
-            m.view_count as viewCount,
+            m.post_status as postStatus, m.view_count as viewCount,
             TO_CHAR(m.created_at, 'YYYY-MM-DD HH24:MI') as createdAt,
             u.nickname,
             u.profile_image as profilePhoto,
             r.sido_name as sidoName
         FROM travel_mate m
         JOIN member2 u ON m.member_id = u.member_id
-        JOIN region r ON m.region_id = r.region_id
+        JOIN member1 m1 ON m.member_id = m1.member_id JOIN region r ON m.region_id = r.region_id
         WHERE m.mate_id = #{mateId}
+          AND m.post_status = 1  AND m1.status = 1
     </select>
     
     <update id="updateMateViewCount">
@@ -98,7 +98,7 @@
         WHERE mate_id = #{mateId}
     </delete>
     
-	<select id="getUserMateList" parameterType="long" resultType="com.tripan.app.domain.dto.CommunityMateDto">
+    <select id="getUserMateList" parameterType="long" resultType="com.tripan.app.domain.dto.CommunityMateDto">
 	    SELECT 
 	        m.mate_id as mateId,
 	        m.member_id as memberId,
@@ -111,7 +111,7 @@
 	        m.content,
 	        m.tags,
 	        m.status,
-	        m.view_count as viewCount,
+            m.post_status as postStatus, m.view_count as viewCount,
 	        TO_CHAR(m.created_at, 'YYYY-MM-DD HH24:MI') as createdAt,
 	        u.nickname,
 	        u.profile_image as profilePhoto,
@@ -120,7 +120,13 @@
 	    JOIN member2 u ON m.member_id = u.member_id
 	    LEFT JOIN region r ON m.region_id = r.region_id
 	    WHERE m.member_id = #{memberId}
-	    ORDER BY m.created_at DESC
+          AND m.post_status = 1 ORDER BY m.created_at DESC
 	</select>
+
+    <update id="updateMateBlindStatus">
+        UPDATE travel_mate 
+        SET post_status = #{postStatus} 
+        WHERE mate_id = #{mateId}
+    </update>
 
 </mapper>
