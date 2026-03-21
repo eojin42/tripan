@@ -36,5 +36,20 @@
           AND api_area_code IS NOT NULL
         ORDER BY api_area_code ASC
     </select>
+    
+    <select id="selectSigunguList" resultType="com.tripan.app.domain.dto.RegionDto">
+        SELECT
+            region_id           AS regionId,
+            sido_name           AS sidoName,
+            sigungu_name        AS sigunguName,
+            api_area_code       AS apiAreaCode,
+            api_sigungu_code    AS apiSigunguCode
+        FROM region
+        WHERE sido_name = (
+            SELECT sido_name FROM region WHERE region_id = #{sidoId}
+        )
+        AND api_sigungu_code IS NOT NULL
+        ORDER BY sigungu_name ASC
+    </select>
 
 </mapper>

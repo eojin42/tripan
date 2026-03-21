@@ -5,6 +5,7 @@ import com.tripan.app.mapper.RegionMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
@@ -19,5 +20,10 @@ public class RegionApiController {
     @GetMapping("/sido")
     public List<RegionDto> getSidoList() {
         return regionMapper.selectSidoList();
+    }
+    
+    @GetMapping("/sigungu")
+    public List<RegionDto> getSigunguList(@RequestParam("sidoId") Long sidoId) {
+        return regionMapper.selectSigunguList(sidoId);
     }
 }

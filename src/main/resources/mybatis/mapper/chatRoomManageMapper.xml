@@ -1,0 +1,172 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.tripan.app.admin.mapper.ChatRoomManageMapper">
+
+    <!-- 채팅방 목록 조회 -->
+    <select id="selectAllRooms" resultType="com.tripan.app.admin.domain.dto.ChatRoomManageDto">
+        SELECT
+            cr.chat_room_id     AS chatRoomId,
+            cr.chat_room_name   AS chatRoomName,
+            cr.chat_room_type   AS chatRoomType,
+            cr.region_id        AS regionId,
+            r.sido_name         AS sidoName,
+            r.sigungu_name      AS sigunguName,
+            cr.status,
+            cr.created_at       AS createdAt,
+            (
+                SELECT COUNT(*)
+                FROM   chat_member cm
+                WHERE  cm.chat_room_id = cr.chat_room_id
+                AND    cm.conn_status  = 'ONLINE'
+                AND    cm.admin_status = 'NORMAL'
+            ) AS onlineCount
+        FROM  chat_room cr
+        LEFT  JOIN region r ON r.region_id = cr.region_id
+        WHERE cr.chat_room_type = 'REGION'
+        ORDER BY cr.created_at DESC
+    </select>
+
+    <!-- 채팅방 단건 조회 -->
+    <select id="selectRoomById" resultType="com.tripan.app.admin.domain.dto.ChatRoomManageDto">
+        SELECT
+            cr.chat_room_id     AS chatRoomId,
+            cr.chat_room_name   AS chatRoomName,
+            cr.chat_room_type   AS chatRoomType,
+            cr.region_id        AS regionId,
+            r.sido_name         AS sidoName,
+            r.sigungu_name      AS sigunguName,
+            cr.status,
+            cr.created_at       AS createdAt,
+            (
+                SELECT COUNT(*)
+                FROM   chat_member cm
+                WHERE  cm.chat_room_id = cr.chat_room_id
+                AND    cm.conn_status  = 'ONLINE'
+            ) AS onlineCount
+        FROM  chat_room cr
+        LEFT  JOIN region r ON r.region_id = cr.region_id
+        WHERE cr.chat_room_id = #{chatRoomId}
+    </select>
+
+    <!-- 채팅방 개설 -->
+    <insert id="insertRoom" parameterType="com.tripan.app.admin.domain.dto.ChatRoomManageDto"
+            useGeneratedKeys="false">
+        <selectKey keyProperty="chatRoomId" resultType="long" order="BEFORE">
+            SELECT seq_chat_room_id.NEXTVAL FROM DUAL
+        </selectKey>
+        INSERT INTO chat_room (
+            chat_room_id,
+            region_id,
+            trip_id,
+            chat_room_type,
+            chat_room_name,
+            status,
+            created_at
+        ) VALUES (
+            #{chatRoomId},
+            #{regionId,    jdbcType=NUMERIC},
+            NULL,
+            #{chatRoomType},
+            #{chatRoomName},
+            #{status},
+            SYSTIMESTAMP
+        )
+    </insert>
+
+    <!--  활성/비활성 변경 -->
+    <update id="updateStatus">
+        UPDATE chat_room
+        SET    status = #{status}
+        WHERE  chat_room_id = #{chatRoomId}
+    </update>
+
+    <!-- 채팅방 삭제 -->
+    <delete id="deleteRoom">
+        DELETE FROM chat_room
+        WHERE  chat_room_id = #{chatRoomId}
+    </delete>
+
+    <!-- 통계 -->
+    <select id="countTotal" resultType="int">
+        SELECT COUNT(*) FROM chat_room
+        WHERE chat_room_type IN ('REGION', 'WORKSPACE')
+    </select>
+
+    <select id="countActive" resultType="int">
+        SELECT COUNT(*) FROM chat_room
+	    WHERE chat_room_type IN ('REGION', 'WORKSPACE')
+	    AND   status = 'ACTIVE'
+    </select>
+
+    <select id="countTodayMessages" resultType="int">
+        SELECT COUNT(*)
+        FROM   chat_message
+        WHERE  TRUNC(created_at) = TRUNC(SYSDATE)
+    </select>
+
+    <!-- 타입별 통계 -->
+    <select id="countByType" resultType="int">
+        SELECT COUNT(*) FROM chat_room WHERE chat_room_type = #{type}
+    </select>
+
+    <select id="countActiveByType" resultType="int">
+        SELECT COUNT(*) FROM chat_room
+        WHERE  chat_room_type = #{type}
+        AND    status = 'ACTIVE'
+    </select>
+
+    <!-- 입장 멤버 목록 -->
+    <select id="selectMembersByRoomId" resultType="com.tripan.app.admin.domain.dto.ChatMemberManageDto">
+        SELECT
+            cm.chat_member_id    AS chatMemberId,
+            cm.chat_room_id      AS chatRoomId,
+            cm.member_id         AS memberId,
+            m2.nickname,
+            cm.conn_status       AS connStatus,
+            cm.admin_status      AS adminStatus,
+            cm.joined_at         AS joinedAt,
+            cm.last_connected_at AS lastConnectedAt
+        FROM  chat_member cm
+        JOIN  member1      m ON m.member_id = cm.member_id
+        JOIN member2 m2 ON m2.member_id = cm.member_id
+        WHERE cm.chat_room_id = #{chatRoomId}
+        AND   cm.admin_status != 'KICKED'
+        ORDER BY cm.joined_at DESC
+    </select>
+
+    <!-- 멤버 상태 변경 (강퇴 / 차단) -->
+    <update id="updateMemberStatus">
+        UPDATE chat_member
+        SET    admin_status = #{adminStatus}
+        WHERE  chat_room_id = #{chatRoomId}
+        AND    member_id    = #{memberId}
+    </update>
+
+    <!-- 채팅 내역 (날짜 필터 + 오래된 순 정렬) -->
+    <select id="selectMessagesByRoomId" resultType="com.tripan.app.admin.domain.dto.ChatMessageManageDto">
+        SELECT *
+        FROM (
+            SELECT
+                msg.message_id                               AS messageId,
+                msg.room_id                                  AS roomId,
+                msg.member_id                                AS memberId,
+                m2.nickname                                   AS senderNickname,
+                msg.message_type                             AS messageType,
+                msg.content,
+                TO_CHAR(msg.created_at, 'YYYY-MM-DD HH24:MI') AS createdAt
+            FROM  chat_message msg
+            LEFT  JOIN member1  m ON m.member_id = msg.member_id
+            LEFT JOIN member2 m2 ON m2.member_id = msg.member_id
+            WHERE msg.room_id = #{chatRoomId}
+            <if test="searchDate != null and searchDate != ''">
+                AND TRUNC(msg.created_at) = TO_DATE(#{searchDate}, 'YYYY-MM-DD')
+            </if>
+            ORDER BY msg.created_at DESC
+        )
+        WHERE ROWNUM &lt;= #{size}
+        ORDER BY messageId ASC
+    </select>
+
+</mapper>
