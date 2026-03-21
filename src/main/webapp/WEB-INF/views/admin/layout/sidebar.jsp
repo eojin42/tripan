@@ -101,6 +101,9 @@
       <a href="${pageContext.request.contextPath}/admin/report/main"
          class="sub-item ${param.activePage == 'reports' ? 'active' : ''}"
          onclick="event.stopPropagation(); closeMobileSidebar()">유저/게시물 신고 관리</a>
+     <a href="${pageContext.request.contextPath}/admin/chat/rooms"
+         class="sub-item ${param.activePage == 'reports' ? 'active' : ''}"
+         onclick="event.stopPropagation(); closeMobileSidebar()">채팅방 관리</a>
     </div>
 
   </div>

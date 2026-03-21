@@ -7,7 +7,7 @@ import java.util.Map;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.tripan.app.admin.domain.dto.AdminChatRoomDto;
+import com.tripan.app.admin.domain.dto.ChatRoomManageDto;
 import com.tripan.app.admin.mapper.CsManageMapper;
 import com.tripan.app.domain.dto.CommunityChatRoomDto;
 
@@ -55,7 +55,7 @@ public class CsManageServiceImpl implements CsManageService {
 	}
 
 	@Override
-	public List<AdminChatRoomDto> getAllSupportRooms() {
+	public List<ChatRoomManageDto> getAllSupportRooms() {
 		return csMapper.selectAllSupportRooms();
 	}
 

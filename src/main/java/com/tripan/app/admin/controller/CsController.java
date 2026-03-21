@@ -15,7 +15,7 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.ResponseBody;
 
-import com.tripan.app.admin.domain.dto.AdminChatRoomDto;
+import com.tripan.app.admin.domain.dto.ChatRoomManageDto;
 import com.tripan.app.admin.service.CsManageService;
 import com.tripan.app.domain.dto.CommunityChatRoomDto;
 import com.tripan.app.domain.dto.MemberDto;
@@ -51,7 +51,7 @@ public class CsController {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
         if ("ROLE_ADMIN".equals(loginUser.getRole())) {
-            List<AdminChatRoomDto> unread = csService.getAllSupportRooms()
+            List<ChatRoomManageDto> unread = csService.getAllSupportRooms()
                     .stream()
                     .filter(r -> r.getUnreadCount() > 0)
                     .collect(Collectors.toList());
@@ -95,7 +95,7 @@ public class CsController {
         if (loginUser == null) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
-        List<AdminChatRoomDto> rooms = csService.getAllSupportRooms();
+        List<ChatRoomManageDto> rooms = csService.getAllSupportRooms();
         return ResponseEntity.ok(rooms);
     }
 

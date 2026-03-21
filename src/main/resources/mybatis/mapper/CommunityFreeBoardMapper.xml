@@ -68,7 +68,7 @@
             m2.profile_image as profilePhoto
         FROM freeboard_comment c
         LEFT JOIN member2 m2 ON c.member_id = m2.member_id
-        WHERE c.board_id = #{boardId} AND f.status = 1
+        WHERE c.board_id = #{boardId} AND c.status = 1
         ORDER BY c.comment_id ASC
     </select>
     

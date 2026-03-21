@@ -21,4 +21,5 @@ public interface RegionMapper {
         @Param("apiSigunguCode") Integer apiSigunguCode
     );
     List<RegionDto> selectSidoList();
+    List<RegionDto> selectSigunguList(@Param("sidoId") Long sidoId);
 }
