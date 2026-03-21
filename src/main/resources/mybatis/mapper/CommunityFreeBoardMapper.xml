@@ -4,26 +4,24 @@
 <mapper namespace="com.tripan.app.mapper.CommunityFreeBoardMapper">
 
   <select id="selectAll" resultType="com.tripan.app.domain.dto.CommunityFreeBoardDto">
-    SELECT 
-        f.board_id as boardId,
-        /* DB 컬럼명이 member_id2라면 f.member_id2로 수정해야 합니다 */
-        f.member_id as memberId, 
-        f.category,
-        f.title,
-        f.content,
-        f.thumbnail_url as thumbnailUrl,
-        f.view_count as viewCount,
-        f.like_count as likeCount,
-        f.reply_count as replyCount,
-        TO_CHAR(f.created_at, 'YYYY-MM-DD HH24:MI') as createdAt,
-        m2.nickname,
-        m2.profile_image as profilePhoto
-    FROM freeboard f
-    LEFT JOIN member1 m1 ON f.member_id = m1.member_id
-    LEFT JOIN member2 m2 ON f.member_id = m2.member_id
-    WHERE f.status = 1
-    ORDER BY f.board_id DESC
-	</select>
+        SELECT 
+            f.board_id as boardId,
+            f.member_id as memberId, 
+            f.category,
+            f.title,
+            f.content,
+            f.thumbnail_url as thumbnailUrl,
+            f.view_count as viewCount,
+            f.like_count as likeCount,
+            f.reply_count as replyCount,
+            TO_CHAR(f.created_at, 'YYYY-MM-DD HH24:MI') as createdAt,
+            m2.nickname,
+            m2.profile_image as profilePhoto
+        FROM freeboard f
+        LEFT JOIN member1 m1 ON f.member_id = m1.member_id
+        LEFT JOIN member2 m2 ON f.member_id = m2.member_id
+        WHERE f.status = 1     AND m1.status = 1    ORDER BY f.board_id DESC
+    </select>
 	
 	<select id="selectByCategory" resultType="com.tripan.app.domain.dto.CommunityFreeBoardDto">
         SELECT 
@@ -62,14 +60,18 @@
             c.comment_id as commentId,
             c.board_id as boardId,
             c.member_id as memberId,
-            c.content,
+            c.status,
+            CASE 
+                WHEN c.status = 0 THEN '🚫 5회 이상 신고가 누적되어 숨김 처리된 댓글입니다.'
+                ELSE c.content 
+            END as content,
             TO_CHAR(c.created_at, 'YYYY-MM-DD HH24:MI') as createdAt,
             m2.nickname,
             m2.profile_image as profilePhoto
         FROM freeboard_comment c
+        LEFT JOIN member1 m1 ON c.member_id = m1.member_id
         LEFT JOIN member2 m2 ON c.member_id = m2.member_id
-        WHERE c.board_id = #{boardId} AND c.status = 1
-        ORDER BY c.comment_id ASC
+        WHERE c.board_id = #{boardId} AND m1.status = 1   ORDER BY c.comment_id ASC
     </select>
     
     <!--댓글 달기 -->
@@ -169,5 +171,17 @@
 	    WHERE f.member_id = #{memberId} AND f.status = 1
 	    ORDER BY f.board_id DESC
 	</select>
+	
+	<update id="updateStatus">
+        UPDATE freeboard 
+        SET status = #{status} 
+        WHERE board_id = #{boardId}
+    </update>
+
+    <update id="updateCommentStatus">
+        UPDATE freeboard_comment 
+        SET status = #{status} 
+        WHERE comment_id = #{commentId}
+    </update>
 
 </mapper>

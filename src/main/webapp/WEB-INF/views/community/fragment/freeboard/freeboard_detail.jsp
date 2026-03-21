@@ -147,7 +147,7 @@
           </c:when>
           <%-- 남의 글일 때: 신고 버튼 표시 --%>
           <c:otherwise>
-            <a href="javascript:void(0)" onclick="reportFreeboardPost(${board.boardId})" style="display: block; padding: 12px 16px; font-size: 14px; font-weight: 600; color: var(--text-dark); text-decoration: none;">🚨 게시글 신고</a>
+            <a href="javascript:void(0)" onclick="reportFreeboardPost(${board.boardId}, ${board.memberId})" style="display: block; padding: 12px 16px; font-size: 14px; font-weight: 600; color: var(--text-dark); text-decoration: none;">🚨 게시글 신고</a>
           </c:otherwise>
         </c:choose>
       </div>
@@ -234,7 +234,7 @@
                           <a href="javascript:void(0)" onclick="deleteFreeboardComment(${comment.commentId}, ${board.boardId})" style="display: block; padding: 10px 14px; font-size: 13px; font-weight: 600; color: #ff4d4d; text-decoration: none;">🗑️ 삭제하기</a>
                         </c:when>
                         <c:otherwise>
-                          <a href="javascript:void(0)" onclick="reportFreeboardComment(${comment.commentId})" style="display: block; padding: 10px 14px; font-size: 13px; font-weight: 600; color: var(--text-dark); text-decoration: none;">🚨 신고하기</a>
+                          <a href="javascript:void(0)" onclick="reportFreeboardComment(${comment.commentId}, ${comment.memberId})" style="display: block; padding: 10px 14px; font-size: 13px; font-weight: 600; color: var(--text-dark); text-decoration: none;">🚨 신고하기</a>
                         </c:otherwise>
                       </c:choose>
                     </div>

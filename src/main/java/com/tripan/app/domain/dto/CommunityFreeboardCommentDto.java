@@ -19,4 +19,7 @@ public class CommunityFreeboardCommentDto {
     // 작성자 조인 정보 
     private String nickname;
     private String profilePhoto;
+    
+    private int status;
+    
 }

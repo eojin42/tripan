@@ -6,6 +6,7 @@
         INSERT INTO report (
             report_id, 
             reporter_id, 
+            reported_id,
             target_type, 
             target_id, 
             reason, 
@@ -14,11 +15,32 @@
         ) VALUES (
             SEQ_REPORT_ID.NEXTVAL, 
             #{reporterId}, 
+            #{reportedId},
             #{targetType}, 
             #{targetId}, 
             #{reason}, 
             'PENDING',  SYSDATE
         )
     </insert>
+    
+    <select id="countReportByTarget" resultType="int">
+        SELECT COUNT(*) 
+        FROM report 
+        WHERE target_type = #{targetType} AND target_id = #{targetId}
+    </select>
+
+    <select id="countReportByReportedId" resultType="int">
+        SELECT COUNT(*) 
+        FROM report 
+        WHERE reported_id = #{reportedId}
+    </select>
+    
+    <select id="checkDuplicateReport" resultType="int" parameterType="com.tripan.app.domain.dto.ReportDto">
+        SELECT COUNT(*)
+        FROM report
+        WHERE reporter_id = #{reporterId}
+          AND target_type = #{targetType}
+          AND target_id = #{targetId}
+    </select>
 
 </mapper>
