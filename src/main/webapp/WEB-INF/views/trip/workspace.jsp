@@ -12,6 +12,8 @@
   <link rel="stylesheet" href="${pageContext.request.contextPath}/dist/css/trip/trip.css">
   <link rel="stylesheet" href="${pageContext.request.contextPath}/dist/css/trip/workspace.festival.css">
   <link rel="stylesheet" href="${pageContext.request.contextPath}/dist/css/trip/workspace_expense_v2.css">
+  <link rel="stylesheet" href="${pageContext.request.contextPath}/dist/css/trip/workspace_chat.css">
+  
   <link rel="preconnect" href="https://cdn.jsdelivr.net">
   <link href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/variable/pretendardvariable.css" rel="stylesheet">
   <%-- WebSocket: SockJS + STOMP --%>
@@ -778,6 +780,7 @@
                 <c:choose>
                   <c:when test="${not empty m.profileImage}">
                     <img src="<c:choose><c:when test="${fn:startsWith(m.profileImage, 'http')}">${m.profileImage}</c:when><c:otherwise>${pageContext.request.contextPath}/uploads/${m.profileImage}</c:otherwise></c:choose>" 
+                         alt="${fn:escapeXml(m.nickname)}"
                          style="width:100%; height:100%; object-fit:cover; border-radius:50%;" 
                          onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
                     <span style="display:none; font-weight:800; font-size:15px;">${fn:substring(m.nickname,0,2)}</span>
@@ -1501,7 +1504,7 @@
 <%-- 이미지 전체화면 뷰어 --%>
 <div class="modal-overlay" id="imageViewerModal" style="z-index: 9999; background: rgba(0,0,0,0.85); backdrop-filter: blur(5px);" onclick="closeImageViewer()">
   <button class="viewer-close-btn" onclick="closeImageViewer()" style="position: absolute; top: 20px; right: 20px; background: rgba(255,255,255,0.2); border: none; border-radius: 50%; width: 40px; height: 40px; color: white; font-size: 20px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: background 0.2s;">✕</button>
-  <img id="viewerImage" src="" style="max-width: 90vw; max-height: 85vh; border-radius: 16px; object-fit: contain; cursor: zoom-out; box-shadow: 0 10px 40px rgba(0,0,0,0.5);">
+  <img id="viewerImage" src="" alt="이미지 전체화면 보기" style="max-width: 90vw; max-height: 85vh; border-radius: 16px; object-fit: contain; cursor: zoom-out; box-shadow: 0 10px 40px rgba(0,0,0,0.5);">
 </div>
 
 <%-- 알림 dim --%>
@@ -1567,6 +1570,7 @@ function loadFestivalTabIfNeeded() {
 <script src="${pageContext.request.contextPath}/dist/js/trip/workspace.map.js"></script>
 <script src="${pageContext.request.contextPath}/dist/js/trip/workspace.trip.js"></script>
 <script src="${pageContext.request.contextPath}/dist/js/trip/workspace.festival.js"></script>
+<%-- workspace.chat.js 는 workspace_chat.jsp include 안에서 로드됨 (중복 방지) --%>
 
 <%-- 카카오맵 데이터 주입 및 KTO --%>
 <script>
@@ -1625,6 +1629,20 @@ var TRIP_META = {
 <%-- 동기화 토스트 (우상단) --%>
 <div id="wsToast" class="ws-toast"></div>
 
+<%--  채팅 JS에서 참조하는 전역 변수를 include 전에 선언 --%>
+<script>
+  var MY_MEMBER_ID = ${myMemberId};
+  var MY_ROLE = '${memberRole}';
+
+  //  알림창에 닉네임을 띄우기 위한 닉네임 사전(Dictionary) 생성
+  var MEMBER_DICT = {};
+  <c:forEach var="m" items="${tripDto.members}">
+    MEMBER_DICT['${m.memberId}'] = '${fn:escapeXml(m.nickname)}';
+  </c:forEach>
+</script>
+
+<jsp:include page="/WEB-INF/views/trip/workspace_chat.jsp" />
+
 <%-- WebSocket 클라이언트 --%>
 <script src="${pageContext.request.contextPath}/dist/js/trip/workspace.ws.js"></script>
 <script>
@@ -1638,15 +1656,6 @@ var TRIP_META = {
 
 <%--  전역 변수 설정 및 뷰어 권한 철통 통제 --%>
 <script>
-  var MY_MEMBER_ID = ${myMemberId};
-  var MY_ROLE = '${memberRole}';
-
-  //  알림창에 닉네임을 띄우기 위한 닉네임 사전(Dictionary) 생성
-  var MEMBER_DICT = {};
-  <c:forEach var="m" items="${tripDto.members}">
-    MEMBER_DICT['${m.memberId}'] = '${fn:escapeXml(m.nickname)}';
-  </c:forEach>
-
   if (MY_ROLE === 'VIEWER') {
       document.body.classList.add('role-viewer');
       
