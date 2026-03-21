@@ -13,4 +13,6 @@ public class CommunityMateCommentDto {
 
     private String nickname;
     private String profilePhoto;
+    
+    private int status;
 }

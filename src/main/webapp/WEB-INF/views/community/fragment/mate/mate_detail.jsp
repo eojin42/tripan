@@ -49,9 +49,14 @@
             </div>
         </div>
         
-        <c:if test="${loginUserId == mate.memberId}">
-            <button onclick="deleteMatePost(${mate.mateId})" style="padding: 6px 12px; border-radius: 8px; border: 1px solid #FF6B6B; background: white; color: #FF6B6B; font-weight: 700; cursor: pointer; transition: 0.2s;" onmouseover="this.style.background='#FFF5F5'" onmouseout="this.style.background='white'">🗑️ 글 삭제</button>
-        </c:if>
+		<c:choose>
+            <c:when test="${loginUserId == mate.memberId}">
+                <button onclick="deleteMatePost(${mate.mateId})" style="padding: 6px 12px; border-radius: 8px; border: 1px solid #FF6B6B; background: white; color: #FF6B6B; font-weight: 700; cursor: pointer; transition: 0.2s;" onmouseover="this.style.background='#FFF5F5'" onmouseout="this.style.background='white'">🗑️ 글 삭제</button>
+            </c:when>
+            <c:otherwise>
+                <button onclick="openReportModal('MATE', ${mate.mateId}, ${mate.memberId})" style="padding: 6px 12px; border-radius: 8px; border: 1px solid #cbd5e1; background: white; color: var(--text-gray); font-weight: 700; cursor: pointer; transition: 0.2s;" onmouseover="this.style.background='#f1f5f9'" onmouseout="this.style.background='white'">🚨 글 신고</button>
+            </c:otherwise>
+        </c:choose>
     </div>
 
     <div style="background: linear-gradient(145deg, #F8FAFC, #F0F8FF); border: 1px solid rgba(137,207,240,0.3); border-radius: 16px; padding: 20px; margin-bottom: 28px; display: flex; gap: 32px; flex-wrap: wrap; box-shadow: inset 0 2px 4px rgba(255,255,255,0.8);">

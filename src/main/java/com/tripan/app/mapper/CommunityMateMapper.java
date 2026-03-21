@@ -23,4 +23,6 @@ public interface CommunityMateMapper {
     void updateMateViewCount(Long mateId);
 
     void deleteMatePost(Long mateId);
+    
+    void updateMateBlindStatus(@Param("mateId") Long mateId, @Param("postStatus") int postStatus);
 }

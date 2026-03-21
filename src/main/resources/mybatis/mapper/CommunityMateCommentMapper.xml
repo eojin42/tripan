@@ -3,7 +3,7 @@
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.tripan.app.mapper.CommunityMateCommentMapper">
 
-<insert id="insertComment">
+	<insert id="insertComment">
         INSERT INTO travel_mate_comment (comment_id, mate_id, member_id, content, parent_id)
         VALUES (SEQ_MATE_COMMENT_ID.NEXTVAL, #{mateId}, #{memberId}, #{content}, #{parentId, jdbcType=NUMERIC})
     </insert>
@@ -15,23 +15,31 @@
                     c.comment_id as commentId,
                     c.mate_id as mateId,
                     c.member_id as memberId,
-                    c.content,
+                    c.status,
+                    CASE 
+                        WHEN c.status = 0 THEN '🚫 5회 이상 신고가 누적되어 숨김 처리된 댓글입니다.'
+                        ELSE c.content 
+                    END as content,
                     c.parent_id as parentId,
                     TO_CHAR(c.created_at, 'YYYY-MM-DD HH24:MI') as createdAt,
                     u.nickname,
                     u.profile_image as profilePhoto
                 FROM travel_mate_comment c
                 JOIN member2 u ON c.member_id = u.member_id
-                WHERE c.mate_id = #{mateId} 
-                  AND c.parent_id IS NULL AND c.status = 1
-                ORDER BY c.created_at DESC
+                JOIN member1 m1 ON c.member_id = m1.member_id WHERE c.mate_id = #{mateId} 
+                  AND c.parent_id IS NULL
+                  AND m1.status = 1 ORDER BY c.created_at DESC
             ) a WHERE ROWNUM <![CDATA[<=]]> #{offset} + #{limit}
         ) WHERE rnum > #{offset}
     </select>
 
     <select id="countComments" resultType="int">
-        SELECT COUNT(*) FROM travel_mate_comment
-        WHERE mate_id = #{mateId} AND parent_id IS NULL AND c.status = 1
+        SELECT COUNT(*) 
+        FROM travel_mate_comment c
+        JOIN member1 m1 ON c.member_id = m1.member_id
+        WHERE c.mate_id = #{mateId} 
+          AND c.parent_id IS NULL 
+          AND m1.status = 1
     </select> 
     
     <select id="selectChildComments" resultType="com.tripan.app.domain.dto.CommunityMateCommentDto">
@@ -39,16 +47,20 @@
             c.comment_id as commentId,
             c.mate_id as mateId,
             c.member_id as memberId,
-            c.content,
+            c.status,
+            CASE 
+                WHEN c.status = 0 THEN '🚫 5회 이상 신고가 누적되어 숨김 처리된 댓글입니다.'
+                ELSE c.content 
+            END as content,
             c.parent_id as parentId,
             TO_CHAR(c.created_at, 'YYYY-MM-DD HH24:MI') as createdAt,
             u.nickname,
             u.profile_image as profilePhoto
         FROM travel_mate_comment c
         JOIN member2 u ON c.member_id = u.member_id
-        WHERE c.mate_id = #{mateId} AND c.status = 1
+        JOIN member1 m1 ON c.member_id = m1.member_id WHERE c.mate_id = #{mateId} 
           AND c.parent_id IS NOT NULL
-        ORDER BY c.created_at ASC
+          AND m1.status = 1 ORDER BY c.created_at ASC
     </select>
     
     <select id="selectCommentOwner" resultType="java.lang.Long">
@@ -59,5 +71,11 @@
         DELETE FROM travel_mate_comment 
         WHERE comment_id = #{commentId} OR parent_id = #{commentId}
     </delete>
+
+    <update id="updateCommentBlindStatus">
+        UPDATE travel_mate_comment 
+        SET status = #{status} 
+        WHERE comment_id = #{commentId}
+    </update>
 
 </mapper>

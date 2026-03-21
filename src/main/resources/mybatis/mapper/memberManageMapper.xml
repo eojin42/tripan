@@ -98,4 +98,16 @@
                AND ms_d.status_code = 3
         ORDER BY deleteScheduledDate ASC
     </select>
+    
+    <update id="updateMember1Status">
+        UPDATE member1
+        SET status = #{status}
+        WHERE member_id = #{memberId}
+    </update>
+
+    <insert id="insertMemberStatusHistory">
+        INSERT INTO memberStatus (member_id, status_code, memo, reg_date)
+        VALUES (#{memberId}, #{status}, #{memo}, SYSDATE)
+    </insert>
+    
 </mapper>
