@@ -80,9 +80,33 @@
 	    )
 	</insert>
 
-    <insert id="insertEmptyAccommodation" parameterType="map">
-        INSERT INTO accommodation (place_id, checkintime, checkouttime) 
-        VALUES (#{placeId}, '15:00', '11:00')
+    <insert id="insertEmptyAccommodation">
+        INSERT INTO accommodation (place_id, checkintime, checkouttime, af_id)
+        VALUES (#{placeId}, '15:00', '11:00', 'AF' || #{placeId})
     </insert>
+
+    <select id="findPartnerApplyByPartnerId" parameterType="long" resultType="com.tripan.app.partner.domain.dto.PartnerApplyDto">
+        SELECT 
+            p.partner_id as partnerId,
+            p.member_id as memberId,
+            p.partner_name as partnerName,
+            p.contact_name as contactName,
+            p.contact_phone as contactPhone,
+            p.contact_email as contactEmail,     
+            p.has_exp as expStatus,              
+            p.business_number as businessNumber, 
+            p.partner_intro as partnerIntro,
+            p.bank_name as bankName,
+            p.account_number as accountNumber,
+            ps.status_code as status,
+            ps.memo as rejectReason,
+            p.created_at as createdAt
+        FROM partner p
+        LEFT JOIN partner_status ps ON p.partner_id = ps.partner_id
+        WHERE p.partner_id = #{partnerId}
+        ORDER BY ps.reg_date DESC
+        FETCH FIRST 1 ROWS ONLY
+    </select>
+    
     
 </mapper>

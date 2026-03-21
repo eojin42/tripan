@@ -50,7 +50,6 @@ public class PartnerMainController {
         
         List<PartnerInfoDto> partnerList = partnerInfoService.getPartnerListByMemberId(memberId);
         
-        // 등록된 숙소가 없으면 신규 입점 화면으로 강제 이동
         if (partnerList == null || partnerList.isEmpty()) {
             model.addAttribute("activeTab", "new_apply");
             return "partner/main";
@@ -58,7 +57,6 @@ public class PartnerMainController {
         
         model.addAttribute("partnerList", partnerList);
 
-        // 현재 파트너 ID 결정 및 세션 검증
         Long currentPartnerId = requestedPartnerId != null ? requestedPartnerId : (Long) session.getAttribute("currentPartnerId");
         
         final Long finalTargetId = currentPartnerId;
@@ -68,27 +66,30 @@ public class PartnerMainController {
             currentPartnerId = partnerList.get(0).getPartnerId(); 
         }
         
-        PartnerInfoDto info = partnerInfoService.getPartnerInfo(memberId);
-        if (info != null && ("SUSPENDED".equals(info.getStatus()) || "BLOCKED".equals(info.getStatus()))) {
+        
+        final Long safeTargetId = currentPartnerId;
+        PartnerInfoDto currentPartner = partnerList.stream()
+                .filter(p -> p.getPartnerId().equals(safeTargetId))
+                .findFirst().orElse(partnerList.get(0));
+        
+        String status = currentPartner.getStatus(); 
+        
+        if ("0".equals(status) || "PENDING".equals(status) || "REJECTED".equals(status)) {
+            return "redirect:/partner/apply?partnerId=" + currentPartner.getPartnerId();
+        }
+
+        if ("SUSPENDED".equals(status) || "BLOCKED".equals(status)) {
             model.addAttribute("title", "접근 제한");
-            model.addAttribute("message", "파트너사가 정지 또는 차단 상태입니다.<br>문의: support@tripan.com");
+            model.addAttribute("message", "해당 파트너사가 정지 또는 차단 상태입니다.<br>문의: support@tripan.com");
             return "error/error2";
         }
         
         session.setAttribute("currentPartnerId", currentPartnerId);
         
-        // 화면에 뿌려줄 파트너 정보 찾기
-        final Long safeTargetId = currentPartnerId;
-        PartnerInfoDto currentPartner = partnerList.stream()
-                .filter(p -> p.getPartnerId().equals(safeTargetId))
-                .findFirst().orElse(partnerList.get(0));
-
-        // 기존 JSP와의 호환성을 위해 두 개의 이름으로 담아줌
         model.addAttribute("currentPartner", currentPartner);
         model.addAttribute("partnerInfo", currentPartner);
         model.addAttribute("activeTab", tab);
 
-        // 선택된 숙소(Partner)와 연결된 장소(Place) 및 객실(Room) 정보 조회
         Long placeId = partnerInfoService.getPlaceIdByPartnerId(currentPartnerId);
         
         if (placeId != null) {

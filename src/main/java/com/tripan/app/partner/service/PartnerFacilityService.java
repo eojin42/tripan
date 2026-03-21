@@ -22,7 +22,7 @@ public class PartnerFacilityService {
 
         if (afId == null || afId.isEmpty()) {
         	
-            afId = "AF" + dto.getPlaceId(); 
+            afId = "af" + dto.getPlaceId(); 
             
             facilityMapper.insertAccommodationFacilities(dto, afId);
             facilityMapper.insertAccommodationRules(dto, afId);

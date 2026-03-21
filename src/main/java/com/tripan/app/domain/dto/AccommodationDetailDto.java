@@ -20,6 +20,8 @@ public class AccommodationDetailDto extends AccommodationDto{
     private int isBookmarked;
     private String parkinglodging;
     
+    private Integer isActive;
+    
     private Integer fitness;
     private Integer chkcooking;
     private Integer barbecue;
@@ -27,4 +29,6 @@ public class AccommodationDetailDto extends AccommodationDto{
     private Integer karaoke;
     private Integer publicpc;
     private Integer sauna;
+    
+    private String otherFacility;
 }

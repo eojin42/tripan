@@ -16,7 +16,8 @@
             partner_intro AS partnerIntro
         FROM partner
         WHERE member_id = #{memberId}
-    </select>
+        ORDER BY created_at ASC      FETCH FIRST 1 ROWS ONLY      
+     </select>
 
     <update id="updatePartnerInfo">
         UPDATE partner

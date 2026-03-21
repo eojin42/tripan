@@ -30,6 +30,7 @@ public class PartnerApplyController {
     public String applyForm(
             @AuthenticationPrincipal CustomUserDetails userDetails, 
             @RequestParam(value = "mode", required = false) String mode,
+            @RequestParam(value = "partnerId", required = false) Long partnerId, 
             @RequestParam(value = "source", required = false) String source,
             RedirectAttributes rttr,
             Model model) { 
@@ -39,7 +40,9 @@ public class PartnerApplyController {
             return "redirect:/login"; 
         }
 
-        if (userDetails.getAuthorities().contains(new SimpleGrantedAuthority("ROLE_PARTNER"))) {
+        boolean isPartner = userDetails.getAuthorities().contains(new SimpleGrantedAuthority("ROLE_PARTNER"));
+
+        if (isPartner && !"branch".equals(mode) && partnerId == null) {
             return "redirect:/partner/main"; 
         }
 
@@ -47,7 +50,13 @@ public class PartnerApplyController {
         String entryPoint = "admin".equals(source) ? "ADMIN" : "MAIN";
         model.addAttribute("entryPoint", entryPoint);
 
-        PartnerApplyDto myApply = partnerApplyService.getPartnerApplyByMemberId(memberId);
+        PartnerApplyDto myApply = null;
+
+        if (partnerId != null) {
+            myApply = partnerApplyService.getPartnerApplyByPartnerId(partnerId); 
+        } else {
+            myApply = partnerApplyService.getPartnerApplyByMemberId(memberId);
+        }
 
         if ("edit".equals(mode)) {
             if (myApply != null) {
@@ -58,7 +67,6 @@ public class PartnerApplyController {
 
         if (myApply != null) {
             String status = myApply.getStatus();
-            
             if ("PENDING".equals(status) || "REJECTED".equals(status)) {
                 model.addAttribute("partnerStatus", status);
                 model.addAttribute("rejectReason", myApply.getRejectReason()); 
