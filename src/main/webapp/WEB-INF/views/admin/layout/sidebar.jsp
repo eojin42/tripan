@@ -98,9 +98,9 @@
       <a href="${pageContext.request.contextPath}/admin/cs"
          class="sub-item ${param.activePage == 'cs' ? 'active' : ''}"
          onclick="event.stopPropagation(); closeMobileSidebar()">1:1 문의 관리</a>
-      <a href="${pageContext.request.contextPath}/admin/reports"
+      <a href="${pageContext.request.contextPath}/admin/report/main"
          class="sub-item ${param.activePage == 'reports' ? 'active' : ''}"
-         onclick="event.stopPropagation(); closeMobileSidebar()">신고 게시물 관리</a>
+         onclick="event.stopPropagation(); closeMobileSidebar()">유저/게시물 신고 관리</a>
     </div>
 
   </div>
