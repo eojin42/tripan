@@ -50,7 +50,7 @@
 	    FROM feed_post F
 	    LEFT JOIN member2 M ON F.member_id = M.member_id
 	    LEFT JOIN trip T ON F.trip_id = T.trip_id
-	    WHERE F.del_yn = 'N'  ORDER BY F.post_id DESC
+	    WHERE F.del_yn = 'N' AND F.status = 1 ORDER BY F.post_id DESC
 	</select>
 	
 	<select id="checkFeedLike" resultType="int">
@@ -92,7 +92,7 @@
         FROM post_comment c
         LEFT JOIN member2 m ON c.member_id = m.member_id
         WHERE c.post_id = #{postId} 
-          AND c.del_yn = 'N' ORDER BY c.comment_id ASC
+          AND c.del_yn = 'N' AND F.status = 1 ORDER BY c.comment_id ASC
     </select>
     
     <insert id="insertFeedComment" parameterType="com.tripan.app.domain.dto.CommunityFeedCommentDto">
@@ -171,7 +171,7 @@
 	    FROM feed_post F
 	    LEFT JOIN member2 M ON F.member_id = M.member_id
 	    LEFT JOIN trip T ON F.trip_id = T.trip_id
-	    WHERE F.member_id = #{targetMemberId}  AND F.del_yn = 'N' ORDER BY F.post_id DESC
+	    WHERE F.member_id = #{targetMemberId}  AND F.del_yn = 'N' AND F.status = 1 ORDER BY F.post_id DESC
 	</select>
 	
 <select id="getUserActivityList" parameterType="long" resultType="com.tripan.app.domain.dto.CommunityUserActivityDto">
@@ -264,7 +264,7 @@
 	    FROM feed_post F
 	    LEFT JOIN member2 M ON F.member_id = M.member_id
 	    LEFT JOIN trip T ON F.trip_id = T.trip_id
-	    WHERE F.post_id = #{postId} AND F.del_yn = 'N'
+	    WHERE F.post_id = #{postId} AND F.del_yn = 'N' AND F.status = 1
 	</select>
 
 	<select id="getFollowerList" resultType="map">

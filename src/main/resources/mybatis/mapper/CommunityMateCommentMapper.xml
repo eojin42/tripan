@@ -23,7 +23,7 @@
                 FROM travel_mate_comment c
                 JOIN member2 u ON c.member_id = u.member_id
                 WHERE c.mate_id = #{mateId} 
-                  AND c.parent_id IS NULL
+                  AND c.parent_id IS NULL AND c.status = 1
                 ORDER BY c.created_at DESC
             ) a WHERE ROWNUM <![CDATA[<=]]> #{offset} + #{limit}
         ) WHERE rnum > #{offset}
@@ -31,7 +31,7 @@
 
     <select id="countComments" resultType="int">
         SELECT COUNT(*) FROM travel_mate_comment
-        WHERE mate_id = #{mateId} AND parent_id IS NULL
+        WHERE mate_id = #{mateId} AND parent_id IS NULL AND c.status = 1
     </select> 
     
     <select id="selectChildComments" resultType="com.tripan.app.domain.dto.CommunityMateCommentDto">
@@ -46,7 +46,7 @@
             u.profile_image as profilePhoto
         FROM travel_mate_comment c
         JOIN member2 u ON c.member_id = u.member_id
-        WHERE c.mate_id = #{mateId} 
+        WHERE c.mate_id = #{mateId} AND c.status = 1
           AND c.parent_id IS NOT NULL
         ORDER BY c.created_at ASC
     </select>

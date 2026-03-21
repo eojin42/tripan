@@ -23,7 +23,9 @@
       <svg class="menu-icon" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
       <span class="menu-text">대시보드</span>
     </a>
-    <a href="${pageContext.request.contextPath}/admin/settlement"
+    
+    <div class="menu-label">Sales</div>
+    <a href="${pageContext.request.contextPath}/admin/settlement/main"
        class="menu-item ${param.activePage == 'stats' ? 'active' : ''}"
        onclick="closeMobileSidebar()">
       <svg class="menu-icon" viewBox="0 0 24 24"><line x1="18" y1="20" x2="18" y2="10"></line><line x1="12" y1="20" x2="12" y2="4"></line><line x1="6" y1="20" x2="6" y2="14"></line></svg>

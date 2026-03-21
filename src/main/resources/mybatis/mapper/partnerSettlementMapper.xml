@@ -2,7 +2,7 @@
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 
-<mapper namespace="com.tripan.app.admin.mapper.SettlementMapper">
+<mapper namespace="com.tripan.app.admin.mapper.PartnerSettlementMapper">
 
     <!-- ============================================================
          1. 파트너 월별 정산 요약 목록 (main 리스트)
