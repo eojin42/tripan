@@ -1756,20 +1756,89 @@ textarea.form-textarea:focus { border-color: var(--blue); background: var(--whit
   background: var(--bg);
 }
 
-/* ━━━ 가계부 ━━━ */
+/* ━━━ 가계부 (편집 모드) ━━━
+   편집 모드에서 패널이 전체 너비를 차지하면서 내부 스크롤이 제대로 동작하도록 수정
+   핵심: panel-expense → flex-column / 높이 100% / exp-tab-pane이 flex:1로 채움
+*/
 .ws-layout.mode-edit #panel-expense {
   background: var(--bg);
+  display: flex !important;
+  flex-direction: column !important;
+  height: 100%;
+  overflow: hidden;
 }
+
+/* 내부 탭바는 flex-shrink:0 고정 */
+.ws-layout.mode-edit #panel-expense > div[style*="display:flex"][style*="border-bottom"] {
+  flex-shrink: 0;
+}
+
+/* exp-tab-pane: 각 탭이 남은 영역 꽉 채우도록 */
+.ws-layout.mode-edit #panel-expense .exp-tab-pane {
+  flex: 1;
+  min-height: 0;   /* flex 자식의 overflow 버그 방지 */
+  overflow-y: auto;
+}
+
+/* 홈탭: 넓은 너비에서 카드들을 그리드로 배치 */
+.ws-layout.mode-edit #exp-tab-home {
+  display: flex !important;
+  flex-direction: row !important;
+  flex-wrap: wrap;
+  align-content: flex-start;
+  gap: 20px;
+  padding: 24px 32px;
+  overflow-y: auto;
+}
+.ws-layout.mode-edit #exp-tab-home .exp-home-hero {
+  flex: 1 1 320px;
+  min-width: 280px;
+  max-width: 480px;
+}
+.ws-layout.mode-edit #exp-tab-home #expSettleStatus {
+  flex: 0 0 100%;
+}
+.ws-layout.mode-edit #exp-tab-home #expenseCatsSection {
+  flex: 0 0 100%;
+}
+.ws-layout.mode-edit #exp-tab-home #expMySummarySection {
+  flex: 1 1 320px;
+  min-width: 280px;
+}
+
+/* 내역탭 (exp-tab-list = expense-panel-inner) */
 .ws-layout.mode-edit #panel-expense .expense-panel-inner {
   max-width: 860px;
   margin: 0 auto;
-  padding: 40px 56px;
-  overflow-y: auto;
+  padding: 20px 32px 32px;
   width: 100%;
   flex: 1;
   display: flex;
   flex-direction: column;
+  min-height: 0;
+  overflow-y: auto;
 }
+
+/* 정산탭: settle 뷰가 올바르게 스크롤되도록 */
+.ws-layout.mode-edit #exp-tab-settle {
+  display: flex !important;
+  flex-direction: column !important;
+  flex: 1;
+  min-height: 0;
+  max-width: 860px;
+  margin: 0 auto;
+  width: 100%;
+  padding: 0 16px;
+  box-sizing: border-box;
+}
+.ws-layout.mode-edit #settleStatusView,
+.ws-layout.mode-edit #settleDoneView {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+}
+
+/* 카드/아이템 크기 살짝 키우기 */
 .ws-layout.mode-edit #panel-expense .expense-summary {
   border-radius: 22px;
   padding: 28px 32px;
@@ -1785,7 +1854,7 @@ textarea.form-textarea:focus { border-color: var(--blue); background: var(--whit
   border-radius: 18px;
 }
 .ws-layout.mode-edit #panel-expense .expense-cat__icon { font-size: 28px; }
-.ws-layout.mode-edit #panel-expense .expense-cat__amt { font-size: 15px; }
+.ws-layout.mode-edit #panel-expense .expense-cat__amt  { font-size: 15px; }
 .ws-layout.mode-edit #panel-expense .expense-item {
   padding: 16px 18px;
   border-radius: 16px;
@@ -1795,7 +1864,7 @@ textarea.form-textarea:focus { border-color: var(--blue); background: var(--whit
   width: 44px; height: 44px; font-size: 22px; border-radius: 14px;
 }
 .ws-layout.mode-edit #panel-expense .expense-item__name { font-size: 15px; }
-.ws-layout.mode-edit #panel-expense .expense-item__amt { font-size: 17px; }
+.ws-layout.mode-edit #panel-expense .expense-item__amt  { font-size: 17px; }
 
 /* ━━━ 투표 ━━━ */
 .ws-layout.mode-edit #panel-vote {

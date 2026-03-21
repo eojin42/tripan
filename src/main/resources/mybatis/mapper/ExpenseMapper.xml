@@ -361,6 +361,18 @@
 	      AND  status        != 'COMPLETED'
 	</update>
 
+	<!--
+	    ★ 단건 settlement_id 기준 amount 업데이트
+	    updateSingleSettlementAmount는 trip/pair 조합 전체를 건드리는 버그가 있으므로
+	    정산 요청 시에는 이 쿼리를 사용 (settlement_id = 정확히 1행만 수정)
+	-->
+	<update id="updateSettlementById">
+	    UPDATE settlement
+	    SET    amount = #{amount}
+	    WHERE  settlement_id = #{settlementId}
+	      AND  status       != 'COMPLETED'
+	</update>
+
 	<!-- 중복 요청 방지 -->
 	<select id="countActiveSettlement" resultType="int">
 	    SELECT COUNT(*)

@@ -241,57 +241,31 @@ public class ExpenseServiceImpl implements ExpenseService {
     @Override
     @Transactional
     public void completeSettlements(SettlementDto.CompleteRequest req) {
+        /*
+         * ★ 최종 수정: settlement row의 status/settledAt만 COMPLETED로 변경
+         *
+         * settlement_expense_link는 건드리지 않음.
+         *
+         * [이유]
+         * settlement_expense_link는 expense 단위로 연결됨.
+         * 한 expense에 참여자가 여러 명이면,
+         * 1명 완료 시 그 expense가 SETTLED → 다른 참여자 정산도 화면에서 사라지는 버그.
+         *
+         * [해결]
+         * 프론트 p2pMap이 settleStatus(expense 단위) 대신
+         * COMPLETED settlement의 (fromMid, toMid) 페어를 직접 비교해서 제외.
+         * → 다른 참여자에게 영향 없이 정확하게 동작.
+         * → settlement row만 COMPLETED로 바꾸면 충분.
+         *
+         * JPA dirty checking으로 자동 UPDATE됨.
+         */
         for (Long id : req.getSettlementIds()) {
             settlementRepository.findById(id).ifPresent(s -> {
                 s.setStatus("COMPLETED");
                 s.setSettledAt(LocalDateTime.now());
-
-                /*
-                 * ★ settlement_expense_link 처리 전략
-                 *
-                 * [배치 정산] batch_id != null
-                 *   → createSettlements() 에서 이미 link INSERT 완료
-                 *   → 여기서 다시 INSERT 하면 UQ_SEL_LINK(batch_id, expense_id) 위반
-                 *   → 아무것도 하지 않는다
-                 *
-                 * [단건 정산] batch_id == null (requestSingleSettlement 경유)
-                 *   → link가 아직 없음 → 새 batch_id 발급 후 현재 미완료 expense 연결
-                 */
-                if (s.getBatchId() != null) {
-                    // 배치 정산: link는 createSettlements에서 처리됨, 아무것도 하지 않음
-                    return;
-                }
-
-                // 단건 정산: batch_id 발급 + link INSERT
-                Long newBatchId = settlementRepository.generateNextBatchId();
-                s.setBatchId(newBatchId);
-                final Long finalBatchId = newBatchId;
-                final Long tripId       = s.getTripId();
-
-                // 이미 COMPLETED batch에 연결된 expense 제외
-                List<Long> alreadyLinked = expenseMapper.selectSettledExpenseIdsByTripId(tripId);
-                List<Long> toLink = expenseMapper
-                        .selectExpenseSummaryListByTripId(tripId, 0, 9999)
-                        .stream()
-                        .map(ExpenseDto.SummaryResponse::getExpenseId)
-                        .filter(eid -> !alreadyLinked.contains(eid))
-                        .collect(Collectors.toList());
-
-                if (!toLink.isEmpty()) {
-                    List<Map<String, Object>> linkRows = new ArrayList<>();
-                    for (Long eid : toLink) {
-                        Map<String, Object> row = new HashMap<>();
-                        row.put("batchId",   finalBatchId);
-                        row.put("expenseId", eid);
-                        row.put("tripId",    tripId);
-                        linkRows.add(row);
-                    }
-                    expenseMapper.insertSettlementExpenseLinks(linkRows);
-                }
             });
         }
     }
-
     @Override
     @Transactional
     public void deleteSettlement(Long settlementId) {
