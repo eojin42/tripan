@@ -1,21 +1,23 @@
 /**
- * workspace.chat.js — 여행 워크스페이스 채팅
+ * workspace.chat.js v20260322 — 여행 워크스페이스 채팅
  * ─────────────────────────────────────────────
  * 의존: CTX_PATH, TRIP_ID, MY_MEMBER_ID, MY_NICK (workspace.jsp에서 주입)
  *       SockJS + STOMP (이미 로드됨)
  * ─────────────────────────────────────────────
  */
+console.log('[Chat] workspace.chat.js v20260322 로드됨');
 
 /* ══════════════════════════════════════════
    상태
 ══════════════════════════════════════════ */
 var _chat = {
-  roomId:       null,
-  open:         false,
-  loadingMore:  false,
-  oldestMsgId:  null,
-  stompSub:     null,
-  unread:       0
+  roomId:            null,
+  open:              false,
+  loadingMore:       false,
+  oldestMsgId:       null,
+  stompSub:          null,
+  unread:            0,
+  localLastReadMsgId: null  // 서버 XML 무관하게 로컬에서 관리하는 마지막 읽은 msgId
 };
 
 // CSS .chat-mem-avatar--0~5 와 완전 동일한 팔레트
@@ -34,11 +36,13 @@ function initChat() {
     .then(function(data) {
       if (!data) return;
       _chat.roomId = data.chatRoomId;
-
-      // 안 읽은 수 표시
       _setUnread(data.unreadCount || 0);
 
-      // WebSocket 채팅 채널 구독
+      // 서버에서 받은 lastReadMessageId를 로컬 기준으로 저장
+      if (data.lastReadMessageId) {
+        _chat.localLastReadMsgId = data.lastReadMessageId;
+      }
+
       _subscribeChat();
     })
     .catch(function(e) { console.warn('[Chat] 초기화 실패', e); });
@@ -99,16 +103,104 @@ function toggleChat() {
 function _openChat() {
   var modal = document.getElementById('chatModal');
   if (!modal) return;
-
+  if (_chat.open) return;
   _chat.open = true;
-  modal.classList.add('open');
-  _setUnread(0); // 즉시 배지 숨김
 
-  // 메시지 로드 완료 후 읽음 처리 (로드 전 last_connected_at 갱신 방지)
+  // 로컬에 저장된 unread 수와 마지막 읽은 msgId 사용
+  var localUnread   = _chat.unread;
+  var localLastRead = _chat.localLastReadMsgId;
+
+  _setUnread(0);
+  modal.classList.add('open');
   _chat.oldestMsgId = null;
-  _loadMessages(null, true, function() {
-    _markRead(); // 로드 완료 콜백에서 읽음 처리
-  });
+
+  // roomId가 없으면 먼저 조회
+  if (!_chat.roomId) {
+    fetch(CTX_PATH + '/api/trips/' + TRIP_ID + '/chat/room')
+      .then(function(r) { return r.ok ? r.json() : null; })
+      .then(function(data) {
+        if (data && data.chatRoomId) _chat.roomId = data.chatRoomId;
+        console.log('[Chat] _openChat localUnread=', localUnread, 'localLastRead=', localLastRead);
+        _doLoadAndScroll(localUnread, localLastRead);
+      })
+      .catch(function() { _doLoadAndScroll(0, null); });
+  } else {
+    console.log('[Chat] _openChat localUnread=', localUnread, 'localLastRead=', localLastRead);
+    _doLoadAndScroll(localUnread, localLastRead);
+  }
+}
+
+function _doLoadAndScroll(unread, lastReadId) {
+  var list = document.getElementById('chatMessageList');
+  if (list) list.innerHTML = '<div class="chat-loading-text">불러오는 중...</div>';
+
+  if (!_chat.roomId) return;
+
+  fetch(CTX_PATH + '/api/trips/' + TRIP_ID + '/chat/messages?limit=50')
+    .then(function(r) { return r.ok ? r.json() : []; })
+    .then(function(msgs) {
+      _chat.loadingMore = false;
+      if (!_chat.open) return; // 로드 중 닫혔으면 중단
+
+      var list = document.getElementById('chatMessageList');
+      if (!list) return;
+
+      console.log('[Chat] 메시지 수=', msgs.length, '/ unread=', unread, '/ lastReadId=', lastReadId);
+
+      if (!msgs.length) {
+        list.innerHTML = '<div class="chat-empty-text">아직 채팅 내역이 없습니다.<br>첫 번째 메시지를 보내보세요! 💬</div>';
+        _markRead();
+        return;
+      }
+
+      if (msgs[0]) _chat.oldestMsgId = msgs[0].messageId;
+      list.innerHTML = msgs.map(_buildMsgHtml).join('');
+
+      var dividerInserted = false;
+      if (unread > 0 && lastReadId) {
+        dividerInserted = _insertUnreadDivider(list, lastReadId, unread);
+      }
+
+      requestAnimationFrame(function() {
+        requestAnimationFrame(function() {
+          if (!_chat.open) return;
+          var list = document.getElementById('chatMessageList');
+          if (!list) return;
+
+          if (dividerInserted) {
+            var divider = list.querySelector('.chat-unread-divider');
+            if (divider) {
+              // getBoundingClientRect: 현재 뷰포트 기준 위치
+              // list.scrollTop + (divider위치 - list위치) = divider의 list 내 절대 위치
+              var listTop    = list.getBoundingClientRect().top;
+              var divTop     = divider.getBoundingClientRect().top;
+              var currentScrollTop = list.scrollTop;
+              list.scrollTop = currentScrollTop + (divTop - listTop) - 8;
+              console.log('[Chat] 구분선 스크롤 listTop=', listTop, 'divTop=', divTop, '→ scrollTop=', list.scrollTop);
+            } else {
+              list.scrollTop = list.scrollHeight;
+            }
+          } else {
+            list.scrollTop = list.scrollHeight;
+          }
+          console.log('[Chat] scrollTop after=', list.scrollTop, '/ scrollHeight=', list.scrollHeight);
+
+          // 현재 렌더된 마지막 메시지 ID를 로컬에 저장
+          var allMsgs = list.querySelectorAll('.chat-msg[data-msg-id]');
+          var lastMsg = allMsgs[allMsgs.length - 1];
+          if (lastMsg) {
+            _chat.localLastReadMsgId = parseInt(lastMsg.getAttribute('data-msg-id'), 10);
+          }
+
+          _markRead();
+        });
+      });
+    })
+    .catch(function() {
+      if (!_chat.open) return;
+      var list = document.getElementById('chatMessageList');
+      if (list) list.innerHTML = '<div class="chat-empty-text">메시지를 불러오지 못했습니다.</div>';
+    });
 }
 
 function _closeChat() {
@@ -116,64 +208,68 @@ function _closeChat() {
   if (!modal) return;
   _chat.open = false;
   modal.classList.remove('open');
+  // markRead는 여기서 호출 안 함 — 스크롤 완료(메시지 실제로 봤을 때)에만 호출
 }
 
 /* ══════════════════════════════════════════
-   메시지 로드
+   메시지 로드 (무한스크롤 전용 — 위로 스크롤 시 이전 메시지 추가)
 ══════════════════════════════════════════ */
-function _loadMessages(beforeId, scrollToBottom, onComplete) {
-  if (!_chat.roomId) return;
+function _loadMessages(beforeId, scrollToBottom, unreadCount, lastReadMsgId, onComplete) {
+  if (!_chat.roomId || !beforeId) return; // 무한스크롤은 beforeId 필수
+  if (_chat.loadingMore) return;
   _chat.loadingMore = true;
 
   var list = document.getElementById('chatMessageList');
+  var prevHeight = list ? list.scrollHeight : 0;
 
-  if (!beforeId && list) {
-    list.innerHTML = '<div class="chat-loading-text">불러오는 중...</div>';
-  }
-
-  var url = CTX_PATH + '/api/trips/' + TRIP_ID + '/chat/messages?limit=50'
-          + (beforeId ? '&beforeId=' + beforeId : '');
-
-  fetch(url)
+  fetch(CTX_PATH + '/api/trips/' + TRIP_ID + '/chat/messages?limit=50&beforeId=' + beforeId)
     .then(function(r) { return r.ok ? r.json() : []; })
     .then(function(msgs) {
       _chat.loadingMore = false;
-      if (!list) return;
-
-      var prevHeight = list.scrollHeight;
-
-      if (!msgs.length) {
-        if (!beforeId) {
-          list.innerHTML = '<div class="chat-empty-text">아직 채팅 내역이 없습니다.<br>첫 번째 메시지를 보내보세요! 💬</div>';
-        }
-        if (typeof onComplete === 'function') onComplete();
-        return;
-      }
-
-      var html = msgs.map(_buildMsgHtml).join('');
-
-      if (beforeId) {
-        list.insertAdjacentHTML('afterbegin', html);
-        list.scrollTop = list.scrollHeight - prevHeight;
-      } else {
-        list.innerHTML = html;
-      }
+      if (!list || !msgs.length) return;
 
       if (msgs[0]) _chat.oldestMsgId = msgs[0].messageId;
 
-      if (scrollToBottom) {
-        list.scrollTop = list.scrollHeight;
-      }
-
-      if (typeof onComplete === 'function') onComplete();
+      list.insertAdjacentHTML('afterbegin', msgs.map(_buildMsgHtml).join(''));
+      // 스크롤 위치 유지 (위에 내용이 추가됐으므로 높이 차이만큼 보정)
+      list.scrollTop = list.scrollHeight - prevHeight;
     })
-    .catch(function() {
-      _chat.loadingMore = false;
-      if (list && !beforeId) {
-        list.innerHTML = '<div class="chat-empty-text">메시지를 불러오지 못했습니다.</div>';
-      }
-      if (typeof onComplete === 'function') onComplete();
-    });
+    .catch(function() { _chat.loadingMore = false; });
+}
+
+/**
+ * lastReadMsgId 바로 다음 메시지 앞에 구분선 삽입
+ * @returns {boolean} 삽입 성공 여부
+ */
+function _insertUnreadDivider(list, lastReadMsgId, unreadCount) {
+  var allMsgs  = list.querySelectorAll('.chat-msg[data-msg-id]');
+  var inserted = false;
+  var threshold = parseInt(lastReadMsgId, 10);
+
+  for (var i = 0; i < allMsgs.length; i++) {
+    var msgId = parseInt(allMsgs[i].getAttribute('data-msg-id'), 10);
+    if (!isNaN(msgId) && msgId > threshold) {
+      var dividerHtml = '<div class="chat-unread-divider">'
+        + '<span class="chat-unread-divider__line"></span>'
+        + '<span class="chat-unread-divider__label">읽지 않은 메시지 ' + unreadCount + '개</span>'
+        + '<span class="chat-unread-divider__line"></span>'
+        + '</div>';
+      allMsgs[i].insertAdjacentHTML('beforebegin', dividerHtml);
+      inserted = true;
+      break;
+    }
+  }
+
+  // 50개 범위 안에 lastReadMsgId가 없는 경우 → 맨 위에 배너
+  if (!inserted && allMsgs.length > 0) {
+    var topDividerHtml = '<div class="chat-unread-divider chat-unread-divider--top">'
+      + '<span class="chat-unread-divider__label">📩 읽지 않은 메시지 ' + unreadCount + '개</span>'
+      + '</div>';
+    list.insertAdjacentHTML('afterbegin', topDividerHtml);
+    inserted = true;
+  }
+
+  return inserted;
 }
 
 /* ══════════════════════════════════════════
@@ -222,14 +318,14 @@ function _onNewMessage(msg) {
 
   if (_chat.open) {
     if (!isMe) {
-      // 상대방 메시지: 항상 표시
       _appendMessage(msg, false);
     }
-    // 내 메시지는 sendChatMessage() REST 응답에서 이미 추가했으므로 WS 수신 시 skip
     _markRead();
   } else {
-    // 채팅창 닫혀있으면 배지 증가 (상대방 메시지만)
     if (!isMe) {
+      // 읽지 않은 새 메시지: localLastReadMsgId는 현재 마지막 읽은 ID 유지
+      // 아직 localLastReadMsgId가 없으면 이 메시지 직전 ID를 기록할 수 없으므로
+      // _chat.unread만 증가
       _setUnread(_chat.unread + 1);
     }
   }
@@ -285,7 +381,7 @@ function _buildMsgHtml(msg) {
     ? ' style="background:' + color + ';color:#fff"'
     : '';
 
-  return '<div class="chat-msg ' + side + '">'
+  return '<div class="chat-msg ' + side + '" data-msg-id="' + (msg.messageId || '') + '">'
        + (avatarHtml ? '<div class="chat-msg__avatar">' + avatarHtml + '</div>' : '')
        + '<div class="chat-msg__body">'
        +   nameHtml
@@ -329,7 +425,7 @@ function _setUnread(count) {
 ══════════════════════════════════════════ */
 function _onChatScroll(el) {
   if (el.scrollTop < 60 && !_chat.loadingMore && _chat.oldestMsgId) {
-    _loadMessages(_chat.oldestMsgId, false);
+    _loadMessages(_chat.oldestMsgId, false, 0, null, null);
   }
 }
 

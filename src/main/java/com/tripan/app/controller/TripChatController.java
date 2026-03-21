@@ -35,13 +35,16 @@ public class TripChatController {
         if (myId == null) return ResponseEntity.status(401).build();
 
         try {
-            String tripName = tripService.getTripDetails(tripId).getTripName();
-            Long chatRoomId = chatService.getOrCreateChatRoom(tripId, tripName, myId);
-            int  unread     = chatService.countUnread(chatRoomId, myId);
+            String tripName  = tripService.getTripDetails(tripId).getTripName();
+            Long chatRoomId  = chatService.getOrCreateChatRoom(tripId, tripName, myId);
+            int  unread      = chatService.countUnread(chatRoomId, myId);
+            // unread가 있을 때만 lastReadMessageId를 내려줌 (없으면 null → 구분선 불필요)
+            Long lastReadId  = (unread > 0) ? chatService.getLastReadMessageId(chatRoomId, myId) : null;
 
             Map<String, Object> resp = new HashMap<>();
-            resp.put("chatRoomId", chatRoomId);
-            resp.put("unreadCount", unread);
+            resp.put("chatRoomId",        chatRoomId);
+            resp.put("unreadCount",       unread);
+            resp.put("lastReadMessageId", lastReadId);
             return ResponseEntity.ok(resp);
         } catch (Exception e) {
             e.printStackTrace();

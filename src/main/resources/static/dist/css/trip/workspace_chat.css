@@ -210,11 +210,13 @@
 .chat-modal__messages {
   flex: 1;
   overflow-y: auto;
+  overflow-x: hidden;
   padding: 12px 12px 4px;
   display: flex;
   flex-direction: column;
   gap: 2px;
-  scroll-behavior: smooth;
+  scroll-behavior: auto;
+  position: relative; /* divider.offsetTop이 이 컨테이너 기준이 되도록 */
 }
 .chat-modal__messages::-webkit-scrollbar {
   width: 4px;
@@ -329,6 +331,43 @@
   padding: 20px;
   font-size: 12px;
   color: #A0AEC0;
+}
+
+/* ── 읽지 않은 메시지 구분선 (카카오톡 스타일) ── */
+.chat-unread-divider {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 4px;
+  margin: 6px 0;
+  flex-shrink: 0;
+  width: 100%;
+}
+.chat-unread-divider__line {
+  flex: 1;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, #FC8181 30%, #FC8181 70%, transparent);
+  opacity: 0.5;
+}
+.chat-unread-divider__label {
+  font-size: 11px;
+  font-weight: 700;
+  color: #FC8181;
+  white-space: nowrap;
+  background: #fff5f5;
+  padding: 3px 10px;
+  border-radius: 20px;
+  border: 1px solid rgba(252,129,129,.3);
+  letter-spacing: .1px;
+}
+/* 맨 위에 표시되는 배너형 구분선 (50개 범위 밖) */
+.chat-unread-divider--top {
+  justify-content: center;
+  padding: 6px 4px;
+}
+.chat-unread-divider--top .chat-unread-divider__label {
+  font-size: 12px;
+  padding: 5px 16px;
 }
 .chat-msg--me .chat-msg__bubble {
   /* 색상은 JS에서 memberId 기반으로 인라인 style 주입 */
