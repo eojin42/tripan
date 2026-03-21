@@ -157,10 +157,10 @@ function _renderCategoryCards(breakdown, total) {
     if (_CAT_ORDER.indexOf(k)===-1) ordered.push(c);
   });
 
-  wrap.innerHTML = ordered.map(function(c) {
-    var k   = (c.category||'ETC').toUpperCase();
+  var cardsHtml = ordered.map(function(catItem) {
+    var k   = (catItem.category||'ETC').toUpperCase();
     var m   = _cat(k);
-    var amt = Number(c.totalAmount||0);
+    var amt = Number(catItem.totalAmount||0);
     var pct = total > 0 ? Math.round(amt/total*100) : 0;
     return '<div class="exp-cat-card" onclick="openCatDetail(\'' + k + '\')" style="--cat-color:' + m.color + ';--cat-bg:' + m.bg + ';--cat-light:' + m.light + ';">'
       + '<div class="exp-cat-card__header">'
@@ -172,8 +172,24 @@ function _renderCategoryCards(breakdown, total) {
       + '<div class="exp-cat-card__bar"><div class="exp-cat-card__bar-fill" style="width:' + pct + '%;"></div></div>'
       + '</div>';
   }).join('');
+
+  /* < > 네비게이션 버튼 포함 렌더 */
+  var showNav = ordered.length > 2;
+  section.innerHTML =
+    '<div class="exp-home-section-title">📊 카테고리별 지출</div>'
+    + '<div class="exp-cats-nav-wrap">'
+    + (showNav ? '<button class="exp-cats-nav-btn exp-cats-nav-btn--l" id="catNavL" onclick="_scrollCats(-1)">&#8249;</button>' : '')
+    + '<div class="expense-cats" id="expCatsInner">' + cardsHtml + '</div>'
+    + (showNav ? '<button class="exp-cats-nav-btn exp-cats-nav-btn--r" id="catNavR" onclick="_scrollCats(1)">&#8250;</button>' : '')
+    + '</div>';
 }
 
+
+/* 카테고리 네비게이션 스크롤 */
+function _scrollCats(dir) {
+  var inner = document.getElementById('expCatsInner');
+  if (inner) inner.scrollBy({ left: dir * 140, behavior: 'smooth' });
+}
 
 /* ─── 내 지출 요약 (수정 요구사항 3 — "나" 중심, 결제/부담 중복 제거) ─── */
 function _renderMyExpenseSummaryV2(myPaid, myShare, myBal, categoryBreakdown, memberShares, myMid) {
@@ -195,69 +211,101 @@ function _renderMyExpenseSummaryV2(myPaid, myShare, myBal, categoryBreakdown, me
     + '<div id="myRecentExpense" class="my-recent-expense"></div>'
     + '<button class="exp-my-detail-btn" onclick="openMyExpenseDetail()">내 지출 상세 보기 →</button>';
 
-  /* 내 카테고리별 지출 조회 (expenses 목록 기반) */
-  fetch(CTX_PATH + '/api/trips/' + TRIP_ID + '/expenses?page=1&size=200')
-    .then(function(r) { return r.ok ? r.json() : []; })
-    .then(function(list) {
-      list = (list||[]).map(normalizeRow);
-      var myExpenses = list.filter(function(e) { return Number(e.payerId) === myMid; });
+  /* 내 지출 요약: with-participants(shareAmount) + settlements 동시 조회 */
+  Promise.all([
+    fetch(CTX_PATH + '/api/trips/' + TRIP_ID + '/expenses/with-participants')
+      .then(function(r) { return r.ok ? r.json() : []; }),
+    fetch(CTX_PATH + '/api/trips/' + TRIP_ID + '/settlements?memberId=' + myMid)
+      .then(function(r) { return r.ok ? r.json() : {}; })
+  ])
+  .then(function(res) {
+    var allExp = (res[0] || []);
+    var settleData = res[1] || {};
+    var settlements = (settleData.settlements || []);
 
-      /* 내 카테고리 분석 */
-      var catMap = {};
-      myExpenses.forEach(function(e) {
-        var k = (e.category||'ETC').toUpperCase();
-        if (!catMap[k]) catMap[k] = 0;
-        catMap[k] += Number(e.amount||0);
+    /* ── 내 카테고리 분석: 참여자 기반 shareAmount 합산 ── */
+    var catMap = {};
+    allExp.forEach(function(exp) {
+      var k = (exp.category||'ETC').toUpperCase();
+      (exp.participants || []).forEach(function(p) {
+        if (Number(p.memberId) === myMid) {
+          if (!catMap[k]) catMap[k] = 0;
+          catMap[k] += Number(p.shareAmount || 0);
+        }
+      });
+    });
+
+    var catEntries = Object.keys(catMap).map(function(k) { return { cat: k, amt: catMap[k] }; })
+      .sort(function(a,b) { return b.amt - a.amt; });
+
+    if (catEntries.length) {
+      var catHtml = '<div class="my-cat-bd__title">내가 가장 많이 쓴 카테고리</div>';
+      catHtml += catEntries.slice(0, 5).map(function(ce, i) {
+        var m = _cat(ce.cat);
+        var maxAmt = catEntries[0].amt || 1;
+        var barW = Math.round(ce.amt / maxAmt * 100);
+        return '<div class="my-cat-bd__row">'
+          + '<div class="my-cat-bd__left">'
+          +   '<span class="my-cat-bd__rank">' + (i+1) + '</span>'
+          +   '<span class="my-cat-bd__icon" style="background:' + m.light + ';">' + m.icon + '</span>'
+          +   '<span class="my-cat-bd__name">' + m.name + '</span>'
+          + '</div>'
+          + '<div class="my-cat-bd__right">'
+          +   '<div class="my-cat-bd__bar"><div class="my-cat-bd__bar-fill" style="width:' + barW + '%;background:' + m.color + ';"></div></div>'
+          +   '<span class="my-cat-bd__amt">' + _fmtAmt(ce.amt) + '</span>'
+          + '</div>'
+          + '</div>';
+      }).join('');
+      var catEl = document.getElementById('myCatBreakdown');
+      if (catEl) catEl.innerHTML = catHtml;
+    }
+
+    /* ── 최근 활동: 내가 결제한 지출 + 내가 완료한 정산 ── */
+    var recentEl = document.getElementById('myRecentExpense');
+    if (!recentEl) return;
+
+    /* 내가 결제한 지출 (최대 3건) */
+    var myPayments = allExp
+      .filter(function(e) { return Number(e.payerId) === myMid; })
+      .sort(function(a,b) { return String(b.expenseDate||'').localeCompare(String(a.expenseDate||'')); })
+      .slice(0, 3)
+      .map(function(e) {
+        return { type: 'pay', expenseId: e.expenseId, desc: e.description||'', cat: e.category||'ETC', amt: Number(e.amount||0), date: e.expenseDate||'' };
       });
 
-      var catEntries = Object.keys(catMap).map(function(k) { return { cat: k, amt: catMap[k] }; })
-        .sort(function(a,b) { return b.amt - a.amt; });
+    /* 내가 송금 완료한 정산 (status=COMPLETED, fromMemberId=나) */
+    var mySent = settlements
+      .filter(function(s) { return s.status === 'COMPLETED' && Number(s.fromMemberId) === myMid; })
+      .slice(0, 2)
+      .map(function(s) {
+        return { type: 'settle', desc: (s.toNickname||s.toMemberNickname||'?') + '에게 송금', cat: 'SETTLE', amt: Number(s.amount||0), date: s.settledAt||s.createdAt||'' };
+      });
 
-      if (catEntries.length) {
-        var catHtml = '<div class="my-cat-bd__title">내가 가장 많이 쓴 카테고리</div>';
-        catHtml += catEntries.map(function(c, i) {
-          var m = _cat(c.cat);
-          var maxAmt = catEntries[0].amt || 1;
-          var barW = Math.round(c.amt / maxAmt * 100);
-          return '<div class="my-cat-bd__row">'
-            + '<div class="my-cat-bd__left">'
-            +   '<span class="my-cat-bd__rank">' + (i+1) + '</span>'
-            +   '<span class="my-cat-bd__icon" style="background:' + m.light + ';">' + m.icon + '</span>'
-            +   '<span class="my-cat-bd__name">' + m.name + '</span>'
-            + '</div>'
-            + '<div class="my-cat-bd__right">'
-            +   '<div class="my-cat-bd__bar"><div class="my-cat-bd__bar-fill" style="width:' + barW + '%;background:' + m.color + ';"></div></div>'
-            +   '<span class="my-cat-bd__amt">' + _fmtAmt(c.amt) + '</span>'
-            + '</div>'
-            + '</div>';
-        }).join('');
-        var catEl = document.getElementById('myCatBreakdown');
-        if (catEl) catEl.innerHTML = catHtml;
-      }
+    var recentAll = myPayments.concat(mySent)
+      .sort(function(a,b) { return String(b.date).localeCompare(String(a.date)); })
+      .slice(0, 4);
 
-      /* 최근 결제 지출 (최대 3건) */
-      var recent = myExpenses.sort(function(a,b) {
-        return String(b.expenseDate||'').localeCompare(String(a.expenseDate||''));
-      }).slice(0,3);
-
-      if (recent.length) {
-        var recentHtml = '<div class="my-cat-bd__title" style="margin-top:16px;">최근 내가 결제한 지출</div>';
-        recentHtml += recent.map(function(e) {
-          var m = _cat(e.category);
-          var date = e.expenseDate ? String(e.expenseDate).substring(5).replace(/-/g,'/') : '';
-          return '<div class="my-recent-item" onclick="openExpenseDetail(' + e.expenseId + ')">'
-            + '<div class="my-recent-item__icon" style="background:' + m.light + ';">' + m.icon + '</div>'
-            + '<div class="my-recent-item__info">'
-            +   '<div class="my-recent-item__name">' + _esc(e.description||'') + '</div>'
-            +   '<div class="my-recent-item__meta">' + date + ' · ' + m.name + '</div>'
-            + '</div>'
-            + '<div class="my-recent-item__amt">' + _fmtAmt(e.amount) + '</div>'
-            + '</div>';
-        }).join('');
-        var recentEl = document.getElementById('myRecentExpense');
-        if (recentEl) recentEl.innerHTML = recentHtml;
-      }
-    }).catch(function() {});
+    if (recentAll.length) {
+      var recentHtml = '<div class="my-cat-bd__title" style="margin-top:14px;">최근 활동</div>';
+      recentHtml += recentAll.map(function(item) {
+        var m = item.cat === 'SETTLE' ? { icon: '💸', light: '#FFF5F5', name: '송금' } : _cat(item.cat);
+        var dateStr = item.date ? String(item.date).substring(5, 10).replace(/-/g,'/') : '';
+        var typeBadge = item.type === 'pay'
+          ? '<span class="my-recent-badge my-recent-badge--pay">결제</span>'
+          : '<span class="my-recent-badge my-recent-badge--settle">송금</span>';
+        var clickAttr = item.type === 'pay' ? ' onclick="openExpenseDetail(' + item.expenseId + ')"' : '';
+        return '<div class="my-recent-item"' + clickAttr + (item.type === 'pay' ? ' style="cursor:pointer;"' : '') + '>'
+          + '<div class="my-recent-item__icon" style="background:' + m.light + ';">' + m.icon + '</div>'
+          + '<div class="my-recent-item__info">'
+          +   '<div class="my-recent-item__name">' + _esc(item.desc) + ' ' + typeBadge + '</div>'
+          +   '<div class="my-recent-item__meta">' + dateStr + ' · ' + m.name + '</div>'
+          + '</div>'
+          + '<div class="my-recent-item__amt' + (item.type === 'settle' ? ' my-recent-item__amt--settle' : '') + '">' + (item.type === 'settle' ? '-' : '') + _fmtAmt(item.amt) + '</div>'
+          + '</div>';
+      }).join('');
+      recentEl.innerHTML = recentHtml;
+    }
+  }).catch(function() {});
 }
 
 
@@ -1587,3 +1635,4 @@ function _renderBatchExpenses(data) {
     + cards
     + '</div>';
 }
+								

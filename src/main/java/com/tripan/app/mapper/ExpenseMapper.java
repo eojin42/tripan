@@ -79,6 +79,9 @@ public interface ExpenseMapper {
                               @Param("toMemberId")   Long toMemberId,
                               @Param("fromMemberId") Long fromMemberId);
 
+    /** 여행 멤버 ID 목록 (알림 발송용) */
+    List<Map<String, Object>> selectTripMemberIds(@Param("tripId") Long tripId);
+
     /** 알림 INSERT */
     int insertTripNotification(@Param("tripId")     Long tripId,
                                @Param("receiverId") Long receiverId,

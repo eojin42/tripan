@@ -328,14 +328,15 @@
       <div id="myBalanceLine" class="exp-home-hero__balance"></div>
     </div>
 
-    <%-- ── 정산 대기 현황 칩 (나에게 온 정산 요청 건수) ── --%>
-    <div id="expSettleStatus" style="padding:0 16px;margin-top:8px;"></div>
 
     <%-- ── 카테고리별 지출 (가로 스크롤 카드형) ── --%>
     <div id="expenseCatsSection" style="display:none;padding:12px 16px 0;">
       <div class="exp-home-section-title">📊 카테고리별 지출</div>
       <div class="expense-cats" id="expenseCats" style="display:flex;gap:10px;overflow-x:auto;padding-bottom:8px;scrollbar-width:none;-webkit-overflow-scrolling:touch;"></div>
     </div>
+
+    <%-- ── 정산 알림 칩 (내 지출 요약 위) ── --%>
+    <div id="expSettleStatus" style="padding:0 16px 4px;"></div>
 
     <%-- ── 내 지출 요약 섹션 ── --%>
     <div id="expMySummarySection" style="display:none;padding:12px 16px 20px;">

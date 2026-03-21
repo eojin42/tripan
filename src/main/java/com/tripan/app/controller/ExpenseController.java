@@ -58,32 +58,42 @@ public class ExpenseController {
         req.setTripId(tripId);
         ExpenseDto.DetailResponse result = expenseService.createExpense(req);
 
-        // ★ 알림 발송 (결제자를 제외한 모든 멤버에게)
+        // ★ 알림 발송 — notificationService는 JPA @Transactional 내에서 실행되어
+        //   시퀀스 PK 충돌 시 트랜잭션이 rollback-only로 마킹됨 → 지출도 롤백되는 버그
+        //   해결: JPA 트랜잭션 완전히 끝난 후 MyBatis expenseMapper로 직접 알림 INSERT
         try {
             Long senderId    = req.getPayerId();
             String payerNick = result.getPayerNickname() != null ? result.getPayerNickname() : "누군가";
-            String desc      = result.getDescription()  != null ? result.getDescription()  : "";
-            long   amount    = result.getAmount() != null ? result.getAmount().longValue() : 0L;
+            String message   = payerNick + "님이 새 지출을 추가했어요! 가계부를 확인해보세요.";
 
-            String message = payerNick + "님이 새 지출을 추가했어요: "
-                    + desc + " ₩" + String.format("%,d", amount);
+            // trip_member에서 결제자 제외 멤버에게 각각 알림 INSERT (MyBatis → 별도 트랜잭션)
+            java.util.List<java.util.Map<String, Object>> members = expenseMapper.selectTripMemberIds(tripId);
+            for (java.util.Map<String, Object> m : members) {
+                // Oracle MyBatis Map은 대문자 키로 반환 ("MEMBER_ID")
+                Object midObj = m.get("MEMBER_ID");
+                if (midObj == null) midObj = m.get("memberId"); // 소문자 fallback
+                if (midObj == null) midObj = m.get("member_id");
+                if (midObj == null) continue;
+                long receiverId = Long.parseLong(String.valueOf(midObj));
+                if (receiverId == senderId) continue;
+                try {
+                    expenseMapper.insertTripNotification(tripId, receiverId, senderId, message, "EXPENSE");
+                } catch (Exception notifEx) {
+                    // 개별 알림 PK 충돌 무시 — 지출 등록에는 영향 없음
+                }
+            }
 
-            // DB 알림 저장 (결제자 제외 전체)
-            notificationService.notifyAll(tripId, senderId, message, "EXPENSE");
-
-            // WebSocket: 알림 벨 갱신
-            Map<String, Object> notifMsg = new HashMap<>();
+            // WebSocket 브로드캐스트
+            java.util.Map<String, Object> notifMsg = new HashMap<>();
             notifMsg.put("type", "NEW_NOTIFICATION");
             messagingTemplate.convertAndSend("/sub/trip/" + tripId, notifMsg);
 
-            // WebSocket: 지출 목록 실시간 갱신 (EXPENSE_ADDED는 workspace_ws.js에서 이미 처리됨)
-            Map<String, Object> expMsg = new HashMap<>();
+            java.util.Map<String, Object> expMsg = new HashMap<>();
             expMsg.put("type", "EXPENSE_ADDED");
             expMsg.put("senderNickname", payerNick);
             messagingTemplate.convertAndSend("/sub/trip/" + tripId, expMsg);
 
         } catch (Exception e) {
-            // 알림 실패가 지출 등록을 막으면 안 됨
             e.printStackTrace();
         }
 
@@ -129,15 +139,17 @@ public class ExpenseController {
                 expenseMapper.insertSingleSettlement(req);
             }
 
-            // 알림 발송
-            String message = "정산 요청이 도착했어요! ₩"
-                    + String.format("%,d", amount.longValue()) + " 을 확인해주세요.";
-            expenseMapper.insertTripNotification(tripId, fromMemberId, myId, message, "EXPENSE");
-            
-            Map<String, Object> wsMsg = new HashMap<>();
-            wsMsg.put("type", "NEW_NOTIFICATION");
-            messagingTemplate.convertAndSend("/sub/trip/" + tripId, wsMsg);
-            
+            // 알림 발송 — 별도 try-catch, "EXPENSE" 타입만 허용됨
+            try {
+                String message = "정산 요청이 도착했어요! 가계부를 확인해주세요.";
+                expenseMapper.insertTripNotification(tripId, fromMemberId, myId, message, "EXPENSE");
+                Map<String, Object> wsMsg = new HashMap<>();
+                wsMsg.put("type", "NEW_NOTIFICATION");
+                messagingTemplate.convertAndSend("/sub/trip/" + tripId, wsMsg);
+            } catch (Exception notifEx) {
+                notifEx.printStackTrace(); // 알림 실패해도 정산은 성공
+            }
+
             result.put("success", true);
             result.put("message", "정산을 요청했어요!");
         } catch (Exception e) {
