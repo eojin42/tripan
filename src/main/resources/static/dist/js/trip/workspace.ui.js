@@ -25,6 +25,13 @@ function setViewMode(mode) {
   if (mode === 'edit') layout.classList.add('mode-edit');
   if (mode === 'map')  layout.classList.add('mode-map');
 
+  /* ★ 편집모드: 사이드바가 full-width → data-wide 강제 true
+     설정 안 하면 이전 split 모드의 좁은 너비 값이 남아
+     [data-wide="false"] 규칙이 정산 카드 등에서 flex-wrap:wrap 적용됨 */
+  if (mode === 'edit') {
+    sidebar.setAttribute('data-wide', 'true');
+  }
+
   if (mode === 'split') {
     requestAnimationFrame(function () { setSidebarWidth(prevSidebarW); });
   }
