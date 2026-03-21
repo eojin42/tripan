@@ -101,12 +101,9 @@ function _loadHomeTab() {
       if (sendEl) sendEl.textContent = myBal < 0 ? _fmtAmt(Math.abs(myBal)) : '₩ 0';
 
       /* ── 나의 잔액 상태 ── */
+      /* ★ 수정: myBalanceLine 배지 제거 — 정신없어서 삭제 */
       var myBalEl = document.getElementById('myBalanceLine');
-      if (myBalEl) {
-        if (myBal > 0) myBalEl.innerHTML = '<span class="exp-home-balance-chip exp-home-balance-chip--recv">💚 ' + _fmtAmt(myBal) + ' 받을 예정</span>';
-        else if (myBal < 0) myBalEl.innerHTML = '<span class="exp-home-balance-chip exp-home-balance-chip--send">💸 ' + _fmtAmt(Math.abs(myBal)) + ' 보낼 예정</span>';
-        else myBalEl.innerHTML = '<span class="exp-home-balance-chip exp-home-balance-chip--done">✅ 정산 없음</span>';
-      }
+      if (myBalEl) myBalEl.innerHTML = '';
 
       /* ── 정산 대기 현황 (수정 요구사항 1: 나에게 온 정산 요청 건수) ── */
       _renderSettleStatusChip();
@@ -142,16 +139,10 @@ function _renderSettleStatusChip() {
           && Number(s.fromMemberId) === myMid;
       });
       if (!incoming.length) { el.innerHTML = ''; return; }
-      var totalAmt = incoming.reduce(function(sum, s) { return sum + Number(s.amount || 0); }, 0);
+      /* ★ 수정: 정산 대기 칩은 유지하되 금액 배지만 단순하게 */
       el.innerHTML = '<div class="exp-home-settle-chip" onclick="switchExpTab(\'settle\', document.querySelectorAll(\'.exp-itab\')[2])">'
-        + '<div class="exp-home-settle-chip__left">'
-        +   '<div class="exp-home-settle-chip__icon">📬</div>'
-        +   '<div>'
-        +     '<div class="exp-home-settle-chip__title">처리 대기 중인 정산 요청</div>'
-        +     '<div class="exp-home-settle-chip__sub">총 ' + _fmtAmt(totalAmt) + ' · 정산 탭에서 확인하세요</div>'
-        +   '</div>'
-        + '</div>'
-        + '<span class="exp-home-settle-chip__badge">' + incoming.length + '건</span>'
+        + '<span class="exp-home-settle-chip__icon">📬</span>'
+        + '<span class="exp-home-settle-chip__title">정산 요청 ' + incoming.length + '건 대기 중 · 정산 탭에서 확인</span>'
         + '</div>';
     })
     .catch(function() { el.innerHTML = ''; });
@@ -219,15 +210,9 @@ function _renderMyExpenseSummaryV2(myPaid, myShare, myBal, categoryBreakdown, me
   if (!myMid || (myPaid === 0 && myShare === 0)) { el.style.display='none'; return; }
   el.style.display = '';
 
-  var balHtml, balClass;
-  if (myBal > 0) { balHtml = '💚 ' + _fmtAmt(myBal) + ' 받을 예정'; balClass = 'recv'; }
-  else if (myBal < 0) { balHtml = '💸 ' + _fmtAmt(Math.abs(myBal)) + ' 보낼 예정'; balClass = 'send'; }
-  else { balHtml = '✅ 정산 없음'; balClass = 'done'; }
-
-  /* 상단 히어로에 결제/부담이 이미 있으므로 여기선 정산 결과 + 카테고리 분석만 */
+  /* ★ 수정: 배지 제거 — 카테고리 분석만 */
   var summaryBody = document.getElementById('expMySummaryBody');
-  summaryBody.innerHTML =
-      '<div class="my-summary-result my-summary-result--' + balClass + '">' + balHtml + '</div>'
+  summaryBody.innerHTML = ''
     + '<div id="myCatBreakdown" class="my-cat-breakdown"></div>'
     + '<div id="myRecentExpense" class="my-recent-expense"></div>'
     + '<button class="exp-my-detail-btn" onclick="openMyExpenseDetail()">내 지출 상세 보기 →</button>';
@@ -360,10 +345,61 @@ function loadExpenseList() {
   listEl.innerHTML = '<div class="expense-empty-state"><div class="expense-empty-state__icon">⏳</div>'
     + '<div class="expense-empty-state__title">불러오는 중...</div></div>';
 
-  fetch(CTX_PATH + '/api/trips/' + TRIP_ID + '/expenses?page=1&size=50')
-    .then(function(r) { return r.ok ? r.json() : Promise.reject(r.status); })
-    .then(function(list) {
-      list = (list||[]).map(normalizeRow);
+  var myMid = _getMyMid() || 0;
+
+  /* settlements API 동시 호출: 타임스탬프로 정확히 판별
+     - expense.createdAt < settlement.settledAt → SETTLED (이 expense가 정산됐을 당시)
+     - expense.createdAt >= settlement.settledAt → UNSETTLED (정산 완료 후 새로 추가된 것) */
+  Promise.all([
+    fetch(CTX_PATH + '/api/trips/' + TRIP_ID + '/expenses?page=1&size=50')
+      .then(function(r) { return r.ok ? r.json() : Promise.reject(r.status); }),
+    fetch(CTX_PATH + '/api/trips/' + TRIP_ID + '/settlements?memberId=' + myMid)
+      .then(function(r) { return r.ok ? r.json() : {settlements:[]}; })
+  ])
+    .then(function(results) {
+      var list = (results[0]||[]).map(normalizeRow);
+      var settlements = ((results[1]||{}).settlements||[]).map(normalizeRow);
+
+      /* pair별 COMPLETED 정산 목록 (toMemberId=결제자 기준) */
+      var completedByPayer = {};
+      settlements.forEach(function(s) {
+        if (s.status === 'COMPLETED' && s.settledAt) {
+          var toMid = s.toMemberId || 0;
+          if (!completedByPayer[toMid]) completedByPayer[toMid] = [];
+          completedByPayer[toMid].push(new Date(s.settledAt).getTime());
+        }
+      });
+
+      /* pair별 PENDING/REQUESTED 결제자 목록 */
+      var pendingPayers = {};
+      settlements.forEach(function(s) {
+        if (s.status === 'REQUESTED' || s.status === 'PENDING') {
+          pendingPayers[s.toMemberId || 0] = true;
+        }
+      });
+
+      /* expense별 settle_status 결정
+         우선순위: DB settle_status(배치 정산) > 타임스탬프 기반(단건 정산) */
+      list = list.map(function(e) {
+        /* 배치 정산으로 이미 SETTLED/PENDING이면 그대로 */
+        var dbSs = (e.settleStatus || 'UNSETTLED').toUpperCase();
+        if (dbSs === 'SETTLED') return e;
+        if (dbSs === 'PENDING') return e;
+
+        var payerId = Number(e.payerId);
+        var expTs   = e.createdAt ? new Date(e.createdAt).getTime() : 0;
+
+        /* 이 결제자에 대한 완료된 정산 중, expense 생성 이후에 완료된 것이 있으면 SETTLED */
+        var completedTimes = completedByPayer[payerId] || [];
+        var isSettled = completedTimes.some(function(t) { return t > expTs; });
+        if (isSettled) return Object.assign({}, e, { settleStatus: 'SETTLED' });
+
+        /* 이 결제자에 대한 진행 중 정산이 있으면 PENDING */
+        if (pendingPayers[payerId]) return Object.assign({}, e, { settleStatus: 'PENDING' });
+
+        return e;
+      });
+
       var cntEl = document.getElementById('expenseCount');
       if (cntEl) cntEl.textContent = list.length ? '총 ' + list.length + '건' : '';
 
@@ -404,12 +440,16 @@ function loadExpenseList() {
           var m = _cat(e.category);
           var hasMemo    = !!(e.memo && String(e.memo).trim());
           var hasReceipt = !!(e.receiptUrl && String(e.receiptUrl).trim());
-          /* ★ 정산 상태 스타일 */
           var ss = (e.settleStatus || 'UNSETTLED').toUpperCase();
-          var ssStyle = ss === 'SETTLED'
-            ? 'border-left:3px solid #10B981;background:rgba(16,185,129,0.04);'
+          /* ★ border-left inline style 대신 CSS 변수 --accent 사용
+             → trip.css의 border !important와 충돌 없음 */
+          var accentColor = ss === 'SETTLED' ? '#10B981'
+                          : ss === 'PENDING' ? '#F59E0B'
+                          : m.color;
+          var cardBg = ss === 'SETTLED'
+            ? 'background:linear-gradient(135deg,rgba(16,185,129,0.05),#fff);'
             : ss === 'PENDING'
-            ? 'border-left:3px solid #F59E0B;background:rgba(245,158,11,0.04);'
+            ? 'background:linear-gradient(135deg,rgba(245,158,11,0.05),#fff);'
             : '';
           var ssCheck = ss === 'SETTLED' ? '<span class="exp-settle-check settled">✓</span>' : '';
           var ssBadge = ss === 'SETTLED'
@@ -418,7 +458,7 @@ function loadExpenseList() {
             ? '<span class="exp-settle-badge exp-settle-badge--pending">⏳ 정산 중</span>'
             : '';
           var date = e.expenseDate ? String(e.expenseDate).substring(5).replace(/-/g,'/') : '';
-          html += '<div class="expense-item" style="' + ssStyle + '" data-expense-id="' + e.expenseId + '">'
+          html += '<div class="expense-item" style="--accent:' + accentColor + ';' + cardBg + '" data-expense-id="' + e.expenseId + '">'
             + '<div class="expense-item__cat-icon" style="background:' + m.light + ';color:' + m.color + ';">' + m.icon + '</div>'
             + '<div class="expense-item__info">'
             +   '<div class="expense-item__name">' + ssCheck + _esc(e.description||'') + '</div>'
@@ -432,10 +472,7 @@ function loadExpenseList() {
             + '</div>'
             + '<div class="expense-item__right">'
             +   '<div class="expense-item__amt">' + _fmtAmt(e.amount) + '</div>'
-            /* ★ 수정: data-del-id로 식별, 이벤트 위임 방식 사용 */
-            +   '<button class="expense-del-btn" '
-            +     'data-del-id="' + e.expenseId + '" '
-            +     'title="삭제">✕</button>'
+            +   '<button class="expense-del-btn" data-del-id="' + e.expenseId + '" title="삭제">✕</button>'
             + '</div>'
             + '</div>';
         });
@@ -548,89 +585,70 @@ function _loadSettleStatusView() {
     var expenses     = (results[0] || []).map(normalizeRow);
     var existingList = (results[1] && results[1].settlements) ? results[1].settlements : [];
 
-    /* ★ settleStatus 맵 구축 (세 번째 API — settleStatus 포함) */
-    var settleStatusMap = {};
-    (results[2] || []).map(normalizeRow).forEach(function(e) {
-      settleStatusMap[Number(e.expenseId)] = (e.settleStatus || 'UNSETTLED').toUpperCase();
-    });
-
-    /* ── 1단계: 지출 기반 P2P 정산 계산 ──
+    /*
+     * ══════════════════════════════════════════════════════════
+     * 정산 현황 계산 — 최종 올바른 버전
      *
-     * ★ 핵심 수정: settleStatus(expense 단위) 기반 제외 → COMPLETED settlement 직접 비교
+     * 원칙: "모든 expense 부채 합계 - 모든 COMPLETED 정산 합계 = 남은 부채"
      *
-     * [기존 방식의 버그]
-     * settleStatus는 expense 단위 → expense에 참여자가 3명이면
-     * 1명 완료처리 시 expense 전체가 SETTLED → 나머지 2명 정산도 사라짐
+     * [왜 이 방식인가]
+     * 기존 방식들의 공통 결함:
+     * - completedPairs: pair 전체를 skip → 새 지출도 skip됨
+     * - settledExpenseMap + singleCompletedAmt: 두 방식이 배치/단건을
+     *   서로 다른 방식으로 처리하다 케이스마다 구멍이 생김
      *
-     * [수정 방식]
-     * COMPLETED settlement 목록에서 (fromMid, toMid) 페어를 추출
-     * 각 참여자(fromMid)와 결제자(toMid) 사이에 COMPLETED settlement가 있으면
-     * 그 expense의 해당 참여자 몫만 제외 → 다른 참여자는 영향 없음
+     * 이 방식은 단순하고 모든 케이스에서 정확:
+     * - 단건 정산 완료 후 새 지출 추가 → netAmt = 새 지출 금액 만큼 증가 ✓
+     * - 배치 정산 완료 후 새 지출 추가 → netAmt = 새 지출 금액만큼 증가 ✓
+     * - 정산 완료 후 새 지출 없음 → netAmt = 0 → 카드 사라짐 ✓
+     * ══════════════════════════════════════════════════════════
      */
     var p2pMap = {};
 
-    /* COMPLETED settlement 페어 맵: "fromMid_toMid" → true */
-    var completedPairs = {};
-    existingList.forEach(function(s) {
-      if (s.status === 'COMPLETED') {
-        var pairKey = (s.fromMemberId || 0) + '_' + (s.toMemberId || 0);
-        completedPairs[pairKey] = true;
-      }
-    });
-
+    /* 1) 모든 expense의 pair별 부채 합산 (필터 없음) */
     expenses.forEach(function(exp) {
       var payerId   = Number(exp.payerId);
       var payerNick = exp.payerNickname || MEMBER_DICT[payerId] || '?';
       var participants = exp.participants || [];
 
-      /* 참여자 1명 이하 → 개인 지출, 정산 제외 */
       if (participants.length <= 1) return;
 
-      /* 결제자만 참여한 경우도 제외 */
-      var nonPayerParticipants = participants.filter(function(p) {
+      var nonPayers = participants.filter(function(p) {
         return p.memberId && Number(p.memberId) !== payerId;
       });
-      if (!nonPayerParticipants.length) return;
+      if (!nonPayers.length) return;
 
-      /* 각 참여자(결제자 제외)에 대해 정산 생성 */
-      nonPayerParticipants.forEach(function(p) {
-        var fromMid  = Number(p.memberId);   /* 돈 보내는 사람 (분담자) */
-        var toMid    = payerId;              /* 돈 받는 사람 (결제자) */
+      nonPayers.forEach(function(p) {
+        var fromMid  = Number(p.memberId);
+        var toMid    = payerId;
         var fromNick = p.memberNickname || p.nickname || MEMBER_DICT[fromMid] || '?';
         var amt      = Number(p.shareAmount || 0);
         if (amt <= 0) return;
 
-        /* ★ 이 (fromMid → toMid) 페어에 이미 COMPLETED settlement가 있으면 제외
-         *   expense 단위가 아닌 참여자 페어 단위로 판단하므로
-         *   다른 참여자에게는 영향 없음 */
-        var pairKey = fromMid + '_' + toMid;
-        if (completedPairs[pairKey]) return;
-
         var key = fromMid + '_' + toMid;
         if (!p2pMap[key]) {
-          p2pMap[key] = {
-            fromMid: fromMid, toMid: toMid,
-            fromNick: fromNick, toNick: payerNick,
-            totalAmt: 0, expenses: []
-          };
+          p2pMap[key] = { fromMid: fromMid, toMid: toMid,
+            fromNick: fromNick, toNick: payerNick, totalAmt: 0, expenses: [] };
         }
         p2pMap[key].totalAmt += amt;
         p2pMap[key].expenses.push({
-          expenseId: exp.expenseId,
-          description: exp.description || '',
-          category: exp.category || 'ETC',
-          amount: Number(exp.amount || 0),
-          shareAmount: amt,
-          expenseDate: exp.expenseDate || ''
+          expenseId: exp.expenseId, description: exp.description || '',
+          category: exp.category || 'ETC', amount: Number(exp.amount || 0),
+          shareAmount: amt, expenseDate: exp.expenseDate || ''
         });
       });
     });
 
-    /* ── 2단계: 기존 settlement 배열로 저장
-       ★ Bug Fix: 기존 key→단일값 방식은 같은 pair에 COMPLETED+PENDING이 있을 때
-          마지막 값만 남아 PENDING이 안 보이거나, COMPLETED 때문에 카드 전체가 스킵됨.
-          배열로 저장해서 COMPLETED 금액 차감 후 netAmt > 0이면 카드 표시.
-    ── */
+    /* 2) 모든 COMPLETED 정산의 pair별 합산 */
+    var allCompletedAmt = {};
+    existingList.forEach(function(s) {
+      if (s.status === 'COMPLETED') {
+        var k = (s.fromMemberId||0) + '_' + (s.toMemberId||0);
+        allCompletedAmt[k] = (allCompletedAmt[k] || 0) + Number(s.amount || 0);
+      }
+    });
+
+    /* 3) settlement 배열 (PENDING/REQUESTED 탐색용) */
     var existingByKey = {};
     existingList.forEach(function(s) {
       var key = (s.fromMemberId||0) + '_' + (s.toMemberId||0);
@@ -638,10 +656,9 @@ function _loadSettleStatusView() {
       existingByKey[key].push(s);
     });
 
-    /* ── 3단계: 내가 관련된 정산만 분리 ── */
-    var toRecv = []; /* 내가 받을 정산 (내가 결제자 = toMid === myMid) */
-    var toSend = []; /* 내가 줘야 할 정산 (내가 분담자 = fromMid === myMid) */
-
+    /* 4) 내가 관련된 정산 분리 */
+    var toRecv = [];
+    var toSend = [];
     Object.keys(p2pMap).forEach(function(key) {
       var item = p2pMap[key];
       if (item.toMid === myMid)   toRecv.push(item);
@@ -650,25 +667,21 @@ function _loadSettleStatusView() {
 
     /* 지출이 없는 경우 */
     if (!toRecv.length && !toSend.length) {
-      if (emptyEl) emptyEl.style.display = '';
+      if (emptyEl) emptyEl.style.display = 'flex';
       if (recvList) recvList.innerHTML = '';
       if (sendList) sendList.innerHTML = '';
       return;
     }
 
-    /* ── 4단계: 내가 받을 정산 렌더 ── */
+    /* ── 5단계: 내가 받을 정산 렌더 ── */
     var recvHtml = '';
     var hasRecv = false;
     toRecv.forEach(function(item) {
       var key       = item.fromMid + '_' + item.toMid;
       var settleArr = existingByKey[key] || [];
 
-      /*
-       * ★ SETTLED 지출은 p2pMap 계산 시 이미 제외됐으므로
-       *   completedAmt를 추가로 차감하면 이중 차감 → 새 지출 후 카드 안 보이는 버그
-       *   netAmt = 미완료 지출에서 나온 금액 그대로 사용
-       */
-      var netAmt = item.totalAmt;
+      /* 핵심: 총부채 - 완료된 정산액 = 실제 남은 금액 */
+      var netAmt = item.totalAmt - (allCompletedAmt[key] || 0);
       if (netAmt <= 0) return;
       hasRecv = true;
 
@@ -723,10 +736,8 @@ function _loadSettleStatusView() {
       var key       = item.fromMid + '_' + item.toMid;
       var settleArr = existingByKey[key] || [];
 
-      /*
-       * ★ SETTLED 지출은 p2pMap에서 이미 제외 → completedAmt 이중 차감 금지
-       */
-      var netAmt = item.totalAmt;
+      /* 핵심: 총부채 - 완료된 정산액 = 실제 남은 금액 */
+      var netAmt = item.totalAmt - (allCompletedAmt[key] || 0);
       if (netAmt <= 0) return;
       hasSend = true;
 
@@ -767,15 +778,18 @@ function _loadSettleStatusView() {
       }
     }
 
-    /* 전부 완료된 경우 */
+    /* 전부 완료된 경우 (p2pMap 항목이 있지만 netAmt가 전부 0) */
     if (!hasRecv && !hasSend) {
+      if (emptyEl) emptyEl.style.display = 'none';
       if (recvList) recvList.innerHTML = '';
       if (sendList) sendList.innerHTML = '<div class="settle-all-done">🎉 모든 정산이 완료됐어요!</div>';
+    } else {
+      if (emptyEl) emptyEl.style.display = 'none';
     }
   })
   .catch(function(err) {
     console.warn('[Settlement] 탭 로드 실패:', err);
-    if (emptyEl) emptyEl.style.display = '';
+    if (emptyEl) emptyEl.style.display = 'flex';
     if (recvList) recvList.innerHTML = '';
     if (sendList) sendList.innerHTML = '';
   });
@@ -858,7 +872,7 @@ function _loadSettleDoneView() {
 
       if (!completed.length) {
         doneList.innerHTML = '';
-        if (doneEmpty) doneEmpty.style.display = '';
+        if (doneEmpty) doneEmpty.style.display = 'flex';
         return;
       }
 
@@ -905,8 +919,8 @@ function _loadSettleDoneView() {
           + '<div class="settle-card__top">'
           +   '<div class="settle-card__avatar settle-card__avatar--done">' + String(otherNick).substring(0,2) + '</div>'
           +   '<div class="settle-card__info">'
-          +     '<div class="settle-card__direction">' + (group.length > 1 ? '묶음 정산' : otherNick) + '</div>'
-          +     '<div class="settle-card__hint">' + settledDate + (isRealBatch ? ' · 배치 #' + bid : '') + '</div>'
+          +     '<div class="settle-card__direction">' + (group.length > 1 ? '묶음 정산' : (isSentByMe ? '나 → ' + otherNick : otherNick + ' → 나')) + '</div>'
+          +     '<div class="settle-card__hint">' + settledDate + (isRealBatch ? ' · 배치 #' + bid : ' · 단건 정산') + '</div>'
           +   '</div>'
           +   '<div class="settle-card__amt settle-card__amt--done">' + _fmtAmt(batchAmt) + '</div>'
           + '</div>'
@@ -916,12 +930,16 @@ function _loadSettleDoneView() {
           +   '<span class="settle-done-dir ' + dirClass + '">' + direction + '</span>'
           +   (isRealBatch
               ? '<button class="settle-detail-link" onclick="event.stopPropagation();openSettledBatchDetail(' + bid + ')">상세 보기 →</button>'
-              : '')
+              : '<button class="settle-detail-link" onclick="event.stopPropagation();_openSingleSettleDetail(' + firstS.settlementId + ',\'' + otherNick + '\',' + batchAmt + ',\'' + settledDate + '\',' + (isSentByMe?'true':'false') + ')">상세 보기 →</button>'
+            )
           +   '<button class="settle-del-btn" onclick="deleteSettlement(this,' + firstS.settlementId + ')" title="삭제">🗑</button>'
           + '</div>'
           + '</div>';
       });
 
+      /* ★ Bug Fix: 항목이 있어도 이전 호출에서 표시된 빈상태가 남아있는 문제 방지
+         → 항목이 있으면 반드시 명시적으로 doneEmpty를 숨긴다 */
+      if (doneEmpty) doneEmpty.style.display = 'none';
       doneList.innerHTML = html;
     })
     .catch(function() {
@@ -1022,6 +1040,107 @@ function deleteSettlement(btn, settlementId) {
 
 /* 저장된 정산 로드 (호환성) */
 function loadSavedSettlements() { switchSettleView('done'); }
+
+/* ═══════════════════════════════════════════
+   단건 정산 상세 모달 — 관련 지출 포함
+═══════════════════════════════════════════ */
+function _openSingleSettleDetail(settlementId, otherNick, amount, settledDate, isSentByMe) {
+  var modal   = document.getElementById('settleDetailModal');
+  var body    = document.getElementById('settleDetailBody');
+  var titleEl = modal && modal.querySelector('.modal-box__title');
+  if (!body) return;
+  if (titleEl) titleEl.textContent = '✅ 정산 완료 상세';
+
+  body.innerHTML = '<div style="text-align:center;padding:40px;color:var(--light);">불러오는 중...</div>';
+  openModal('settleDetailModal');
+
+  var dirText  = isSentByMe ? ('나 → ' + otherNick) : (otherNick + ' → 나');
+  var dirColor = isSentByMe ? '#C53030' : '#276749';
+
+  /* 두 당사자 사이 관련 지출 조회 */
+  fetch(CTX_PATH + '/api/trips/' + TRIP_ID + '/expenses/with-participants')
+    .then(function(r) { return r.ok ? r.json() : []; })
+    .then(function(expenses) {
+      var myMid = _getMyMid();
+      /* 정산 방향으로 당사자 특정:
+         isSentByMe=true → 내가 fromMid(돈 보내는 쪽), otherNick이 toMid(받는 쪽=결제자)
+         isSentByMe=false → 내가 toMid(결제자), otherNick이 fromMid */
+      var relatedExp = (expenses || []).filter(function(exp) {
+        var payerId = Number(exp.payerId);
+        var parts   = (exp.participants || []).map(function(p) { return Number(p.memberId); });
+        if (isSentByMe) {
+          /* 상대방이 결제자 + 내가 참여자 */
+          return parts.indexOf(myMid) !== -1;
+        } else {
+          /* 내가 결제자 + 상대방이 참여자 */
+          var memberIds = (exp.participants || []).map(function(p) {
+            return String(p.memberNickname || p.nickname || '');
+          });
+          var nickMatch = memberIds.some(function(n) {
+            return n === otherNick || n.indexOf(otherNick) !== -1;
+          });
+          return payerId === myMid && nickMatch;
+        }
+      }).slice(0, 10);
+
+      var summaryHtml =
+        '<div class="bd-section bd-summary">'
+        + '<div class="bd-section-label">정산 요약</div>'
+        + '<div class="bd-transfer-row">'
+        +   '<div class="bd-transfer-avatars">'
+        +     '<div class="bd-avatar" style="background:' + (isSentByMe ? 'linear-gradient(135deg,#FC8181,#FEB2B2)' : 'linear-gradient(135deg,#89CFF0,#C2B8D9)') + ';">'
+        +       (isSentByMe ? '나' : String(otherNick).substring(0,2))
+        +     '</div>'
+        +     '<div class="bd-arrow">→</div>'
+        +     '<div class="bd-avatar bd-avatar--recv">' + (isSentByMe ? String(otherNick).substring(0,2) : '나') + '</div>'
+        +   '</div>'
+        +   '<div class="bd-transfer-info">'
+        +     '<div class="bd-transfer-names" style="color:' + dirColor + ';font-weight:800;">' + dirText + '</div>'
+        +     '<div class="bd-transfer-amt">' + _fmtAmt(amount) + '</div>'
+        +   '</div>'
+        + '</div>'
+        + '<div class="bd-summary-footer">'
+        +   '<div class="bd-total-row"><span>정산 금액</span><span class="bd-total-amt">' + _fmtAmt(amount) + '</span></div>'
+        +   '<div class="bd-status-row"><span class="bd-badge-done">✅ 완료</span><span class="bd-settled-date">' + (settledDate || '') + '</span></div>'
+        + '</div>'
+        + '</div>';
+
+      var expHtml = '<div class="bd-section"><div class="bd-section-label">관련 지출 내역</div>';
+      if (!relatedExp.length) {
+        expHtml += '<div style="padding:16px;text-align:center;color:var(--light);font-size:13px;">관련 지출을 찾을 수 없어요</div>';
+      } else {
+        relatedExp.forEach(function(exp) {
+          var m    = _cat(exp.category);
+          var date = exp.expenseDate ? String(exp.expenseDate).substring(5).replace(/-/g,'/') : '';
+          var myShare = 0;
+          (exp.participants || []).forEach(function(p) {
+            if (Number(p.memberId) === myMid) myShare = Number(p.shareAmount || 0);
+          });
+          expHtml +=
+            '<div class="bd-exp-card" onclick="openExpenseDetail(' + exp.expenseId + ')" style="cursor:pointer;">'
+            + '<div class="bd-exp-card__header">'
+            +   '<div class="bd-exp-icon" style="background:' + m.light + ';color:' + m.color + ';">' + m.icon + '</div>'
+            +   '<div class="bd-exp-info">'
+            +     '<div class="bd-exp-name">' + _esc(exp.description || '') + '</div>'
+            +     '<div class="bd-exp-meta">' + m.name + ' · ' + date + ' · 총 ' + _fmtAmt(exp.amount) + '</div>'
+            +   '</div>'
+            +   '<div class="bd-exp-payer">'
+            +     (myShare > 0
+                  ? '<span style="font-weight:800;color:#2D3748;">내 몫 ' + _fmtAmt(myShare) + '</span>'
+                  : '👤 ' + _esc(exp.payerNickname || '?'))
+            +   '</div>'
+            + '</div>'
+            + '</div>';
+        });
+      }
+      expHtml += '</div>';
+
+      body.innerHTML = summaryHtml + expHtml;
+    })
+    .catch(function() {
+      body.innerHTML = '<div style="padding:24px;text-align:center;color:var(--light);font-size:13px;">정보를 불러오지 못했어요</div>';
+    });
+}
 
 
 /* ═══════════════════════════════════════════
