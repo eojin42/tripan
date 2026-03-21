@@ -17,4 +17,6 @@ public interface PartnerApplyMapper {
     
     void insertEmptyPlace(PartnerApplyDto dto);
     void insertEmptyAccommodation(Map<String, Object> params);
+    
+    PartnerApplyDto findPartnerApplyByPartnerId(Long partnerId);
 }

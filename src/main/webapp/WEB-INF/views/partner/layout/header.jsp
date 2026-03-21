@@ -69,9 +69,9 @@
           
           <div style="border-top: 1px solid #F1F5F9; margin: 8px 0;"></div>
           
-          <a href="?tab=new_apply" class="dropdown-item" style="display:block; padding:12px; text-decoration:none; color:var(--primary); font-weight:800; font-size:13px; border-radius:8px; text-align:center; background:var(--primary-10);">
-            ➕ 새로운 숙소 추가하기
-          </a>
+		  <a href="${pageContext.request.contextPath}/partner/apply?mode=branch" class="dropdown-item" style="display:block; padding:12px; text-decoration:none; color:var(--primary); font-weight:800; font-size:13px; border-radius:8px; text-align:center; background:var(--primary-10);">
+	          ➕ 새로운 숙소 추가하기 (분점)
+	      </a>
       </div>
     </div>
   </div>

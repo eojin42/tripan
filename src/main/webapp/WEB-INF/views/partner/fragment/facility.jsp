@@ -22,11 +22,11 @@
             </div>
             
             <div style="display: flex; align-items: center; gap: 12px;">
-                <span id="activeStatusText" style="font-size: 14px; font-weight: 800; color: ${place.isActive == 1 ? '#4A44F2' : '#A0AEC0'};">
-                    ${place.isActive == 1 ? '온라인 (노출 중) 🟢' : '오프라인 (숨김) ⚪'}
+                <span id="activeStatusText" style="font-size: 14px; font-weight: 800; color: ${accommodation.isActive == 1 ? '#4A44F2' : '#A0AEC0'};">
+                    ${accommodation.isActive == 1 ? '온라인 (노출 중) 🟢' : '오프라인 (숨김) ⚪'}
                 </span>
                 <label class="toggle-switch">
-                    <input type="checkbox" id="isActive" onchange="updateToggleUI()" ${place.isActive == 1 ? 'checked' : ''}>
+                    <input type="checkbox" id="isActive" onchange="updateToggleUI()" ${accommodation.isActive == 1 ? 'checked' : ''}>
                     <span class="slider round"></span>
                 </label>
             </div>
@@ -59,37 +59,38 @@
             
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
                 <label class="fac-label">
-                    <input type="checkbox" id="fitness" value="1" ${facility.fitness == 1 ? 'checked' : ''}> <span class="fac-text">🏋️ 체력단련장</span>
+                    <input type="checkbox" id="fitness" value="1" ${accommodation.fitness == 1 ? 'checked' : ''}> <span class="fac-text">🏋️ 체력단련장</span>
                 </label>
                 <label class="fac-label">
-                    <input type="checkbox" id="chkcooking" value="1" ${facility.chkcooking == 1 ? 'checked' : ''}> <span class="fac-text">🍳 취사 가능</span>
+                    <input type="checkbox" id="chkcooking" value="1" ${accommodation.chkcooking == 1 ? 'checked' : ''}> <span class="fac-text">🍳 취사 가능</span>
                 </label>
                 <label class="fac-label">
-                    <input type="checkbox" id="barbecue" value="1" ${facility.barbecue == 1 ? 'checked' : ''}> <span class="fac-text">🍖 바비큐</span>
+                    <input type="checkbox" id="barbecue" value="1" ${accommodation.barbecue == 1 ? 'checked' : ''}> <span class="fac-text">🍖 바비큐</span>
                 </label>
                 <label class="fac-label">
-                    <input type="checkbox" id="beverage" value="1" ${facility.beverage == 1 ? 'checked' : ''}> <span class="fac-text">☕ 식음료/조식</span>
+                    <input type="checkbox" id="beverage" value="1" ${accommodation.beverage == 1 ? 'checked' : ''}> <span class="fac-text">☕ 식음료/조식</span>
                 </label>
                 <label class="fac-label">
-                    <input type="checkbox" id="karaoke" value="1" ${facility.karaoke == 1 ? 'checked' : ''}> <span class="fac-text">🎤 노래방</span>
+                    <input type="checkbox" id="karaoke" value="1" ${accommodation.karaoke == 1 ? 'checked' : ''}> <span class="fac-text">🎤 노래방</span>
                 </label>
                 <label class="fac-label">
-                    <input type="checkbox" id="publicpc" value="1" ${facility.publicpc == 1 ? 'checked' : ''}> <span class="fac-text">💻 공용 PC</span>
+                    <input type="checkbox" id="publicpc" value="1" ${accommodation.publicpc == 1 ? 'checked' : ''}> <span class="fac-text">💻 공용 PC</span>
                 </label>
                 <label class="fac-label">
-                    <input type="checkbox" id="sauna" value="1" ${facility.sauna == 1 ? 'checked' : ''}> <span class="fac-text">♨️ 사우나</span>
+                    <input type="checkbox" id="sauna" value="1" ${accommodation.sauna == 1 ? 'checked' : ''}> <span class="fac-text">♨️ 사우나</span>
                 </label>
 
                 <div></div>
 
-                <div style="grid-column: 1 / -1; display: flex; align-items: center; gap: 12px; margin-top: 4px; padding-top: 12px; border-top: 1px dashed #E2E8F0;">
+				<div style="grid-column: 1 / -1; display: flex; align-items: center; gap: 12px; margin-top: 4px; padding-top: 12px; border-top: 1px dashed #E2E8F0;">
                     <label class="fac-label" style="flex-shrink: 0; background: none; padding: 0;">
-                        <input type="checkbox" id="hasOtherFacility" onchange="toggleOtherInput()" ${not empty otherFacilityValue ? 'checked' : ''}> <span class="fac-text">➕ 기타 시설</span>
+                        <input type="checkbox" id="hasOtherFacility" onchange="toggleOtherInput()" ${not empty accommodation.otherFacility ? 'checked' : ''}> <span class="fac-text">➕ 기타 시설</span>
                     </label>
+                    
                     <input type="text" id="otherFacilityName" class="cute-input" 
-                           value="${otherFacilityValue}" 
+                           value="${accommodation.otherFacility}" 
                            placeholder="부대시설을 적어주세요! (예: 루프탑 펍)" 
-                           style="flex: 1; margin-top: 0; display: ${not empty otherFacilityValue ? 'block' : 'none'};">
+                           style="flex: 1; margin-top: 0; display: ${not empty accommodation.otherFacility ? 'block' : 'none'};">
                 </div>
             </div>
         </div>
