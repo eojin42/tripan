@@ -6023,10 +6023,10 @@ body.role-viewer .map-add-btn {
   margin: 16px 16px 8px;
   background: linear-gradient(135deg, #2D3748 0%, #1A202C 100%);
   border-radius: 20px;
-  padding: 22px 20px 18px;
+  padding: 22px 20px 20px;
   color: white;
   position: relative;
-  overflow: hidden;
+  flex-shrink: 0; /* ★ 절대 줄어들지 않도록 */
 }
 .exp-home-hero::before {
   content: '';

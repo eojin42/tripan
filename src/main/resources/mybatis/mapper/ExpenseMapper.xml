@@ -371,6 +371,14 @@
 	      AND  status        != 'COMPLETED'
 	</select>
 	
+	<!-- 여행 멤버 ID 목록 조회 (알림 발송용) -->
+	<select id="selectTripMemberIds" resultType="java.util.Map">
+	    SELECT tm.member_id AS MEMBER_ID
+	    FROM trip_member tm
+	    WHERE tm.trip_id = #{tripId}
+	      AND tm.invitation_status = 'ACCEPTED'
+	</select>
+
 	<!-- 알림 INSERT -->
 	<insert id="insertTripNotification">
 	    INSERT INTO trip_notification (

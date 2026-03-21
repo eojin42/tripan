@@ -815,3 +815,73 @@
   transition: background .12s;
 }
 .bd-receipt-btn:hover { background: var(--bg); }
+
+/* ═══ 카테고리 카드 네비게이션 ═══ */
+.exp-cats-nav-wrap {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  position: relative;
+  margin: 0 -4px;
+}
+.exp-cats-nav-btn {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: 1.5px solid #E2E8F0;
+  background: #fff;
+  color: #4A5568;
+  font-size: 18px;
+  line-height: 1;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: background .15s, border-color .15s;
+  box-shadow: 0 1px 4px rgba(0,0,0,.08);
+  z-index: 1;
+}
+.exp-cats-nav-btn:hover {
+  background: #EDF2F7;
+  border-color: #CBD5E0;
+}
+.expense-cats-scroll,
+.expense-cats {
+  display: flex !important;
+  flex-wrap: nowrap !important;
+  gap: 8px !important;
+  overflow-x: auto !important;
+  overflow-y: hidden !important;
+  padding: 4px 4px 10px !important;
+  flex: 1;
+  min-width: 0;
+  scroll-snap-type: x mandatory;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none !important;
+}
+.expense-cats-scroll::-webkit-scrollbar,
+.expense-cats::-webkit-scrollbar { display: none !important; }
+.expense-cats-scroll > *,
+.expense-cats > * { scroll-snap-align: start; flex-shrink: 0; }
+
+/* 최근 활동 뱃지 */
+.my-recent-badge {
+  display: inline-block;
+  font-size: 9px;
+  font-weight: 800;
+  padding: 1px 5px;
+  border-radius: 4px;
+  vertical-align: middle;
+}
+.my-recent-badge--pay {
+  background: #EBF8FF;
+  color: #2B6CB0;
+}
+.my-recent-badge--settle {
+  background: #FFF5F5;
+  color: #C53030;
+}
+.my-recent-item__amt--settle {
+  color: #C53030 !important;
+}
