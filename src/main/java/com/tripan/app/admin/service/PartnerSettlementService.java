@@ -6,7 +6,7 @@ import com.tripan.app.admin.domain.dto.SettlementFilterDto;
 import com.tripan.app.admin.domain.dto.SettlementManageDto;
 import com.tripan.app.admin.domain.dto.SettlementOrderDto;
 
-public interface SettlementManageService {
+public interface PartnerSettlementService {
 	public List<SettlementManageDto> getSummaryList(SettlementFilterDto filter);
 	public int getSummaryCount(SettlementFilterDto filter);
 	public List<SettlementManageDto> getDetailList(SettlementFilterDto filter);
@@ -14,4 +14,5 @@ public interface SettlementManageService {
 	public List<SettlementOrderDto> getExcelRowsByPlace(SettlementFilterDto filter);
 	public void approvePlace(Long placeId, String settlementMonth, Long adminId);
 	public void approveAllByPartner(Long memberId, String settlementMonth, Long adminId); 
+	public void aggregateSettlement();
 }

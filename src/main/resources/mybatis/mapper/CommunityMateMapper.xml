@@ -24,7 +24,7 @@
         FROM travel_mate m
         JOIN member2 u ON m.member_id = u.member_id
         JOIN region r ON m.region_id = r.region_id
-        WHERE 1=1
+        WHERE 1=1 AND m.post_status = 1
         
         <if test="regionId != null">
             AND m.region_id = #{regionId}

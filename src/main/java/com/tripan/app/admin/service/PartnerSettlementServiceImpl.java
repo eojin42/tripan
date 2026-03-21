@@ -1,23 +1,31 @@
 package com.tripan.app.admin.service;
 
-import com.tripan.app.admin.domain.dto.SettlementFilterDto;
-import com.tripan.app.admin.domain.dto.SettlementManageDto;
-import com.tripan.app.admin.domain.dto.SettlementOrderDto;
-import com.tripan.app.admin.mapper.SettlementManageMapper;
-
-import lombok.RequiredArgsConstructor;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import com.tripan.app.admin.domain.dto.SettlementAggregateDto;
+import com.tripan.app.admin.domain.dto.SettlementFilterDto;
+import com.tripan.app.admin.domain.dto.SettlementManageDto;
+import com.tripan.app.admin.domain.dto.SettlementOrderDto;
+import com.tripan.app.admin.mapper.PartnerSettlementMapper;
+import com.tripan.app.admin.mapper.SettlementBatchMapper;
+
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+
 @Service
 @RequiredArgsConstructor
-public class SettlementManageServiceImpl implements SettlementManageService{
+@Slf4j
+public class PartnerSettlementServiceImpl implements PartnerSettlementService{
 
-    private final SettlementManageMapper settlementMapper;
+    private final PartnerSettlementMapper settlementMapper;
+    private final SettlementBatchMapper   batchMapper; 
 
     // ─────────────────────────────────────────
     //  조회
@@ -76,4 +84,49 @@ public class SettlementManageServiceImpl implements SettlementManageService{
             }
         }
     }
+
+    @Transactional(rollbackFor = Exception.class)
+    public void aggregateSettlement() {
+        String targetDate = LocalDate.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd"));
+        log.info("[정산 배치] 시작 - 기준일: {}", targetDate);
+ 
+        List<SettlementAggregateDto> targets = batchMapper.selectUnsettledAggregates(targetDate);
+ 
+        if (targets.isEmpty()) {
+            log.info("[정산 배치] 대상 없음 - 종료");
+            return;
+        }
+ 
+        log.info("[정산 배치] 집계 대상: {}건", targets.size());
+ 
+        int successCount = 0;
+        int skipCount    = 0;
+ 
+        for (SettlementAggregateDto dto : targets) {
+            try {
+                boolean exists = batchMapper.existsSettlement(
+                        dto.getPartnerId(), dto.getSettlementMonth());
+ 
+                if (exists) {
+                    batchMapper.updateSettlementAmount(dto);
+                    log.debug("[정산 배치] UPDATE - partnerId={}, month={}",
+                            dto.getPartnerId(), dto.getSettlementMonth());
+                } else {
+                    batchMapper.insertSettlement(dto);
+                    log.debug("[정산 배치] INSERT - partnerId={}, month={}",
+                            dto.getPartnerId(), dto.getSettlementMonth());
+                }
+                successCount++;
+ 
+            } catch (Exception e) {
+                skipCount++;
+                log.error("[정산 배치] 처리 실패 - partnerId={}, month={}, 오류={}",
+                        dto.getPartnerId(), dto.getSettlementMonth(), e.getMessage());
+            }
+        }
+ 
+        log.info("[정산 배치] 완료 - 성공: {}건, 실패: {}건", successCount, skipCount);
+    }
+    
+   
 }

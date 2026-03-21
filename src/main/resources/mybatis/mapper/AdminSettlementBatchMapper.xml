@@ -1,0 +1,114 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.tripan.app.admin.mapper.SettlementBatchMapper">
+
+    <!-- ================================================================
+            미정산 집계 조회
+            - reservation.status = 'SUCCESS' (정상 예약만)
+            - check_out_date < 오늘 (체크아웃 완료)
+            - partner_settlement에 해당 partner_id + settlement_month 없는 것
+              → 중복 집계 방지의 핵심
+
+         조인 경로:
+            reservation → room (room_id)
+            room        → place (place_id)
+            place       → partner (partner_id)
+            reservation → order_detail (reservation_id)
+            order_detail → orders (order_id)
+         ================================================================ -->
+    <select id="selectUnsettledAggregates"
+            parameterType="String"
+            resultType="com.tripan.app.admin.domain.dto.SettlementAggregateDto">
+        SELECT
+            p.partner_id                                                 AS partnerId,
+            TO_CHAR(r.check_out_date, 'YYYY-MM')                        AS settlementMonth,
+ 
+            /* 총 결제액: 실결제액 합산 */
+            SUM(o.real_total_amount)                                     AS totalSales,
+ 
+            /* 수수료: reservation.commission_rate 적용 후 합산 */
+            SUM(ROUND(o.real_total_amount * r.commission_rate / 100))   AS commissionAmount,
+ 
+            /* 최종 지급액 */
+            SUM(o.real_total_amount)
+                - SUM(ROUND(o.real_total_amount * r.commission_rate / 100))
+                                                                         AS netAmount
+ 
+        FROM reservation r
+        JOIN room         rm ON rm.room_id          = r.room_id
+        JOIN place        p  ON p.place_id           = rm.place_id
+        JOIN order_detail od ON od.reservation_id    = r.reservation_id
+        JOIN orders       o  ON o.order_id            = od.order_id
+ 
+        WHERE r.status         = 'SUCCESS'
+          AND r.check_out_date &lt;= TO_DATE(#{targetDate}, 'YYYY-MM-DD')
+          AND o.status         != 'CANCELED'
+          AND p.partner_id     IS NOT NULL
+          AND p.is_active      = 1
+ 
+          /* 핵심: 이미 집계된 파트너+월 조합은 제외 */
+          AND NOT EXISTS (
+              SELECT 1
+              FROM partner_settlement ps
+              WHERE ps.partner_id       = p.partner_id
+                AND ps.settlement_month = TO_CHAR(r.check_out_date, 'YYYY-MM')
+          )
+ 
+        GROUP BY
+            p.partner_id,
+            TO_CHAR(r.check_out_date, 'YYYY-MM')
+ 
+        ORDER BY settlementMonth, partnerId
+    </select>
+
+    <!-- ================================================================
+           정산 존재 여부 확인
+         ================================================================ -->
+    <select id="existsSettlement" parameterType="map" resultType="boolean">
+        SELECT CASE WHEN COUNT(*) > 0 THEN 1 ELSE 0 END
+        FROM partner_settlement
+        WHERE partner_id       = #{partnerId}
+          AND settlement_month = #{settlementMonth}
+    </select>
+
+    <!-- ================================================================
+           신규 정산 INSERT
+         ================================================================ -->
+    <insert id="insertSettlement" parameterType="com.tripan.app.admin.domain.dto.SettlementAggregateDto">
+        INSERT INTO partner_settlement (
+            partner_settlement_id,
+            partner_id,
+            settlement_month,
+            total_sales,
+            commission_amount,
+            net_amount,
+            status
+        ) VALUES (
+            partner_settlement_seq.NEXTVAL,  
+            #{partnerId},
+            #{settlementMonth},
+            #{totalSales},
+            #{commissionAmount},
+            #{netAmount},
+            '대기'   -- partner_settlement.status: 정산/완료/대기
+        )
+    </insert>
+
+    <!-- ================================================================
+            기존 정산 금액 누적 UPDATE
+            배치를 재실행해도 기존 데이터에 덮어쓰지 않고 누적
+            status가 이미 '완료'면 건드리지 않음 (승인 완료된 건 보호)
+         ================================================================ -->
+    <update id="updateSettlementAmount" parameterType="com.tripan.app.admin.domain.dto.SettlementAggregateDto">
+        PDATE partner_settlement
+        SET total_sales       = total_sales       + #{totalSales},
+            commission_amount = commission_amount + #{commissionAmount},
+            net_amount        = net_amount        + #{netAmount}
+        WHERE partner_id       = #{partnerId}
+          AND settlement_month = #{settlementMonth}
+          AND status          != '완료'
+    </update>
+
+</mapper>

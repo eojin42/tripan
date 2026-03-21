@@ -21,6 +21,7 @@
     FROM freeboard f
     LEFT JOIN member1 m1 ON f.member_id = m1.member_id
     LEFT JOIN member2 m2 ON f.member_id = m2.member_id
+    WHERE f.status = 1
     ORDER BY f.board_id DESC
 	</select>
 	
@@ -41,7 +42,7 @@
         FROM freeboard f
         LEFT JOIN member1 m1 ON f.member_id = m1.member_id
         LEFT JOIN member2 m2 ON f.member_id = m2.member_id
-        WHERE f.category = #{category} ORDER BY f.board_id DESC
+        WHERE f.category = #{category} AND f.status = 1 ORDER BY f.board_id DESC
     </select>
 
 	<insert id="insertBoard" parameterType="com.tripan.app.domain.dto.CommunityFreeBoardDto">
@@ -67,7 +68,7 @@
             m2.profile_image as profilePhoto
         FROM freeboard_comment c
         LEFT JOIN member2 m2 ON c.member_id = m2.member_id
-        WHERE c.board_id = #{boardId}
+        WHERE c.board_id = #{boardId} AND f.status = 1
         ORDER BY c.comment_id ASC
     </select>
     
@@ -165,7 +166,7 @@
 	        m2.profile_image as profilePhoto
 	    FROM freeboard f
 	    JOIN member2 m2 ON f.member_id = m2.member_id
-	    WHERE f.member_id = #{memberId}
+	    WHERE f.member_id = #{memberId} AND f.status = 1
 	    ORDER BY f.board_id DESC
 	</select>
 

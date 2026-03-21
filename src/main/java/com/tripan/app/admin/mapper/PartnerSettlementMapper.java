@@ -11,7 +11,7 @@ import com.tripan.app.admin.domain.dto.SettlementManageDto;
 import com.tripan.app.admin.domain.dto.SettlementOrderDto;
 
 @Mapper
-public interface SettlementManageMapper {
+public interface PartnerSettlementMapper {
 	 /** 파트너 월별 정산 요약 목록 */
     List<SettlementManageDto> selectSummaryList(SettlementFilterDto filter);
 
