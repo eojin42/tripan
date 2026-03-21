@@ -30,6 +30,8 @@ public class CommunityFreeBoardDto {
     private Long tripId;
     private String tripName;
     private String tripDate;
-
+    
+    private int status;
+    
     private List<MultipartFile> files;
 }

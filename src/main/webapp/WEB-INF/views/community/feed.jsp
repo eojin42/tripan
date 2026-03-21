@@ -680,6 +680,7 @@
 
     <input type="hidden" id="reportTargetType" value="">
     <input type="hidden" id="reportTargetId" value="">
+    <input type="hidden" id="reportReportedId" value="">
 
     <select id="reportReasonSelect" class="lounge-input-style" style="margin-bottom: 20px;">
       <option value="">신고 사유를 선택해주세요</option>
@@ -2219,8 +2220,8 @@ function editFreeboardPost(boardId) {
      });
  }
 
- function reportFreeboardPost(boardId) {
-     openReportModal('FREEBOARD', boardId); // 종류: FREEBOARD
+ function reportFreeboardPost(boardId, memberId) {
+     openReportModal('FREEBOARD', boardId, memberId);
  }
 
 // 🗑️ 자유게시판 댓글 삭제 함수
@@ -2255,9 +2256,10 @@ function deleteFreeboardComment(commentId, boardId) {
     });
 }
 
-function reportFreeboardComment(commentId) {
-    openReportModal('FREEBOARD_COMMENT', commentId); // 종류: FREEBOARD_COMMENT
+function reportFreeboardComment(commentId, memberId) {
+    openReportModal('COMMENT', commentId, memberId);
 }
+
  
  function openReportModal(targetType, targetId) {
      if (typeof IS_LOGGED_IN !== 'undefined' && !IS_LOGGED_IN) {
@@ -2278,6 +2280,7 @@ function reportFreeboardComment(commentId) {
  function submitReport() {
      const targetType = document.getElementById('reportTargetType').value;
      const targetId = document.getElementById('reportTargetId').value;
+     const reportedId = document.getElementById('reportReportedId').value; 
      const reason = document.getElementById('reportReasonSelect').value;
 
      if (!reason) {
@@ -2288,6 +2291,7 @@ function reportFreeboardComment(commentId) {
      const requestData = {
          targetType: targetType,
          targetId: targetId,
+         reportedId: reportedId,
          reason: reason
      };
 

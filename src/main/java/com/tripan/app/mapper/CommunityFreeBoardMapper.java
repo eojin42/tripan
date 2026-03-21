@@ -42,5 +42,8 @@ public interface CommunityFreeBoardMapper {
     
     int updateBoard(CommunityFreeBoardDto dto);
     List<CommunityFreeBoardDto> getUserBoardList(Long memberId);
+    
+    void updateStatus(@Param("boardId") Long boardId, @Param("status") int status);
+    void updateCommentStatus(@Param("commentId") Long commentId, @Param("status") int status);
 }
     

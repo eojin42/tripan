@@ -47,6 +47,11 @@ public class ReportApiController {
             response.put("status", "success");
             response.put("message", "신고가 정상적으로 접수되었습니다.");
             return ResponseEntity.ok(response);
+            
+        } catch (IllegalArgumentException e) {
+            response.put("status", "error");
+            response.put("message", e.getMessage()); 
+            return ResponseEntity.badRequest().body(response); 
 
         } catch (Exception e) {
             log.error("신고 접수 중 에러 발생", e);
