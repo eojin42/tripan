@@ -103,7 +103,14 @@ public class ExpenseController {
     /**
      * 단건 정산 요청 생성
      * POST /api/trips/{tripId}/settlements/request
-     * body: { fromMemberId, amount }
+     * body: { fromMemberId, amount, existingSettlementId? }
+     *
+     * ★ 핵심 수정:
+     *   - existingSettlementId가 있으면 그 settlement_id 1건만 UPDATE
+     *   - 없으면 신규 INSERT (단건)
+     *   - 기존의 countActiveSettlement → updateSingleSettlementAmount 방식은
+     *     (tripId, toMemberId, fromMemberId) 조합으로 전체를 덮어써서
+     *     "정산 요청 1건 눌렀는데 전부 처리" 버그 발생 → 폐기
      */
     @PostMapping("/trips/{tripId}/settlements/request")
     public ResponseEntity<Map<String, Object>> requestSingleSettlement(
@@ -123,23 +130,28 @@ public class ExpenseController {
             Long fromMemberId = Long.valueOf(String.valueOf(body.get("fromMemberId")));
             java.math.BigDecimal amount = new java.math.BigDecimal(String.valueOf(body.get("amount")));
 
-            // 기존 REQUESTED/PENDING 있으면 amount 업데이트, 없으면 INSERT
-            // (새 지출 추가 후 재요청 시 기존 정산 금액을 갱신)
-            SettlementDto.SingleRequest req = SettlementDto.SingleRequest.builder()
-                    .tripId(tripId)
-                    .toMemberId(myId)
-                    .fromMemberId(fromMemberId)
-                    .amount(amount)
-                    .build();
+            // ★ 프론트에서 넘긴 existingSettlementId 확인
+            Object existingIdObj = body.get("existingSettlementId");
+            Long existingId = null;
+            if (existingIdObj != null && !"null".equals(String.valueOf(existingIdObj))) {
+                try { existingId = Long.valueOf(String.valueOf(existingIdObj)); } catch (Exception ignored) {}
+            }
 
-            int existing = expenseMapper.countActiveSettlement(tripId, myId, fromMemberId);
-            if (existing > 0) {
-                expenseMapper.updateSingleSettlementAmount(req);
+            if (existingId != null && existingId > 0) {
+                // ★ 그 settlement_id 1건만 금액 업데이트 (전체 trip/pair 대상 아님)
+                expenseMapper.updateSettlementById(existingId, amount);
             } else {
+                // ★ 신규 단건 INSERT
+                SettlementDto.SingleRequest req = SettlementDto.SingleRequest.builder()
+                        .tripId(tripId)
+                        .toMemberId(myId)
+                        .fromMemberId(fromMemberId)
+                        .amount(amount)
+                        .build();
                 expenseMapper.insertSingleSettlement(req);
             }
 
-            // 알림 발송 — 별도 try-catch, "EXPENSE" 타입만 허용됨
+            // 알림 발송 — 실패해도 정산 처리에는 영향 없음
             try {
                 String message = "정산 요청이 도착했어요! 가계부를 확인해주세요.";
                 expenseMapper.insertTripNotification(tripId, fromMemberId, myId, message, "EXPENSE");
@@ -147,13 +159,13 @@ public class ExpenseController {
                 wsMsg.put("type", "NEW_NOTIFICATION");
                 messagingTemplate.convertAndSend("/sub/trip/" + tripId, wsMsg);
             } catch (Exception notifEx) {
-                notifEx.printStackTrace(); // 알림 실패해도 정산은 성공
+                notifEx.printStackTrace();
             }
 
             result.put("success", true);
             result.put("message", "정산을 요청했어요!");
         } catch (Exception e) {
-        	e.printStackTrace();
+            e.printStackTrace();
             result.put("success", false);
             result.put("message", e.getMessage());
         }

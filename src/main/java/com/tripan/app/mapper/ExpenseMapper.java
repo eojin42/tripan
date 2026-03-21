@@ -74,6 +74,14 @@ public interface ExpenseMapper {
     /** 기존 REQUESTED/PENDING 정산 amount 업데이트 (새 지출 추가 후 재계산용) */
     int updateSingleSettlementAmount(SettlementDto.SingleRequest req);
 
+    /**
+     * ★ 단건 settlement_id 기준 amount 업데이트
+     * 기존 updateSingleSettlementAmount는 (tripId, toMemberId, fromMemberId) 조합으로
+     * 전체 미완료 정산을 덮어써서 "1건 눌렀는데 전부 처리" 버그 발생 → 이 메서드로 대체
+     */
+    int updateSettlementById(@Param("settlementId") Long settlementId,
+                             @Param("amount") java.math.BigDecimal amount);
+
     /** 중복 요청 방지 체크 */
     int countActiveSettlement(@Param("tripId")       Long tripId,
                               @Param("toMemberId")   Long toMemberId,
