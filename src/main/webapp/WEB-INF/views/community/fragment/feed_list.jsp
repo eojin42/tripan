@@ -287,7 +287,7 @@
               </c:when>
               <c:otherwise>
                 <a href="${pageContext.request.contextPath}/community/myfeed?memberId=${feed.memberId}">👤 프로필 보기</a>
-                <a href="javascript:void(0)" onclick="openReportModal('FEED', ${feed.postId})">🚨 게시글 신고</a>
+                <a href="javascript:void(0)" onclick="openReportModal('FEED', ${feed.postId}, ${feed.memberId})">🚨 게시글 신고</a>
               </c:otherwise>
             </c:choose>
           </div>

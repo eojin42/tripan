@@ -37,7 +37,6 @@
 </div>
 
 <script>
-// 🌟 여기서부터 모든 스크립트를 전역(window) 객체에 달아서 AJAX 렌더링 시에도 절대 뻗지 않도록 방어했습니다.
 const CURRENT_USER_ID = '${sessionScope.loginUser != null ? sessionScope.loginUser.memberId : ""}';
 let cachedRegions = null;
 
@@ -137,7 +136,7 @@ window.searchMates = function() {
 				
 			let mateKebabMenu = isMyPost 
 			    ? `<button class="kebab-item danger" onclick="event.stopPropagation(); window.deleteMatePost(\${mate.mateId})">🗑️ 삭제하기</button>`
-			    : `<button class="kebab-item danger" onclick="event.stopPropagation(); openReportModal('MATE', \${mate.mateId})">🚨 신고하기</button>`;
+			    : `<button class="kebab-item danger" onclick="event.stopPropagation(); openReportModal('MATE', \${mate.mateId}, \${mate.memberId})">🚨 신고하기</button>`;
 
             html += `
             <div class="mate-card" id="mate-card-\${mate.mateId}">
@@ -266,7 +265,7 @@ window.loadMateComments = function(mateId, page) {
             let isMyComment = (CURRENT_USER_ID !== '' && CURRENT_USER_ID == comment.memberId);
 			let kebabMenu = isMyComment 
 			    ? `<button class="kebab-item danger" onclick="window.deleteMateComment(\${comment.commentId}, \${mateId})">🗑️ 삭제하기</button>`
-			    : `<button class="kebab-item danger" onclick="openReportModal('MATE_COMMENT', \${comment.commentId})">🚨 신고하기</button>`;
+			    : `<button class="kebab-item danger" onclick="openReportModal('MATE_COMMENT', \${comment.commentId}, \${comment.memberId})">🚨 신고하기</button>`;
 
             html += `
             <div style="display: flex; flex-direction: column; gap: 10px; border-bottom: 1px dashed var(--border-color); padding-bottom: 12px; margin-bottom: 12px;">
@@ -297,7 +296,7 @@ window.loadMateComments = function(mateId, page) {
                 let isMyChild = (CURRENT_USER_ID !== '' && CURRENT_USER_ID == child.memberId);
 				let childKebab = isMyChild 
 				    ? `<button class="kebab-item danger" onclick="window.deleteMateComment(\${child.commentId}, \${mateId})">🗑️ 삭제하기</button>`
-				    : `<button class="kebab-item danger" onclick="openReportModal('MATE_COMMENT', \${child.commentId})">🚨 신고하기</button>`;
+				    : `<button class="kebab-item danger" onclick="openReportModal('MATE_COMMENT', \${child.commentId}, \${child.memberId})">🚨 신고하기</button>`;
 
                 html += `
                 <div style="display: flex; gap: 8px; margin-left: 36px; margin-top: 4px; padding: 10px 14px; background: rgba(137, 207, 240, 0.05); border-radius: 12px;">

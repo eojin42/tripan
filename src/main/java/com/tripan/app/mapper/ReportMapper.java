@@ -1,7 +1,7 @@
 package com.tripan.app.mapper;
 
 import org.apache.ibatis.annotations.Mapper;
-import org.springframework.data.repository.query.Param;
+import org.apache.ibatis.annotations.Param;
 
 import com.tripan.app.domain.dto.ReportDto;
 
