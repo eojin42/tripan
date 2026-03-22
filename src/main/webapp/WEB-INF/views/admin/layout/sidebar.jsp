@@ -25,13 +25,21 @@
     </a>
     
     <div class="menu-label">Sales</div>
-    <a href="${pageContext.request.contextPath}/admin/settlement/main"
-       class="menu-item ${param.activePage == 'stats' ? 'active' : ''}"
-       onclick="closeMobileSidebar()">
+    <%-- 통계 및 정산 (has-sub) --%>
+    <div class="menu-item has-sub ${param.activePage == 'platform-settlement' || param.activePage == 'partner-settlement' ? 'active open' : ''}"
+         onclick="toggleSubMenu(this)">
       <svg class="menu-icon" viewBox="0 0 24 24"><line x1="18" y1="20" x2="18" y2="10"></line><line x1="12" y1="20" x2="12" y2="4"></line><line x1="6" y1="20" x2="6" y2="14"></line></svg>
       <span class="menu-text">통계 및 정산</span>
-    </a>
-
+      <svg class="chevron-down" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"></polyline></svg>
+    </div>
+    <div class="sub-menu ${param.activePage == 'platform-settlement' || param.activePage == 'partner-settlement' ? 'open' : ''}">
+      <a href="${pageContext.request.contextPath}/admin/settlement/platform/main"
+         class="sub-item ${param.activePage == 'platform-settlement' ? 'active' : ''}"
+         onclick="event.stopPropagation(); closeMobileSidebar()">플랫폼 매출 현황</a>
+      <a href="${pageContext.request.contextPath}/admin/settlement/partner/main"
+         class="sub-item ${param.activePage == 'partner-settlement' ? 'active' : ''}"
+         onclick="event.stopPropagation(); closeMobileSidebar()">파트너사 정산 관리</a>
+    </div>
     <div class="menu-label">Management</div>
 
     <%-- 파트너사 관리 (has-sub) --%>

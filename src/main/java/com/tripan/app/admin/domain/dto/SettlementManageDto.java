@@ -53,4 +53,7 @@ public class SettlementManageDto {
 
     /* ── 예약 건별 목록 (상세 아코디언 전용) ─── */
     private List<SettlementOrderDto> orders;
+    
+    private int checkedOutCount;       // 체크아웃 완료 예약 건수
+    private int totalReservationCount; // 전체 예약 건수
 }

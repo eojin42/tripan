@@ -29,26 +29,29 @@
             SUM(o.real_total_amount)                                     AS totalSales,
  
             /* 수수료: reservation.commission_rate 적용 후 합산 */
-            SUM(ROUND(o.real_total_amount * r.commission_rate / 100))   AS commissionAmount,
+            SUM(ROUND(o.real_total_amount * p.commission_rate / 100))   AS commissionAmount,
  
             /* 최종 지급액 */
             SUM(o.real_total_amount)
-                - SUM(ROUND(o.real_total_amount * r.commission_rate / 100))
+                - SUM(ROUND(o.real_total_amount * p.commission_rate / 100))
                                                                          AS netAmount
  
         FROM reservation r
         JOIN room         rm ON rm.room_id          = r.room_id
-        JOIN place        p  ON p.place_id           = rm.place_id
+        JOIN place        pl ON pl.place_id          = rm.place_id
+        JOIN partner      p  ON p.partner_id         = pl.partner_id
         JOIN order_detail od ON od.reservation_id    = r.reservation_id
         JOIN orders       o  ON o.order_id            = od.order_id
- 
+
         WHERE r.status         = 'SUCCESS'
-          AND r.check_out_date &lt;= TO_DATE(#{targetDate}, 'YYYY-MM-DD')
+        <!-- 프로젝트 테스트를 위해 기존 쿼리조건 주석처리 : AND r.check_out_date &lt; ADD_MONTHS(TO_DATE(#{targetDate}, 'YYYY-MM'), 1) -->
+          AND r.check_out_date  &lt; TRUNC(SYSDATE) 
           AND o.status         != 'CANCELED'
           AND p.partner_id     IS NOT NULL
-          AND p.is_active      = 1
+          AND p.status          = 1
  
-          /* 핵심: 이미 집계된 파트너+월 조합은 제외 */
+          /* 핵심: 이미 집계된 파트너+월 조합은 제외 (done 포함)
+                   승인 완료된 건 배치가 건드리지 않음 */
           AND NOT EXISTS (
               SELECT 1
               FROM partner_settlement ps
@@ -92,7 +95,7 @@
             #{totalSales},
             #{commissionAmount},
             #{netAmount},
-            '대기'   -- partner_settlement.status: 정산/완료/대기
+            'wait'   -- partner_settlement.status: done/wait
         )
     </insert>
 
@@ -102,13 +105,13 @@
             status가 이미 '완료'면 건드리지 않음 (승인 완료된 건 보호)
          ================================================================ -->
     <update id="updateSettlementAmount" parameterType="com.tripan.app.admin.domain.dto.SettlementAggregateDto">
-        PDATE partner_settlement
+        UPDATE partner_settlement
         SET total_sales       = total_sales       + #{totalSales},
             commission_amount = commission_amount + #{commissionAmount},
             net_amount        = net_amount        + #{netAmount}
         WHERE partner_id       = #{partnerId}
           AND settlement_month = #{settlementMonth}
-          AND status          != '완료'
+          AND status          != 'done'
     </update>
 
 </mapper>

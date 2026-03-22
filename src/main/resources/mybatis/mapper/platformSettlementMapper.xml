@@ -1,0 +1,117 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.tripan.app.admin.mapper.PlatformSettlementMapper">
+
+    <!--
+        날짜 기준: ORDERS.ORDER_DATE  (결제한 날 = 실제 수익 발생일)
+        상태 기준: ORDERS.STATUS = 'SUCCESS'  (insertOrder 시 'SUCCESS' 로 입력됨)
+    -->
+
+    <!-- KPI 집계 -->
+    <select id="selectKpi"
+            resultType="com.tripan.app.admin.domain.dto.PlatformSettlementDto$KpiDto">
+        SELECT
+            NVL(SUM(o.TOTAL_AMOUNT),    0)                                                 AS gmv,
+            NVL(SUM(o.COUPON_DISCOUNT), 0)                                                 AS couponDiscount,
+            NVL(SUM(o.POINT_DISCOUNT),  0)                                                 AS pointUsed,
+            NVL(SUM(ROUND(o.TOTAL_AMOUNT * r.COMMISSION_RATE / 100)), 0)                   AS commission,
+            NVL(SUM(o.TOTAL_AMOUNT - ROUND(o.TOTAL_AMOUNT * r.COMMISSION_RATE / 100)), 0)  AS partnerPayout,
+            NVL(SUM(ROUND(o.TOTAL_AMOUNT * r.COMMISSION_RATE / 100))
+                - SUM(o.COUPON_DISCOUNT)
+                - SUM(o.POINT_DISCOUNT), 0)                                                AS netProfit,
+            CASE WHEN NVL(SUM(o.TOTAL_AMOUNT), 0) = 0 THEN 0
+                 ELSE ROUND(SUM(ROUND(o.TOTAL_AMOUNT * r.COMMISSION_RATE / 100))
+                            / SUM(o.TOTAL_AMOUNT) * 100, 1)
+            END                                                                             AS commissionRate
+        FROM ORDERS o
+        INNER JOIN ORDER_DETAIL od ON o.ORDER_ID        = od.ORDER_ID
+        INNER JOIN RESERVATION  r  ON od.RESERVATION_ID = r.RESERVATION_ID
+        WHERE o.STATUS = 'SUCCESS'
+          AND TO_CHAR(o.ORDER_DATE, 'YYYY') = TO_CHAR(#{year})
+        <if test="month != null and month != ''">
+          AND TO_CHAR(o.ORDER_DATE, 'MM') = #{month}
+        </if>
+    </select>
+
+    <!-- 전월 GMV -->
+    <select id="selectPrevMonthGmv" resultType="java.lang.Long">
+        SELECT NVL(SUM(o.TOTAL_AMOUNT), 0)
+        FROM ORDERS o
+        INNER JOIN ORDER_DETAIL od ON o.ORDER_ID        = od.ORDER_ID
+        INNER JOIN RESERVATION  r  ON od.RESERVATION_ID = r.RESERVATION_ID
+        WHERE o.STATUS = 'SUCCESS'
+          AND TO_CHAR(o.ORDER_DATE, 'YYYY-MM') =
+              TO_CHAR(ADD_MONTHS(TO_DATE(TO_CHAR(#{year}) || '-' || #{month}, 'YYYY-MM'), -1), 'YYYY-MM')
+    </select>
+
+    <!-- 월별 정산 목록 (테이블) -->
+    <select id="selectMonthlyList"
+            resultType="com.tripan.app.admin.domain.dto.PlatformSettlementDto$MonthlyRowDto">
+        SELECT
+            TO_CHAR(o.ORDER_DATE, 'YYYY-MM')                                                   AS settlementMonth,
+            NVL(SUM(o.TOTAL_AMOUNT),    0)                                                      AS gmv,
+            NVL(SUM(o.COUPON_DISCOUNT), 0)                                                      AS couponDiscount,
+            NVL(SUM(o.POINT_DISCOUNT),  0)                                                      AS pointUsed,
+            NVL(SUM(ROUND(o.TOTAL_AMOUNT * r.COMMISSION_RATE / 100)), 0)                        AS commission,
+            NVL(SUM(o.TOTAL_AMOUNT - ROUND(o.TOTAL_AMOUNT * r.COMMISSION_RATE / 100)), 0)       AS partnerPayout,
+            NVL(SUM(ROUND(o.TOTAL_AMOUNT * r.COMMISSION_RATE / 100))
+                - SUM(o.COUPON_DISCOUNT)
+                - SUM(o.POINT_DISCOUNT), 0)                                                     AS netProfit,
+            COUNT(DISTINCT r.PARTNER_ID)                                                        AS partnerCount,
+            'DONE'        AS status,
+            'badge-done'  AS statusBadgeClass,
+            '완료'         AS statusLabel
+        FROM ORDERS o
+        INNER JOIN ORDER_DETAIL od ON o.ORDER_ID        = od.ORDER_ID
+        INNER JOIN RESERVATION  r  ON od.RESERVATION_ID = r.RESERVATION_ID
+        WHERE o.STATUS = 'SUCCESS'
+          AND TO_CHAR(o.ORDER_DATE, 'YYYY') = TO_CHAR(#{year})
+        <if test="month != null and month != ''">
+          AND TO_CHAR(o.ORDER_DATE, 'MM') = #{month}
+        </if>
+        GROUP BY TO_CHAR(o.ORDER_DATE, 'YYYY-MM')
+        ORDER BY TO_CHAR(o.ORDER_DATE, 'YYYY-MM') DESC
+    </select>
+
+    <!-- 일별 수익 추이 (차트) — ORDER_DATE 기준이므로 미래 날짜 없음 -->
+    <select id="selectDailyChart"
+            resultType="com.tripan.app.admin.domain.dto.PlatformSettlementDto$DailyChartDto">
+        SELECT
+            TO_CHAR(o.ORDER_DATE, 'MM/DD')                                                 AS day,
+            NVL(SUM(ROUND(o.TOTAL_AMOUNT * r.COMMISSION_RATE / 100)), 0)                   AS commission,
+            NVL(SUM(ROUND(o.TOTAL_AMOUNT * r.COMMISSION_RATE / 100))
+                - SUM(o.COUPON_DISCOUNT)
+                - SUM(o.POINT_DISCOUNT), 0)                                                AS netProfit
+        FROM ORDERS o
+        INNER JOIN ORDER_DETAIL od ON o.ORDER_ID        = od.ORDER_ID
+        INNER JOIN RESERVATION  r  ON od.RESERVATION_ID = r.RESERVATION_ID
+        WHERE o.STATUS = 'SUCCESS'
+          AND TO_CHAR(o.ORDER_DATE, 'YYYY') = TO_CHAR(#{year})
+          AND TO_CHAR(o.ORDER_DATE, 'MM')   = #{month}
+        GROUP BY TO_CHAR(o.ORDER_DATE, 'MM/DD'), TRUNC(o.ORDER_DATE)
+        ORDER BY TRUNC(o.ORDER_DATE) ASC
+    </select>
+
+    <!-- 미정산 파트너 수
+         파트너 정산관리 페이지와 동일 기준:
+         이달에 예약(SUCCESS)이 있는 파트너 중 아직 ORDERS가 없거나 SUCCESS 아닌 건이 있는 파트너
+         → 간단하게: 이달 RESERVATION.STATUS='SUCCESS' 인 PARTNER_ID 전체 수
+           (파트너 정산관리와 동일하게 RESERVATION 기준)
+    -->
+    <select id="selectPendingPartnerCount" resultType="int">
+        SELECT COUNT(DISTINCT r.PARTNER_ID)
+        FROM RESERVATION r
+        WHERE r.STATUS = 'SUCCESS'
+          AND TO_CHAR(r.CHECK_IN_DATE, 'YYYY-MM') = TO_CHAR(SYSDATE, 'YYYY-MM')
+    </select>
+
+    <!-- 미정산 대기 금액: 이달 SUCCESS 예약의 파트너 지급 예정액 -->
+    <select id="selectPendingAmount" resultType="java.lang.Long">
+        SELECT NVL(SUM(r.AMOUNT - ROUND(r.AMOUNT * r.COMMISSION_RATE / 100)), 0)
+        FROM RESERVATION r
+        WHERE r.STATUS = 'SUCCESS'
+          AND TO_CHAR(r.CHECK_IN_DATE, 'YYYY-MM') = TO_CHAR(SYSDATE, 'YYYY-MM')
+    </select>
+
+</mapper>

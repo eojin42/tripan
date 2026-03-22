@@ -41,29 +41,31 @@ function approvePlace(placeId, month, btn) {
   btn.disabled = true;
   btn.textContent = '처리중...';
 
-  fetch(STL_CTX + '/admin/settlement/approve/place', {
+  fetch(STL_CTX + '/admin/settlement/partner/approve/place', {
     method  : 'POST',
     headers : { 'Content-Type': 'application/x-www-form-urlencoded' },
-    body    : 'placeId=' + placeId + '&month=' + month
+    body    : 'partnerId=' + placeId + '&settlementMonth=' + month
   })
-  .then(function (r) { return r.json(); })
+  .then(function (r) { return r.text(); })
   .then(function (res) {
-    if (res.success) {
+    if (res === 'ok') {
+      // 버튼 상태 변경
+      btn.disabled = true;
       btn.innerHTML = '&#10003; 승인 완료';
-      btn.style.background = 'var(--border)';
-      btn.style.color = 'var(--muted)';
-      /* 헤더 뱃지 갱신 */
-      var card = document.getElementById('placeCard_' + placeId);
+      btn.className = 'btn-approve-place approved';
+      // 카드 헤더 뱃지 갱신
+      var card = btn.closest('.place-card');
       if (card) {
         var badge = card.querySelector('.badge');
         if (badge) { badge.className = 'badge badge-done'; badge.textContent = '승인완료'; }
       }
+      // 하단 바 카운트 갱신
       updateBarCount(1);
       showToast('정산 승인이 완료되었습니다.');
     } else {
       btn.disabled = false;
       btn.innerHTML = '&#10003; 이 숙소 정산 승인';
-      showToast('오류: ' + (res.message || '승인에 실패했습니다.'));
+      showToast(res || '승인에 실패했습니다.');
     }
   })
   .catch(function () {
@@ -75,38 +77,41 @@ function approvePlace(placeId, month, btn) {
 
 /* ── 전체 일괄 승인 ── */
 function approveAll(memberId, month) {
-  if (!confirm('미승인 숙소를 전체 정산 승인하시겠습니까?')) return;
+  if (!confirm('이 파트너의 정산을 승인하시겠습니까?\n승인 시 모든 숙소가 일괄 확정됩니다.')) return;
   var bulkBtn = document.getElementById('bulkApproveBtn');
   bulkBtn.disabled = true;
   bulkBtn.textContent = '처리중...';
 
-  fetch(STL_CTX + '/admin/settlement/approve/partner', {
+  fetch(STL_CTX + '/admin/settlement/partner/approve/all', {
     method  : 'POST',
     headers : { 'Content-Type': 'application/x-www-form-urlencoded' },
-    body    : 'memberId=' + memberId + '&month=' + month
+    body    : 'partnerId=' + memberId + '&settlementMonth=' + month
   })
-  .then(function (r) { return r.json(); })
+  .then(function (r) { return r.text(); })
   .then(function (res) {
-    if (res.success) {
-      document.querySelectorAll('.btn-approve-place:not(:disabled)').forEach(function (b) {
+    if (res === 'ok') {
+      // 미승인 버튼 전체 done 처리
+      document.querySelectorAll('.btn-approve-place:not(.approved)').forEach(function (b) {
         b.disabled = true;
         b.innerHTML = '&#10003; 승인 완료';
-        b.style.background = 'var(--border)';
-        b.style.color = 'var(--muted)';
+        b.className = 'btn-approve-place approved';
       });
-      document.querySelectorAll('.badge.badge-wait').forEach(function (b) {
+      // 카드 뱃지 전체 갱신
+      document.querySelectorAll('.badge.badge-wait, .badge.badge-partial').forEach(function (b) {
         b.className = 'badge badge-done';
         b.textContent = '승인완료';
       });
+      // 하단 바 카운트 갱신
       var total = document.querySelectorAll('.place-card').length;
       var barCount = document.getElementById('barApprovedCount');
       if (barCount) barCount.textContent = total;
+      bulkBtn.disabled = true;
       bulkBtn.innerHTML = '&#10003;&nbsp; 전체 승인 완료';
       showToast('전체 정산 승인이 완료되었습니다.');
     } else {
       bulkBtn.disabled = false;
       bulkBtn.innerHTML = '&#10003;&nbsp; 미승인 전체 승인';
-      showToast('오류: ' + (res.message || '승인에 실패했습니다.'));
+      showToast(res || '승인에 실패했습니다.');
     }
   })
   .catch(function () {
@@ -135,7 +140,7 @@ function updateBarCount(delta) {
 
 /* 파트너 전체 숙소 CSV */
 function downloadPartnerCsv(memberId, month) {
-  fetch(STL_CTX + '/admin/settlement/csv/partner?memberId=' + memberId + '&month=' + month)
+  fetch(STL_CTX + '/admin/settlement/partner/csv/partner?memberId=' + memberId + '&month=' + month)
     .then(function (r) { return r.json(); })
     .then(function (rows) { buildAndSaveCsv(rows, '파트너정산_' + month + '.csv'); })
     .catch(function () { showToast('CSV 다운로드 중 오류가 발생했습니다.'); });
@@ -143,7 +148,7 @@ function downloadPartnerCsv(memberId, month) {
 
 /* 숙소 단위 CSV */
 function downloadPlaceCsv(placeId, month) {
-  fetch(STL_CTX + '/admin/settlement/csv/place?placeId=' + placeId + '&month=' + month)
+  fetch(STL_CTX + '/admin/settlement/partner/csv/place?placeId=' + placeId + '&month=' + month)
     .then(function (r) { return r.json(); })
     .then(function (rows) { buildAndSaveCsv(rows, '숙소정산_' + month + '.csv'); })
     .catch(function () { showToast('CSV 다운로드 중 오류가 발생했습니다.'); });

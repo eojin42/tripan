@@ -1,0 +1,179 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.tripan.app.admin.mapper.DashboardMapper">
+
+    <!-- 최근 15일 일별 예약 추이
+         ORDERS.ORDER_DATE 기준, STATUS='SUCCESS'-->
+    <select id="selectDailyOrders"
+            resultType="com.tripan.app.admin.domain.dto.DashboardDto$DailyOrderDto">
+        SELECT
+            TO_CHAR(o.ORDER_DATE, 'MM/DD')  AS day,
+            COUNT(*)                         AS orderCount,
+            NVL(SUM(o.TOTAL_AMOUNT), 0)      AS totalAmount
+        FROM ORDERS o
+        WHERE o.STATUS = 'SUCCESS'
+          AND o.ORDER_DATE >= TRUNC(SYSDATE) - 14
+          AND o.ORDER_DATE  &lt; TRUNC(SYSDATE) + 1
+        GROUP BY TO_CHAR(o.ORDER_DATE, 'MM/DD'), TRUNC(o.ORDER_DATE)
+        ORDER BY TRUNC(o.ORDER_DATE) ASC
+    </select>
+
+    <!-- 실시간 숙소 랭킹 TOP 5
+         최근 30일 RESERVATION 기준, PLACE 조인 -->
+    <select id="selectAccomRanking"
+            resultType="com.tripan.app.admin.domain.dto.DashboardDto$AccomRankDto">
+        SELECT *
+        FROM (
+            SELECT
+                ROW_NUMBER() OVER (ORDER BY COUNT(*) DESC) AS rank,
+                p.PLACE_ID                                  AS placeId,
+                p.PLACE_NAME                                AS placeName,
+                p.ADDRESS                                   AS address,
+                p.IMAGE_URL                                 AS imageUrl,
+                COUNT(*)                                    AS reservationCount
+            FROM RESERVATION r
+            INNER JOIN ROOM rm ON r.ROOM_ID  = rm.ROOM_ID
+            INNER JOIN PLACE p  ON rm.PLACE_ID = p.PLACE_ID
+            WHERE r.STATUS = 'SUCCESS'
+              AND r.CHECK_IN_DATE >= SYSDATE - 30
+            GROUP BY p.PLACE_ID, p.PLACE_NAME, p.ADDRESS, p.IMAGE_URL
+        )
+        WHERE rank &lt;= 5
+    </select>
+
+    <!-- 지역 랭킹 TOP 5
+         TRIP.CITIES (콤마 구분 문자열) 기반 집계
+         예) '여수, 강릉' → '여수', '강릉' 각각 카운트
+         REGION.SIDO_NAME LIKE 매칭으로 집계 -->
+    <select id="selectRegionRanking"
+            resultType="com.tripan.app.admin.domain.dto.DashboardDto$RegionRankDto">
+        SELECT *
+        FROM (
+            SELECT
+                ROW_NUMBER() OVER (ORDER BY COUNT(DISTINCT t.TRIP_ID) DESC) AS rank,
+                MIN(r.REGION_ID)                        AS regionId,
+                r.SIDO_NAME                             AS regionName,
+                COUNT(DISTINCT t.TRIP_ID)               AS tripCount
+            FROM TRIP t
+            /* CITIES 문자열에 sido_name이 포함된 region 매칭 */
+            INNER JOIN REGION r
+                    ON INSTR(t.CITIES, r.SIDO_NAME) > 0
+                   AND r.API_SIGUNGU_CODE IS NULL
+            WHERE t.CITIES IS NOT NULL
+            GROUP BY r.SIDO_NAME
+        )
+        WHERE rank &lt;= 5
+    </select>
+
+    <!-- 미답변 CS 채팅
+         · SUPPORT 타입 + ACTIVE 상태
+         · 마지막 메시지 발신자가 관리자(ROLE_ADMIN)가 아닌 것 = 미답변 -->
+    <select id="selectUnAnsweredChats"
+            resultType="com.tripan.app.admin.domain.dto.DashboardDto$UnAnsweredChatDto">
+        SELECT
+            cr.CHAT_ROOM_ID                                         AS roomId,
+            NVL(m2.NICKNAME, m1.USERNAME)                           AS memberNickname,
+            TO_CHAR(cr.CREATED_AT, 'YYYY-MM-DD HH24:MI')           AS createdAt,
+            ROUND((SYSDATE - CAST(cr.CREATED_AT AS DATE)) * 24)    AS waitingHours,
+            last_msg.CONTENT                                        AS lastMessage
+        FROM CHAT_ROOM cr
+        /* 마지막 메시지 */
+        LEFT JOIN (
+            SELECT cm.ROOM_ID, cm.CONTENT, cm.MEMBER_ID
+            FROM CHAT_MESSAGE cm
+            WHERE cm.CREATED_AT = (
+                SELECT MAX(cm2.CREATED_AT)
+                FROM CHAT_MESSAGE cm2
+                WHERE cm2.ROOM_ID = cm.ROOM_ID
+            )
+            AND ROWNUM = 1
+        ) last_msg ON last_msg.ROOM_ID = cr.CHAT_ROOM_ID
+        /* 마지막 발신자 롤 확인 */
+        LEFT JOIN MEMBER1 last_sender ON last_sender.MEMBER_ID = last_msg.MEMBER_ID
+        /* 채팅방 개설 유저 (가장 먼저 입장한 NORMAL 멤버) */
+        INNER JOIN CHAT_MEMBER cm_user
+               ON  cm_user.CHAT_ROOM_ID = cr.CHAT_ROOM_ID
+               AND cm_user.ADMIN_STATUS  = 'NORMAL'
+               AND cm_user.JOINED_AT     = (
+                       SELECT MIN(s.JOINED_AT)
+                       FROM   CHAT_MEMBER s
+                       WHERE  s.CHAT_ROOM_ID = cr.CHAT_ROOM_ID
+                         AND  s.ADMIN_STATUS  = 'NORMAL'
+                   )
+        INNER JOIN MEMBER1 m1 ON m1.MEMBER_ID = cm_user.MEMBER_ID
+        LEFT  JOIN MEMBER2 m2 ON m2.MEMBER_ID = cm_user.MEMBER_ID
+        WHERE cr.CHAT_ROOM_TYPE = 'SUPPORT'
+          AND cr.STATUS         = 'ACTIVE'
+          /* 마지막 메시지가 없거나, 마지막 발신자가 관리자가 아니면 미답변 */
+          AND (last_msg.MEMBER_ID IS NULL
+               OR NVL(last_sender.ROLE, 'ROLE_USER') != 'ROLE_ADMIN')
+        ORDER BY cr.CREATED_AT ASC
+        FETCH FIRST 10 ROWS ONLY
+    </select>
+
+    <!-- 입점 승인 대기 파트너
+         · business_number 기준 최신 1건만 (신청 페이지와 동일 로직)
+         · partner_status 최신 이력 = 'PENDING'-->
+    <select id="selectPendingPartners"
+            resultType="com.tripan.app.admin.domain.dto.DashboardDto$PendingPartnerDto">
+        SELECT
+            p.PARTNER_ID                              AS memberId,
+            p.PARTNER_NAME                            AS username,
+            p.CONTACT_EMAIL                           AS email,
+            p.CONTACT_NAME                            AS loginId,
+            TO_CHAR(p.CREATED_AT, 'YYYY-MM-DD')      AS regDate
+        FROM (
+            SELECT p2.*,
+                   ROW_NUMBER() OVER (
+                       PARTITION BY p2.BUSINESS_NUMBER
+                       ORDER BY p2.CREATED_AT DESC
+                   ) AS rn
+            FROM PARTNER p2
+        ) p
+        JOIN (
+            SELECT ps.PARTNER_ID, ps.STATUS_CODE
+            FROM (
+                SELECT ps2.*,
+                       ROW_NUMBER() OVER (
+                           PARTITION BY ps2.PARTNER_ID
+                           ORDER BY ps2.PARTNER_STATUS_ID DESC
+                       ) AS rn
+                FROM PARTNER_STATUS ps2
+            ) ps
+            WHERE ps.rn = 1
+        ) latest_status ON latest_status.PARTNER_ID = p.PARTNER_ID
+        WHERE p.rn = 1
+          AND latest_status.STATUS_CODE = 'PENDING'
+        ORDER BY p.CREATED_AT DESC
+        FETCH FIRST 10 ROWS ONLY
+    </select>
+
+    <!-- 신고 상위 유저 TOP 10
+         · 탈퇴(MEMBER1.STATUS=0) 제외 -->
+    <select id="selectTopReported"
+            resultType="com.tripan.app.admin.domain.dto.DashboardDto$TopReportedDto">
+        SELECT *
+        FROM (
+            SELECT
+                m1.MEMBER_ID                                AS memberId,
+                NVL(m2.NICKNAME, m1.USERNAME)               AS nickname,
+                m1.LOGIN_ID                                  AS loginId,
+                COUNT(r.REPORT_ID)                           AS reportCount,
+                NVL(ms_cur.STATUS_CODE, 1)                  AS statusCode
+            FROM REPORT r
+            INNER JOIN MEMBER1 m1 ON r.TARGET_ID = m1.MEMBER_ID
+            LEFT  JOIN MEMBER2 m2 ON m1.MEMBER_ID = m2.MEMBER_ID
+            LEFT  JOIN (
+                SELECT MEMBER_ID, STATUS_CODE,
+                       ROW_NUMBER() OVER (PARTITION BY MEMBER_ID ORDER BY REG_DATE DESC) AS rn
+                FROM MEMBERSTATUS
+            ) ms_cur ON ms_cur.MEMBER_ID = m1.MEMBER_ID AND ms_cur.rn = 1
+            WHERE m1.STATUS = 1  /* 탈퇴(STATUS=0) 제외, 활성 유저만 */
+            GROUP BY m1.MEMBER_ID, m2.NICKNAME, m1.USERNAME, m1.LOGIN_ID, ms_cur.STATUS_CODE
+            ORDER BY COUNT(r.REPORT_ID) DESC
+        )
+        WHERE ROWNUM &lt;= 10
+    </select>
+
+</mapper>

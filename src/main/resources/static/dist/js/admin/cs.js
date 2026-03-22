@@ -592,9 +592,7 @@ function formatDate(v) {
 }
 
 // ── textarea Enter 전송 ──
-document.getElementById('adminMsgInput').addEventListener('keydown', e => {
-  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendAdminMsg(); }
-});
+ if (e.key === 'Enter' && !e.shiftKey)
 document.getElementById('adminMsgInput').addEventListener('input', function() {
   this.style.height = 'auto';
   this.style.height = Math.min(this.scrollHeight, 100) + 'px';

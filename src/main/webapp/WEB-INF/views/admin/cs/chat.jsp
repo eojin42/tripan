@@ -310,7 +310,7 @@
     const viewEl = document.getElementById('adminChatView');
     viewEl.style.display = 'flex';
 
-    document.getElementById('adminChatTitle').textContent = `🎧 ${room.userName || '사용자'} 님의 상담`;
+    document.getElementById('adminChatTitle').textContent = `🎧 ${room.nickname || '사용자'} 님의 상담`;
     document.getElementById('adminChatSub').textContent   = `문의 시작: ${formatTime(room.createdAt)}`;
 
     // 이전 연결 끊기
@@ -432,16 +432,21 @@
 
   // ── textarea 자동 높이 조절 + Enter 전송 ──
   const inputEl = document.getElementById('adminChatInput');
-  inputEl.addEventListener('input', function() {
-    this.style.height = 'auto';
-    this.style.height = Math.min(this.scrollHeight, 120) + 'px';
-  });
-  inputEl.addEventListener('keydown', function(e) {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault();
-      sendAdminMessage();
-    }
-  });
+
+	inputEl.addEventListener('input', function() {
+	  this.style.height = 'auto';
+	  this.style.height = Math.min(this.scrollHeight, 120) + 'px';
+	});
+	
+	inputEl.addEventListener('keydown', function(e) {
+	  // 한글 조합 중 엔터 방지
+	  if (e.isComposing || e.keyCode === 229) return;
+	
+	  if (e.key === 'Enter' && !e.shiftKey) {
+	    e.preventDefault();
+	    sendAdminMessage();
+	  }
+	});
 
   // ── 초기 로드 + 30초마다 목록 갱신 ──
   loadInquiryList();
