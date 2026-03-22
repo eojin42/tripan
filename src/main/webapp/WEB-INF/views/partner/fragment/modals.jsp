@@ -3,10 +3,10 @@
 <div class="modal-overlay" id="roomModal" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); backdrop-filter: blur(2px); z-index: 9999; display: none; align-items: center; justify-content: center;">
     <div class="modal-content" style="width: 600px; max-height: 90vh; overflow-y: auto; background: white; border-radius: 16px; padding: 24px; box-shadow: 0 10px 25px rgba(0,0,0,0.1);">
         <div class="modal-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
-            <div>
-                <h2 style="margin: 0; font-size: 20px; font-weight: 800;">🛏️ 새 객실 등록</h2>
-                <p style="font-size: 13px; color: var(--muted); margin: 4px 0 0;">판매하실 객실의 상세 정보를 입력해주세요.</p>
-            </div>
+			<div style="display: flex; justify-content: space-between; margin-bottom: 16px;">
+			    <h2 id="roomModalTitle" style="font-size: 18px; font-weight: bold;">🛏️ 새 객실 등록</h2>
+			    <button onclick="closeRoomModal()" style="background: none; border: none; font-size: 20px; cursor: pointer;">&times;</button>
+			</div>
             <button onclick="closeRoomModal()" style="background: none; border: none; font-size: 24px; cursor: pointer; color: #8B92A5;">✕</button>
         </div>
 
@@ -133,6 +133,8 @@
         </div>
 
         <form id="roomForm">
+			
+			<input type="hidden" id="modalRoomId" name="roomId" value="">
             <div class="form-group" style="margin-bottom: 12px;">
                 <label>객실명</label>
                 <input type="text" id="roomName" class="form-control" placeholder="예: 디럭스 오션뷰" required>
@@ -193,3 +195,4 @@
 </div>
 
 <!-- 객실용 모달 끝-->
+

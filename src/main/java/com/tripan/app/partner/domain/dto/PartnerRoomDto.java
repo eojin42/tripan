@@ -23,4 +23,6 @@ public class PartnerRoomDto {
     private Integer roominternet;     // 와이파이(인터넷)
     private Integer roombath;         // 욕조
     private Integer roomrefrigerator; // 냉장고
+    
+    private String imageUrl;
 }
