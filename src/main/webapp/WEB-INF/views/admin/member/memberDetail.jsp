@@ -326,12 +326,12 @@
                   onclick="openResModal('${book.resId}','${book.roomName}','${book.duration}','${book.totalPrice}','${book.statusText}')"
                   data-status="${book.statusText}"
                   data-name="${book.roomName}"
-                  data-resdate="${book.resDate}">
-                <td style="color:var(--muted); font-weight:700;">#${book.resId}</td>
+                  data-resdate="${book.duration}">
+                <td style="color:var(--muted); font-weight:700;">${book.resId}</td>
                 <td><strong>${book.roomName}</strong></td>
-                <td style="color:var(--muted);">${book.resDate}</td>
+                <td style="color:var(--muted);">${book.duration}</td>
                 <td>${book.duration}</td>
-                <td class="num">₩ ${book.totalPrice}</td>
+                <td class="num"> ${book.totalPrice}</td>
                 <td><span class="badge ${book.statusClass}">${book.statusText}</span></td>
               </tr>
             </c:forEach>
@@ -579,7 +579,7 @@ function saveSuspendStatus() {
 
 /* ── 예약 영수증 모달 ── */
 function openResModal(id, name, date, price, status) {
-  document.getElementById('md_orderId').textContent  = '주문번호: #' + id;
+  document.getElementById('md_orderId').textContent  = '주문번호: ' + id;
   document.getElementById('md_name').textContent     = name;
   document.getElementById('md_date').textContent     = date;
   document.getElementById('md_price').textContent    = price + ' 원';

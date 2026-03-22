@@ -6,14 +6,14 @@ import java.util.List;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.tripan.app.admin.domain.dto.BookingResponseDto;
+import com.tripan.app.admin.domain.dto.ReservationResponseDto;
 import com.tripan.app.admin.domain.dto.DormantKpiDto;
 import com.tripan.app.admin.domain.dto.DormantMemberDto;
 import com.tripan.app.admin.domain.dto.MemberDto;
 import com.tripan.app.admin.domain.dto.MemberKpiDto;
 import com.tripan.app.admin.domain.entity.Member1;
 import com.tripan.app.admin.domain.entity.Member3;
-import com.tripan.app.admin.mapper.BookingManageMapper;
+import com.tripan.app.admin.mapper.ReservationManageMapper;
 import com.tripan.app.admin.mapper.MemberManageMapper;
 import com.tripan.app.admin.repository.Member1ManageRepository;
 import com.tripan.app.admin.repository.Member2ManageRepository;
@@ -34,7 +34,7 @@ public class MemberManageServiceImpl implements MemberManageService{
 	private final Member2ManageRepository      member2Repository;
     private final MemberStatusManageRepository memberStatusRepository;
     private final Member3ManageRepository member3Repository;
-    private final BookingManageMapper bookingMapper;
+    private final ReservationManageMapper bookingMapper;
     
 	@Override
 	public List<MemberDto> getAllMembers() {
@@ -45,7 +45,7 @@ public class MemberManageServiceImpl implements MemberManageService{
 	public MemberDto getMemberDetail(Long memberId) {
 		MemberDto member = memberMapper.selectMemberDetail(memberId);
 		
-		List<BookingResponseDto> bookings = bookingMapper.selectBookingsByMemberId(memberId);
+		List<ReservationResponseDto> bookings = bookingMapper.selectBookingsByMemberId(memberId);
 		member.setBookingList(bookings);
 		//member.setCsList(csMapper.selectCsHistoryByMemberId(memberId));
 		//member.setBadgeList(memberMapper.selectUserBadges(memberId));

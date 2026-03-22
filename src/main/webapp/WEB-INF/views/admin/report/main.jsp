@@ -39,25 +39,42 @@
     /* 콘텐츠 아코디언 */
     .content-row { cursor:pointer; transition:background .15s; }
     .content-row:hover td { background:var(--bg); }
-    .content-row.open td  { background:#f0f7ff; }
+    .content-row.open td  { background:var(--bg); font-weight:600; }
     .accordion-row { display:none; }
     .accordion-row.open { display:table-row; }
-    .accordion-inner { background:#f8fafc; border-top:1px solid var(--border); }
+    .accordion-inner { border-top:2px solid #BFDBFE; border-bottom:2px solid #BFDBFE; }
     .accordion-inner table { width:100%; border-collapse:collapse; font-size:13px; }
-    .accordion-inner th { padding:8px 14px; font-weight:600; color:var(--muted); font-size:12px; border-bottom:1px solid var(--border); text-align:left; background:#f1f5f9; }
-    .accordion-inner td { padding:9px 14px; border-bottom:1px dashed var(--border); }
+    .accordion-inner th { padding:8px 14px; font-weight:700; color:#1D4ED8; font-size:11px; border-bottom:1px solid #BFDBFE; text-align:left; background:#DBEAFE; text-transform:uppercase; letter-spacing:.04em; }
+    .accordion-inner td { padding:10px 14px; border-bottom:1px dashed #BFDBFE; background:#F0F7FF; }
     .accordion-inner tr:last-child td { border-bottom:none; }
     .expand-icon { float:right; transition:transform .2s; font-size:11px; color:var(--muted); }
     .content-row.open .expand-icon { transform:rotate(180deg); }
     .content-preview { max-width:200px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; color:var(--muted); font-size:13px; }
 
-    /* 이용자별 아코디언 */
+    /* 이용자별 아코디언 — 콘텐츠 아코디언과 동일 색으로 통일 */
     .user-row { cursor:pointer; transition:background .15s; }
     .user-row:hover td { background:var(--bg); }
-    .user-row.open td  { background:#f0f7ff; font-weight:700; }
-    .content-full { max-width:260px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; color:var(--muted); }
-    .link-btn { display:inline-block; padding:3px 10px; font-size:12px; font-weight:600; background:#e0e7ff; color:#4338ca; border-radius:6px; text-decoration:none; }
+    .user-row.open td  { background:var(--bg); font-weight:700; }
+    .user-accordion-row { display:none; }
+    .user-accordion-row.open { display:table-row; }
+    .user-accordion-inner { border-top:2px solid #BFDBFE; border-bottom:2px solid #BFDBFE; }
+    .user-accordion-inner table { width:100%; border-collapse:collapse; font-size:13px; }
+    .user-accordion-inner th { padding:8px 14px; font-weight:700; color:#1D4ED8; font-size:11px; border-bottom:1px solid #BFDBFE; text-align:left; background:#DBEAFE; text-transform:uppercase; letter-spacing:.04em; }
+    .user-accordion-inner td { padding:10px 14px; border-bottom:1px dashed #BFDBFE; background:#F0F7FF; }
+    .user-accordion-inner tr:last-child td { border-bottom:none; }
+    .content-full { max-width:240px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; color:var(--muted); }
+    .link-btn { display:inline-block; padding:3px 10px; font-size:12px; font-weight:600; background:#e0e7ff; color:#4338ca; border-radius:6px; text-decoration:none; cursor:pointer; border:none; }
     .link-btn:hover { background:#c7d2fe; }
+
+    /* 콘텐츠 전체 보기 모달 */
+    .view-modal-sheet { background:#fff; width:100%; max-width:720px; border-radius:20px; overflow:hidden; box-shadow:0 24px 64px rgba(0,0,0,.16); display:flex; flex-direction:column; max-height:85vh; }
+    .view-modal-content { padding:0 26px 20px; overflow-y:auto; flex:1; }
+    .view-post-box { background:var(--bg); border:1px solid var(--border); border-radius:12px; padding:20px; font-size:14px; line-height:1.8; color:var(--text); white-space:pre-wrap; word-break:break-all; margin-bottom:20px; }
+    .view-comment-item { padding:12px 16px; border-bottom:1px dashed var(--border); font-size:13px; }
+    .view-comment-item:last-child { border-bottom:none; }
+    .view-comment-author { font-weight:700; color:var(--text); font-size:12px; margin-bottom:4px; }
+    .view-comment-text { color:var(--text); line-height:1.6; }
+    .view-comment-reported { background:#FEF2F2; border-left:3px solid var(--danger); padding-left:12px; border-radius:0 8px 8px 0; }
 
     /* 모달 */
     .modal-overlay { position:fixed; inset:0; background:rgba(15,23,42,.5); backdrop-filter:blur(4px); display:none; justify-content:center; align-items:center; z-index:3000; padding:24px; }
@@ -79,7 +96,7 @@
 <body>
 
 <div class="admin-layout">
-  <jsp:include page="../layout/sidebar.jsp"><jsp:param name="activePage" value="report"/></jsp:include>
+  <jsp:include page="../layout/sidebar.jsp"><jsp:param name="activePage" value="reports"/></jsp:include>
   <div class="main-wrapper">
     <jsp:include page="../layout/header.jsp" />
     <main class="main-content">
@@ -180,6 +197,27 @@
   </div>
 </div>
 
+<!-- 콘텐츠 전체 보기 모달 -->
+<div class="modal-overlay" id="viewModal">
+  <div class="view-modal-sheet">
+    <div class="ms-head">
+      <div>
+        <h3 id="viewModalTitle">콘텐츠 전체 보기</h3>
+        <p id="viewModalMeta"></p>
+      </div>
+      <button class="ms-close" onclick="closeViewModal()">✕</button>
+    </div>
+    <div class="view-modal-content">
+      <div id="viewModalBody">
+        <div style="text-align:center;padding:40px;color:var(--muted);">불러오는 중...</div>
+      </div>
+    </div>
+    <div class="ms-foot">
+      <button class="btn btn-ghost" onclick="closeViewModal()">닫기</button>
+    </div>
+  </div>
+</div>
+
 <!-- 콘텐츠 미리보기 모달 -->
 <div class="modal-overlay" id="contentModal">
   <div class="modal-sheet">
@@ -196,6 +234,9 @@
     </div>
     <div class="ms-foot">
       <button class="btn btn-ghost" id="modalCancelBtn">닫기</button>
+      <button class="btn-deactivate" id="modalActivateBtn"
+              style="background:#059669;"
+              onclick="activateContent()">활성화 처리</button>
       <button class="btn-deactivate" id="modalDeactivateBtn">비활성화 처리</button>
     </div>
   </div>
@@ -265,23 +306,35 @@ function getContentFiltered() {
     if (!kw) return true;
     if (type === 'content'  && !(c.targetContent||'').toLowerCase().includes(kw)) return false;
     if (type === 'reported' && !(c.reportedNickname||'').toLowerCase().includes(kw)) return false;
+    // 신고자/신고사유는 콘텐츠 탭에서 지원 안 됨 → 이용자별 탭으로 안내
+    if (type === 'reporter' || type === 'reason') return false;
     return true;
   });
 }
 
 function getUserFiltered() {
-  const kw = document.getElementById('filterKeyword').value.trim().toLowerCase();
+  const kw   = document.getElementById('filterKeyword').value.trim().toLowerCase();
   const type = document.getElementById('filterSearchType').value;
   if (!kw) return USER_LIST;
   return USER_LIST.filter(r => {
+    if (type === 'content'  && !(r.targetContent||'').toLowerCase().includes(kw)) return false;
     if (type === 'reported' && !(r.reportedNickname||'').toLowerCase().includes(kw)) return false;
     if (type === 'reporter' && !(r.reporterNickname||'').toLowerCase().includes(kw)) return false;
-    if (type === 'reason'   && !(r.reason||'').toLowerCase().includes(kw)) return false;
+    if (type === 'reason') {
+      const reasonKo = (REASON_LABEL[r.reason] || r.reason || '').toLowerCase();
+      if (!reasonKo.includes(kw)) return false;
+    }
     return true;
   });
 }
 
 function applyFilter() {
+  const type = document.getElementById('filterSearchType').value;
+  // 신고자/신고사유 검색 시 이용자별 탭으로 자동 전환
+  if ((type === 'reporter' || type === 'reason') && currentTab !== 'user') {
+    switchTab('user');
+    return;
+  }
   if (currentTab === 'user') renderUserTable(getUserFiltered());
   else                       renderContentTable(sortContentData(getContentFiltered()));
 }
@@ -415,7 +468,7 @@ function renderUserTable(list) {
 
     const detailRows = u.reports.map(r => {
       const pathFn  = CONTENT_URL[r.targetType];
-      const linkBtn = pathFn ? '<a href="' + pathFn(r.targetId) + '" target="_blank" class="link-btn" onclick="event.stopPropagation()">글 보기 →</a>' : '';
+      const linkBtn = '<button class="link-btn" onclick="event.stopPropagation();openViewModal(\'' + r.targetType + '\',' + r.targetId + ',\'' + esc(r.targetContent||'') + '\',\'' + esc(r.reportedNickname||'') + '\')">글 보기 →</button>';
       return '<tr>'
         + '<td><span class="badge badge-type badge-' + r.targetType + '">' + (TYPE_LABEL[r.targetType]||r.targetType) + '</span></td>'
         + '<td class="content-full">' + esc(r.targetContent||'-') + '</td>'
@@ -426,9 +479,9 @@ function renderUserTable(list) {
         + '</tr>';
     }).join('');
 
-    html += '<tr class="accordion-row" id="ua-' + idx + '">'
+    html += '<tr class="user-accordion-row" id="ua-' + idx + '">'
       + '<td colspan="5" style="padding:0;">'
-      + '<div class="accordion-inner"><table>'
+      + '<div class="user-accordion-inner"><table>'
       + '<thead><tr><th>유형</th><th>내용</th><th>링크</th><th>신고자</th><th>신고 사유</th><th>신고일시</th></tr></thead>'
       + '<tbody>' + detailRows + '</tbody>'
       + '</table></div></td></tr>';
@@ -445,7 +498,79 @@ function renderUserTable(list) {
   });
 }
 
-/* ── 모달 ── */
+/* ── 콘텐츠 전체 보기 모달 ── */
+const COMMENT_PARENT_URL = {
+  FREEBOARD_COMMENT: id => CTX + '/community/freeboard/detail/' + id,
+  MATE_COMMENT:      id => CTX + '/community/mate/detail/' + id,
+  FEED_COMMENT:      id => CTX + '/community/feed'
+};
+
+async function openViewModal(targetType, targetId, previewContent, authorNickname) {
+  document.getElementById('viewModalTitle').textContent =
+    (TYPE_LABEL[targetType] || targetType) + ' 전체 보기';
+  document.getElementById('viewModalMeta').textContent =
+    '작성자: ' + (authorNickname || '-');
+  document.getElementById('viewModalBody').innerHTML =
+    '<div style="text-align:center;padding:40px;color:var(--muted);">불러오는 중...</div>';
+  document.getElementById('viewModal').classList.add('open');
+
+  const isComment = ['FEED_COMMENT','FREEBOARD_COMMENT','MATE_COMMENT'].includes(targetType);
+
+  try {
+    // 모든 타입 동일하게 API 호출 (댓글 타입은 서버에서 부모 글 찾아줌)
+    const res  = await fetch(CTX + '/admin/report/content?targetType=' + targetType + '&targetId=' + targetId);
+    const data = await res.json();
+    renderViewModal(targetType, data, isComment ? targetId : null);
+  } catch(e) {
+    document.getElementById('viewModalBody').innerHTML =
+      '<div style="text-align:center;padding:40px;color:var(--danger);">콘텐츠를 불러오지 못했습니다.</div>';
+  }
+}
+
+function renderViewModal(targetType, data, reportedCommentId, reportedCommentContent) {
+  const isComment = ['FEED_COMMENT','FREEBOARD_COMMENT','MATE_COMMENT'].includes(targetType);
+  let html = '';
+
+  if (!data) {
+    document.getElementById('viewModalBody').innerHTML =
+      '<div style="text-align:center;padding:40px;color:var(--danger);">콘텐츠를 불러오지 못했습니다.</div>';
+    return;
+  }
+
+  // 본문 표시
+  html += '<div style="font-size:12px;font-weight:700;color:var(--muted);margin-bottom:8px;text-transform:uppercase;">';
+  html += isComment ? '원글' : '본문 (신고됨)';
+  html += '</div>';
+  html += '<div class="view-post-box' + (!isComment ? ' view-comment-reported' : '') + '">'
+    + esc(data.content || '(내용 없음)') + '</div>';
+
+  // 댓글 목록
+  if (data.comments && data.comments.length > 0) {
+    html += '<div style="font-size:12px;font-weight:700;color:var(--muted);margin:16px 0 8px;text-transform:uppercase;">';
+    html += '댓글 ' + data.comments.length + '개';
+    if (isComment) html += ' <span style="font-weight:400;color:var(--danger);">(신고된 댓글 강조)</span>';
+    html += '</div>';
+    html += '<div style="border:1px solid var(--border);border-radius:12px;overflow:hidden;">';
+    data.comments.forEach(c => {
+      /* 댓글 신고일 때만 해당 댓글 강조 — commentId 일치 여부로 판단 */
+      const isRep = isComment && String(c.commentId) === String(reportedCommentId);
+      html += '<div class="view-comment-item' + (isRep ? ' view-comment-reported' : '') + '">'
+        + '<div class="view-comment-author">' + esc(c.nickname || '-')
+        + (isRep ? ' <span class="badge badge-danger" style="font-size:10px;">신고됨</span>' : '') + '</div>'
+        + '<div class="view-comment-text">' + esc(c.content || '') + '</div>'
+        + '</div>';
+    });
+    html += '</div>';
+  } else {
+    html += '<div style="color:var(--muted);font-size:13px;margin-top:8px;">댓글이 없습니다.</div>';
+  }
+
+  document.getElementById('viewModalBody').innerHTML = html;
+}
+
+function closeViewModal() {
+  document.getElementById('viewModal').classList.remove('open');
+}
 function openModal(e, idx) {
   e.stopPropagation();
   const c = window._currentContentList[idx];
@@ -454,19 +579,26 @@ function openModal(e, idx) {
   modalActive     = c.contentStatus !== 0;
 
   document.getElementById('modalTitle').textContent = (TYPE_LABEL[c.targetType]||c.targetType) + ' 상세';
-  document.getElementById('modalMeta').textContent  = '작성자: ' + (c.reportedNickname||'-') + '  |  신고 ' + c.reportCount + '회';
+  document.getElementById('modalMeta').textContent  = '작성자: ' + (c.reportedNickname||'-') + '  |  신고 ' + c.userReportCount + '회';
   document.getElementById('modalBadges').innerHTML  =
     '<span class="badge badge-type badge-' + c.targetType + '">' + (TYPE_LABEL[c.targetType]||c.targetType) + '</span> '
     + (c.contentStatus === 0 ? '<span class="badge badge-inactive">비활성</span>' : '<span class="badge badge-done">활성</span>');
   document.getElementById('modalContent').textContent = c.targetContent || '(내용 없음)';
 
   const deactivateBtn = document.getElementById('modalDeactivateBtn');
+  const activateBtn   = document.getElementById('modalActivateBtn');
+
   if (c.contentStatus === 0) {
-    deactivateBtn.disabled = true;
-    deactivateBtn.textContent = '이미 비활성화됨';
+    // 비활성 상태 → 활성화 버튼만 보이기
+    deactivateBtn.style.display = 'none';
+    activateBtn.style.display   = '';
+    activateBtn.disabled        = false;
   } else {
-    deactivateBtn.disabled = false;
-    deactivateBtn.textContent = '비활성화 처리';
+    // 활성 상태 → 비활성화 버튼만 보이기
+    activateBtn.style.display   = 'none';
+    deactivateBtn.style.display = '';
+    deactivateBtn.disabled      = false;
+    deactivateBtn.textContent   = '비활성화 처리';
   }
 
   document.getElementById('contentModal').classList.add('open');
@@ -489,6 +621,31 @@ async function deactivateContent() {
     const data = await res.json();
     if (data.success) {
       alert('비활성화 처리되었습니다.');
+      closeModal();
+      location.reload();
+    } else {
+      alert('오류: ' + (data.message||'처리 실패'));
+      btn.disabled = false;
+    }
+  } catch(e) {
+    alert('통신 오류가 발생했습니다.');
+    btn.disabled = false;
+  }
+}
+
+async function activateContent() {
+  if (!confirm('이 콘텐츠를 다시 활성화하시겠습니까?')) return;
+  const btn = document.getElementById('modalActivateBtn');
+  btn.disabled = true;
+  try {
+    const res = await fetch(CTX + '/admin/report/activate', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ targetType: modalTargetType, targetId: modalTargetId })
+    });
+    const data = await res.json();
+    if (data.success) {
+      alert('활성화 처리되었습니다.');
       closeModal();
       location.reload();
     } else {
@@ -529,6 +686,7 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('modalCancelBtn').addEventListener('click', closeModal);
   document.getElementById('modalDeactivateBtn').addEventListener('click', deactivateContent);
   document.getElementById('contentModal').addEventListener('click', e => { if(e.target===e.currentTarget) closeModal(); });
+  document.getElementById('viewModal').addEventListener('click', e => { if(e.target===e.currentTarget) closeViewModal(); });
 
   switchTab('all');
 });

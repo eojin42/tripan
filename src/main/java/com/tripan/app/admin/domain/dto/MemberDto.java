@@ -59,6 +59,6 @@ public class MemberDto {
     private String regDate;
     private Long registerId;
     
-    private List<BookingResponseDto> bookingList;
+    private List<ReservationResponseDto> bookingList;
 	private List<Long> targetIds;
 }

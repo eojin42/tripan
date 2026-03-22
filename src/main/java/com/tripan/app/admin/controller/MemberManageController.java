@@ -13,13 +13,13 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 
-import com.tripan.app.admin.domain.dto.BookingResponseDto;
+import com.tripan.app.admin.domain.dto.ReservationResponseDto;
 import com.tripan.app.admin.domain.dto.DormantKpiDto;
 import com.tripan.app.admin.domain.dto.DormantMemberDto;
 import com.tripan.app.admin.domain.dto.MemberDto;
 import com.tripan.app.admin.domain.dto.MemberKpiDto;
 import com.tripan.app.admin.domain.entity.Member1;
-import com.tripan.app.admin.service.BookingManageService;
+import com.tripan.app.admin.service.ReservationManageService;
 import com.tripan.app.admin.service.MemberManageService;
 import com.tripan.app.security.CustomUserDetails;
 
@@ -32,7 +32,7 @@ import lombok.extern.slf4j.Slf4j;
 @RequestMapping("admin/member/*")
 public class MemberManageController {
 	private final MemberManageService memberService;
-	private final BookingManageService bookingService;
+	private final ReservationManageService bookingService;
 	
 	@GetMapping({"", "/", "/main"})
 	public String membermain(Model model) {
@@ -51,7 +51,7 @@ public class MemberManageController {
 	public String getmemberDetail(@PathVariable("memberId") Long memberId, Model model) {
 		MemberDto member = memberService.getMemberDetail(memberId);
 		
-		List<BookingResponseDto> bookings = bookingService.getBookingsByMember(memberId);
+		List<ReservationResponseDto> bookings = bookingService.getBookingsByMember(memberId);
 		
 		model.addAttribute("member", member);
 	    model.addAttribute("bookingList", bookings);

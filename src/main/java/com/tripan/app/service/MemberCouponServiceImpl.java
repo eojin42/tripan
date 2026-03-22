@@ -10,7 +10,7 @@ import org.springframework.stereotype.Service;
 
 import com.tripan.app.admin.domain.dto.CouponDto;
 import com.tripan.app.admin.domain.entity.Member1;
-import com.tripan.app.admin.mapper.CouponMapper;
+import com.tripan.app.admin.mapper.CouponManageMapper;
 import com.tripan.app.domain.dto.MemberCouponDto;
 import com.tripan.app.domain.entity.MemberCoupon;
 import com.tripan.app.mapper.MemberCouponMapper;
@@ -24,7 +24,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @RequiredArgsConstructor
 public class MemberCouponServiceImpl implements MemberCouponService{
-	private final CouponMapper couponMapper;
+	private final CouponManageMapper couponMapper;
 	private final MemberCouponMapper memberCouponMapper;
 	private final MemberCouponRepository memberCouponRepository;
 	
