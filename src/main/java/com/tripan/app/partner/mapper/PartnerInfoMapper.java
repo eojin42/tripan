@@ -20,4 +20,5 @@ public interface PartnerInfoMapper {
     Map<String, Object> getFacilityByAfId(String afId);
     
     void updatePlaceInfo(PartnerInfoDto dto);
+    void updateAccommodationType(PartnerInfoDto dto);
 }

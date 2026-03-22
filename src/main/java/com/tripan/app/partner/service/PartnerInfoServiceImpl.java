@@ -81,6 +81,9 @@ public class PartnerInfoServiceImpl implements PartnerInfoService {
         if (dto.getPlaceId() != null) {
             partnerInfoMapper.updatePlaceInfo(dto);
         }
+        if (dto.getAccommodationType() != null) {
+            partnerInfoMapper.updateAccommodationType(dto);
+        }
     }
 
     public void calculateLatLngFromAddress(PartnerInfoDto dto) {
