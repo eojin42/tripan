@@ -211,7 +211,8 @@
 	            var diffCancel = Math.ceil((checkIn - now) / (1000 * 60 * 60 * 24));
 	            var daysSinceCheckIn = Math.ceil((now - checkIn) / (1000 * 60 * 60 * 24));
 
-	            var canCancel = diffCancel >= 4 && checkIn >= now;
+	            // var canCancel = diffCancel >= 4 && checkIn >= now;
+	            var canCancel = diffCancel >= 5 && checkIn >= now;
 	            var canWriteReview = daysSinceCheckIn >= 0 && daysSinceCheckIn <= 30; 
 
 	            var currentStatus = String(b.status || '').toUpperCase();
@@ -292,6 +293,7 @@
   document.addEventListener('DOMContentLoaded', function() { loadStats(); loadTrips(); });
   
   async function cancelReservation(reservationId, diffCancel) {
+	    /*
 	  	let refundRate = 0;
 	    if (diffCancel >= 10) refundRate = 100;
 	    else if (diffCancel >= 4 && diffCancel <= 9) refundRate = diffCancel * 10; 
@@ -299,7 +301,13 @@
 	    let msg = '정말로 이 예약을 취소하시겠습니까?\n\n';
 	    msg += '※ 현재 체크인 기준 D-' + diffCancel + '일 전입니다.\n';
 	    msg += '※ 환불 규정에 따라 결제 금액의 [' + refundRate + '%]만 환불됩니다.\n';
-      msg += '(결제 취소 시 사용하신 마일리지와 쿠폰은 100% 즉시 복구됩니다.)';
+     	msg += '(결제 취소 시 사용하신 마일리지와 쿠폰은 100% 즉시 복구됩니다.)';
+     	*/
+     	
+     	let msg = '정말로 이 예약을 취소하시겠습니까?\n\n';
+        msg += '※ 현재 체크인 기준 D-' + diffCancel + '일 전입니다.\n';
+        msg += '※ 체크인 5일 전 무료 취소 기간으로 결제 금액 전액(100%)이 환불됩니다.\n';
+        msg += '(사용하신 마일리지와 쿠폰도 즉시 복구됩니다.)';
 	  
 	    if (!confirm(msg)) {
 	        return;

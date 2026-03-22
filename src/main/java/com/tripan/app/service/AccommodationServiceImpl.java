@@ -383,7 +383,8 @@ public class AccommodationServiceImpl implements AccommodationService{
 	    LocalDate checkInDate = checkInTimestamp.toInstant().atZone(ZoneId.systemDefault()).toLocalDate();
 	    LocalDate today = LocalDate.now();
 	    long daysBefore = ChronoUnit.DAYS.between(today, checkInDate);
-
+	    
+	    /*
 	    // 3일 전부터는 환불 원천 차단
 	    if (daysBefore <= 3) {
 	        throw new RuntimeException("이용 3일 전부터는 환불이 불가합니다.");
@@ -394,6 +395,12 @@ public class AccommodationServiceImpl implements AccommodationService{
 	    if (daysBefore <= 9 && daysBefore >= 4) {
 	        refundRate = daysBefore * 0.1;
 	    }
+	    */
+	    
+	    if (daysBefore <= 4) {
+	        throw new RuntimeException("이용 4일 전부터는 예약 취소 및 환불이 불가합니다.");
+	    }
+	    double refundRate = 1.0; // 5일 전 이상이면 100% 환불 처리
 
 	    // -------------------------------------------------------------------
 	    // 2. 🌟 포인트 100% 우선 복구 로직 🌟
