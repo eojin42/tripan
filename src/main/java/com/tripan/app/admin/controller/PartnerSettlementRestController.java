@@ -1,10 +1,9 @@
 package com.tripan.app.admin.controller;
 
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.http.ResponseEntity;
+import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -15,124 +14,160 @@ import com.tripan.app.admin.domain.dto.SettlementFilterDto;
 import com.tripan.app.admin.domain.dto.SettlementManageDto;
 import com.tripan.app.admin.domain.dto.SettlementOrderDto;
 import com.tripan.app.admin.service.PartnerSettlementService;
-import com.tripan.app.security.CustomUserDetails;
 
 import lombok.RequiredArgsConstructor;
 
 @RestController
+@RequestMapping("/admin/settlement/partner")
 @RequiredArgsConstructor
-@RequestMapping("/admin/settlement")
 public class PartnerSettlementRestController {
-	private final PartnerSettlementService settlementService;
-	 
+
+    private final PartnerSettlementService settlementService;
+
     // ─────────────────────────────────────────────
-    //  메인 목록 데이터 (AJAX)
-    //  GET /admin/settlement/list
+    //  목록 조회 (main.jsp → settlement.js)
+    //  GET /admin/settlement/partner/list
     // ─────────────────────────────────────────────
-    @GetMapping("/list")
-    public Map<String, Object> list(SettlementFilterDto filter) {
-        List<SettlementManageDto> list  = settlementService.getSummaryList(filter);
-        int                       total = settlementService.getSummaryCount(filter);
- 
-        Map<String, Object> result = new HashMap<>();
-        result.put("list",  list);
-        result.put("total", total);
-        result.put("page",  filter.getPage());
-        result.put("size",  filter.getSize());
-        return result;
-    }
- 
-    // ─────────────────────────────────────────────
-    //  숙소별 예약 건 목록 (상세 페이지 아코디언)
-    //  GET /admin/settlement/orders?placeId=&month=
-    // ─────────────────────────────────────────────
-    @GetMapping("/orders")
-    public List<SettlementManageDto> orders(
-            @RequestParam Long   placeId,
-            @RequestParam String month
+    @GetMapping(value = "/list", produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<?> list(
+            @RequestParam(value = "settlementMonth", required = false) String settlementMonth,
+            @RequestParam(value = "status",          required = false) String status,
+            @RequestParam(value = "region",          required = false) String region,
+            @RequestParam(value = "keyword",         required = false) String keyword,
+            @RequestParam(value = "page",  defaultValue = "1")  int page,
+            @RequestParam(value = "size",  defaultValue = "20") int size
     ) {
         SettlementFilterDto filter = new SettlementFilterDto();
-        filter.setPlaceId(placeId);
-        filter.setSettlementMonth(month);
-        return settlementService.getDetailList(filter);
+        filter.setSettlementMonth(settlementMonth);
+        filter.setStatus(status);
+        filter.setRegion(region);
+        filter.setKeyword(keyword);
+        filter.setPage(page);
+        filter.setSize(size);
+
+        List<SettlementManageDto> list  = settlementService.getSummaryList(filter);
+        int                       total = settlementService.getSummaryCount(filter);
+
+        return ResponseEntity.ok(
+            java.util.Map.of("list", list, "total", total)
+        );
     }
- 
+
     // ─────────────────────────────────────────────
-    //  정산 승인 - 숙소 단위
-    //  POST /admin/settlement/approve/place
+    //  숙소(room) 단건 정산 승인
+    //  POST /admin/settlement/partner/approve/place
     // ─────────────────────────────────────────────
     @PostMapping("/approve/place")
-    public Map<String, Object> approvePlace(
-            @RequestParam Long   placeId,
-            @RequestParam String month,
-            @AuthenticationPrincipal CustomUserDetails user
+    public ResponseEntity<String> approvePlace(
+            @RequestParam("partnerId")       Long   partnerId,
+            @RequestParam("settlementMonth") String settlementMonth,
+            @RequestParam(value = "adminId", defaultValue = "0") Long adminId
     ) {
-        Map<String, Object> res = new HashMap<>();
         try {
-            settlementService.approvePlace(placeId, month, user.getMember().getMemberId());
-            res.put("success", true);
-        } catch (Exception e) {
-            res.put("success", false);
-            res.put("message", e.getMessage());
+            settlementService.approvePlace(partnerId, settlementMonth, adminId);
+            return ResponseEntity.ok("ok");
+        } catch (IllegalStateException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
         }
-        return res;
     }
- 
+
     // ─────────────────────────────────────────────
-    //  정산 승인 - 파트너 전체 일괄
-    //  POST /admin/settlement/approve/partner
+    //  파트너 전체 정산 일괄 승인
+    //  POST /admin/settlement/partner/approve/all
     // ─────────────────────────────────────────────
-    @PostMapping("/approve/partner")
-    public Map<String, Object> approvePartner(
-            @RequestParam Long   memberId,
-            @RequestParam String month,
-            @AuthenticationPrincipal CustomUserDetails user
+    @PostMapping("/approve/all")
+    public ResponseEntity<String> approveAll(
+            @RequestParam("partnerId")       Long   partnerId,
+            @RequestParam("settlementMonth") String settlementMonth,
+            @RequestParam(value = "adminId", defaultValue = "0") Long adminId
     ) {
-        Map<String, Object> res = new HashMap<>();
         try {
-            settlementService.approveAllByPartner(memberId, month, user.getMember().getMemberId());
-            res.put("success", true);
-        } catch (Exception e) {
-            res.put("success", false);
-            res.put("message", e.getMessage());
+            settlementService.approveAllByPartner(partnerId, settlementMonth, adminId);
+            return ResponseEntity.ok("ok");
+        } catch (IllegalStateException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
         }
-        return res;
     }
- 
+
     // ─────────────────────────────────────────────
-    //  CSV 다운로드용 데이터 - 파트너 단위
-    //  GET /admin/settlement/csv/partner?memberId=&month=
+    //  CSV — 파트너 전체 숙소 예약 건별
+    //  GET /admin/settlement/partner/csv/partner
     // ─────────────────────────────────────────────
     @GetMapping("/csv/partner")
-    public List<SettlementOrderDto> csvPartner(
-            @RequestParam Long   memberId,
-            @RequestParam String month
+    public ResponseEntity<List<SettlementOrderDto>> csvByPartner(
+            @RequestParam("memberId") Long   memberId,
+            @RequestParam("month")    String month
     ) {
         SettlementFilterDto filter = new SettlementFilterDto();
         filter.setMemberId(memberId);
         filter.setSettlementMonth(month);
-        return settlementService.getExcelRowsByPartner(filter);
+        return ResponseEntity.ok(settlementService.getExcelRowsByPartner(filter));
     }
- 
+
     // ─────────────────────────────────────────────
-    //  CSV 다운로드용 데이터 - 숙소 단위
-    //  GET /admin/settlement/csv/place?placeId=&month=
+    //  CSV — 숙소(room) 단위 예약 건별
+    //  GET /admin/settlement/partner/csv/place
     // ─────────────────────────────────────────────
     @GetMapping("/csv/place")
-    public List<SettlementOrderDto> csvPlace(
-            @RequestParam Long   placeId,
-            @RequestParam String month
+    public ResponseEntity<List<SettlementOrderDto>> csvByPlace(
+            @RequestParam("placeId") Long   placeId,
+            @RequestParam("month")   String month
     ) {
         SettlementFilterDto filter = new SettlementFilterDto();
         filter.setPlaceId(placeId);
         filter.setSettlementMonth(month);
-        return settlementService.getExcelRowsByPlace(filter);
+        return ResponseEntity.ok(settlementService.getExcelRowsByPlace(filter));
+    }
+    // ─────────────────────────────────────────────
+    //  KPI 조회 (main.jsp 상단 카드 4개)
+    //  GET /admin/settlement/partner/kpi?settlementMonth=YYYY-MM
+    // ─────────────────────────────────────────────
+    @GetMapping(value = "/kpi", produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<?> kpi(
+            @RequestParam(value = "settlementMonth", required = false) String settlementMonth
+    ) {
+        SettlementFilterDto filter = new SettlementFilterDto();
+        filter.setSettlementMonth(settlementMonth);
+        filter.setPage(1);
+        filter.setSize(9999);
+
+        List<SettlementManageDto> list = settlementService.getSummaryList(filter);
+
+        java.math.BigDecimal totalGmv        = java.math.BigDecimal.ZERO;
+        java.math.BigDecimal totalCommission = java.math.BigDecimal.ZERO;
+        java.math.BigDecimal pendingAmt      = java.math.BigDecimal.ZERO;
+        java.math.BigDecimal doneAmt         = java.math.BigDecimal.ZERO;
+        int pendingCount = 0, doneCount = 0;
+
+        for (SettlementManageDto d : list) {
+            if (d.getTotalGmv()        != null) totalGmv        = totalGmv.add(d.getTotalGmv());
+            if (d.getTotalCommission() != null) totalCommission = totalCommission.add(d.getTotalCommission());
+            if ("done".equals(d.getSettlementStatus()) || "DONE".equals(d.getSettlementStatus())) {
+                if (d.getTotalNetPayout() != null) doneAmt = doneAmt.add(d.getTotalNetPayout());
+                doneCount++;
+            } else {
+                if (d.getTotalNetPayout() != null) pendingAmt = pendingAmt.add(d.getTotalNetPayout());
+                pendingCount++;
+            }
+        }
+
+        return ResponseEntity.ok(java.util.Map.of(
+            "totalGmv",        totalGmv,
+            "totalCommission", totalCommission,
+            "pendingAmt",      pendingAmt,
+            "pendingCount",    pendingCount,
+            "doneAmt",         doneAmt,
+            "doneCount",       doneCount
+        ));
     }
 
- // PartnerSettlementRestController에 임시 추가
+    // ─────────────────────────────────────────────
+    //  배치 테스트용 (운영 배포 전 제거)
+    //  GET /admin/settlement/partner/batch/test
+    // ─────────────────────────────────────────────
     @GetMapping("/batch/test")
-    public String batchTest() {
+    public ResponseEntity<String> batchTest() {
         settlementService.aggregateSettlement();
-        return "완료";
+        return ResponseEntity.ok("배치 실행 완료");
     }
 }

@@ -34,4 +34,5 @@ public class SettlementOrderDto {
     // 결제 상태
     private String  paymentStatus;         // payment.status
     private String  orderStatus;           // orders.status
+    private String  reservationStatus;
 }

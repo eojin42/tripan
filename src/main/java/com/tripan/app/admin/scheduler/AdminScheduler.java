@@ -31,6 +31,8 @@ public class AdminScheduler {
      */
     @Scheduled(cron = "0 0 2 * * *")
     public void aggregateSettlement() {
+    	log.info("[스케줄러] 월별 정산 집계 시작");
         settlementService.aggregateSettlement();
+        log.info("[스케줄러] 월별 정산 집계 완료");
     }
 }

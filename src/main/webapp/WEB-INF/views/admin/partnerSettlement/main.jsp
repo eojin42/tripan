@@ -63,7 +63,7 @@
 </head>
 <body>
 <div class="admin-layout">
-  <jsp:include page="../layout/sidebar.jsp"><jsp:param name="activePage" value="settlement"/></jsp:include>
+  <jsp:include page="../layout/sidebar.jsp"><jsp:param name="activePage" value="partner-settlement"/></jsp:include>
   <div class="main-wrapper">
     <jsp:include page="../layout/header.jsp" />
 
@@ -148,16 +148,20 @@
             파트너 정산 목록
             <span id="tableCountBadge" style="font-size:13px;font-weight:600;color:var(--muted);"></span>
           </h2>
+          <button class="btn-excel-sm btn-sm" onclick="stlDownloadCheckedCsv()" style="height:34px;padding:0 14px;border-radius:8px;font-size:12px;font-weight:700;border:1.5px solid #059669;background:transparent;color:#059669;cursor:pointer;">
+            선택 CSV 다운로드
+          </button>
         </div>
         <div class="table-responsive">
           <table>
             <thead>
               <tr>
+                <th style="width:40px;"><input type="checkbox" onclick="stlToggleAll(this)" title="전체 선택"></th>
                 <th>파트너 / ID</th>
                 <th>정산월</th>
                 <th>숙소 수</th>
                 <th>총 결제액 (GMV)</th>
-                <th>수수료</th>
+                <th>수수료 (율)</th>
                 <th>쿠폰 파트너 부담</th>
                 <th>최종 지급액 (Net)</th>
                 <th>정산 상태</th>

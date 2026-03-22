@@ -17,7 +17,7 @@ import com.tripan.app.admin.service.PartnerSettlementService;
 import lombok.RequiredArgsConstructor;
  
 @Controller
-@RequestMapping("/admin/settlement")
+@RequestMapping("/admin/settlement/partner")
 @RequiredArgsConstructor
 public class PartnerSettlementController {
  
@@ -29,7 +29,7 @@ public class PartnerSettlementController {
     // ─────────────────────────────────────────────
     @GetMapping("/main")
     public String main() {
-        return "admin/settlement/main";
+        return "admin/partnerSettlement/main";
     }
  
     // ─────────────────────────────────────────────
@@ -61,7 +61,7 @@ public class PartnerSettlementController {
             if (d.getTotalCouponPlatform() != null) totalCouponPlatform = totalCouponPlatform.add(d.getTotalCouponPlatform());
             if (d.getTotalCouponPartner()  != null) totalCouponPartner  = totalCouponPartner.add(d.getTotalCouponPartner());
             if (d.getTotalNetPayout()      != null) totalNetPayout      = totalNetPayout.add(d.getTotalNetPayout());
-            if ("APPROVED".equals(d.getSettlementStatus())) approvedPlaceCount++;
+            if ("DONE".equals(d.getSettlementStatus())) approvedPlaceCount++;
         }
  
         model.addAttribute("memberId",           memberId);
@@ -79,6 +79,6 @@ public class PartnerSettlementController {
             model.addAttribute("partnerLoginId",  details.get(0).getLoginId());
         }
  
-        return "admin/settlement/detail";
+        return "admin/partnerSettlement/detail";
     }
 }
