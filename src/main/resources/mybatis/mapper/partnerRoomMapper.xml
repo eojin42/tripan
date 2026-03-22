@@ -3,13 +3,25 @@
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.tripan.app.partner.mapper.PartnerRoomMapper">
 
-    <insert id="insertRoom">
+    <insert id="insertRoom" parameterType="com.tripan.app.partner.domain.dto.PartnerRoomDto">
         INSERT INTO room (
             room_id, place_id, room_name, roombasecount, 
-            max_capacity, room_count, amount, roomintro, rf_id
+            max_capacity, room_count, amount, roomintro, 
+            rf_id, is_active
         ) VALUES (
             #{roomId}, #{placeId}, #{roomName}, #{roombasecount},
-            #{maxCapacity}, #{roomCount}, #{amount}, #{roomintro}, #{rfId}
+            #{maxCapacity}, #{roomCount}, #{amount}, #{roomintro}, 
+            #{rfId}, NVL(#{isActive}, 1)
+        )
+    </insert>
+
+    <insert id="insertRoomImage">
+        INSERT INTO room_image (
+            room_image_id, room_id, image_url
+        ) VALUES (
+            (SELECT NVL(MAX(room_image_id), 0) + 1 FROM room_image),
+            #{roomId}, 
+            #{imageUrl}
         )
     </insert>
     
@@ -44,6 +56,19 @@
         WHERE place_id = #{placeId}
         ORDER BY room_id DESC
     </select>
-	
+    
+    <insert id="insertRoomFacility" parameterType="com.tripan.app.partner.domain.dto.PartnerRoomDto">
+        INSERT INTO room_facility (
+            rf_id, roomaircondition, roomtv, roominternet, roombath, roomrefrigerator
+        ) VALUES (
+            #{rfId}, 
+            NVL(#{roomaircondition}, 0), 
+            NVL(#{roomtv}, 0), 
+            NVL(#{roominternet}, 0), 
+            NVL(#{roombath}, 0), 
+            NVL(#{roomrefrigerator}, 0)
+        )
+    </insert>
+
 	
 </mapper>
