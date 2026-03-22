@@ -66,7 +66,7 @@
          onclick="event.stopPropagation(); closeMobileSidebar()">휴면 회원 관리</a>
     </div>
 
-    <a href="${pageContext.request.contextPath}/admin/bookings"
+    <a href="${pageContext.request.contextPath}/admin/reservations"
        class="menu-item ${param.activePage == 'booking' ? 'active' : ''}"
        onclick="closeMobileSidebar()">
       <svg class="menu-icon" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
@@ -74,12 +74,20 @@
     </a>
 
     <div class="menu-label">Promotion</div>
-    <a href="${pageContext.request.contextPath}/admin/coupon/main"
-       class="menu-item ${param.activePage == 'coupon' ? 'active' : ''}"
-       onclick="closeMobileSidebar()">
+    <div class="menu-item has-sub ${param.activePage == 'coupon' || param.activePage == 'point' ? 'active open' : ''}"
+         onclick="toggleSubMenu(this)">
       <svg class="menu-icon" viewBox="0 0 24 24"><path d="M20 12V22H4V12"/><path d="M22 7H2v5h20V7z"/><path d="M12 22V7"/><path d="M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7z"/><path d="M12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z"/></svg>
-      <span class="menu-text">쿠폰 관리</span>
-    </a>
+      <span class="menu-text">쿠폰/포인트 관리</span>
+      <svg class="chevron-down" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"></polyline></svg>
+    </div>
+    <div class="sub-menu ${param.activePage == 'coupon' || param.activePage == 'point' ? 'open' : ''}">
+      <a href="${pageContext.request.contextPath}/admin/coupon/main"
+         class="sub-item ${param.activePage == 'coupon' ? 'active' : ''}"
+         onclick="event.stopPropagation(); closeMobileSidebar()">쿠폰 관리</a>
+      <a href="${pageContext.request.contextPath}/admin/point"
+         class="sub-item ${param.activePage == 'point' ? 'active' : ''}"
+         onclick="event.stopPropagation(); closeMobileSidebar()">포인트 관리</a>
+    </div>
 
     <div class="menu-label">Operation & CS</div>
     <a href="${pageContext.request.contextPath}/admin/banners"
@@ -88,21 +96,21 @@
       <svg class="menu-icon" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>
       <span class="menu-text">배너/기획전 관리</span>
     </a>
-    <div class="menu-item has-sub ${param.activePage == 'cs' || param.activePage == 'reports' ? 'active open' : ''}"
+    <div class="menu-item has-sub ${param.activePage == 'cs' || param.activePage == 'reports' || param.activePage == 'chatrooms' ? 'active open' : ''}"
          onclick="toggleSubMenu(this)">
       <svg class="menu-icon" viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
       <span class="menu-text">CS 관리</span>
       <svg class="chevron-down" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"></polyline></svg>
     </div>
-    <div class="sub-menu ${param.activePage == 'cs' || param.activePage == 'reports' ? 'open' : ''}">
+    <div class="sub-menu ${param.activePage == 'cs' || param.activePage == 'reports' || param.activePage == 'chatrooms' ? 'open' : ''}">
       <a href="${pageContext.request.contextPath}/admin/cs"
          class="sub-item ${param.activePage == 'cs' ? 'active' : ''}"
          onclick="event.stopPropagation(); closeMobileSidebar()">1:1 문의 관리</a>
       <a href="${pageContext.request.contextPath}/admin/report/main"
          class="sub-item ${param.activePage == 'reports' ? 'active' : ''}"
          onclick="event.stopPropagation(); closeMobileSidebar()">유저/게시물 신고 관리</a>
-     <a href="${pageContext.request.contextPath}/admin/chat/rooms"
-         class="sub-item ${param.activePage == 'reports' ? 'active' : ''}"
+      <a href="${pageContext.request.contextPath}/admin/chat/rooms"
+         class="sub-item ${param.activePage == 'chatrooms' ? 'active' : ''}"
          onclick="event.stopPropagation(); closeMobileSidebar()">채팅방 관리</a>
     </div>
 

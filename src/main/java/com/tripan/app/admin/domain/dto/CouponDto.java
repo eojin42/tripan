@@ -166,5 +166,16 @@ public class CouponDto {
         private int prevBlockPage;
         private int nextBlockPage;
     }
+    
+    @Data
+    public static class UsageItem {
+        private String     couponName;             // 쿠폰명
+        private String     discountType;           // FIXED / PERCENT
+        private BigDecimal discountAmount;         // 총 할인금액
+        private BigDecimal platformDiscountAmount; // 플랫폼 부담금액
+        private BigDecimal partnerDiscountAmount;  // 파트너 부담금액
+        private BigDecimal platformShare;          // 플랫폼 부담 비율
+        private BigDecimal partnerShare;           // 파트너 부담 비율
+    }
 
 }

@@ -10,7 +10,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.tripan.app.admin.domain.dto.CouponDto;
 import com.tripan.app.admin.domain.dto.CouponTargetDto;
-import com.tripan.app.admin.mapper.CouponMapper;
+import com.tripan.app.admin.mapper.CouponManageMapper;
 import com.tripan.app.admin.mapper.CouponTargetMapper;
 
 import lombok.RequiredArgsConstructor;
@@ -19,7 +19,7 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class CouponServiceImpl implements CouponService {
 
-	private final CouponMapper couponMapper;
+	private final CouponManageMapper couponMapper;
     private final CouponTargetMapper couponTargetMapper;
 
     private static final int PAGE_SIZE = 10;

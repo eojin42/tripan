@@ -73,4 +73,17 @@ public class ReportManageServiceImpl implements ReportManageService {
             default -> log.warn("[숨김처리] 알 수 없는 targetType={}", targetType);
         }
     }
+    @Override
+    @Transactional
+    public void activateContent(String targetType, Long targetId) {
+        switch (targetType) {
+            case "FEED":              reportManageMapper.showFeedPost(targetId);         break;
+            case "FEED_COMMENT":      reportManageMapper.showPostComment(targetId);      break;
+            case "FREEBOARD":         reportManageMapper.showFreeboard(targetId);        break;
+            case "FREEBOARD_COMMENT": reportManageMapper.showFreeboardComment(targetId); break;
+            case "MATE":              reportManageMapper.showTravelMate(targetId);       break;
+            case "MATE_COMMENT":      reportManageMapper.showTravelMateComment(targetId);break;
+            default: throw new IllegalArgumentException("알 수 없는 타입: " + targetType);
+        }
+    }
 }

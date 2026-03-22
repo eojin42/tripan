@@ -9,7 +9,7 @@ import org.apache.ibatis.annotations.Param;
 import com.tripan.app.admin.domain.dto.CouponDto;
 
 @Mapper
-public interface CouponMapper {
+public interface CouponManageMapper {
 
     CouponDto.KpiResponse selectKpi();
 

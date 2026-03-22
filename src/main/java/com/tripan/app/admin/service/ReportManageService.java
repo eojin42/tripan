@@ -17,4 +17,6 @@ public interface ReportManageService {
  
     /** 콘텐츠 비활성화 (어드민 수동) */
     void deactivateContent(String targetType, Long targetId);
+    
+    void activateContent(String targetType, Long targetId);
 }

@@ -1,0 +1,237 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.tripan.app.admin.mapper.ReservationManageMapper">
+
+    <sql id="searchConditions">
+        <where>
+            <if test="startDate != null and startDate != ''">
+                AND r.CHECK_IN_DATE &gt;= TO_DATE(#{startDate}, 'YYYY-MM-DD')
+            </if>
+            <if test="endDate != null and endDate != ''">
+                AND r.CHECK_IN_DATE &lt;= TO_DATE(#{endDate}, 'YYYY-MM-DD')
+            </if>
+            <if test="status != null and status != ''">
+                AND r.STATUS = #{status}
+            </if>
+            <if test="paymentStatus != null and paymentStatus != ''">
+                AND o.STATUS = #{paymentStatus}
+            </if>
+            <if test="keyword != null and keyword != ''">
+                <choose>
+                    <when test="keywordType == 'reservationId'">
+                        AND TO_CHAR(r.RESERVATION_ID) LIKE '%' || #{keyword} || '%'
+                    </when>
+                    <when test="keywordType == 'memberName'">
+                        AND m.USERNAME LIKE '%' || #{keyword} || '%'
+                    </when>
+                    <when test="keywordType == 'placeName'">
+                        AND pl.PLACE_NAME LIKE '%' || #{keyword} || '%'
+                    </when>
+                    <otherwise>
+                        AND TO_CHAR(r.RESERVATION_ID) LIKE '%' || #{keyword} || '%'
+                    </otherwise>
+                </choose>
+            </if>
+        </where>
+    </sql>
+
+    <!-- 전체 예약 목록 (회원 상세용) -->
+    <select id="selectAllBookings" resultType="com.tripan.app.admin.domain.dto.ReservationResponseDto">
+        SELECT
+            r.RESERVATION_ID AS id,
+            '#' || r.RESERVATION_ID AS resId,
+            m.USERNAME AS username,
+            rm.ROOM_NAME AS roomName,
+            TO_CHAR(r.CHECK_IN_DATE, 'YYYY-MM-DD') || ' ~ ' ||
+            TO_CHAR(r.CHECK_OUT_DATE, 'YYYY-MM-DD') AS duration,
+            '₩ ' || TO_CHAR(r.AMOUNT, 'FM999,999,999') AS totalPrice,
+            r.STATUS AS statusText,
+            CASE WHEN r.STATUS = 'SUCCESS' THEN 'badge-done'
+                 WHEN r.STATUS = 'CANCELED' THEN 'badge-danger'
+                 ELSE 'badge-wait' END AS statusClass
+        FROM RESERVATION r
+            JOIN MEMBER1 m ON m.MEMBER_ID = r.MEMBER_ID
+            LEFT JOIN ROOM rm ON rm.ROOM_ID = r.ROOM_ID
+        ORDER BY r.RESERVATION_ID DESC
+    </select>
+
+    <!-- 회원별 예약 목록 -->
+    <select id="selectBookingsByMemberId" parameterType="Long"
+            resultType="com.tripan.app.admin.domain.dto.ReservationResponseDto">
+        SELECT
+            r.RESERVATION_ID AS id,
+            '#' || r.RESERVATION_ID AS resId,
+            rm.ROOM_NAME AS roomName,
+            TO_CHAR(r.CHECK_IN_DATE, 'YYYY-MM-DD') || ' ~ ' ||
+            TO_CHAR(r.CHECK_OUT_DATE, 'YYYY-MM-DD') AS duration,
+            '₩ ' || TO_CHAR(r.AMOUNT, 'FM999,999,999') AS totalPrice,
+            r.STATUS AS statusText,
+            CASE WHEN r.STATUS = 'SUCCESS' THEN 'badge-done'
+                 WHEN r.STATUS = 'CANCELED' THEN 'badge-danger'
+                 ELSE 'badge-wait' END AS statusClass
+        FROM RESERVATION r
+            LEFT JOIN ROOM rm ON rm.ROOM_ID = r.ROOM_ID
+        WHERE r.MEMBER_ID = #{memberId}
+        ORDER BY r.RESERVATION_ID DESC
+    </select>
+
+    <!-- 예약 목록 조회 (페이징) -->
+    <select id="selectReservationList"
+            parameterType="com.tripan.app.admin.domain.dto.ReservationSearchDto"
+            resultType="com.tripan.app.admin.domain.dto.ReservationDto">
+        SELECT *
+        FROM (
+            SELECT
+                r.RESERVATION_ID AS reservationId,
+                od.ORDER_ID AS orderId,
+                m.USERNAME AS memberName,
+                pl.PLACE_NAME AS placeName,
+                rm.ROOM_NAME AS roomName,
+                pt.PARTNER_NAME AS partnerName,
+                TO_CHAR(r.CHECK_IN_DATE,  'YYYY-MM-DD') AS checkInDate,
+                TO_CHAR(r.CHECK_OUT_DATE, 'YYYY-MM-DD') AS checkOutDate,
+                r.AMOUNT AS amount,
+                NVL(od_refund.AMOUNT, 0) AS refundAmount,
+                r.STATUS AS status,
+                o.STATUS AS paymentStatus,
+                ROW_NUMBER() OVER (ORDER BY r.RESERVATION_ID DESC) AS rn
+            FROM RESERVATION r
+                LEFT JOIN MEMBER1 m   ON m.MEMBER_ID  = r.MEMBER_ID
+                LEFT JOIN ROOM rm     ON rm.ROOM_ID   = r.ROOM_ID
+                LEFT JOIN PLACE pl    ON pl.PLACE_ID  = rm.PLACE_ID
+                LEFT JOIN PARTNER pt  ON pt.PARTNER_ID = r.PARTNER_ID
+                LEFT JOIN (
+                    SELECT RESERVATION_ID, ORDER_ID
+                    FROM ORDER_DETAIL
+                    WHERE DETAIL_ID IN (
+                        SELECT MIN(DETAIL_ID) FROM ORDER_DETAIL GROUP BY RESERVATION_ID
+                    )
+                ) od ON od.RESERVATION_ID = r.RESERVATION_ID
+                LEFT JOIN ORDERS o ON o.ORDER_ID = od.ORDER_ID
+                LEFT JOIN ORDER_DETAIL od_refund
+                    ON od_refund.RESERVATION_ID = r.RESERVATION_ID
+                    AND od_refund.STATUS = 'CANCELLED'
+            <include refid="searchConditions"/>
+        )
+        WHERE rn BETWEEN #{offset} + 1 AND #{offset} + #{size}
+    </select>
+
+    <!-- 예약 총 건수 -->
+    <select id="countReservationList"
+            parameterType="com.tripan.app.admin.domain.dto.ReservationSearchDto"
+            resultType="long">
+        SELECT COUNT(*)
+        FROM RESERVATION r
+            LEFT JOIN MEMBER1 m   ON m.MEMBER_ID  = r.MEMBER_ID
+            LEFT JOIN ROOM rm     ON rm.ROOM_ID   = r.ROOM_ID
+            LEFT JOIN PLACE pl    ON pl.PLACE_ID  = rm.PLACE_ID
+            LEFT JOIN PARTNER pt  ON pt.PARTNER_ID = r.PARTNER_ID
+            LEFT JOIN (
+                SELECT RESERVATION_ID, ORDER_ID
+                FROM ORDER_DETAIL
+                WHERE DETAIL_ID IN (
+                    SELECT MIN(DETAIL_ID) FROM ORDER_DETAIL GROUP BY RESERVATION_ID
+                )
+            ) od ON od.RESERVATION_ID = r.RESERVATION_ID
+            LEFT JOIN ORDERS o ON o.ORDER_ID = od.ORDER_ID
+        <include refid="searchConditions"/>
+    </select>
+
+    <!-- KPI 집계 - 전체 기준 (날짜 필터 없을 때 전체) -->
+    <select id="selectReservationKpi"
+            parameterType="com.tripan.app.admin.domain.dto.ReservationSearchDto"
+            resultType="com.tripan.app.admin.domain.dto.ReservationDto">
+        SELECT
+            COUNT(*) AS totalCount,
+            SUM(CASE WHEN r.STATUS = 'SUCCESS' AND r.CHECK_OUT_DATE &gt;= TRUNC(SYSDATE) THEN 1 ELSE 0 END) AS reservedCount,
+            SUM(CASE WHEN r.STATUS = 'SUCCESS' AND r.CHECK_OUT_DATE &lt;  TRUNC(SYSDATE) THEN 1 ELSE 0 END) AS usedCount,
+            SUM(CASE WHEN r.STATUS = 'CANCELED' THEN 1 ELSE 0 END) AS cancelledCount
+        FROM RESERVATION r
+            LEFT JOIN MEMBER1 m   ON m.MEMBER_ID  = r.MEMBER_ID
+            LEFT JOIN ROOM rm     ON rm.ROOM_ID   = r.ROOM_ID
+            LEFT JOIN PLACE pl    ON pl.PLACE_ID  = rm.PLACE_ID
+            LEFT JOIN PARTNER pt  ON pt.PARTNER_ID = r.PARTNER_ID
+            LEFT JOIN (
+                SELECT RESERVATION_ID, ORDER_ID
+                FROM ORDER_DETAIL
+                WHERE DETAIL_ID IN (
+                    SELECT MIN(DETAIL_ID) FROM ORDER_DETAIL GROUP BY RESERVATION_ID
+                )
+            ) od ON od.RESERVATION_ID = r.RESERVATION_ID
+            LEFT JOIN ORDERS o ON o.ORDER_ID = od.ORDER_ID
+        <include refid="searchConditions"/>
+    </select>
+
+    <!-- 예약 상세 조회 -->
+    <select id="selectReservationDetail"
+            parameterType="long"
+            resultType="com.tripan.app.admin.domain.dto.ReservationDto">
+        SELECT
+            r.RESERVATION_ID AS reservationId,
+            od.ORDER_ID AS orderId,
+            m.USERNAME AS memberName,
+            pl.PLACE_NAME AS placeName,
+            rm.ROOM_NAME AS roomName,
+            pt.PARTNER_NAME AS partnerName,
+            TO_CHAR(r.CHECK_IN_DATE,  'YYYY-MM-DD') AS checkInDate,
+            TO_CHAR(r.CHECK_OUT_DATE, 'YYYY-MM-DD') AS checkOutDate,
+            r.GUEST_COUNT AS guestCount,
+            r.REQUEST AS request,
+            r.AMOUNT AS amount,
+            NVL(od_refund.AMOUNT, 0) AS refundAmount,
+            o.COUPON_DISCOUNT AS couponDiscount,
+            o.POINT_DISCOUNT AS pointDiscount,
+            o.REAL_TOTAL_AMOUNT AS settlementTargetAmount,
+            r.COMMISSION_RATE AS commissionRate,
+            r.STATUS AS status,
+            o.STATUS AS paymentStatus
+        FROM RESERVATION r
+            LEFT JOIN MEMBER1 m   ON m.MEMBER_ID  = r.MEMBER_ID
+            LEFT JOIN ROOM rm     ON rm.ROOM_ID   = r.ROOM_ID
+            LEFT JOIN PLACE pl    ON pl.PLACE_ID  = rm.PLACE_ID
+            LEFT JOIN PARTNER pt  ON pt.PARTNER_ID = r.PARTNER_ID
+            LEFT JOIN (
+                SELECT RESERVATION_ID, ORDER_ID
+                FROM ORDER_DETAIL
+                WHERE DETAIL_ID IN (
+                    SELECT MIN(DETAIL_ID) FROM ORDER_DETAIL GROUP BY RESERVATION_ID
+                )
+            ) od ON od.RESERVATION_ID = r.RESERVATION_ID
+            LEFT JOIN ORDERS o ON o.ORDER_ID = od.ORDER_ID
+            LEFT JOIN ORDER_DETAIL od_refund
+                ON od_refund.RESERVATION_ID = r.RESERVATION_ID
+                AND od_refund.STATUS = 'CANCELLED'
+        WHERE r.RESERVATION_ID = #{reservationId}
+    </select>
+
+    <!-- 쿠폰 사용 내역 -->
+    <select id="selectCouponUsageByReservationId"
+            parameterType="long"
+            resultType="com.tripan.app.admin.domain.dto.CouponDto$UsageItem">
+        SELECT
+            c.COUPON_NAME AS couponName,
+            c.DISCOUNT_TYPE AS discountType,
+            cu.DISCOUNT_AMOUNT AS discountAmount,
+            cu.PLATFORM_DISCOUNT_AMOUNT AS platformDiscountAmount,
+            cu.PARTNER_DISCOUNT_AMOUNT AS partnerDiscountAmount,
+            c.PLATFORM_SHARE AS platformShare,
+            c.PARTNER_SHARE AS partnerShare
+        FROM COUPON_USAGE cu
+            JOIN MEMBER_COUPON mc ON mc.MEMBER_COUPON_ID = cu.MEMBER_COUPON_ID
+            JOIN COUPON c         ON c.COUPON_ID = mc.COUPON_ID
+            JOIN ORDER_DETAIL od  ON od.ORDER_ID = cu.ORDER_ID
+        WHERE od.RESERVATION_ID = #{reservationId}
+          AND cu.STATUS != 'canceled'
+    </select>
+
+    <!-- 예약 상태 변경 (기존 - Long id) -->
+    <update id="updateBookingStatus">
+        UPDATE RESERVATION SET STATUS = #{status} WHERE RESERVATION_ID = #{id}
+    </update>
+
+    <!-- 예약 상태 변경 (신규 - Long reservationId) -->
+    <update id="updateReservationStatus">
+        UPDATE RESERVATION SET STATUS = #{status} WHERE RESERVATION_ID = #{reservationId}
+    </update>
+
+</mapper>

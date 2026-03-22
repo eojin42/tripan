@@ -35,7 +35,7 @@ public class Booking {
     private String checkOut;
     private Long totalPrice;
     
-    private Integer status;
+    private String status;
 
     private LocalDateTime regDate;
 }

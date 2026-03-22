@@ -1,0 +1,113 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.tripan.app.admin.mapper.PointManageMapper">
+
+    <!-- ======================================================
+         회원별 포인트 요약 목록
+         - 현재 잔액 / 누적 적립 / 누적 사용 / 마지막 변동일
+    ====================================================== -->
+    <select id="selectMemberPointList"
+            resultType="com.tripan.app.admin.domain.dto.PointManageDto">
+        SELECT
+            m1.member_id                                        AS memberId,
+            m1.login_id                                         AS loginId,
+            m2.nickname,
+            m1.email,
+            NVL(
+                (SELECT rem_point
+                 FROM   point p2
+                 WHERE  p2.member_id = m1.member_id
+                 AND    p2.point_id  = (
+                     SELECT MAX(p3.point_id) FROM point p3
+                     WHERE  p3.member_id = m1.member_id
+                 )), 0
+            )                                                   AS remPoint,
+            NVL(
+                (SELECT SUM(point_amount)
+                 FROM   point
+                 WHERE  member_id = m1.member_id
+                 AND    point_amount > 0), 0
+            )                                                   AS totalEarned,
+            NVL(
+                (SELECT ABS(SUM(point_amount))
+                 FROM   point
+                 WHERE  member_id = m1.member_id
+                 AND    point_amount &lt; 0), 0
+            )                                                   AS totalUsed,
+            TO_CHAR(
+                (SELECT MAX(reg_date) FROM point WHERE member_id = m1.member_id),
+                'YYYY-MM-DD'
+            )                                                   AS lastChangeDate
+        FROM  member1 m1
+        JOIN  member2 m2 ON m2.member_id = m1.member_id
+        WHERE m1.status != '4'
+        AND   m2.nickname != '(탈퇴)'
+        <if test="keyword != null and keyword != ''">
+            AND (m1.login_id LIKE '%' || #{keyword} || '%'
+              OR m2.nickname LIKE '%' || #{keyword} || '%')
+        </if>
+        ORDER BY remPoint DESC
+    </select>
+
+    <!-- ======================================================
+         개인 포인트 내역 (은행 계좌 내역 스타일)
+    ====================================================== -->
+    <select id="selectPointHistory"
+            resultType="com.tripan.app.admin.domain.dto.PointManageDto$HistoryDto">
+        SELECT
+            p.point_id                              AS pointId,
+            p.member_id                             AS memberId,
+            p.order_id                              AS orderId,
+            p.change_reason                         AS changeReason,
+            p.point_amount                          AS pointAmount,
+            p.rem_point                             AS remPoint,
+            TO_CHAR(p.reg_date, 'YYYY-MM-DD HH24:MI') AS regDate
+        FROM  point p
+        WHERE p.member_id = #{memberId}
+        <if test="startDate != null and startDate != ''">
+            AND p.reg_date &gt;= TO_DATE(#{startDate}, 'YYYY-MM-DD')
+        </if>
+        <if test="endDate != null and endDate != ''">
+            AND p.reg_date &lt; TO_DATE(#{endDate}, 'YYYY-MM-DD') + 1
+        </if>
+        ORDER BY p.point_id DESC
+    </select>
+
+    <!-- ======================================================
+         현재 잔여 포인트 조회
+    ====================================================== -->
+    <select id="selectRemPoint" resultType="int">
+        SELECT NVL(rem_point, 0)
+        FROM   point
+        WHERE  member_id = #{memberId}
+        AND    point_id  = (
+            SELECT MAX(point_id) FROM point WHERE member_id = #{memberId}
+        )
+    </select>
+
+    <!-- ======================================================
+         포인트 내역 INSERT (시퀀스: point_seq)
+    ====================================================== -->
+    <insert id="insertPointHistory">
+        INSERT INTO point (
+            point_id,
+            member_id,
+            order_id,
+            change_reason,
+            point_amount,
+            rem_point,
+            reg_date
+        ) VALUES (
+            point_seq.NEXTVAL,
+            #{memberId},
+            #{orderId,     jdbcType=VARCHAR},
+            #{changeReason},
+            #{pointAmount},
+            #{remPoint},
+            SYSDATE
+        )
+    </insert>
+
+</mapper>

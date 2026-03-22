@@ -13,4 +13,5 @@ public interface ReportMapper {
     int countReportByReportedId(Long reportedId);
     
     int checkDuplicateReport(ReportDto reportDto);
+    
 }

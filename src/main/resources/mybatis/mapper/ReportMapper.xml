@@ -42,5 +42,7 @@
           AND target_type = #{targetType}
           AND target_id = #{targetId}
     </select>
+    
+
 
 </mapper>
