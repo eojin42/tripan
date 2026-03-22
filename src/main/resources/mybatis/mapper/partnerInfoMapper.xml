@@ -52,12 +52,18 @@
             p.status,
             pl.place_id AS placeId,
             pl.address AS address,
-            pl.image_url AS imageUrl
-        FROM partner p
+            pl.image_url AS imageUrl,
+            a.accommodation_type AS accommodationType  FROM partner p
         LEFT JOIN place pl ON p.partner_id = pl.partner_id
-        WHERE p.member_id = #{memberId}
+        LEFT JOIN accommodation a ON pl.place_id = a.place_id  WHERE p.member_id = #{memberId}
         ORDER BY p.created_at ASC
     </select>
+    
+    <update id="updateAccommodationType">
+        UPDATE accommodation
+        SET accommodation_type = #{accommodationType}
+        WHERE place_id = #{placeId}
+    </update>
     
     <select id="getPlaceIdByPartnerId" resultType="java.lang.Long">
         SELECT place_id 

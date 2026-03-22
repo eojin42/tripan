@@ -67,10 +67,6 @@
                 <h2 style="font-size: 16px; font-weight: 800; margin-bottom: 24px;">👤 담당자 및 사업자 정보</h2>
                 
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px;">
-					<div>
-					    <label class="info-form-label">사업장명 (수정 불가)</label>
-					    <input type="text" class="info-form-control" value="${partnerInfo.partnerName}" disabled>
-					</div>
 
 					<div>
 					    <label class="info-form-label">사업장명 (수정 불가)</label>
@@ -102,6 +98,7 @@
                             <option value="PENSION" ${partnerInfo.accommodationType == 'PENSION' ? 'selected' : ''}>펜션/풀빌라</option>
                             <option value="GUESTHOUSE" ${partnerInfo.accommodationType == 'GUESTHOUSE' ? 'selected' : ''}>게스트하우스/한옥</option>
                             <option value="CAMPING" ${partnerInfo.accommodationType == 'CAMPING' ? 'selected' : ''}>캠핑/글램핑</option>
+                            <option value="기타" ${partnerInfo.accommodationType == '기타' ? 'selected' : ''}>기타</option>
                         </select>
                     </div>
                 </div>
