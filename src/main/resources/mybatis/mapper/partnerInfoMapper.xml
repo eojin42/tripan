@@ -74,9 +74,11 @@
         UPDATE place
         SET address = #{address},
             latitude = #{latitude},
-            longitude = #{longitude}
+            longitude = #{longitude},
+            place_name = #{partnerName},                     
+            description = #{partnerIntro, jdbcType=CLOB}     
             <if test="imageUrl != null and imageUrl != ''">
-            , image_url = #{imageUrl}
+            	, image_url = #{imageUrl}
             </if>
         WHERE place_id = #{placeId}
     </update>
