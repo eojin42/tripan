@@ -1,14 +1,47 @@
 function openRoomModal() {
-  document.getElementById('roomModal').style.display = 'flex';
+    document.getElementById('roomForm').reset(); 
+    document.getElementById('modalRoomId').value = ""; // ID 비우기 (신규 등록을 의미함)
+    document.getElementById('roomModalTitle').innerText = "🛏️ 새 객실 등록";
+    document.getElementById('roomModal').style.display = 'flex';
+}
+
+function openRoomModalForUpdate(btn) {
+    document.getElementById('roomForm').reset(); 
+    
+    const roomId = btn.getAttribute('data-id');
+    const isActive = btn.getAttribute('data-active');
+
+    document.getElementById('modalRoomId').value = roomId;
+    
+    document.getElementById('roomName').value = btn.getAttribute('data-name');
+    document.getElementById('roombasecount').value = btn.getAttribute('data-base');
+    document.getElementById('maxCapacity').value = btn.getAttribute('data-max');
+    document.getElementById('roomCount').value = btn.getAttribute('data-cnt');
+    document.getElementById('amount').value = btn.getAttribute('data-amt');
+    document.getElementById('roomintro').value = btn.getAttribute('data-intro');
+    
+    if(isActive == 1) {
+        document.querySelector('input[name="isActive"][value="1"]').checked = true;
+    } else {
+        document.querySelector('input[name="isActive"][value="0"]').checked = true;
+    }
+    
+    document.getElementById('roomModalTitle').innerText = "🛏️ 객실 정보 수정";
+    document.getElementById('roomModal').style.display = 'flex';
 }
 
 function closeRoomModal() {
-  document.getElementById('roomModal').style.display = 'none';
-  document.getElementById('roomForm').reset(); // 닫을 때 폼 초기화
+    document.getElementById('roomModal').style.display = 'none';
+    document.getElementById('roomForm').reset(); // 닫을 때 폼 초기화
 }
 
 function saveRoom() {
     const formData = new FormData();
+    
+    const roomId = document.getElementById('modalRoomId').value;
+    if (roomId !== "") {
+        formData.append('roomId', roomId); 
+    }
     
     formData.append('roomName', document.getElementById('roomName').value);
     formData.append('roombasecount', document.getElementById('roombasecount').value);
@@ -27,7 +60,7 @@ function saveRoom() {
     const fileInput = document.getElementById('roomImages');
     const maxFiles = 5;
 
-    if (fileInput.files.length === 0) {
+    if (roomId === "" && fileInput.files.length === 0) {
         showToast('최소 1장 이상의 객실 사진을 등록해주세요!', 'error');
         return; 
     }
@@ -58,11 +91,15 @@ function saveRoom() {
     })
     .then(data => {
         if (data.message === 'success') {
-            showToast('🎉 새 객실과 사진이 성공적으로 등록되었습니다!', 'success');
+            if (roomId !== "") {
+                showToast('✅ 객실 정보가 성공적으로 수정되었습니다!', 'success');
+            } else {
+                showToast('🎉 새 객실과 사진이 성공적으로 등록되었습니다!', 'success');
+            }
             closeRoomModal();
             setTimeout(() => { location.reload(); }, 1000); 
         } else {
-            showToast('객실 등록에 실패했습니다. 다시 시도해주세요.', 'error');
+            showToast('요청 처리에 실패했습니다. 다시 시도해주세요.', 'error');
         }
     })
     .catch(error => {

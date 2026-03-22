@@ -44,17 +44,19 @@
     
     <select id="getRoomsByPlaceId" resultType="com.tripan.app.partner.domain.dto.PartnerRoomDto">
         SELECT
-            room_id AS roomId,
-            place_id AS placeId,
-            room_name AS roomName,
-            roombasecount AS roombasecount,
-            max_capacity AS maxCapacity,
-            room_count AS roomCount,
-            amount AS amount,
-            roomintro AS roomintro
-        FROM room
-        WHERE place_id = #{placeId}
-        ORDER BY room_id DESC
+            r.room_id AS roomId,
+            r.place_id AS placeId,
+            r.room_name AS roomName,
+            r.roombasecount AS roombasecount,
+            r.max_capacity AS maxCapacity,
+            r.room_count AS roomCount,
+            r.amount AS amount,
+            r.roomintro AS roomintro,
+            r.is_active AS isActive,
+            (SELECT image_url FROM room_image ri WHERE ri.room_id = r.room_id AND ROWNUM = 1) AS imageUrl
+        FROM room r
+        WHERE r.place_id = #{placeId}
+        ORDER BY r.room_id DESC
     </select>
     
     <insert id="insertRoomFacility" parameterType="com.tripan.app.partner.domain.dto.PartnerRoomDto">
