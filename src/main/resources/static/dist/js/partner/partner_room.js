@@ -4,6 +4,7 @@ function openRoomModal() {
 
 function closeRoomModal() {
   document.getElementById('roomModal').style.display = 'none';
+  document.getElementById('roomForm').reset(); // 닫을 때 폼 초기화
 }
 
 function saveRoom() {
@@ -16,8 +17,15 @@ function saveRoom() {
     formData.append('amount', document.getElementById('amount').value);
     formData.append('roomintro', document.getElementById('roomintro').value);
 
-	const fileInput = document.getElementById('roomImages');
-    const maxFiles = 5; //  최대 업로드 가능 개수
+    const isActive = document.querySelector('input[name="isActive"]:checked');
+    if(isActive) formData.append('isActive', isActive.value);
+
+    document.querySelectorAll('input[name="facility"]').forEach(checkbox => {
+        formData.append(checkbox.value, checkbox.checked ? "1" : "0"); 
+    });
+
+    const fileInput = document.getElementById('roomImages');
+    const maxFiles = 5;
 
     if (fileInput.files.length === 0) {
         showToast('최소 1장 이상의 객실 사진을 등록해주세요!', 'error');
@@ -43,7 +51,7 @@ function saveRoom() {
     .then(res => {
         if (res.status === 401) {
             showToast('세션이 만료되었습니다. 로그인 페이지로 이동합니다.', 'error');
-            setTimeout(() => { location.href = TripanConfig.contextPath + '/partner/login'; }, 1500);
+            setTimeout(() => { location.href = TripanConfig.contextPath + '/member/login'; }, 1500);
             throw new Error('Session Expired');
         }
         return res.json();
@@ -54,7 +62,7 @@ function saveRoom() {
             closeRoomModal();
             setTimeout(() => { location.reload(); }, 1000); 
         } else {
-            showToast('객실 등록에 실패했습니다.', 'error');
+            showToast('객실 등록에 실패했습니다. 다시 시도해주세요.', 'error');
         }
     })
     .catch(error => {

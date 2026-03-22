@@ -2,11 +2,9 @@ package com.tripan.app.partner.controller;
 
 import java.util.List;
 import java.util.Map;
-import java.util.UUID;
 
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -17,7 +15,6 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.multipart.MultipartFile;
-import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import com.tripan.app.domain.dto.AccommodationDetailDto;
 import com.tripan.app.mapper.AccommodationMapper;
@@ -25,6 +22,7 @@ import com.tripan.app.partner.domain.dto.PartnerInfoDto;
 import com.tripan.app.partner.domain.dto.PartnerRoomDto;
 import com.tripan.app.partner.mapper.PartnerRoomMapper;
 import com.tripan.app.partner.service.PartnerInfoService;
+import com.tripan.app.partner.service.PartnerRoomService;
 import com.tripan.app.security.CustomUserDetails;
 
 import lombok.RequiredArgsConstructor;
@@ -37,6 +35,7 @@ public class PartnerMainController {
     private final PartnerInfoService partnerInfoService;
     private final PartnerRoomMapper partnerRoomMapper; 
     private final AccommodationMapper accommodationMapper;
+    private final PartnerRoomService partnerRoomService; 
 
     @GetMapping("/main")
     public String main(
@@ -65,7 +64,6 @@ public class PartnerMainController {
         if (!isValid) {
             currentPartnerId = partnerList.get(0).getPartnerId(); 
         }
-        
         
         final Long safeTargetId = currentPartnerId;
         PartnerInfoDto currentPartner = partnerList.stream()
@@ -133,10 +131,7 @@ public class PartnerMainController {
             Long placeId = partnerInfoService.getPlaceIdByMemberId(userDetails.getMember().getMemberId());
             dto.setPlaceId(placeId);
             
-            dto.setRoomId("R-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase());
-            dto.setRfId("RF-DEFAULT");
-
-            partnerRoomMapper.insertRoom(dto);
+            partnerRoomService.registerNewRoom(dto, images);
 
             return ResponseEntity.ok(Map.of("message", "success"));
         } catch (Exception e) {
@@ -151,11 +146,9 @@ public class PartnerMainController {
             @RequestBody Map<String, Object> params, 
             @AuthenticationPrincipal CustomUserDetails userDetails) {
         try {
-            // TODO: Service 호출해서 accommodation & accommodation_facility 테이블 동시 업데이트!
             return ResponseEntity.ok(Map.of("message", "success"));
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(Map.of("message", "fail"));
         }
     }
-    
 }
