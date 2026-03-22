@@ -67,10 +67,17 @@
                 <h2 style="font-size: 16px; font-weight: 800; margin-bottom: 24px;">👤 담당자 및 사업자 정보</h2>
                 
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px;">
-                    <div>
-                        <label class="info-form-label">사업장명 (수정 불가)</label>
-                        <input type="text" class="info-form-control" value="${partnerInfo.partnerName}" disabled>
-                    </div>
+					<div>
+					    <label class="info-form-label">사업장명 (수정 불가)</label>
+					    <input type="text" class="info-form-control" value="${partnerInfo.partnerName}" disabled>
+					</div>
+
+					<div>
+					    <label class="info-form-label">사업장명 (수정 불가)</label>
+					    <input type="hidden" name="partnerName" value="${partnerInfo.partnerName}">
+					    <input type="text" class="info-form-control" value="${partnerInfo.partnerName}" disabled>
+					</div>
+					
                     <div>
                         <label class="info-form-label">사업자등록번호 (수정 불가)</label>
                         <input type="text" class="info-form-control" value="${not empty partnerInfo.businessNumber ? partnerInfo.businessNumber : '심사중'}" disabled>
