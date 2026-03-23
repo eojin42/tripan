@@ -26,10 +26,14 @@ public class TripDto {
     private int isPublic;           // 0: 비공개, 1: 공개
 
     // 담아오기 횟수
-    private int scrapCount;
+    private Integer scrapCount;
+
+    // 좋아요 수
+    private Integer likeCount;
 
     // 통계
     private String leaderNickname;
+    private String leaderProfileImage; // 작성자 프로필 이미지
     private String regionName;
     private Long regionId;
     private double totalBudget;

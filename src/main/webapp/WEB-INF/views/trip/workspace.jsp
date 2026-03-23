@@ -690,6 +690,30 @@
 </div>
 </c:if>
 
+<%-- ★ 담아오기 안내 모달 — isScraped=true (OWNER가 스크랩한 여행) 일 때만 표시 --%>
+<c:if test="${isScraped && showWelcome}">
+<div class="modal-overlay" id="scrapWelcomeModal" style="z-index:3001;">
+  <div class="welcome-modal-box" style="max-width:420px;">
+    <div class="welcome-modal-glow"></div>
+    <div class="welcome-icon">🗂️</div>
+    <h2 class="welcome-title">여행을 담아왔어요!</h2>
+    <p class="welcome-subtitle">
+      <strong>${fn:escapeXml(tripDto.tripName)}</strong><br>
+      원본 일정을 그대로 가져왔어요 ✈️<br>
+      이제 <strong>나만의 여행</strong>으로 자유롭게 수정해보세요!
+    </p>
+    <div class="welcome-tips">
+      <div class="welcome-tip-item"><span>1</span> 좌측 상단 <strong>상세</strong> 버튼 → 여행 정보 수정</div>
+      <div class="welcome-tip-item"><span>2</span> 장소를 추가하거나 순서를 바꿔보세요</div>
+      <div class="welcome-tip-item"><span>3</span> 동행자를 초대해 함께 계획하세요</div>
+    </div>
+    <button class="welcome-btn" onclick="closeScrapWelcomeModal()">
+      ✏️ 내 여행 꾸미러 가기
+    </button>
+  </div>
+</div>
+</c:if>
+
 <%-- 메모 & 이미지 모달 --%>
 <div class="modal-overlay" id="memoModal">
   <div class="modal-box" style="max-width: 420px; border-radius: 24px;">
@@ -1622,7 +1646,8 @@ var TRIP_META = {
   description: '${fn:escapeXml(tripDto.description)}',
   tripType:    '${tripDto.tripType}',
   origStart:   '${fn:substring(tripDto.startDate,0,10)}',
-  origEnd:     '${fn:substring(tripDto.endDate,0,10)}'
+  origEnd:     '${fn:substring(tripDto.endDate,0,10)}',
+  isScraped:   ${isScraped}
 };
 </script>
 

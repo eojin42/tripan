@@ -99,7 +99,9 @@
             t.scrap_count                         AS scrapCount,
             t.description,
             m.nickname                            AS leaderNickname,
-            m.profile_image                       AS thumbnailUrl
+            m.profile_image                       AS leaderProfileImage,
+            (SELECT COUNT(*) FROM likes
+             WHERE target_id = t.trip_id AND target_type = 'TRIP') AS likeCount
         FROM trip t
         LEFT JOIN trip_member tm
                ON tm.trip_id = t.trip_id
@@ -127,7 +129,9 @@
             t.trip_type                           AS tripType,
             t.scrap_count                         AS scrapCount,
             m.nickname                            AS leaderNickname,
-            m.profile_image                       AS thumbnailUrl
+            m.profile_image                       AS leaderProfileImage,
+            (SELECT COUNT(*) FROM likes
+             WHERE target_id = t.trip_id AND target_type = 'TRIP') AS likeCount
         FROM trip t
         LEFT JOIN trip_member tm
                ON tm.trip_id = t.trip_id
@@ -186,5 +190,97 @@
             END,
             t.start_date DESC
     </select>
+
+    <!-- ══════════════════════════════════════════════════
+         피드 상세 — trip 기본 + 작성자 프로필 + 태그
+    ══════════════════════════════════════════════════ -->
+    <select id="selectPublicTripDetail" resultType="com.tripan.app.domain.dto.TripDto">
+        SELECT
+            t.trip_id                             AS tripId,
+            t.trip_name                           AS tripName,
+            TO_CHAR(t.start_date, 'YYYY-MM-DD')   AS startDate,
+            TO_CHAR(t.end_date,   'YYYY-MM-DD')   AS endDate,
+            t.thumbnail_url                       AS thumbnailUrl,
+            t.cities                              AS citiesStr,
+            t.trip_type                           AS tripType,
+            t.scrap_count                         AS scrapCount,
+            t.description,
+            t.is_public                           AS isPublic,
+            m.nickname                            AS leaderNickname,
+            m.profile_image                       AS leaderProfileImage,
+            (SELECT COUNT(*) FROM likes
+             WHERE target_id = t.trip_id AND target_type = 'TRIP') AS likeCount
+        FROM trip t
+        LEFT JOIN trip_member tm
+               ON tm.trip_id = t.trip_id AND tm.role = 'OWNER'
+        LEFT JOIN member2 m ON m.member_id = tm.member_id
+        WHERE t.trip_id = #{tripId}
+          AND t.is_public = 1
+    </select>
+
+    <!-- ══════════════════════════════════════════════════
+         비슷한 여행 — 같은 태그 or 같은 도시 TOP 4
+         현재 tripId 제외
+    ══════════════════════════════════════════════════ -->
+    <select id="selectRelatedPublicTrips" resultType="com.tripan.app.domain.dto.TripDto">
+        SELECT * FROM (
+            SELECT
+                t.trip_id                             AS tripId,
+                t.trip_name                           AS tripName,
+                t.thumbnail_url                       AS thumbnailUrl,
+                t.cities                              AS citiesStr,
+                t.scrap_count                         AS scrapCount,
+                m.nickname                            AS leaderNickname
+            FROM trip t
+            LEFT JOIN trip_member tm
+                   ON tm.trip_id = t.trip_id AND tm.role = 'OWNER'
+            LEFT JOIN member2 m ON m.member_id = tm.member_id
+            WHERE t.is_public = 1
+              AND t.trip_id != #{tripId}
+              AND (
+                  t.cities LIKE '%' || #{cityKeyword} || '%'
+                  OR EXISTS (
+                      SELECT 1 FROM trip_tag tt
+                      JOIN trip_tag tt2 ON tt2.tag_id = tt.tag_id
+                      WHERE tt.trip_id = t.trip_id
+                        AND tt2.trip_id = #{tripId}
+                  )
+              )
+            ORDER BY t.scrap_count DESC
+        )
+        WHERE ROWNUM &lt;= 4
+    </select>
+
+    <!-- ══════════════════════════════════════════════════
+         좋아요 수 조회
+    ══════════════════════════════════════════════════ -->
+    <select id="selectTripLikeCount" resultType="int">
+        SELECT COUNT(*) FROM likes
+        WHERE target_id = #{tripId} AND target_type = 'TRIP'
+    </select>
+
+    <!-- ══════════════════════════════════════════════════
+         내가 좋아요 했는지 확인
+    ══════════════════════════════════════════════════ -->
+    <select id="selectMyTripLike" resultType="int">
+        SELECT COUNT(*) FROM likes
+        WHERE target_id = #{tripId} AND target_type = 'TRIP' AND member_id = #{memberId}
+    </select>
+
+    <!-- ══════════════════════════════════════════════════
+         좋아요 추가
+    ══════════════════════════════════════════════════ -->
+    <insert id="insertTripLike">
+        INSERT INTO likes (like_id, member_id, target_id, target_type, created_at)
+        VALUES (SEQ_LIKES_ID.NEXTVAL, #{memberId}, #{tripId}, 'TRIP', SYSDATE)
+    </insert>
+
+    <!-- ══════════════════════════════════════════════════
+         좋아요 삭제
+    ══════════════════════════════════════════════════ -->
+    <delete id="deleteTripLike">
+        DELETE FROM likes
+        WHERE target_id = #{tripId} AND target_type = 'TRIP' AND member_id = #{memberId}
+    </delete>
 
 </mapper>
