@@ -1,4 +1,3 @@
-
 if (typeof window.PLACE_TYPE === 'undefined') {
   window.PLACE_TYPE = { OFFICIAL: 'OFFICIAL', CUSTOM: 'CUSTOM' };
 }
@@ -200,20 +199,43 @@ function searchRpCards(keyword) {
   if (grid) grid.innerHTML = '<div style="text-align:center;padding:32px;color:#A0AEC0;"><div style="font-size:32px;margin-bottom:8px;">🔍</div><div>검색 중...</div></div>';
 
   _rpSearchTimer = setTimeout(function() {
-    fetch(CTX_PATH + '/api/places/search?keyword=' + encodeURIComponent(kw))
+    // ★ 현재 선택된 카테고리를 쿼리에 포함 → 지역 검색 시에도 카테고리 필터 작동
+    var catParam = (_rpCategory && _rpCategory !== 'all') ? _rpCategory : '';
+    var url = CTX_PATH + '/api/places/search?keyword=' + encodeURIComponent(kw)
+      + (catParam ? '&category=' + encodeURIComponent(catParam) : '');
+
+    fetch(url)
       .then(function(r) { return r.json(); })
       .then(function(res) {
          var list = Array.isArray(res) ? res : (res.officialPlaces || []);
-         
-         // 여행지(KAKAO_CITIES)에 해당하는 장소가 맨 위로 오도록 정렬
+
+         // ★ 클라이언트 2차 필터 — 서버가 category를 무시했을 경우 안전망
+         if (catParam) {
+           // DB category 값 매핑 (필터 버튼 value → DB 저장값)
+           var catMap = {
+             'RESTAURANT':    ['RESTAURANT','FOOD','FD6','음식점','식당','맛집'],
+             'ACCOMMODATION': ['ACCOMMODATION','HOTEL','STAY','숙박','숙소'],
+             'TOUR':          ['TOUR','ATTRACTION','TRAVEL','관광','여행','명소'],
+             'CULTURE':       ['CULTURE','CT1','문화시설','문화','공연','전시'],
+             'LEISURE':       ['LEISURE','SPORTS','CE7','레포츠','스포츠','레저'],
+             'SHOPPING':      ['SHOPPING','MT1','마트','쇼핑']
+           };
+           var accepts = catMap[catParam] || [catParam];
+           list = list.filter(function(p) {
+             var c = (p.category || p.categoryName || '').toUpperCase();
+             return accepts.some(function(v) { return c.includes(v.toUpperCase()); });
+           });
+         }
+
+         // 여행지 도시 주소 우선 정렬
          if (typeof KAKAO_CITIES !== 'undefined' && KAKAO_CITIES.length > 0) {
-             list.sort(function(a, b) {
-                 var aMatch = KAKAO_CITIES.some(function(city) { return (a.address || '').includes(city); });
-                 var bMatch = KAKAO_CITIES.some(function(city) { return (b.address || '').includes(city); });
-                 if (aMatch && !bMatch) return -1;
-                 if (!aMatch && bMatch) return 1;
-                 return 0;
-             });
+           list.sort(function(a, b) {
+             var aMatch = KAKAO_CITIES.some(function(city) { return (a.address || '').includes(city); });
+             var bMatch = KAKAO_CITIES.some(function(city) { return (b.address || '').includes(city); });
+             if (aMatch && !bMatch) return -1;
+             if (!aMatch && bMatch) return 1;
+             return 0;
+           });
          }
 
          if (grid) grid.innerHTML = '';
@@ -224,7 +246,7 @@ function searchRpCards(keyword) {
            if (noResult) noResult.style.display = 'block';
          } else {
            if (noResult) noResult.style.display = 'none';
-           _appendRpCards(list); // 검색 결과 카드 렌더링
+           _appendRpCards(list);
          }
       })
       .catch(function() {
@@ -249,7 +271,17 @@ function filterRec(btn, category) {
   document.querySelectorAll('.rp-filter-btn').forEach(function (b) { b.classList.remove('active'); });
   btn.classList.add('active');
 
-  // offset 초기화 후 서버 재요청
+  _rpCategory = category; // ★ 카테고리 상태 먼저 업데이트
+
+  // 검색어가 있으면 → 현재 검색어로 재검색 (카테고리 필터 반영)
+  var inp = document.getElementById('rpSearchInput');
+  var kw = inp ? inp.value.trim() : '';
+  if (kw) {
+    searchRpCards(kw);
+    return;
+  }
+
+  // 검색어 없으면 → 카테고리별 추천 로드
   _rpOffset  = 0;
   _rpHasMore = true;
   loadRecommendCards(category, _getCityParam(), 0);
@@ -262,6 +294,18 @@ function switchRpTab(tab, btn) {
   document.querySelectorAll('.rp-pane').forEach(function (el) { el.classList.remove('active'); });
   var t = document.getElementById('rpPane-' + tab);
   if (t) t.classList.add('active');
+
+  // ★ 추천 장소 탭일 때만 검색바 표시
+  var searchbar = document.getElementById('rpSearchbar');
+  if (searchbar) {
+    searchbar.style.display = (tab === 'suggest') ? '' : 'none';
+  }
+
+  // 탭 전환 시 검색어 초기화
+  if (tab !== 'suggest') {
+    var inp = document.getElementById('rpSearchInput');
+    if (inp && inp.value) { inp.value = ''; searchRpCards(''); }
+  }
 }
 
 /* ══════════════════════════

@@ -40,7 +40,7 @@ public class SpringSecurityConfig {
 				"/accommodation/coupon/*", "/accommodation/coupon",
 				"/community/feed", "/community/fragment/feed", 
 				"/api/festivals/**", "/api/chat/rooms/region",
-				"/ws-tripan/**",
+				"/ws-tripan/**", "/feed/feed_list", "/feed/public-trips",
 				"/partner/api/check-session",
 			    };
 		

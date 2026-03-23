@@ -422,16 +422,25 @@
   }
 
   fetch(CP + '/feed/public-trips?page=0&size=8')
-    .then(function(r){ return r.json(); })
+    .then(function(r){
+      // 401/403이면 Security 설정 문제 → 빈 목록으로 graceful 처리
+      if (!r.ok) {
+        console.warn('[HomeFeed] API 응답 오류:', r.status, '— SecurityConfig에 /feed/public-trips permitAll 추가 필요');
+        return [];
+      }
+      return r.json();
+    })
     .then(function(list) {
-      var items = list.slice(0, 8);
-      if (!items.length) {
+      if (!list || !list.length) {
         container.innerHTML = '<div style="padding:40px;color:#999;font-size:14px;">공개된 여행이 아직 없어요.</div>';
         return;
       }
-      container.innerHTML = items.map(makeItem).join('');
+      container.innerHTML = list.slice(0, 8).map(makeItem).join('');
     })
-    .catch(function(e){ console.error('[HomeFeed]', e); });
+    .catch(function(e){
+      console.error('[HomeFeed] fetch 실패:', e);
+      container.innerHTML = '';
+    });
 })();
 </script>
 <script src="${pageContext.request.contextPath}/dist/js/home.js"></script>
