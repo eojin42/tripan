@@ -25,6 +25,9 @@ public class TripDto {
     private String inviteCode;      // 초대 링크 코드
     private int isPublic;           // 0: 비공개, 1: 공개
 
+    // 담아오기 횟수
+    private int scrapCount;
+
     // 통계
     private String leaderNickname;
     private String regionName;

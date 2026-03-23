@@ -61,7 +61,7 @@
         FETCH FIRST 10 ROWS ONLY
     </select>
 
-    <!-- 공개 여행 검색 -->
+    <!-- 공개 여행 검색 (기존 — 키워드 검색용 유지) -->
     <select id="selectPublicTrips" resultType="com.tripan.app.domain.dto.TripDto">
         SELECT
             trip_id                               AS tripId,
@@ -81,6 +81,62 @@
           AND (trip_name LIKE '%' || #{keyword} || '%' OR cities LIKE '%' || #{keyword} || '%')
         ORDER BY scrap_count DESC, created_at DESC
         FETCH FIRST 20 ROWS ONLY
+    </select>
+
+    <!-- ══════════════════════════════════════════════════
+         피드 - 인기 공개 여행 TOP 8 (스크랩순)
+         feed_list.jsp 인기 섹션 캐러셀용
+    ══════════════════════════════════════════════════ -->
+    <select id="selectHotPublicTrips" resultType="com.tripan.app.domain.dto.TripDto">
+        SELECT
+            t.trip_id                             AS tripId,
+            t.trip_name                           AS tripName,
+            TO_CHAR(t.start_date, 'YYYY-MM-DD')   AS startDate,
+            TO_CHAR(t.end_date,   'YYYY-MM-DD')   AS endDate,
+            t.thumbnail_url                       AS thumbnailUrl,
+            t.cities                              AS citiesStr,
+            t.trip_type                           AS tripType,
+            t.scrap_count                         AS scrapCount,
+            t.description,
+            m.nickname                            AS leaderNickname,
+            m.profile_image                       AS thumbnailUrl
+        FROM trip t
+        LEFT JOIN trip_member tm
+               ON tm.trip_id = t.trip_id
+              AND tm.role     = 'OWNER'
+        LEFT JOIN member2 m
+               ON m.member_id = tm.member_id
+        WHERE t.is_public = 1
+        ORDER BY t.scrap_count DESC, t.created_at DESC
+        FETCH FIRST 8 ROWS ONLY
+    </select>
+
+    <!-- ══════════════════════════════════════════════════
+         피드 - 공개 여행 전체 (무한스크롤 페이징)
+         page: 0부터 시작, size: 한 번에 가져올 개수(기본 12)
+         Oracle OFFSET … ROWS FETCH NEXT … ROWS ONLY
+    ══════════════════════════════════════════════════ -->
+    <select id="selectPublicTripsPaged" resultType="com.tripan.app.domain.dto.TripDto">
+        SELECT
+            t.trip_id                             AS tripId,
+            t.trip_name                           AS tripName,
+            TO_CHAR(t.start_date, 'YYYY-MM-DD')   AS startDate,
+            TO_CHAR(t.end_date,   'YYYY-MM-DD')   AS endDate,
+            t.thumbnail_url                       AS thumbnailUrl,
+            t.cities                              AS citiesStr,
+            t.trip_type                           AS tripType,
+            t.scrap_count                         AS scrapCount,
+            m.nickname                            AS leaderNickname,
+            m.profile_image                       AS thumbnailUrl
+        FROM trip t
+        LEFT JOIN trip_member tm
+               ON tm.trip_id = t.trip_id
+              AND tm.role     = 'OWNER'
+        LEFT JOIN member2 m
+               ON m.member_id = tm.member_id
+        WHERE t.is_public = 1
+        ORDER BY t.scrap_count DESC, t.created_at DESC
+        OFFSET #{offset} ROWS FETCH NEXT #{size} ROWS ONLY
     </select>
 
     <!-- ══════════════════════════════════════════════════
