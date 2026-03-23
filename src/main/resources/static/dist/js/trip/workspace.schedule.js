@@ -163,8 +163,8 @@ function _appendPlaceCard(dayNum, itemId, name, addr, lat, lng, categoryName) {
   card.setAttribute('data-images',   '[]');
   card.setAttribute('data-lat',      lat || 0);
   card.setAttribute('data-lng',      lng || 0);
-  card.setAttribute('data-address',  addr || '');           // ★ 추가
-  card.setAttribute('data-category', categoryName || 'NONE'); // ★ 추가
+  card.setAttribute('data-address',  addr || '');
+  card.setAttribute('data-category', categoryName || 'NONE');
   
   card.innerHTML =
     '<div class="place-num">' + count + '</div>' +
@@ -610,6 +610,7 @@ function saveMemo() {
       }
       closeModal('memoModal');
       showToast('✅ 메모가 저장됐어요');
+      if (typeof notifySummaryChanged === 'function') notifySummaryChanged();
     } else { showToast('⚠️ ' + (data.message || '저장 실패')); }
   })
   .catch(function (err) { if (btnTxt) btnTxt.textContent = '저장'; showToast('⚠️ 서버 오류 (' + err + ')'); });

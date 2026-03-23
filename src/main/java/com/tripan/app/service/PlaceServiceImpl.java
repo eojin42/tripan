@@ -65,7 +65,6 @@ public class PlaceServiceImpl implements PlaceService {
     // ── 배치 동기화 (매일 새벽 3시) ─────────────────────────────
     @Override
     @Transactional
-    @Scheduled(cron = "0 0 3 * * ?")
     public void syncPlacesBatch() {
         log.info("======== [KTO Sync] 배치 시작 ========");
 

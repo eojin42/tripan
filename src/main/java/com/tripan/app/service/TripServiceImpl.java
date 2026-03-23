@@ -62,7 +62,6 @@ public class TripServiceImpl implements TripService {
     private final TripPlaceMapper tripPlaceMapper;
     private final ExpenseMapper expenseMapper;
 
-    // ★ cloneTrip 확장을 위해 추가된 Repository
     private final ItineraryItemRepository itineraryItemRepository;
     private final TripChecklistRepository tripChecklistRepository;
 
@@ -240,20 +239,7 @@ public class TripServiceImpl implements TripService {
     @Override
     public void deleteTrip(Long tripId) { tripRepository.deleteById(tripId); }
 
-    // ═══════════════════════════════════════════════════════
-    //  cloneTrip (담아오기) ★ 확장
-    //
-    //  복사 흐름:
-    //    1. Trip 생성
-    //    2. OWNER 등록
-    //    3. Region / Tag 복사
-    //    4. Day 생성 + old→new day_id 매핑 Map 구성
-    //    5. ItineraryItem 복사 (TripPlace 재사용, Image 제외)
-    //    6. TripChecklist 복사 (구조만, 담당자·체크상태 초기화)
-    //    7. 원본 scrap_count +1
-    //
-    //  절대 복사 금지: ItineraryImage, Expense, Settlement, Vote
-    // ═══════════════════════════════════════════════════════
+  
     @Override
     @Transactional
     public Long cloneTrip(Long originalTripId, Long memberId) {
