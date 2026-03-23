@@ -6,4 +6,5 @@ import java.util.List;
 
 public interface PartnerRoomService {
     void registerNewRoom(PartnerRoomDto dto, List<MultipartFile> images) throws Exception;
+    void deleteRoom(String roomId) throws Exception;
 }

@@ -18,7 +18,6 @@
         </div>
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; font-size: 13px;">
             <div><span style="color:#8B92A5; display:inline-block; width:80px;">숙소명</span> <strong>${partnerInfo.partnerName}</strong></div>
-            <%-- 🌟 수정: accommodation 객체에서 꺼내오고 비어있으면 '숙박'으로 표시 --%>
             <div><span style="color:#8B92A5; display:inline-block; width:80px;">카테고리</span> <strong>${not empty accommodation.accommodationType ? accommodation.accommodationType : '숙박'}</strong></div>
         </div>
     </div>
@@ -76,7 +75,7 @@
                                     onclick="openRoomModalForUpdate(this)">
                                     수정
                                 </button>
-                                <button class="btn btn-ghost" style="padding: 6px 12px; font-size: 12px; color: var(--danger);">삭제</button>
+                                <button type="button" class="btn btn-ghost" style="padding: 6px 12px; font-size: 12px; color: var(--danger);" onclick="deleteRoom('${room.roomId}')">삭제</button>
                             </div>
                         </div>
                     </div>

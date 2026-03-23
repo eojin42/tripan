@@ -125,7 +125,7 @@ public class PartnerMainController {
     @PostMapping("/api/room/save")
     public ResponseEntity<?> saveRoom(
             @ModelAttribute PartnerRoomDto dto, 
-            @RequestParam("images") List<MultipartFile> images,
+            @RequestParam(value = "images", required = false) List<MultipartFile> images,
             @AuthenticationPrincipal CustomUserDetails userDetails) {
         try {
             Long placeId = partnerInfoService.getPlaceIdByMemberId(userDetails.getMember().getMemberId());
@@ -148,6 +148,19 @@ public class PartnerMainController {
         try {
             return ResponseEntity.ok(Map.of("message", "success"));
         } catch (Exception e) {
+            return ResponseEntity.badRequest().body(Map.of("message", "fail"));
+        }
+    }
+    
+    // 객실 삭제 컨트롤러
+    @ResponseBody
+    @PostMapping("/api/room/delete")
+    public ResponseEntity<?> deleteRoom(@RequestParam("roomId") String roomId) {
+        try {
+            partnerRoomService.deleteRoom(roomId);
+            return ResponseEntity.ok(Map.of("message", "success"));
+        } catch (Exception e) {
+            e.printStackTrace();
             return ResponseEntity.badRequest().body(Map.of("message", "fail"));
         }
     }

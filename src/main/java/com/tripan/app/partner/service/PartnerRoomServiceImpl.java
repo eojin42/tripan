@@ -55,4 +55,17 @@ public class PartnerRoomServiceImpl implements PartnerRoomService {
             }
         }
     }
+    
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void deleteRoom(String roomId) throws Exception {
+        String rfId = partnerRoomMapper.getRfIdByRoomId(roomId);
+        
+        partnerRoomMapper.deleteRoomImages(roomId); 
+        partnerRoomMapper.deleteRoom(roomId);      
+        
+        if (rfId != null) {
+            partnerRoomMapper.deleteRoomFacility(rfId); 
+        }
+    }
 }
