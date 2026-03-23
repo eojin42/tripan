@@ -63,14 +63,6 @@
   }
   .sort-overlay.open { opacity: 1; visibility: visible; }
   
-  /* --- 🌟 정렬 모달 --- */
-  .sort-overlay { 
-      position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
-      background: rgba(0,0,0,0.5); z-index: 9990; 
-      opacity: 0; visibility: hidden; transition: all 0.3s; 
-  }
-  .sort-overlay.open { opacity: 1; visibility: visible; }
-  
   .sort-modal { 
       position: fixed; top: 50%; left: 50%; 
       bottom: auto; /* 🌟 기존 bottom 속성을 무효화하는 핵심 코드! */
@@ -172,14 +164,12 @@
     letter-spacing: -0.3px; /* 글자 간격 조절로 가독성 향상 */
   }
 
-  /* 마우스 올렸을 때 효과 */
   .cat-item:hover { 
     border-color: #cbd5e0;
     transform: translateY(-2px); /* 살짝 떠오르는 느낌 */
     box-shadow: 0 4px 12px rgba(0,0,0,0.08);
   }
 
-  /* 활성화된 상태 (검정색 알약) */
   .cat-item.active { 
     background: #1A202C; 
     border-color: #1A202C; 
@@ -201,15 +191,85 @@
 
   /* 그리드 */
   .accommodation-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 40px 32px; }
-  .list-container.map-mode .accommodation-grid { grid-template-columns: 1fr; overflow-y: auto; padding-right: 16px; align-content: start; height: 100%; }
   
-  /* 숙소 카드 */
-  .accommodation-item { cursor: pointer; transition: transform 0.2s; display: flex; flex-direction: column; height: 100%; position: relative; }
-  .accommodation-item:hover { transform: translateY(-4px); }
-  .accommodation-thumb { width: 100%; aspect-ratio: 4/3; border-radius: 16px; overflow: hidden; margin-bottom: 16px; position: relative; background: #eee; }
-  .accommodation-thumb img { width: 100%; height: 100%; object-fit: cover; transition: transform 0.4s; }
+  /* --- 🌟 지도 모드 맞춤형 가로 카드 레이아웃 (중복 제거 & 통합) --- */
+  .list-container.map-mode .accommodation-grid { 
+      grid-template-columns: 1fr; 
+      gap: 16px;
+      overflow-y: auto; 
+      padding-right: 16px; 
+      align-content: start; 
+      height: 100%;
+  }
+  .list-container.map-mode .accommodation-item {
+      flex-direction: row;
+      align-items: center;
+      gap: 16px;
+      padding: 12px;
+  }
+  .list-container.map-mode .accommodation-thumb {
+      width: 130px;
+      height: 130px; 
+      aspect-ratio: 1 / 1; /* 지도 모드에서는 1:1 정사각형 비율 강제 */
+      margin-bottom: 0;
+  }
+  .list-container.map-mode .accommodation-meta {
+      justify-content: center;
+      padding-right: 0;
+  }
+  .list-container.map-mode .accommodation-meta h3 {
+      font-size: 16px; 
+      white-space: normal;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+  }
+  
+  /* --- 숙소 카드 --- */
+  .accommodation-item { 
+      cursor: pointer; 
+      transition: transform 0.2s, box-shadow 0.2s; 
+      display: flex; 
+      flex-direction: column;
+      height: 100%; 
+      position: relative; 
+      background: #ffffff; /* 흰색 바탕 */
+      border-radius: 20px; 
+      padding: 16px; 
+      border: 1px solid #F1F3F5; 
+      box-shadow: 0 4px 12px rgba(0,0,0,0.04); 
+      min-width: 0;
+  }
+  .accommodation-item:hover { 
+      transform: translateY(-4px); 
+      box-shadow: 0 12px 24px rgba(0,0,0,0.08); 
+  }
+
+  /* 🌟 썸네일: 무한스크롤 비율 붕괴 완벽 방지 (aspect-ratio 적용) */
+  .accommodation-thumb { 
+      width: 100%; 
+      aspect-ratio: 4 / 3; /* 어떤 상황에서도 무조건 4:3 고정 */
+      border-radius: 12px;
+      overflow: hidden; 
+      margin-bottom: 16px; 
+      position: relative;
+      background: #eee; 
+      flex-shrink: 0; 
+  }
+  
+  .accommodation-thumb img { 
+      position: absolute; 
+      top: 0; 
+      left: 0; 
+      width: 100%; 
+      height: 100%; 
+      object-fit: cover;
+      transition: transform 0.4s; 
+      display: block;
+  }
   .accommodation-item:hover .accommodation-thumb img { transform: scale(1.05); }
-  .accommodation-meta { position: relative; display: flex; flex-direction: column; flex: 1; }
+
+  .accommodation-meta { position: relative; display: flex; flex-direction: column; flex: 1; min-width: 0;}
   .accommodation-meta h3 { font-size: 18px; font-weight: 800; margin-bottom: 6px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; padding-right: 80px; }
   .accommodation-desc { font-size: 14px; color: var(--text-gray); margin-bottom: 8px; }
   .accommodation-price { font-size: 17px; font-weight: 800; margin-top: auto; }
@@ -541,7 +601,7 @@
  	        }
  	        const svg = btnElement.querySelector('svg');
  	        if (data.isBookmarked) {
- 	            svg.setAttribute('fill', '##4A44F2'); svg.setAttribute('stroke', '##4A44F2');
+ 	            svg.setAttribute('fill', '#4A44F2'); svg.setAttribute('stroke', '#4A44F2');
  	        } else {
  	            svg.setAttribute('fill', 'none'); svg.setAttribute('stroke', 'white');
  	        }

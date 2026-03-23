@@ -35,7 +35,8 @@
   /* --- 1. 이미지 캐러셀 --- */
   .carousel-wrapper { position: relative; width: 100%; height: 500px; overflow: hidden; border-radius: 8px; margin-bottom: 50px; background: #eee; }
   .carousel-track { display: flex; transition: transform 0.4s ease-in-out; height: 100%; }
-  .carousel-slide { min-width: 100%; height: 100%; object-fit: cover; }
+  .carousel-slide { min-width: 100%; height: 100%; object-fit: cover; cursor: pointer; transition: opacity 0.2s; }
+  .carousel-slide:hover { opacity: 0.9; } /* 🌟 클릭 가능한 느낌을 주기 위해 호버 시 살짝 투명해지게 추가 */
   
   .carousel-btn { position: absolute; top: 50%; transform: translateY(-50%); background: rgba(0,0,0,0.3); color: white; border: none; width: 48px; height: 48px; border-radius: 50%; cursor: pointer; display: flex; justify-content: center; align-items: center; font-size: 20px; transition: background 0.2s; z-index: 10; }
   .carousel-btn:hover { background: rgba(0,0,0,0.6); }
@@ -44,30 +45,39 @@
 
   .carousel-counter { position: absolute; bottom: 20px; right: 20px; background: rgba(0,0,0,0.6); color: white; padding: 6px 16px; border-radius: 20px; font-size: 13px; font-weight: 700; z-index: 10; letter-spacing: 2px; }
 
+  /* --- 🌟 숙소 사진 전체보기(갤러리) 모달 CSS --- */
+  .photo-modal { display: none; position: fixed; z-index: 10000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0, 0, 0, 0.9); }
+  .photo-modal.open { display: flex; justify-content: center; align-items: center; flex-direction: column; }
+  .photo-modal .modal-content { margin: auto; display: block; width: 100%; max-width: 1000px; max-height: 80vh; object-fit: contain; }
+  .photo-modal .close-modal { position: absolute; top: 20px; right: 40px; color: #f1f1f1; font-size: 40px; font-weight: bold; transition: 0.3s; cursor: pointer; z-index: 10010; }
+  .photo-modal .close-modal:hover { color: #bbb; }
+  .photo-modal .prev, .photo-modal .next { cursor: pointer; position: absolute; top: 50%; width: auto; padding: 16px; margin-top: -50px; color: white; font-weight: bold; font-size: 24px; transition: 0.3s ease; user-select: none; z-index: 10010; }
+  .photo-modal .prev { left: 40px; }
+  .photo-modal .next { right: 40px; }
+  .photo-modal .prev:hover, .photo-modal .next:hover { background-color: rgba(0, 0, 0, 0.8); }
+  .photo-modal .modal-index { color: white; font-size: 16px; position: absolute; bottom: 30px; left: 50%; transform: translateX(-50%); z-index: 10010; letter-spacing: 2px;}
+
   /* --- 2. 2단 분할 레이아웃 --- */
   .content-split { display: flex; gap: 60px; align-items: flex-start; }
   .main-content { flex: 1; min-width: 0; }
   
-  /* --- 3. 좌측 메인 정보 헤더 (업그레이드) --- */
+  /* --- 3. 좌측 메인 정보 헤더 --- */
   .title-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 20px; }
   .title-left { display: flex; flex-direction: column; }
   .acc-title { font-size: 32px; font-weight: 900; color: var(--text-black); margin-bottom: 8px; line-height: 1.2; }
   .acc-location { font-size: 15px; color: var(--text-gray); font-weight: 600; margin-bottom: 12px; }
   
-  /* 🌟 총 북마크 & 리뷰 개수 라인 */
   .acc-stats { display: flex; align-items: center; gap: 10px; font-size: 14px; font-weight: 700; color: var(--text-black); }
   .acc-stats .stat-item { display: flex; align-items: center; gap: 4px; }
   .review-link { text-decoration: underline; text-underline-offset: 4px; cursor: pointer; transition: color 0.2s; color: var(--text-black); }
   .review-link:hover { color: var(--point-blue); }
 
-  /* 공유 & 찜 아이콘 우측 정렬 */
   .action-icons { display: flex; gap: 16px; align-items: center; }
   .icon-btn { display: flex; align-items: center; justify-content: center; cursor: pointer; color: var(--text-black); transition: transform 0.2s; }
   .icon-btn:hover { transform: translateY(-2px); }
 
-  /* --- 🌟 스티키 네비게이션 (클래스명 충돌 방지: .detail-tab) --- */
+  /* --- 🌟 스티키 네비게이션 --- */
   .sticky-nav { position: sticky; top: 70px; background: rgba(255,255,255,0.95); backdrop-filter: blur(5px); z-index: 50; display: flex; gap: 24px; border-bottom: 1px solid var(--border-light, #E2E8F0); padding: 16px 0 0; margin-bottom: 40px; }
-  /* 헤더와 겹치지 않게 배경 transparent, 패딩 수정 */
   .sticky-nav a.detail-tab { text-decoration: none; color: var(--text-gray); font-size: 15px; font-weight: 600; padding: 0 4px 14px; transition: color 0.2s; background: transparent; border-radius: 0; }
   .sticky-nav a.detail-tab:hover { color: var(--text-black); background: transparent; }
   .sticky-nav a.detail-tab.active { color: var(--text-black); font-weight: 800; border-bottom: 2px solid var(--text-black); margin-bottom: -1px; }
@@ -96,7 +106,6 @@
   .reserve-tab:first-child { border-right: 1px solid var(--border-light, #E2E8F0); }
   .reserve-tab:hover { background: #F8F9FA; }
 
-  /* 선택된 객실 표시 트리거 */
   .sel-room-trigger { display: flex; align-items: center; gap: 16px; padding: 16px; border: 1px solid var(--border-light, #E2E8F0); border-radius: 4px; cursor: pointer; margin-bottom: 24px; transition: border 0.2s; }
   .sel-room-trigger:hover { border-color: var(--text-black); }
   .sel-room-img { width: 56px; height: 56px; border-radius: 4px; object-fit: cover; background: #eee; }
@@ -105,7 +114,6 @@
   .sel-room-capa { font-size: 13px; color: var(--text-gray); }
   .sel-room-arrow { color: var(--text-gray); font-size: 20px; font-weight: 300; }
 
-  /* 가격 계산 영역 */
   .calc-area { background: #F8F9FA; border-radius: 4px; padding: 20px; margin-bottom: 24px; }
   .calc-row { display: flex; justify-content: space-between; font-size: 14px; color: var(--text-dark); margin-bottom: 16px; }
   .calc-row:last-child { margin-bottom: 0; border-top: 1px solid #E2E8F0; padding-top: 16px; font-size: 16px; font-weight: 800; color: var(--text-black); }
@@ -114,7 +122,7 @@
   .btn-reserve-submit { width: 100%; background: var(--text-black); color: white; border: none; padding: 18px 0; font-size: 16px; font-weight: 800; border-radius: 4px; cursor: pointer; transition: background 0.3s; }
   .btn-reserve-submit:hover { background: var(--point-blue); }
 
-  /* --- 5. 객실 선택 모달 (유지) --- */
+  /* --- 5. 객실 선택 모달 --- */
   .rm-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 9990; opacity: 0; visibility: hidden; transition: all 0.3s; }
   .rm-overlay.open { opacity: 1; visibility: visible; }
   .rm-modal { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -40%); width: 100%; max-width: 500px; background: white; border-radius: 12px; z-index: 9999; opacity: 0; visibility: hidden; transition: all 0.3s; display: flex; flex-direction: column; max-height: 80vh; }
@@ -130,48 +138,25 @@
   .rm-i-capa { font-size: 13px; color: var(--text-gray); margin-bottom: 8px; }
   .rm-i-price { font-size: 15px; font-weight: 800; color: var(--point-blue); }
   
-  /* 🌟 태그 스타일 */
   .acc-tags { display: flex; gap: 8px; margin-bottom: 32px; }
   .acc-tag { background: #F5F7FA; color: var(--text-dark); padding: 6px 14px; border-radius: 20px; font-size: 13px; font-weight: 600; }
 
   /* 🌟 쿠폰 영역 스타일 */
-  .coupon-section {
-      display: flex; justify-content: space-between; align-items: center;
-      padding: 20px 0; margin-bottom: 40px;
-      border-top: 1px solid var(--border-light, #E2E8F0);
-      border-bottom: 1px solid var(--border-light, #E2E8F0);
-  }
+  .coupon-section { display: flex; justify-content: space-between; align-items: center; padding: 20px 0; margin-bottom: 40px; border-top: 1px solid var(--border-light, #E2E8F0); border-bottom: 1px solid var(--border-light, #E2E8F0); }
   .coupon-info { display: flex; align-items: center; gap: 40px; }
   .coupon-label { font-size: 15px; font-weight: 800; color: var(--text-black); }
   .coupon-desc { font-size: 14px; font-weight: 500; color: var(--text-dark); }
   
-  .btn-download-coupon {
-      display: flex; align-items: center;
-      background: var(--text-black); color: white;
-      border: none; padding: 10px 16px; border-radius: 4px;
-      font-size: 13px; font-weight: 700; cursor: pointer; transition: all 0.2s;
-  }
+  .btn-download-coupon { display: flex; align-items: center; background: var(--text-black); color: white; border: none; padding: 10px 16px; border-radius: 4px; font-size: 13px; font-weight: 700; cursor: pointer; transition: all 0.2s; }
   .btn-download-coupon:hover { background: var(--point-blue); transform: translateY(-2px); }
 
-  @media (max-width: 992px) {
-    .content-split { flex-direction: column; }
-    .sticky-sidebar { width: 100%; position: static; }
-  }
-  
-  /* 편의시설 그리드 스타일 추가 */
   .facility-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; margin-top: 16px; }
   .facility-item { display: flex; align-items: center; gap: 10px; font-size: 15px; color: var(--text-black); }
   .facility-item i { font-size: 20px; color: var(--text-gray); width: 24px; text-align: center; }
   .fac-emoji { font-size: 22px; }
 
-  /* 주변 상권 요약 박스 스타일 */
   .nearby-summary-box { background: #F8F9FA; padding: 16px 20px; border-radius: 8px; margin-top: 16px; display: flex; align-items: center; gap: 12px; font-size: 14px; font-weight: 600; color: var(--point-blue); border: 1px solid #E6F4FF; }
   
-  @media (max-width: 768px) {
-    .facility-grid { grid-template-columns: repeat(2, 1fr); }
-  }
-  
-  /* 🚀 상세페이지 리뷰 섹션 스타일 */
   .review-photo-gallery { display: flex; gap: 12px; margin-bottom: 32px; overflow-x: auto; padding-bottom: 8px; }
   .review-photo-gallery::-webkit-scrollbar { height: 6px; }
   .review-photo-gallery::-webkit-scrollbar-thumb { background: #E2E8F0; border-radius: 4px; }
@@ -192,6 +177,14 @@
   
   .btn-all-reviews { width: 100%; padding: 16px; background: white; border: 1px solid var(--border-light, #E2E8F0); border-radius: 8px; font-size: 15px; font-weight: 800; color: var(--text-black); cursor: pointer; transition: background 0.2s; margin-top: 24px; }
   .btn-all-reviews:hover { background: #F8F9FA; border-color: var(--text-gray); }
+
+  @media (max-width: 992px) {
+    .content-split { flex-direction: column; }
+    .sticky-sidebar { width: 100%; position: static; }
+  }
+  @media (max-width: 768px) {
+    .facility-grid { grid-template-columns: repeat(2, 1fr); }
+  }
 </style>
 
 <div class="detail-page-wrapper">
@@ -200,16 +193,20 @@
     <div class="carousel-wrapper">
       <div class="carousel-track" id="carouselTrack">
         
+        <c:set var="imgIdx" value="0" />
+        
         <c:if test="${not empty detail.imageUrl}">
             <c:set var="mainImgStr" value="${fn:startsWith(detail.imageUrl, 'http') ? detail.imageUrl : pageContext.request.contextPath += detail.imageUrl}" />
-            <img src="${mainImgStr}" class="carousel-slide" alt="메인 썸네일 이미지" onerror="this.src='https://images.unsplash.com/photo-1542314831-068cd1dbfeeb?w=1100'">
+            <img src="${mainImgStr}" class="carousel-slide" alt="메인 썸네일 이미지" onclick="openAccoPhotoModal(${imgIdx})" onerror="this.src='https://images.unsplash.com/photo-1542314831-068cd1dbfeeb?w=1100'">
+            <c:set var="imgIdx" value="${imgIdx + 1}" />
         </c:if>
 
         <c:if test="${not empty detail.images}">
             <c:forEach var="img" items="${detail.images}">
                 <c:if test="${img ne detail.imageUrl}">
                     <c:set var="finalImgStr" value="${fn:startsWith(img, 'http') ? img : pageContext.request.contextPath += img}" />
-                    <img src="${finalImgStr}" class="carousel-slide" alt="숙소 상세 이미지" onerror="this.src='https://images.unsplash.com/photo-1542314831-068cd1dbfeeb?w=1100'">
+                    <img src="${finalImgStr}" class="carousel-slide" alt="숙소 상세 이미지" onclick="openAccoPhotoModal(${imgIdx})" onerror="this.src='https://images.unsplash.com/photo-1542314831-068cd1dbfeeb?w=1100'">
+                    <c:set var="imgIdx" value="${imgIdx + 1}" />
                 </c:if>
             </c:forEach>
         </c:if>
@@ -225,7 +222,6 @@
     <div class="content-split">
       
       <div class="main-content">
-        
         <div class="title-header">
           <div class="title-left">
             <h1 class="acc-title">${detail.name}</h1>
@@ -553,7 +549,15 @@
   </div>
 </div>
 
-
+<div id="accoPhotoModal" class="photo-modal" onclick="closeAccoPhotoModal(event)">
+    <span class="close-modal" onclick="closeAccoPhotoModal(event)">×</span>
+    <img id="modalAccoPhoto" class="modal-content">
+    <span class="prev" onclick="changeAccoPhoto(-1, event)">&#10094;</span>
+    <span class="next" onclick="changeAccoPhoto(1, event)">&#10095;</span>
+    <div class="modal-index">
+        <span id="accoModalIndex"></span> / <span id="accoModalTotal"></span>
+    </div>
+</div>
 
 <script src="//dapi.kakao.com/v2/maps/sdk.js?appkey=${kakaoApiKey}&libraries=services"></script>
 
@@ -588,12 +592,62 @@ function moveCarousel(direction) {
     currentSlide += direction;
     if (currentSlide < 0) currentSlide = totalSlides - 1;
     if (currentSlide >= totalSlides) currentSlide = 0;
-    
     document.getElementById('carouselTrack').style.transform = `translateX(-\${currentSlide * 100}%)`;
     document.getElementById('c-curr').innerText = currentSlide + 1;
 }
 
-// --- 2. 스크롤 스파이 (네비게이션 연동) 
+// --- 🌟 1-1. 숙소 사진 전체보기(갤러리) 모달 로직 ---
+let currentAccoPhotos = [];
+let currentAccoIndex = 0;
+let modalAccoTotal = 0;
+
+function openAccoPhotoModal(index) {
+    currentAccoPhotos = Array.from(document.querySelectorAll('.carousel-slide')).map(img => img.src);
+    currentAccoIndex = index;
+    modalAccoTotal = currentAccoPhotos.length;
+
+    const modal = document.getElementById('accoPhotoModal');
+    const modalImg = document.getElementById('modalAccoPhoto');
+    const indexSpan = document.getElementById('accoModalIndex');
+    const totalSpan = document.getElementById('accoModalTotal');
+
+    modal.classList.add('open');
+    modalImg.src = currentAccoPhotos[currentAccoIndex];
+    indexSpan.textContent = currentAccoIndex + 1;
+    totalSpan.textContent = modalAccoTotal;
+    
+    document.body.style.overflow = 'hidden';
+}
+
+function closeAccoPhotoModal(event) {
+    if (event.target.id === 'accoPhotoModal' || event.target.className === 'close-modal') {
+        document.getElementById('accoPhotoModal').classList.remove('open');
+        document.body.style.overflow = ''; 
+    }
+}
+
+function changeAccoPhoto(direction, event) {
+    if (event) event.stopPropagation(); 
+    currentAccoIndex += direction;
+    if (currentAccoIndex >= modalAccoTotal) currentAccoIndex = 0; 
+    if (currentAccoIndex < 0) currentAccoIndex = modalAccoTotal - 1; 
+
+    document.getElementById('modalAccoPhoto').src = currentAccoPhotos[currentAccoIndex];
+    document.getElementById('accoModalIndex').textContent = currentAccoIndex + 1;
+}
+
+// 키보드(방향키, ESC)로 갤러리 모달 제어
+document.addEventListener('keydown', function(e) {
+    const modal = document.getElementById('accoPhotoModal');
+    if (modal && modal.classList.contains('open')) {
+        if (e.key === 'ArrowLeft' || e.keyCode === 37) changeAccoPhoto(-1);
+        else if (e.key === 'ArrowRight' || e.keyCode === 39) changeAccoPhoto(1);
+        else if (e.key === 'Escape' || e.keyCode === 27) closeAccoPhotoModal({ target: { id: 'accoPhotoModal' } });
+    }
+});
+
+
+// --- 2. 스크롤 스파이 (네비게이션 연동) ---
 window.addEventListener('scroll', () => {
     let current = '';
     const sections = document.querySelectorAll('.scroll-section');
@@ -638,7 +692,7 @@ function copyShareUrl() {
 
 // --- 3. 북마크 비동기 통신 ---
 window.toggleBookmark = function(event, placeId, btnElement) {
-    event.stopPropagation(); 
+    event.stopPropagation();
     const isLoggedIn = ${not empty sessionScope.loginUser};
     if (!isLoggedIn) {
         alert("로그인이 필요한 서비스입니다.");
@@ -692,7 +746,6 @@ function selectRoom(roomId, name, img, baseCapa, maxCapa, priceStr, totalStr) {
     const nights = Math.floor(${calcNights});
     document.getElementById('s-price-calc').innerText = `₩\${priceStr} * \${nights}박`;
     document.getElementById('s-price-total').innerText = `₩\${totalStr}`;
-
     closeRoomModal();
 }
 
@@ -711,14 +764,13 @@ function submitReservation() {
     if (!isLoggedIn) {
         alert("로그인이 필요한 서비스입니다.");
         location.href = '${pageContext.request.contextPath}/member/login';
-        return; 
+        return;
     }
     const urlParams = new URLSearchParams(window.location.search);
     const checkin = urlParams.get('checkin') || '';
     const checkout = urlParams.get('checkout') || '';
     const adult = urlParams.get('adult') || '1';
     const child = urlParams.get('child') || '0';
-
     if (!checkin || !checkout) {
       alert("체크인 / 체크아웃 날짜를 먼저 선택해주세요!");
       return;
@@ -777,7 +829,6 @@ document.addEventListener("DOMContentLoaded", () => {
                 }
                 
                 completedReqs++;
-                
                 // 3가지 검색이 모두 끝났을 때 텍스트 렌더링
                 if (completedReqs === searchCategories.length) {
                     const summaryEl = document.getElementById('nearbySummary');
@@ -802,8 +853,7 @@ document.addEventListener("DOMContentLoaded", () => {
 function saveRecentAccom() {
     try {
     	const userId = '${sessionScope.loginUser.memberId}';
-    	
-    	const storageKey = userId? 'tripan_recent_stays_' + userId : 'tripan_recent_stays_guest';
+        const storageKey = userId? 'tripan_recent_stays_' + userId : 'tripan_recent_stays_guest';
         const recent = {
             accommodationId: '${detail.placeId}',
             accommodationName: '${detail.name}',
@@ -811,24 +861,20 @@ function saveRecentAccom() {
             thumbnailUrl: '${detail.imageUrl}',
             viewedAt: new Date().toISOString()
         };
-
         const raw = localStorage.getItem(storageKey);
         let list = raw ? JSON.parse(raw) : [];
-
         // 중복 제거
         list = list.filter(x => x.accommodationId != recent.accommodationId);
         // 맨 앞에 추가
         list.unshift(recent);
         // 최대 10개만 유지
         if (list.length > 10) list = list.slice(0, 10);
-
         localStorage.setItem(storageKey, JSON.stringify(list));
     } catch(e) {}
 }
 saveRecentAccom();
 
 //--- 🌟 쿠폰 모달 및 다운로드 로직 ---
-
 function openCouponModal() {
     const isLoggedIn = ${not empty sessionScope.loginUser};
     if (!isLoggedIn) {
@@ -862,14 +908,11 @@ function closeCouponModal() {
 function renderCoupons(coupons) {
     const cpBody = document.getElementById('cpBody');
     let html = '';
-    
     if(!coupons || coupons.length === 0) {
         html = '<div style="padding:20px; text-align:center; color:var(--text-gray);">발급 가능한 쿠폰이 없습니다.</div>';
     } else {
         coupons.forEach(c => {
             const isDownloaded = c.isDownloaded > 0;
-            
-            // 🚀 핵심 수정: JS 변수 앞에 모두 역슬래시(\)를 추가했습니다.
             const amountTxt = c.discountType === 'FIXED' ? `₩\${c.discountAmount.toLocaleString()}` : `\${c.discountAmount}%`;
             const minOrderTxt = c.minOrderAmount ? `최소 결제 ₩\${c.minOrderAmount.toLocaleString()}` : '조건 없음';
             
