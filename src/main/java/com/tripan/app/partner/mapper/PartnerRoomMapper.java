@@ -18,4 +18,7 @@ public interface PartnerRoomMapper {
     void deleteRoomImages(String roomId);  
     void deleteRoom(String roomId);       
     void deleteRoomFacility(String rfId);  
+    
+    void updateRoom(PartnerRoomDto dto);
+    void updateRoomFacility(PartnerRoomDto dto);
 }
