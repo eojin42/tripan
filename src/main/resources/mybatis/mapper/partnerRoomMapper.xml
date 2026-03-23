@@ -71,6 +71,22 @@
             NVL(#{roomrefrigerator}, 0)
         )
     </insert>
+    
+    <select id="getRfIdByRoomId" resultType="string">
+        SELECT rf_id FROM room WHERE room_id = #{roomId}
+    </select>
+
+    <delete id="deleteRoomImages">
+        DELETE FROM room_image WHERE room_id = #{roomId}
+    </delete>
+
+    <delete id="deleteRoom">
+        DELETE FROM room WHERE room_id = #{roomId}
+    </delete>
+
+    <delete id="deleteRoomFacility">
+        DELETE FROM room_facility WHERE rf_id = #{rfId}
+    </delete>
 
 	
 </mapper>

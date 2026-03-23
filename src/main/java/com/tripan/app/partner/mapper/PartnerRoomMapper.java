@@ -13,4 +13,9 @@ public interface PartnerRoomMapper {
     void insertRoomFacility(PartnerRoomDto dto);
     void insertRoom(PartnerRoomDto dto);
     void insertRoomImage(@Param("roomId") String roomId, @Param("imageUrl") String imageUrl);
+    
+    String getRfIdByRoomId(String roomId); 
+    void deleteRoomImages(String roomId);  
+    void deleteRoom(String roomId);       
+    void deleteRoomFacility(String rfId);  
 }
