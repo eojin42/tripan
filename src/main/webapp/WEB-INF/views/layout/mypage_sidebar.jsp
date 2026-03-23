@@ -63,6 +63,11 @@
           <i class="bi bi-ticket-perforated"></i> 보유 쿠폰함
         </a>
       </li>
+      <li class="${activeMenu == 'point' ? 'active' : ''}">
+        <a href="${pageContext.request.contextPath}/mypage/point">
+          <i class="bi bi-coin"></i> 포인트 내역
+        </a>
+      </li>
     </ul>
   </div>
  

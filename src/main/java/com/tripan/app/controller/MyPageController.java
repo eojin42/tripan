@@ -48,4 +48,10 @@ public class MyPageController {
 		return "mypage/map";
 	}
 	
+	@GetMapping("point")
+	public String point(Model model) {
+		model.addAttribute("activeMenu", "point");
+		return "mypage/point";
+	}
+	
 }

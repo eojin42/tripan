@@ -71,11 +71,11 @@
         INTO member1 (
             MEMBER_ID, LOGIN_ID, EMAIL, PASSWORD, USERNAME, 
             STATUS, ROLE, GENDER, FAILURE_CNT, 
-            PROVIDER, PROVIDER_ID, BIRTHDAY
+            PROVIDER, PROVIDER_ID, BIRTHDAY, register_date
         ) VALUES (
             #{memberId}, #{loginId}, #{email}, #{password}, #{name}, 
             1, #{role}, #{gender, jdbcType=VARCHAR}, 0, 
-            #{snsProvider, jdbcType=VARCHAR}, #{snsId, jdbcType=VARCHAR}, #{birthday, jdbcType=VARCHAR}
+            #{snsProvider, jdbcType=VARCHAR}, #{snsId, jdbcType=VARCHAR}, #{birthday, jdbcType=VARCHAR},SYSDATE
         )
         INTO member2 (
             MEMBER_ID, NICKNAME, PROFILE_IMAGE, PHONE_NUMBER, 

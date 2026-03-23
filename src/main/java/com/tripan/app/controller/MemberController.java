@@ -168,12 +168,13 @@ public class MemberController {
             dto.setMemberId(info.getMemberId());
             service.updateMember(dto, uploadPath);
             info.setAvatar(dto.getProfilePhoto());
-            sb.append(dto.getName()).append("님의 회원정보가 정상적으로 변경되었습니다.<br>메인화면으로 이동 하시기 바랍니다.<br>");
+            sb.append(dto.getUsername()).append("님의 회원정보가 정상적으로 변경되었습니다.<br>메인화면으로 이동 하시기 바랍니다.<br>");
+            reAttr.addFlashAttribute("title", "회원정보수정 완료!");  // ← title도 여기서
         } catch (Exception e) {
-            sb.append(dto.getName()).append("님의 회원정보 변경이 실패했습니다.<br>잠시후 다시 변경 하시기 바랍니다.<br>");
+            sb.append("회원정보 변경이 실패했습니다.<br>잠시후 다시 변경 하시기 바랍니다.<br>");
+            reAttr.addFlashAttribute("title", "회원정보수정 실패");   // ← 실패 title
             log.error("회원정보 수정 중 에러 발생", e);
         }
-        reAttr.addFlashAttribute("title", "회원 정보 수정");
         reAttr.addFlashAttribute("message", sb.toString());
         return "redirect:/member/complete";
     }

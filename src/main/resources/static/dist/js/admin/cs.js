@@ -267,8 +267,10 @@ async function enterRoom(room) {
 
   // 입력창 활성 여부
   const input = document.getElementById('adminMsgInput');
-  input.disabled = isClosed;
-  input.placeholder = isClosed ? '종료된 상담입니다.' : '답변을 입력하세요... (Enter: 전송, Shift+Enter: 줄바꿈)';
+  input.disabled = false;
+  input.placeholder = isClosed ?   
+  '종료된 상담입니다. 관리자 메시지는 계속 보낼 수 있습니다. (Enter: 전송, Shift+Enter: 줄바꿈)'
+   : '답변을 입력하세요... (Enter: 전송, Shift+Enter: 줄바꿈)';
 
  connectRoom(room.chatRoomId);
 }
@@ -453,6 +455,7 @@ async function endChat() {
     const badge = document.getElementById('chatStatusBadge');
     badge.className = 'chat-status-closed'; badge.textContent = '상담 종료';
     const input = document.getElementById('adminMsgInput');
+	input.disabled = false;
      input.placeholder = '채팅을 입력하세요.';
 
     loadChatRooms();
@@ -592,10 +595,20 @@ function formatDate(v) {
 }
 
 // ── textarea Enter 전송 ──
- if (e.key === 'Enter' && !e.shiftKey)
-document.getElementById('adminMsgInput').addEventListener('input', function() {
+const adminMsgInput = document.getElementById('adminMsgInput');
+
+// 높이 자동 조절
+adminMsgInput.addEventListener('input', function () {
   this.style.height = 'auto';
   this.style.height = Math.min(this.scrollHeight, 100) + 'px';
+});
+
+// Enter 전송 / Shift+Enter 줄바꿈
+adminMsgInput.addEventListener('keydown', function (e) {
+  if (e.key === 'Enter' && !e.shiftKey) {
+    e.preventDefault();
+    sendAdminMsg(); 
+  }
 });
 
 function handleBackdropClick(event) {
