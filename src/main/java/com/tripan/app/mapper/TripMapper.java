@@ -20,9 +20,25 @@ public interface TripMapper {
     /** 태그 자동완성 */
     List<String> selectTagNamesByKeyword(@Param("keyword") String keyword);
 
-    /** 공개 여행 검색 */
+    /** 공개 여행 검색 (키워드, 기존 유지) */
     List<TripDto> selectPublicTrips(@Param("keyword") String keyword);
 
     /** 나의 여행 목록 (방장 + 참여 중인 여행) */
     List<TripDto> selectMyTrips(@Param("memberId") Long memberId);
+
+    // ── 피드 전용 ──────────────────────────────────────────
+
+    /**
+     * 인기 공개 여행 TOP 8 (스크랩순)
+     * feed_list.jsp 캐러셀 섹션용
+     */
+    List<TripDto> selectHotPublicTrips();
+
+    /**
+     * 공개 여행 전체 페이징 (무한스크롤)
+     *
+     * @param offset 건너뛸 행 수 (page * size)
+     * @param size   한 번에 가져올 개수 (기본 12)
+     */
+    List<TripDto> selectPublicTripsPaged(@Param("offset") int offset, @Param("size") int size);
 }

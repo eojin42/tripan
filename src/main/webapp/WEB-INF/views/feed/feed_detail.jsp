@@ -1,5 +1,4 @@
 <%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
-<%@ page import="java.util.*" %>
 <%
   String cp     = request.getContextPath();
   String fTitle = "부산 2박3일 핫플 뚜시기 — 로컬이 알려주는 진짜 부산";
