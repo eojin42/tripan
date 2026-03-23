@@ -5,8 +5,10 @@ public enum ExpenseCategory {
     FOOD,           // 식비
     TRANSPORT,      // 교통
     ACCOMMODATION,  // 숙소
-    TOUR,        	// 관광 
+    TOUR,        	// 관광
     CAFE,			// 카페
     SHOPPING,		// 쇼핑
-    ETC             // 기타 
+    DRINK,          // 술
+    SNACK,          // 간식
+    ETC             // 기타
 }

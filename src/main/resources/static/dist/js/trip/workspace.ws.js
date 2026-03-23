@@ -430,17 +430,28 @@ function wsSaveStatus(state) {
   var el = document.getElementById('wsSaveStatus');
   if (!el) return;
   var map = {
-    saving:       '⏳ 저장 중...',
-    saved:        '✅ 저장됨',
-    error:        '⚠️ 저장 실패',
-    connected:    '● 연결됨',
-    disconnected: '○ 재연결 중...'
+    saving: '⏳ 저장 중...',
+    saved:  '✅ 저장됨',
+    error:  '⚠️ 저장 실패'
   };
-  el.textContent   = map[state] || '';
-  el.dataset.state = state;
-  if (state === 'saved') {
-    clearTimeout(_saveTimer);
-    _saveTimer = setTimeout(function () { wsSaveStatus('connected'); }, 3000);
+
+  clearTimeout(_saveTimer);
+
+  if (state === 'saving' || state === 'saved' || state === 'error') {
+    el.textContent   = map[state];
+    el.dataset.state = state;
+    el.style.display = '';
+    if (state === 'saved' || state === 'error') {
+      // 2초 후 자동으로 사라짐
+      _saveTimer = setTimeout(function () {
+        el.style.display = 'none';
+        el.dataset.state = 'idle';
+      }, 2000);
+    }
+  } else {
+    // connected / disconnected → 그냥 숨김 (live-badge가 담당)
+    el.style.display = 'none';
+    el.dataset.state = 'idle';
   }
 }
 

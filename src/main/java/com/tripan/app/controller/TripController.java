@@ -162,6 +162,18 @@ public class TripController {
             session.setAttribute("redirectAfterLogin", "/trip/invite/" + inviteCode);
             return "redirect:/member/login";
         }
+
+        // ── 강퇴 사전 체크: inviteCode로 여행 조회 후 KICKED 여부 확인 ──
+        var kickedTrip = tripRepository.findByInviteCode(inviteCode).orElse(null);
+        if (kickedTrip != null) {
+            var memberRecord = tripMemberRepository.findByTripIdAndMemberId(
+                    kickedTrip.getTripId(), loginMemberId);
+            if (memberRecord.isPresent() &&
+                "KICKED".equals(memberRecord.get().getInvitationStatus())) {
+                return "redirect:/trip/my_trips?kicked=true";
+            }
+        }
+
         try {
             Long tripId = tripService.joinTripViaLink(inviteCode, loginMemberId);
             String nick = getLoginNickname(session);

@@ -74,8 +74,8 @@
         <span class="live-dot"></span>
         실시간 동기화
       </div>
-      <%-- 저장 상태 표시 --%>
-      <div id="wsSaveStatus" class="ws-save-status" data-state="connected">● 연결됨</div>
+      <%-- 저장 상태: 저장 중/완료일 때만 표시 --%>
+      <div id="wsSaveStatus" class="ws-save-status" data-state="idle" style="display:none"></div>
 
 	  <%-- 상단바 아바타 디자인 --%>
       <div class="avatar-group" title="동행자" onclick="openModal('memberModal')" style="cursor:pointer">
@@ -130,7 +130,6 @@
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
         <span class="notif-dot" id="notifDot"></span>
       </button>
-      <button class="btn-save" onclick="showToast('💾 저장되었어요!')">저장</button>
     </div>
 </div>
 
@@ -674,7 +673,13 @@
       </p>
       <div class="welcome-info-row">
         <span class="welcome-chip">📅 ${fn:substring(tripDto.startDate,0,10)} ~ ${fn:substring(tripDto.endDate,0,10)}</span>
-        <span class="welcome-chip">👥 ${fn:length(tripDto.members)}명 동행</span>
+        <c:set var="acceptedCount" value="0"/>
+        <c:forEach var="m" items="${tripDto.members}">
+          <c:if test="${m.invitationStatus == 'ACCEPTED'}">
+            <c:set var="acceptedCount" value="${acceptedCount + 1}"/>
+          </c:if>
+        </c:forEach>
+        <span class="welcome-chip">👥 ${acceptedCount}명 동행</span>
       </div>
       <div class="welcome-tips">
         <div class="welcome-tip-item"><span>1</span> 일정을 확인하고 장소를 추가하세요</div>
@@ -1019,16 +1024,7 @@
         </div>
         <div class="tinfo-setting-row">
           <div class="tinfo-setting-item">
-            <span class="tinfo-setting-icon">
-              <c:choose>
-                <c:when test="${tripDto.tripType == 'COUPLE'}">💑</c:when>
-                <c:when test="${tripDto.tripType == 'FAMILY'}">👨‍👩‍👧</c:when>
-                <c:when test="${tripDto.tripType == 'FRIENDS'}">🤝</c:when>
-                <c:when test="${tripDto.tripType == 'SOLO'}">🧳</c:when>
-                <c:when test="${tripDto.tripType == 'BUSINESS'}">💼</c:when>
-                <c:otherwise>✈️</c:otherwise>
-              </c:choose>
-            </span>
+            <span class="tinfo-setting-icon" id="tInfoTypeIcon"></span>
             <div>
               <div class="tinfo-setting-val">
                 <c:choose>
@@ -1044,7 +1040,7 @@
             </div>
           </div>
           <div class="tinfo-setting-item">
-            <span class="tinfo-setting-icon">${tripDto.isPublic == 1 ? '🌐' : '🔒'}</span>
+            <span class="tinfo-setting-icon" id="tInfoPublicIcon"></span>
             <div>
               <div class="tinfo-setting-val">${tripDto.isPublic == 1 ? '공개' : '비공개'}</div>
               <div class="tinfo-setting-sub">공개 설정</div>

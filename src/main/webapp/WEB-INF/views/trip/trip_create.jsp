@@ -327,13 +327,7 @@
 </style>
 
 
-<%-- 테스트 트리거 --%>
-<div class="page-trigger">
-  <p style="font-size:13px;font-weight:700;letter-spacing:3px;color:#A0AEC0;text-transform:uppercase;">Tripan Travel Planner</p>
-  <h1 style="font-size:36px;font-weight:900;color:#1A202C;letter-spacing:-1px;">새 여행 일정 만들기</h1>
-  <p style="font-size:16px;color:#718096;margin-top:-8px;">아래 버튼을 눌러 일정을 시작하세요</p>
-  <button onclick="openCreateModal()" style="margin-top:12px;padding:18px 52px;background:linear-gradient(135deg,#89CFF0,#FFB6C1);border:none;border-radius:50px;color:white;font-family:'Pretendard',sans-serif;font-size:16px;font-weight:800;cursor:pointer;box-shadow:0 10px 30px rgba(137,207,240,.4);transition:all .3s;letter-spacing:.5px;" onmouseover="this.style.transform='translateY(-4px)'" onmouseout="this.style.transform=''">✈️ &nbsp; 일정 만들기</button>
-</div>
+
 
 
 <%-- 모달 --%>
@@ -592,10 +586,16 @@ function openCreateModal() {
 function closeCreateModal() {
   document.getElementById('createOverlay').classList.remove('active');
   document.body.style.overflow = '';
+  // 모달 닫으면 이전 페이지로 (없으면 홈으로)
+  if (history.length > 1) { history.back(); }
+  else { location.href = '${pageContext.request.contextPath}/'; }
 }
 document.getElementById('createOverlay').addEventListener('click', function(e) {
   if (e.target === this) closeCreateModal();
 });
+
+// 페이지 진입 즉시 모달 열기
+window.addEventListener('load', function() { openCreateModal(); });
 
 /* ── 스텝 ── */
 function goToStep(step) {

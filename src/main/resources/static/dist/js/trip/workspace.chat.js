@@ -281,8 +281,8 @@ function sendChatMessage() {
   var content = input.value.trim();
   if (!content) return;
 
-  // IME 잔재로 끼어든 연속 개행 제거 (한글 조합 중 Enter로 생기는 \n 방어)
-  content = content.replace(/\n+/g, ' ').trim();
+  // IME 잔재 방어: 줄바꿈 보존, 연속 3개 이상만 2개로 축소
+  content = content.replace(/\n{3,}/g, '\n\n').trim();
   if (!content) return;
 
   var sendBtn = document.getElementById('chatSendBtn');
@@ -378,8 +378,8 @@ function _buildMsgHtml(msg) {
 
   // 내 말풍선: memberId 기반 고유 색으로 (그라데이션 아닌 단색)
   var bubbleStyle = mine
-    ? ' style="background:' + color + ';color:#fff"'
-    : '';
+    ? ' style="background:' + color + ';color:#fff;white-space:pre-wrap"'
+    : ' style="white-space:pre-wrap"';
 
   return '<div class="chat-msg ' + side + '" data-msg-id="' + (msg.messageId || '') + '">'
        + (avatarHtml ? '<div class="chat-msg__avatar">' + avatarHtml + '</div>' : '')
