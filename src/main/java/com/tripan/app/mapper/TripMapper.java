@@ -41,4 +41,22 @@ public interface TripMapper {
      * @param size   한 번에 가져올 개수 (기본 12)
      */
     List<TripDto> selectPublicTripsPaged(@Param("offset") int offset, @Param("size") int size);
+    /** 공개 여행 상세 (작성자 포함) */
+    TripDto selectPublicTripDetail(@Param("tripId") Long tripId);
+
+    /** 비슷한 공개 여행 TOP 4 */
+    List<TripDto> selectRelatedPublicTrips(@Param("tripId") Long tripId,
+                                           @Param("cityKeyword") String cityKeyword);
+
+    /** 좋아요 수 */
+    int selectTripLikeCount(@Param("tripId") Long tripId);
+
+    /** 내가 좋아요 했는지 (0 or 1) */
+    int selectMyTripLike(@Param("tripId") Long tripId, @Param("memberId") Long memberId);
+
+    /** 좋아요 추가 */
+    void insertTripLike(@Param("tripId") Long tripId, @Param("memberId") Long memberId);
+
+    /** 좋아요 삭제 */
+    void deleteTripLike(@Param("tripId") Long tripId, @Param("memberId") Long memberId);
 }

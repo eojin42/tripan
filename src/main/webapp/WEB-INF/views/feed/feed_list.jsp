@@ -6,17 +6,18 @@
 <link href="https://fonts.googleapis.com/css2?family=Pretendard:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
 <style>
 /* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-   TRIPAN — feed_list.jsp
-   인기피드(회색 bg) + 전체피드(흰 bg)
+   TRIPAN — feed_list.jsp  (리디자인)
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
 :root{
   --b:#89CFF0; --p:#FFB6C1; --oc:#C2B8D9;
   --dk:#1A202C; --md:#4A5568; --lt:#A0AEC0;
   --wh:#fff; --bg:#F3F6FB; --bd:#E2EAF4;
   --g2:linear-gradient(135deg,#89CFF0,#FFB6C1);
+  --g3:linear-gradient(135deg,#a8d8f0,#f0b8c8);
   --ez:cubic-bezier(.19,1,.22,1);
-  --s1:0 1px 8px rgba(0,0,0,.07);
-  --s2:0 10px 32px rgba(0,0,0,.13);
+  --s1:0 2px 12px rgba(0,0,0,.06);
+  --s2:0 12px 40px rgba(0,0,0,.14);
+  --s3:0 4px 20px rgba(137,207,240,.25);
 }
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
 body{font-family:'Pretendard',sans-serif;background:var(--bg);color:var(--dk);}
@@ -24,111 +25,112 @@ body{font-family:'Pretendard',sans-serif;background:var(--bg);color:var(--dk);}
 @keyframes fu{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
 @keyframes ti{from{opacity:0;transform:translateX(-50%) translateY(8px)}to{opacity:1;transform:translateX(-50%) translateY(0)}}
 
-/* ─── 공통 래퍼 ─── */
 .W{max-width:1240px;margin:0 auto;padding:0 40px;}
 
-/* ─── 공통 섹션 헤더 ─── */
-.SH{display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:20px;animation:fu .5s var(--ez) both;}
-.SH-L h2{font-size:19px;font-weight:900;letter-spacing:-.4px;}
-.SH-L p{font-size:12px;color:var(--lt);margin-top:3px;}
+.SH{display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:24px;animation:fu .5s var(--ez) both;}
+.SH-L h2{font-size:20px;font-weight:900;letter-spacing:-.5px;}
+.SH-L p{font-size:12px;color:var(--lt);margin-top:4px;}
 a.SH-R{font-size:12px;font-weight:700;color:var(--lt);text-decoration:none;transition:color .2s;}
 a.SH-R:hover{color:var(--b);}
 
 /* ━━━ 섹션 A — 인기 피드 ━━━ */
-.A{padding:44px 0 52px;}
-
+.A{padding:48px 0 56px;}
 .car-w{position:relative;}
 .car-o{overflow:hidden;}
-.car-t{display:flex;gap:16px;transition:transform .5s var(--ez);}
+.car-t{display:flex;gap:20px;transition:transform .5s var(--ez);}
 
 .HC{
-  flex:0 0 calc(25% - 12px);
-  background:var(--wh);border-radius:16px;overflow:hidden;
+  flex:0 0 calc(25% - 15px);
+  background:var(--wh);border-radius:20px;overflow:hidden;
   box-shadow:var(--s1);text-decoration:none;color:inherit;display:block;
-  transition:transform .3s var(--ez),box-shadow .3s;
+  transition:transform .35s var(--ez),box-shadow .35s;
   animation:fu .5s var(--ez) both;
+  border:1px solid rgba(226,234,244,.8);
 }
 .HC:nth-child(1){animation-delay:.05s}.HC:nth-child(2){animation-delay:.1s}
 .HC:nth-child(3){animation-delay:.15s}.HC:nth-child(4){animation-delay:.2s}
-.HC:hover{transform:translateY(-7px);box-shadow:var(--s2);}
+.HC:hover{transform:translateY(-8px);box-shadow:var(--s2);}
 
-.HC-img{position:relative;height:196px;overflow:hidden;}
-.HC-img img{width:100%;height:100%;object-fit:cover;display:block;transition:transform 1.5s var(--ez);}
-.HC:hover .HC-img img{transform:scale(1.09);}
-.HC-dim{position:absolute;inset:0;background:linear-gradient(to top,rgba(18,26,38,.55),transparent 52%);}
-.HC-rank{position:absolute;top:10px;left:10px;background:var(--g2);color:#fff;font-size:9px;font-weight:900;letter-spacing:2px;padding:3px 10px;border-radius:50px;}
-.HC-scrap{position:absolute;top:10px;right:10px;background:rgba(255,255,255,.93);backdrop-filter:blur(8px);border-radius:50px;padding:4px 10px;font-size:11px;font-weight:800;color:var(--dk);display:flex;align-items:center;gap:3px;}
-.HT{color:#E8849A;}
+.HC-img{position:relative;height:200px;overflow:hidden;}
+.HC-img img{width:100%;height:100%;object-fit:cover;display:block;transition:transform 1.6s var(--ez);}
+.HC:hover .HC-img img{transform:scale(1.08);}
+.HC-dim{position:absolute;inset:0;background:linear-gradient(to top,rgba(10,16,30,.65) 0%,transparent 55%);}
+.HC-img.no-img{background:var(--g3);}
 
-/* 썸네일 없을 때 기본 배경 */
-.HC-img.no-img{background:var(--g2);}
-.HC-img.no-img::after{content:attr(data-name);position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:#fff;font-size:13px;font-weight:800;padding:16px;text-align:center;word-break:keep-all;}
+.HC-rank{position:absolute;top:12px;left:12px;background:var(--g2);color:#fff;font-size:9px;font-weight:900;letter-spacing:2px;padding:4px 12px;border-radius:50px;box-shadow:0 2px 8px rgba(137,207,240,.4);}
 
-.HC-bd{padding:13px 15px 15px;}
-.HC-tag{font-size:10px;font-weight:700;color:var(--b);margin-bottom:4px;}
-.HC-tit{font-size:14px;font-weight:800;line-height:1.35;margin-bottom:5px;word-break:keep-all;}
-.HC-dsc{font-size:11px;color:var(--lt);margin-bottom:11px;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;}
-.HC-usr{display:flex;align-items:center;gap:6px;}
-.AV{width:21px;height:21px;border-radius:50%;background:var(--g2);flex-shrink:0;overflow:hidden;}
+/* 통계 뱃지 — 좋아요+담기 나란히 */
+.HC-stats{position:absolute;top:12px;right:12px;display:flex;gap:5px;}
+.HC-stat{background:rgba(255,255,255,.92);backdrop-filter:blur(10px);border-radius:50px;padding:4px 9px;font-size:10px;font-weight:800;color:var(--dk);display:flex;align-items:center;gap:3px;}
+.HC-stat.like{color:#E8849A;}
+.HC-stat.scrap{color:#5BA7CE;}
+
+.HC-bd{padding:14px 16px 16px;}
+.HC-loc{font-size:9px;font-weight:700;letter-spacing:.5px;color:var(--b);text-transform:uppercase;margin-bottom:5px;}
+.HC-tit{font-size:14px;font-weight:800;line-height:1.4;margin-bottom:10px;word-break:keep-all;}
+.HC-usr{display:flex;align-items:center;gap:7px;}
+.AV{width:22px;height:22px;border-radius:50%;background:var(--g2);flex-shrink:0;overflow:hidden;border:1.5px solid var(--wh);box-shadow:0 1px 4px rgba(0,0,0,.1);}
 .AV img{width:100%;height:100%;object-fit:cover;}
 .UN{font-size:11px;font-weight:600;color:var(--md);}
 
-/* 캐러셀 버튼 */
-.CB{position:absolute;top:98px;width:36px;height:36px;border-radius:50%;background:var(--wh);border:1.5px solid var(--bd);box-shadow:0 3px 12px rgba(0,0,0,.08);cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--md);font-size:14px;transition:all .2s;z-index:10;}
-.CB:hover{background:var(--b);color:#fff;border-color:var(--b);}
-.CB:disabled{opacity:.22;cursor:not-allowed;}
-.CB.pv{left:-18px;}.CB.nx{right:-18px;}
-.dots{display:flex;justify-content:center;gap:5px;margin-top:18px;}
-.dot{width:6px;height:6px;border-radius:50%;background:var(--bd);border:none;cursor:pointer;padding:0;transition:all .3s var(--ez);}
-.dot.on{width:20px;border-radius:3px;background:var(--g2);}
+.CB{position:absolute;top:100px;width:38px;height:38px;border-radius:50%;background:var(--wh);border:1.5px solid var(--bd);box-shadow:0 4px 14px rgba(0,0,0,.1);cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--md);font-size:14px;transition:all .2s;z-index:10;}
+.CB:hover{background:var(--b);color:#fff;border-color:var(--b);transform:scale(1.08);}
+.CB:disabled{opacity:.2;cursor:not-allowed;}
+.CB.pv{left:-19px;}.CB.nx{right:-19px;}
+.dots{display:flex;justify-content:center;gap:5px;margin-top:20px;}
+.dot{width:6px;height:6px;border-radius:50%;background:var(--bd);border:none;cursor:pointer;padding:0;transition:all .35s var(--ez);}
+.dot.on{width:22px;border-radius:3px;background:var(--g2);}
 
 /* ━━━ 섹션 B — 전체 피드 ━━━ */
 .B-bg{background:var(--wh);}
-.B{padding:44px 0 60px;}
+.B{padding:48px 0 64px;}
 
-.FB{display:flex;align-items:center;gap:6px;margin-bottom:22px;flex-wrap:wrap;}
-.FC{padding:6px 14px;border-radius:50px;border:1.5px solid var(--bd);background:transparent;font-family:'Pretendard',sans-serif;font-size:11px;font-weight:700;color:var(--md);cursor:pointer;transition:all .2s;white-space:nowrap;}
+.FB{display:flex;align-items:center;gap:6px;margin-bottom:24px;flex-wrap:wrap;}
+.FC{padding:7px 16px;border-radius:50px;border:1.5px solid var(--bd);background:transparent;font-family:'Pretendard',sans-serif;font-size:11px;font-weight:700;color:var(--md);cursor:pointer;transition:all .2s;white-space:nowrap;}
 .FC:hover{border-color:var(--b);color:var(--b);}
-.FC.on{border-color:transparent;background:var(--g2);color:#fff;box-shadow:0 3px 10px rgba(137,207,240,.3);}
+.FC.on{border-color:transparent;background:var(--g2);color:#fff;box-shadow:var(--s3);}
 .FR{margin-left:auto;display:flex;gap:6px;align-items:center;}
-.SS{padding:7px 13px;border:1.5px solid var(--bd);border-radius:50px;font-family:'Pretendard',sans-serif;font-size:11px;font-weight:600;color:var(--md);background:transparent;outline:none;cursor:pointer;appearance:none;}
+.SS{padding:7px 14px;border:1.5px solid var(--bd);border-radius:50px;font-family:'Pretendard',sans-serif;font-size:11px;font-weight:600;color:var(--md);background:transparent;outline:none;cursor:pointer;appearance:none;}
 
-.FG{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;}
+.FG{display:grid;grid-template-columns:repeat(4,1fr);gap:20px;}
 
 .FD{
-  background:var(--bg);border-radius:16px;overflow:hidden;
+  background:var(--wh);border-radius:20px;overflow:hidden;
   text-decoration:none;color:inherit;display:block;
-  border:1.5px solid var(--bd);
-  transition:all .3s var(--ez);
-  opacity:0;transform:translateY(16px);
+  border:1.5px solid rgba(226,234,244,.7);
+  box-shadow:var(--s1);
+  transition:all .35s var(--ez);
+  opacity:0;transform:translateY(18px);
 }
 .FD.in{opacity:1;transform:translateY(0);}
-.FD:hover{transform:translateY(-7px);box-shadow:var(--s2);border-color:rgba(137,207,240,.3);background:var(--wh);}
+.FD:hover{transform:translateY(-8px);box-shadow:var(--s2);border-color:rgba(137,207,240,.35);}
 
-.FD-img{position:relative;height:196px;overflow:hidden;}
+.FD-img{position:relative;height:186px;overflow:hidden;}
 .FD-img img{width:100%;height:100%;object-fit:cover;display:block;transition:transform 1.2s var(--ez);}
-.FD:hover .FD-img img{transform:scale(1.08);}
-.FD-img.no-img{background:var(--g2);}
-.FD-dim{position:absolute;inset:0;background:linear-gradient(to top,rgba(18,26,38,.28),transparent 50%);}
+.FD:hover .FD-img img{transform:scale(1.07);}
+.FD-img.no-img{background:var(--g3);}
+.FD-dim{position:absolute;inset:0;background:linear-gradient(to top,rgba(10,16,30,.3),transparent 55%);}
 
-.FD-bd{padding:13px 15px 15px;}
-.FD-tag{font-size:10px;font-weight:700;color:var(--b);margin-bottom:4px;}
-.FD-tit{font-size:14px;font-weight:800;margin-bottom:10px;line-height:1.35;word-break:keep-all;}
-.FD-ft{display:flex;justify-content:space-between;align-items:center;border-top:1px solid var(--bd);padding-top:8px;}
+/* 카드 이미지 위 통계 */
+.FD-overlay-stats{position:absolute;bottom:10px;right:10px;display:flex;gap:4px;}
+.FD-stat{background:rgba(255,255,255,.88);backdrop-filter:blur(8px);border-radius:50px;padding:3px 8px;font-size:9px;font-weight:800;display:flex;align-items:center;gap:2px;}
+.FD-stat.like{color:#E8849A;}
+.FD-stat.scrap{color:#5BA7CE;}
+
+.FD-bd{padding:14px 15px 15px;}
+.FD-loc{font-size:9px;font-weight:700;color:var(--b);letter-spacing:.5px;margin-bottom:5px;}
+.FD-tit{font-size:13px;font-weight:800;margin-bottom:12px;line-height:1.4;word-break:keep-all;}
+.FD-ft{display:flex;justify-content:space-between;align-items:center;border-top:1px solid var(--bd);padding-top:9px;}
 .FD-usr{display:flex;align-items:center;gap:5px;font-size:10px;font-weight:600;color:var(--md);}
-.FD-st{display:flex;gap:6px;font-size:10px;color:var(--lt);font-weight:600;}
 
-/* 무한스크롤 로딩 스피너 */
-#loadMore{text-align:center;padding:32px 0;}
+#loadMore{text-align:center;padding:36px 0;}
 .spinner{display:inline-block;width:24px;height:24px;border:3px solid var(--bd);border-top-color:var(--b);border-radius:50%;animation:spin .7s linear infinite;}
 @keyframes spin{to{transform:rotate(360deg)}}
-#noMore{text-align:center;padding:32px 0;font-size:12px;color:var(--lt);font-weight:600;display:none;}
-
-/* 빈 상태 */
+#noMore{text-align:center;padding:36px 0;font-size:12px;color:var(--lt);font-weight:600;display:none;}
 .empty{text-align:center;padding:60px 0;color:var(--lt);font-size:13px;}
 
-@media(max-width:1100px){.FG{grid-template-columns:repeat(3,1fr);}.HC{flex:0 0 calc(33.333% - 11px);}}
-@media(max-width:768px){.W{padding:0 20px;}.FG{grid-template-columns:repeat(2,1fr);}.HC{flex:0 0 calc(50% - 8px);}.FR{margin-left:0;width:100%;}}
+@media(max-width:1100px){.FG{grid-template-columns:repeat(3,1fr);}.HC{flex:0 0 calc(33.333% - 14px);}}
+@media(max-width:768px){.W{padding:0 20px;}.FG{grid-template-columns:repeat(2,1fr);}.HC{flex:0 0 calc(50% - 10px);}.FR{margin-left:0;width:100%;}}
 @media(max-width:480px){.FG{grid-template-columns:1fr;}.HC{flex:0 0 100%;}}
 </style>
 
@@ -200,28 +202,40 @@ window.addEventListener('resize',function(){bld();gt(0);});
 
 /* 인기 캐러셀 카드 생성 */
 function makeHotCard(t, rank) {
-  var thumb = t.thumbnailUrl || '';
-  var cities = t.citiesStr || '';
-  var name = t.tripName || '여행';
-  var desc = t.description || cities || '여행 코스';
-  var leader = t.leaderNickname || '트리패너';
-  var scrap = t.scrapCount || 0;
+  var thumb   = t.thumbnailUrl || '';
+  var cities  = t.citiesStr || '';
+  var name    = t.tripName || '여행';
+  var leader  = t.leaderNickname || '트리패너';
+  var scrap   = t.scrapCount || 0;
+  var likes   = t.likeCount || 0;
+  var profImg = t.leaderProfileImage || '';
 
   var imgInner = thumb
     ? '<img src="'+esc(thumb)+'" alt="'+esc(name)+'" loading="lazy"><div class="HC-dim"></div>'
     : '<div class="HC-dim"></div>';
   var imgCls = thumb ? 'HC-img' : 'HC-img no-img';
 
-  return '<a href="'+CP+'/trip/'+t.tripId+'/workspace" class="HC">'
+  var locLabel = cities
+    ? cities.split(',').slice(0,2).map(function(c){return c.trim();}).filter(Boolean).join(' · ')
+    : '국내여행';
+
+  // 프로필 이미지
+  var avHtml = profImg
+    ? '<div class="AV"><img src="'+esc(profImg.startsWith('http')?profImg:CP+'/'+profImg)+'" alt=""></div>'
+    : '<div class="AV"><img src="'+CP+'/dist/images/trip_icon.png" alt=""></div>';
+
+  return '<a href="'+CP+'/feed/feed_detail?tripId='+t.tripId+'" class="HC">'
     +'<div class="'+imgCls+'">'+ imgInner
     +'<span class="HC-rank">HOT '+rank+'</span>'
-    +'<span class="HC-scrap"><span class="HT">&#9829;</span> '+scrap+'</span>'
+    +'<div class="HC-stats">'
+    +'<span class="HC-stat like">❤️ '+likes+'</span>'
+    +'<span class="HC-stat scrap">🗂 '+scrap+'</span>'
+    +'</div>'
     +'</div>'
     +'<div class="HC-bd">'
-    +'<div class="HC-tag"># '+esc(cities||'국내여행')+'</div>'
+    +'<div class="HC-loc">📍 '+esc(locLabel)+'</div>'
     +'<div class="HC-tit">'+esc(name)+'</div>'
-    +'<div class="HC-dsc">'+esc(desc)+'</div>'
-    +'<div class="HC-usr"><div class="AV"></div><span class="UN">@'+esc(leader)+'</span></div>'
+    +'<div class="HC-usr">'+avHtml+'<span class="UN">@'+esc(leader)+'</span></div>'
     +'</div></a>';
 }
 
@@ -248,25 +262,39 @@ var done = false;
 
 /* 카드 HTML 생성 */
 function makeCard(t) {
-  var thumb = t.thumbnailUrl || '';
-  var cities = t.citiesStr || '';
-  var name = t.tripName || '여행';
-  var leader = t.leaderNickname || '트리패너';
-  var scrap = t.scrapCount || 0;
+  var thumb   = t.thumbnailUrl || '';
+  var cities  = t.citiesStr || '';
+  var name    = t.tripName || '여행';
+  var leader  = t.leaderNickname || '트리패너';
+  var scrap   = t.scrapCount || 0;
+  var likes   = t.likeCount || 0;
+  var profImg = t.leaderProfileImage || '';
 
   var imgHtml = thumb
-    ? '<img src="' + thumb + '" alt="' + esc(name) + '" loading="lazy"><div class="FD-dim"></div>'
+    ? '<img src="' + esc(thumb) + '" alt="' + esc(name) + '" loading="lazy"><div class="FD-dim"></div>'
     : '';
   var imgCls = thumb ? 'FD-img' : 'FD-img no-img';
 
-  return '<a href="' + CP + '/trip/' + t.tripId + '/workspace" class="FD">'
-    + '<div class="' + imgCls + '">' + imgHtml + '</div>'
+  var locLabel = cities
+    ? cities.split(',').slice(0,2).map(function(c){return c.trim();}).filter(Boolean).join(' · ')
+    : '국내여행';
+
+  var avHtml = profImg
+    ? '<div class="AV"><img src="'+esc(profImg.startsWith('http')?profImg:CP+'/'+profImg)+'" alt=""></div>'
+    : '<div class="AV"><img src="'+CP+'/dist/images/trip_icon.png" alt=""></div>';
+
+  return '<a href="' + CP + '/feed/feed_detail?tripId=' + t.tripId + '" class="FD">'
+    + '<div class="' + imgCls + '">' + imgHtml
+    + '<div class="FD-overlay-stats">'
+    + '<span class="FD-stat like">❤️ ' + likes + '</span>'
+    + '<span class="FD-stat scrap">🗂 ' + scrap + '</span>'
+    + '</div>'
+    + '</div>'
     + '<div class="FD-bd">'
-    + '<div class="FD-tag"># ' + esc(cities || '국내여행') + '</div>'
+    + '<div class="FD-loc">📍 ' + esc(locLabel) + '</div>'
     + '<div class="FD-tit">' + esc(name) + '</div>'
     + '<div class="FD-ft">'
-    + '<div class="FD-usr"><div class="AV"></div><span>@' + esc(leader) + '</span></div>'
-    + '<div class="FD-st"><span>&#9829; ' + scrap + '</span></div>'
+    + '<div class="FD-usr">' + avHtml + '<span>@' + esc(leader) + '</span></div>'
     + '</div>'
     + '</div>'
     + '</a>';

@@ -247,7 +247,7 @@
   </section>
 
   <%-- ══════════════════════════════════════════════
-       피드 섹션 (기존 그대로)
+       피드 섹션 — API 연동 (디자인 기존 그대로)
   ══════════════════════════════════════════════ --%>
   <section>
     <div class="feed-header reveal">
@@ -259,67 +259,8 @@
     </div>
     <div class="carousel-wrapper reveal">
       <button class="nav-arrow prev">←</button>
-      <div class="horizontal-list">
-        <div class="list-item">
-          <div class="list-img">
-            <div class="floating-badge">❤️ 890</div>
-            <img src="https://images.unsplash.com/photo-1493246507139-91e8fad9978e?auto=format&fit=crop&w=600&q=80" alt="Busan">
-          </div>
-          <div class="list-info">
-            <span class="tag">#부산 #해운대</span>
-            <h4>부산 2박3일 핫플 뿌시기</h4>
-            <p class="desc">담아오기 1,204회 기록 돌파!</p>
-            <div class="author-info">
-              <div class="author-pic"><img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=100&q=80"></div>
-              @travel_holic
-            </div>
-          </div>
-        </div>
-        <div class="list-item">
-          <div class="list-img">
-            <div class="floating-badge">❤️ 750</div>
-            <img src="https://images.unsplash.com/photo-1506929562872-bb421503ef21?auto=format&fit=crop&w=600&q=80" alt="Jeju">
-          </div>
-          <div class="list-info">
-            <span class="tag">#제주도 #오션뷰</span>
-            <h4>제주 동쪽 감성 숙소 투어</h4>
-            <p class="desc">담아오기 980회 돌파!</p>
-            <div class="author-info">
-              <div class="author-pic"><img src="https://images.unsplash.com/photo-1524504388940-b1c1722653e1?auto=format&fit=crop&w=100&q=80"></div>
-              @jeju_vibe
-            </div>
-          </div>
-        </div>
-        <div class="list-item">
-          <div class="list-img">
-            <div class="floating-badge">❤️ 620</div>
-            <img src="https://images.unsplash.com/photo-1512453979798-5ea266f8880c?auto=format&fit=crop&w=600&q=80" alt="Sokcho">
-          </div>
-          <div class="list-info">
-            <span class="tag">#속초 #먹방투어</span>
-            <h4>속초 1박 2일 맛집 지도</h4>
-            <p class="desc">가성비 끝판왕 N빵 정산 공개</p>
-            <div class="author-info">
-              <div class="author-pic"><img src="https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&w=100&q=80"></div>
-              @n_bread_master
-            </div>
-          </div>
-        </div>
-        <div class="list-item">
-          <div class="list-img">
-            <div class="floating-badge">❤️ 540</div>
-            <img src="https://images.unsplash.com/photo-1476514525535-07fb3b4ae5f1?auto=format&fit=crop&w=600&q=80" alt="Gangneung">
-          </div>
-          <div class="list-info">
-            <span class="tag">#강릉 #해안도로</span>
-            <h4>강릉 드라이브 코스</h4>
-            <p class="desc">인생샷 보장하는 로드트립</p>
-            <div class="author-info">
-              <div class="author-pic"><img src="https://images.unsplash.com/photo-1438761681033-6461ffad8d80?auto=format&fit=crop&w=100&q=80"></div>
-              @world_driver
-            </div>
-          </div>
-        </div>
+      <div class="horizontal-list" id="homeFeedList">
+        <%-- JS로 채워짐 --%>
       </div>
       <button class="nav-arrow next">→</button>
     </div>
@@ -421,5 +362,77 @@
 
 </main>
 
+<script>
+/* ━━━ 실시간 인기피드 API 로딩 ━━━ */
+(function(){
+  var CP = '${pageContext.request.contextPath}';
+  var container = document.getElementById('homeFeedList');
+  if (!container) return;
+
+  function escHtml(s) {
+    return String(s||'')
+      .replace(/&/g,'&amp;').replace(/</g,'&lt;')
+      .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+
+  function makeItem(t) {
+    var thumb   = t.thumbnailUrl || '';
+    var cities  = t.citiesStr || '';
+    var name    = t.tripName || '여행';
+    var scrap   = t.scrapCount || 0;
+    var likes   = t.likeCount || 0;
+    var leader  = t.leaderNickname || '트리패너';
+    var profImg = t.leaderProfileImage || '';
+
+    // 지역 태그 (최대 2개)
+    var tags = cities
+      ? cities.split(',').slice(0,2).map(function(c){ return '#'+c.trim(); }).filter(Boolean).join(' ')
+      : '#국내여행';
+
+    // 설명 (description이 있으면 사용, 없으면 담기수 표시)
+    var desc = (t.description && t.description.trim())
+      ? t.description.trim()
+      : '🗂 ' + scrap + '회 담겨진 여행';
+
+    // 썸네일
+    var imgHtml = thumb
+      ? '<img src="'+escHtml(thumb.startsWith('http')?thumb:CP+thumb)+'" alt="'+escHtml(name)+'" loading="lazy">'
+      : '';
+
+    // 프로필 이미지
+    var avHtml = profImg
+      ? '<img src="'+escHtml(profImg.startsWith('http')?profImg:CP+'/'+profImg)+'" alt="">'
+      : '<img src="'+CP+'/dist/images/trip_icon.png" alt="">';
+
+    return '<div class="list-item" onclick="location.href=\''+CP+'/feed/feed_detail?tripId='+t.tripId+'\'" style="cursor:pointer">'
+      + '<div class="list-img">'
+      + '<div class="floating-badge">❤️ '+likes+' &nbsp; 🗂 '+scrap+'</div>'
+      + imgHtml
+      + '</div>'
+      + '<div class="list-info">'
+      + '<span class="tag">'+escHtml(tags)+'</span>'
+      + '<h4>'+escHtml(name)+'</h4>'
+      + '<p class="desc">'+escHtml(desc)+'</p>'
+      + '<div class="author-info">'
+      + '<div class="author-pic">'+avHtml+'</div>'
+      + '@'+escHtml(leader)
+      + '</div>'
+      + '</div>'
+      + '</div>';
+  }
+
+  fetch(CP + '/feed/public-trips?page=0&size=8')
+    .then(function(r){ return r.json(); })
+    .then(function(list) {
+      var items = list.slice(0, 8);
+      if (!items.length) {
+        container.innerHTML = '<div style="padding:40px;color:#999;font-size:14px;">공개된 여행이 아직 없어요.</div>';
+        return;
+      }
+      container.innerHTML = items.map(makeItem).join('');
+    })
+    .catch(function(e){ console.error('[HomeFeed]', e); });
+})();
+</script>
 <script src="${pageContext.request.contextPath}/dist/js/home.js"></script>
 <jsp:include page="../layout/footer.jsp" />

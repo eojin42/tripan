@@ -42,6 +42,7 @@ public class TripController {
     private final NotificationService notificationService;
     private final TripMemberRepository tripMemberRepository;
     private final TripMemberService tripMemberService;
+    private final com.tripan.app.trip.repository.TripRepository tripRepository;
     
     @Value("${tripan.api.kakao-map-api-key}")
     private String kakaoMapKey;
@@ -93,6 +94,15 @@ public class TripController {
         model.addAttribute("myMemberId", loginMemberIdForWelcome);
         model.addAttribute("memberRole", myRole);
         model.addAttribute("isOwner", "OWNER".equals(myRole));
+
+        // ★ 담아온 여행 여부 — originalTripId가 있으면 스크랩본
+        //   본인이 OWNER이고 스크랩본일 때만 "담아오기 안내 모달" 표시
+        com.tripan.app.trip.domain.entity.Trip tripEntity =
+            tripRepository.findById(tripId).orElse(null);
+        boolean isScraped = tripEntity != null
+            && tripEntity.getOriginalTripId() != null
+            && "OWNER".equals(myRole);
+        model.addAttribute("isScraped", isScraped);
 
         return "trip/workspace";
     }
