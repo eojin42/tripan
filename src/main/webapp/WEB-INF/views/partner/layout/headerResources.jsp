@@ -7,6 +7,9 @@
 
 <link rel="stylesheet" href="${pageContext.request.contextPath}/dist/css/partner/admin.css">
 <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
+<script src='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/index.global.min.js'></script>
+
+
 
 <script>
     const TripanConfig = {
@@ -20,3 +23,4 @@
 <script src="${pageContext.request.contextPath}/dist/js/partner/partner_booking.js" defer></script>
 <script src="${pageContext.request.contextPath}/dist/js/partner/partner_info.js" defer></script>
 <script src="${pageContext.request.contextPath}/dist/js/partner/partner_facility.js" defer></script>
+<script src="${pageContext.request.contextPath}/dist/js/partner/partner_calendar.js" defer></script>

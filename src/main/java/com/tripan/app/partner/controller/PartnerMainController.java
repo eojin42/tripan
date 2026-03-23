@@ -1,5 +1,7 @@
 package com.tripan.app.partner.controller;
 
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -162,6 +164,27 @@ public class PartnerMainController {
         } catch (Exception e) {
             e.printStackTrace();
             return ResponseEntity.badRequest().body(Map.of("message", "fail"));
+        }
+    }
+    
+    @ResponseBody
+    @GetMapping("/api/calendar/events")
+    public ResponseEntity<List<Map<String, Object>>> getCalendarEvents(
+            @RequestParam("start") String start, 
+            @RequestParam("end") String end,     
+            jakarta.servlet.http.HttpSession session) {
+        
+        try {
+            Long currentPartnerId = (Long) session.getAttribute("currentPartnerId");
+            Long placeId = partnerInfoService.getPlaceIdByPartnerId(currentPartnerId);
+            
+            List<Map<String, Object>> eventList = partnerRoomService.getCalendarEvents(placeId, start, end);
+
+            return ResponseEntity.ok(eventList);
+            
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.badRequest().body(new ArrayList<>());
         }
     }
 }

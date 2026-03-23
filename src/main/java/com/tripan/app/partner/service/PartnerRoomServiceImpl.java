@@ -1,7 +1,10 @@
 package com.tripan.app.partner.service;
 
 import java.io.File;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 import org.springframework.beans.factory.annotation.Value; // 🌟 Value 임포트!
@@ -85,5 +88,46 @@ public class PartnerRoomServiceImpl implements PartnerRoomService {
         }
 		
 	}
+	
+	@Override
+    public List<Map<String, Object>> getCalendarEvents(Long placeId, String start, String end) {
+        
+        String startDate = start.substring(0, 10);
+        String endDate = end.substring(0, 10);
+        
+        List<Map<String, Object>> dbReservations = partnerRoomMapper.selectReservationsForCalendar(placeId, startDate, endDate);
+        
+        List<Map<String, Object>> events = new ArrayList<>();
+        
+        for (Map<String, Object> row : dbReservations) {
+            Map<String, Object> event = new HashMap<>();
+            
+            String status = (String) row.get("STATUS");
+            String roomName = (String) row.get("ROOM_NAME");
+            String memberName = (String) row.get("MEMBER_NAME");
+            
+            event.put("id", row.get("RESERVATION_ID").toString());
+            event.put("title", memberName + " (" + roomName + ")");
+            event.put("start", row.get("CHECK_IN"));
+            event.put("end", row.get("CHECK_OUT")); 
+            
+            if ("SUCCESS".equals(status)) {
+                event.put("color", "#2563eb"); // 파란색 (예약완료)
+            } else if ("CANCELED".equals(status)) {
+                event.put("color", "#dc2626"); // 빨간색 (취소됨)
+                event.put("title", "[취소] " + event.get("title"));
+            } else {
+                event.put("color", "#d97706"); // 주황색 (대기/기타)
+            }
+            
+            event.put("amount", row.get("AMOUNT"));
+            event.put("guestCount", row.get("GUEST_COUNT"));
+            event.put("request", row.get("REQUEST") != null ? row.get("REQUEST") : "요청사항 없음");
+            event.put("status", status); // 취소 여부 등
+            events.add(event);
+        }
+        
+        return events;
+    }
     
 }
