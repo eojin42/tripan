@@ -48,10 +48,17 @@
         </if>
 
         <if test="accTypes != null and accTypes.size() > 0">
-            AND a.ACCOMMODATION_TYPE IN
-            <foreach item="type" collection="accTypes" open="(" separator="," close=")">
-                #{type}
-            </foreach>
+            AND (
+                a.ACCOMMODATION_TYPE IN
+                <foreach item="type" collection="accTypes" open="(" separator="," close=")">
+                    #{type}
+                </foreach>
+                
+                <if test='accTypes.contains("기타")'>
+                    OR a.ACCOMMODATION_TYPE NOT IN ('관광호텔', '모텔', '펜션', '게스트하우스', '한옥')
+                    OR a.ACCOMMODATION_TYPE IS NULL
+                </if>
+            )
         </if>
 
         <if test="minPrice != null">
