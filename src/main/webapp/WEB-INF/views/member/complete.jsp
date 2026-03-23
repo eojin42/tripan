@@ -18,12 +18,7 @@
   <main class="complete-section">
     <div class="complete-card">
       
-      <div class="icon-wrapper">
-        <svg class="check-icon" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
-          <polyline points="22 4 12 14.01 9 11.01"></polyline>
-        </svg>
-      </div>
+      
       
       <div class="brand-logo" style="margin-bottom: 16px; justify-content: center;">
         <span class="tri" style="font-size: 32px;">Trip</span><span class="pan" style="font-size: 32px;">an</span><span class="dot" style="color: var(--light-pink); font-size: 34px;">.</span>
@@ -31,7 +26,13 @@
 
 	<c:choose>
 	  <%-- 성공 케이스 --%>
-	  <c:when test="${title == '회원가입 완료!' || title == '회원정보수정 완료!' || title == '패스워드 찾기'}">
+	  <c:when test="${not empty title}">
+	  <div class="icon-wrapper">
+        <svg class="check-icon" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+          <polyline points="22 4 12 14.01 9 11.01"></polyline>
+        </svg>
+      </div>
 	    <h2 class="complete-title" style="color: var(--point-blue);">${title}</h2>
 	    <p class="complete-desc">${message}${name}</p>
 	  </c:when>

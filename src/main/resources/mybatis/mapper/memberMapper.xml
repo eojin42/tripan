@@ -75,7 +75,7 @@
         ) VALUES (
             #{memberId}, #{loginId}, #{email}, #{password}, #{name}, 
             1, #{role}, #{gender, jdbcType=VARCHAR}, 0, 
-            #{snsProvider, jdbcType=VARCHAR}, #{snsId, jdbcType=VARCHAR}, #{birthday, jdbcType=VARCHAR},SYSDATE
+            #{snsProvider, jdbcType=VARCHAR}, #{snsId, jdbcType=VARCHAR}, #{birthday, jdbcType=VARCHAR}, SYSDATE
         )
         INTO member2 (
             MEMBER_ID, NICKNAME, PROFILE_IMAGE, PHONE_NUMBER, 
