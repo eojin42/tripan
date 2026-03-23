@@ -4,6 +4,7 @@ import java.util.List;
 import java.util.Map;
  
 import org.apache.ibatis.annotations.Mapper;
+import org.apache.ibatis.annotations.Param;
 
 import com.tripan.app.admin.domain.dto.PartnerManageDto;
  
@@ -21,4 +22,6 @@ public interface PartnerManageMapper {
     List<Long> selectExpiredPartnerIds();
     void updatePartnerActiveStatus(Map<String, Object> params);
     void insertPartnerStatusPending(Map<String, Object> params); // 신규 등록 시 pending상태 등록
+    void updateMemberRoleToPartner(Map<String, Object> param);
+    Long selectMemberIdByPartnerId(@Param("partnerId") Long partnerId);
 }

@@ -99,8 +99,13 @@ public class PartnerManageServiceImpl implements PartnerManageService {
                 "contractEndDate", contractEndDate
             ));
         }
-        log.info("승인 완료 ID:{}, 수수료:{}%", partnerId, commissionRate);
+        
         PartnerManageDto partner = partnerMapper.selectPartnerDetail(partnerId);
+        if (partner.getMemberId() != null) {
+            partnerMapper.updateMemberRoleToPartner(Map.of("memberId", partner.getMemberId()));
+        }
+        
+        log.info("승인 완료 ID:{}, 수수료:{}%", partnerId, commissionRate);
         sendMail(partner.getContactEmail(),
             PartnerMailTemplates.approveSubject(),
             PartnerMailTemplates.approveContent(partner.getPartnerName(), commissionRate, contractEndDate)

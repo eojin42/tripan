@@ -46,9 +46,6 @@
     </select>
 
     <!-- 활성 파트너 목록 (쿠폰 등록 select용) -->
-    <!--
-        변경: status = 'ACTIVE' → partner_status.status_code = 'ACTIVE' AND partner.status = 1
-    -->
     <select id="selectActivePartners" resultType="com.tripan.app.admin.domain.dto.PartnerManageDto">
         SELECT
             p.partner_id   AS partnerId,
@@ -91,6 +88,21 @@
             #{registerId}
         )
     </insert>
+    
+    <!-- 승인 시 member role 업데이트 (이미 ROLE_PARTNER면 스킵) -->
+	<update id="updateMemberRoleToPartner" parameterType="map">
+	    UPDATE member1
+	    SET role = 'ROLE_PARTNER'
+	    WHERE member_id = #{memberId}
+	      AND role != 'ROLE_PARTNER'
+	</update>
+	
+	<!-- approvePartner 시 member_id 조회용 -->
+	<select id="selectMemberIdByPartnerId" resultType="long">
+	    SELECT member_id
+	    FROM partner
+	    WHERE partner_id = #{partnerId}
+	</select>
 
     <!-- 승인/차단 시 partner.status 숫자값 업데이트 -->
     <!--
@@ -110,10 +122,6 @@
     </update>
 
     <!-- 신규 등록 (partner_status: PENDING INSERT) -->
-    <!--
-        변경: partner INSERT 시 status 컬럼 제거 (partner_status 테이블로 이관)
-             partner_intro 컬럼 제거
-    -->
     <insert id="insertPartner" parameterType="map">
         INSERT INTO partner (
             partner_name, business_number, contact_name, contact_phone,
@@ -142,10 +150,6 @@
     </insert>
 
     <!-- 파트너 상세 조회 (partner_status 최신 + partner_contract 최신 LEFT JOIN) -->
-    <!--
-        변경: partner_intro, reject_reason, updated_at 제거
-             partner_status 최신 1건 JOIN으로 statusCode, memo(rejectReason) 조회
-    -->
     <select id="selectPartnerDetail" resultType="com.tripan.app.admin.domain.dto.PartnerManageDto">
         SELECT
             p.partner_id       AS partnerId,
@@ -194,9 +198,6 @@
     </select>
 
     <!-- 이번달 승인 카운트 -->
-    <!--
-        변경: partner.updated_at 제거 → partner_status.reg_date 기준으로 변경
-    -->
     <select id="selectApprovedThisMonth" resultType="int">
         SELECT COUNT(DISTINCT ps.partner_id)
         FROM partner_status ps
@@ -214,9 +215,6 @@
     </insert>
 
     <!-- 계약 만료된 파트너 ID 목록 (스케줄러용) -->
-    <!--
-        변경: partner.status = 'ACTIVE' → partner.status = 1 AND partner_status 최신 = 'ACTIVE'
-    -->
     <select id="selectExpiredPartnerIds" resultType="long">
         SELECT DISTINCT p.partner_id
         FROM partner p
