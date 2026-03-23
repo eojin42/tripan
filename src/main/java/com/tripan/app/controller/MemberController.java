@@ -8,7 +8,6 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
@@ -63,18 +62,17 @@ public class MemberController {
 
     @PostMapping("account")
     public String memberSubmit(MemberDto dto, Model model, final RedirectAttributes rAttr, HttpSession session) {
-
         try {
-        	service.insertMember(dto, uploadPath); // void, 내부에서 dto.memberId 세팅됨
+            service.insertMember(dto, uploadPath);
 
-            // dto.getMemberId()로 Member1 생성해서 쿠폰 발급
             Member1 savedMember = new Member1();
             savedMember.setId(dto.getMemberId());
             couponService.issueWelcomeCoupon(savedMember);
 
             session.invalidate();
-            rAttr.addFlashAttribute("name", dto.getUsername());
             rAttr.addFlashAttribute("title", "회원 가입 완료!");
+            rAttr.addFlashAttribute("message", dto.getUsername() + "님, 회원가입이 완료되었습니다! <br>메인화면으로 이동 하여 로그인해주시기 바랍니다.<br>"); 
+            // rAttr.addFlashAttribute("name", dto.getUsername());  ← 삭제
             return "redirect:/member/complete";
 
         } catch (Exception e) {
@@ -118,7 +116,8 @@ public class MemberController {
     }
 
     @GetMapping("complete")
-    public String complete(@ModelAttribute("title") String title) throws Exception {
+    public String complete(Model model) {
+        String title = (String) model.asMap().get("title");
         if (title == null || title.isBlank()) return "redirect:/";
         return "member/complete";
     }

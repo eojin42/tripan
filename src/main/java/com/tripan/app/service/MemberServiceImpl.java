@@ -1,6 +1,7 @@
 package com.tripan.app.service;
 
 import java.security.SecureRandom;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
@@ -72,6 +73,7 @@ public class MemberServiceImpl implements MemberService {
             member1.setGender(dto.getGender());
             member1.setBirthday(dto.getBirthday());
             member1.setFailureCnt(0);
+            member1.setRegisterDate(LocalDate.now());
             memberRepository.save(member1);
             dto.setMemberId(member1.getId());
 

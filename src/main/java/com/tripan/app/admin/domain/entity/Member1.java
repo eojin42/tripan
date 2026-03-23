@@ -1,4 +1,6 @@
 package com.tripan.app.admin.domain.entity;
+import java.time.LocalDate;
+
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
@@ -48,4 +50,7 @@ public class Member1 {
 
     @Column(length = 10)
     private String birthday;
+    
+    @Column(name = "register_date")
+    private LocalDate registerDate;
 }
