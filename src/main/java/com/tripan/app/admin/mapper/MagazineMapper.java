@@ -2,11 +2,13 @@ package com.tripan.app.admin.mapper;
 
 import java.util.List;
 
+import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 
 import com.tripan.app.admin.domain.dto.MagazineArticleDto;
 import com.tripan.app.admin.domain.dto.MagazineBlockDto;
 
+@Mapper
 public interface MagazineMapper {
 	List<MagazineArticleDto> selectAll();
     List<MagazineArticleDto> selectPublished();
