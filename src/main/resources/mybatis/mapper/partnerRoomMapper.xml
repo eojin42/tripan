@@ -109,6 +109,26 @@
             is_active = NVL(#{isActive}, 1)
         WHERE room_id = #{roomId}
     </update>
+    
+    <select id="selectReservationsForCalendar" resultType="map">
+	    SELECT 
+	        r.RESERVATION_ID,
+	        r.STATUS,
+	        m.USERNAME as MEMBER_NAME,
+	        rm.ROOM_NAME,
+	        TO_CHAR(r.CHECK_IN_DATE, 'YYYY-MM-DD') as CHECK_IN,
+	        TO_CHAR(r.CHECK_OUT_DATE, 'YYYY-MM-DD') as CHECK_OUT,
+	        r.AMOUNT,
+	        r.GUEST_COUNT,
+	        TO_CHAR(r.REQUEST) AS REQUEST
+	    FROM RESERVATION r
+	    LEFT JOIN MEMBER1 m ON r.MEMBER_ID = m.MEMBER_ID
+	    LEFT JOIN ROOM rm ON r.ROOM_ID = rm.ROOM_ID
+	    WHERE rm.PLACE_ID = #{placeId}
+	      AND r.STATUS IN ('SUCCESS', 'CANCELED')
+	      AND r.CHECK_OUT_DATE >= TO_DATE(#{start}, 'YYYY-MM-DD')
+	      AND r.CHECK_IN_DATE &lt;= TO_DATE(#{end}, 'YYYY-MM-DD')
+	</select>
 
 	
 </mapper>
