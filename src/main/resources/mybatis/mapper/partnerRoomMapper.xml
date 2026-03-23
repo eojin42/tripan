@@ -87,6 +87,28 @@
     <delete id="deleteRoomFacility">
         DELETE FROM room_facility WHERE rf_id = #{rfId}
     </delete>
+    
+    <update id="updateRoomFacility" parameterType="com.tripan.app.partner.domain.dto.PartnerRoomDto">
+        UPDATE room_facility
+        SET roomaircondition = NVL(#{roomaircondition}, 0),
+            roomtv = NVL(#{roomtv}, 0),
+            roominternet = NVL(#{roominternet}, 0),
+            roombath = NVL(#{roombath}, 0),
+            roomrefrigerator = NVL(#{roomrefrigerator}, 0)
+        WHERE rf_id = #{rfId}
+    </update>
+
+    <update id="updateRoom" parameterType="com.tripan.app.partner.domain.dto.PartnerRoomDto">
+        UPDATE room
+        SET room_name = #{roomName},
+            roombasecount = #{roombasecount},
+            max_capacity = #{maxCapacity},
+            room_count = #{roomCount},
+            amount = #{amount},
+            roomintro = #{roomintro},
+            is_active = NVL(#{isActive}, 1)
+        WHERE room_id = #{roomId}
+    </update>
 
 	
 </mapper>

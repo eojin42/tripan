@@ -69,7 +69,7 @@
     
     <insert id="insertEmptyPlace" parameterType="com.tripan.app.partner.domain.dto.PartnerApplyDto">
         <selectKey keyProperty="placeId" resultType="long" order="BEFORE">
-            SELECT SEQ_PLACE.NEXTVAL FROM DUAL
+            SELECT 1000000000 + SEQ_PLACE.NEXTVAL FROM DUAL
         </selectKey>
 	    INSERT INTO place (
 	        place_id, partner_id, category, place_name, 

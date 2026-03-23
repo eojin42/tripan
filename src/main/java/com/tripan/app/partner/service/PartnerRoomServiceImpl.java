@@ -1,18 +1,19 @@
 package com.tripan.app.partner.service;
 
-import com.tripan.app.partner.domain.dto.PartnerRoomDto;
-import com.tripan.app.partner.mapper.PartnerRoomMapper;
-import com.tripan.app.common.StorageService;
+import java.io.File;
+import java.util.List;
+import java.util.UUID;
 
-import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value; // 🌟 Value 임포트!
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.io.File;
-import java.util.List;
-import java.util.UUID;
+import com.tripan.app.common.StorageService;
+import com.tripan.app.partner.domain.dto.PartnerRoomDto;
+import com.tripan.app.partner.mapper.PartnerRoomMapper;
+
+import lombok.RequiredArgsConstructor;
 
 @Service
 @RequiredArgsConstructor
@@ -68,4 +69,21 @@ public class PartnerRoomServiceImpl implements PartnerRoomService {
             partnerRoomMapper.deleteRoomFacility(rfId); 
         }
     }
+
+	@Override
+	public void saveRoomImages(String roomId, List<MultipartFile> images) {
+		if (images != null && !images.isEmpty() && !images.get(0).isEmpty()) {
+            String physicalPath = uploadRoot + File.separator + "room";
+            
+            for (MultipartFile image : images) {
+                if (!image.isEmpty()) {
+                    String savedFilename = storageService.uploadFileToServer(image, physicalPath);
+                    String imageUrl = "/uploads/room/" + savedFilename;
+                    partnerRoomMapper.insertRoomImage(roomId, imageUrl);
+                }
+            }
+        }
+		
+	}
+    
 }

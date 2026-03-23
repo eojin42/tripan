@@ -62,7 +62,6 @@
                                 <fmt:formatNumber value="${room.amount}" pattern="#,###"/> 원
                             </p>
                             <div style="display: flex; gap: 8px; justify-content: flex-end;">
-                                <%-- 🌟 수정: data-* 속성으로 데이터 은닉 (따옴표/줄바꿈 에러 방지) --%>
                                 <button type="button" class="btn btn-ghost" style="padding: 6px 12px; font-size: 12px;"
                                     data-id="${room.roomId}"
                                     data-name="${room.roomName}"
