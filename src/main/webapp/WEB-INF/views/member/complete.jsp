@@ -28,23 +28,26 @@
       <div class="brand-logo" style="margin-bottom: 16px; justify-content: center;">
         <span class="tri" style="font-size: 32px;">Trip</span><span class="pan" style="font-size: 32px;">an</span><span class="dot" style="color: var(--light-pink); font-size: 34px;">.</span>
       </div>
-      
-      <h2 class="complete-title">${title}</h2>
-      
 
-   	<c:choose>
-	  <c:when test="${title == '회원 가입 완료!'}">
-	    <p class="complete-desc">
-	      ${name}님의 성공적으로 가입이 완료되었습니다.<br>
-	      지금 바로 Tripan과 함께 특별한 여행을 계획해 보세요!
-	    </p>
+	<c:choose>
+	  <%-- 성공 케이스 --%>
+	  <c:when test="${title == '회원가입 완료!' || title == '회원정보수정 완료!' || title == '패스워드 찾기'}">
+	    <h2 class="complete-title" style="color: var(--point-blue);">${title}</h2>
+	    <p class="complete-desc">${message}${name}</p>
 	  </c:when>
 	
+	  <%-- 실패 케이스 --%>
 	  <c:otherwise>
-	    <p class="complete-desc">
-	      ${name}님의 회원가입이 실패했습니다.<br>
-	      회원가입을 다시 시도해주시기 바랍니다.
-	    </p>
+	    <div class="icon-wrapper" style="background: #fdecea;">
+	      <svg class="check-icon" style="color: #e53935;" width="40" height="40" viewBox="0 0 24 24"
+	           fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+	        <circle cx="12" cy="12" r="10"/>
+	        <line x1="15" y1="9" x2="9" y2="15"/>
+	        <line x1="9" y1="9" x2="15" y2="15"/>
+	      </svg>
+	    </div>
+	    <h2 class="complete-title" style="color: #e53935;">${title}</h2>
+	    <p class="complete-desc">${message}</p>
 	  </c:otherwise>
 	</c:choose>
 	

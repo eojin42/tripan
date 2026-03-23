@@ -1,8 +1,11 @@
 package com.tripan.app.service;
 
+import java.util.List;
+
 import org.springframework.stereotype.Service;
 
 import com.tripan.app.domain.dto.PointDto;
+import com.tripan.app.domain.dto.PointSummaryDto;
 import com.tripan.app.mapper.PointMapper;
 
 import lombok.RequiredArgsConstructor;
@@ -77,5 +80,18 @@ public class PointServiceImpl implements PointService{
 	        clawbackDto.setRemPoint(currentPoint);
 	        pointMapper.insertPoint(clawbackDto);
 	    }
+	}
+
+	@Override
+	public PointSummaryDto getPointSummary(Long memberId) {
+		Long latest = pointMapper.getLatestPoint(memberId);
+		 List<PointDto> list = pointMapper.selectPointList(memberId);
+		 
+        return PointSummaryDto.builder()
+                .totalPoint(latest != null ? latest.intValue() : 0)
+                .monthEarn (pointMapper.selectMonthEarn  (memberId))
+                .monthUse  (pointMapper.selectMonthUse   (memberId))
+                .list(list)
+                .build();
 	}
 }

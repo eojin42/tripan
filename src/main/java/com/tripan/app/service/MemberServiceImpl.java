@@ -142,7 +142,7 @@ public class MemberServiceImpl implements MemberService {
         }
         try {
             String encPassword = bcryptEncoder.encode(dto.getPassword());
-            memberRepository.updatePassword(dto.getLoginId(), encPassword);
+            memberRepository.updatePassword(dto.getMemberId(), encPassword);
         } catch (Exception e) {
             log.info("updatePassword : ", e);
             throw e;
@@ -176,12 +176,11 @@ public class MemberServiceImpl implements MemberService {
                 member2Repository.updateProfileImage(dto.getMemberId(), dto.getProfilePhoto());
             }
 
-            boolean bPwdUpdate = !isPasswordCheck(dto.getLoginId(), dto.getPassword());
-            if (bPwdUpdate) {
+            if (dto.getPassword() != null && !dto.getPassword().isBlank()) {
                 String encPassword = bcryptEncoder.encode(dto.getPassword());
-                memberRepository.updatePassword(dto.getLoginId(), encPassword);
+                memberRepository.updatePassword(dto.getMemberId(), encPassword);
             }
-
+            
             member2Repository.updateProfile(
                 dto.getMemberId(),
                 dto.getNickname(),
@@ -319,7 +318,7 @@ public class MemberServiceImpl implements MemberService {
                     + password + " </b> 입니다.<br>로그인 후 반드시 패스워드를 변경하시기 바랍니다.");
 
             String encPassword = bcryptEncoder.encode(password.toString());
-            memberRepository.updatePassword(dto.getLoginId(), encPassword);
+            memberRepository.updatePassword(dto.getMemberId(), encPassword);
             memberRepository.resetFailureCount(dto.getLoginId());
 
             boolean b = mailSender.mailSend(mail);

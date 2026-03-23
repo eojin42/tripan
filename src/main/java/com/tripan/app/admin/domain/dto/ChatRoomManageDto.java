@@ -18,6 +18,7 @@ public class ChatRoomManageDto {
     private Long   chatRoomId;
     private String chatRoomName;
     private String chatRoomType;   // REGION, WORKSPACE, SUPPORT
+    private String userName;
 
     /* ── 지역 연결 (region 테이블 JOIN) ── */
     private Long   regionId;

@@ -13,4 +13,8 @@ public class PointDto {
     private Long pointAmount;    
     private Long remPoint;      
     private String regDate;
+    
+    public String getType() {
+        return pointAmount > 0 ? "earn" : "use";
+    }
 }

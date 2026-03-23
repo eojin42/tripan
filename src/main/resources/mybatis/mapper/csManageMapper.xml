@@ -103,7 +103,7 @@
                                      AND  adm.member_id = (SELECT member_id FROM member1 WHERE role = 'ROLE_ADMIN' FETCH FIRST 1 ROWS ONLY)),
                                   DATE '1900-01-01')) > 0
                  THEN 0 ELSE 1 END ASC,
-            cr.created_at ASC
+            cr.created_at DESC
     </select>
 
     <!-- 방 상태 업데이트 (ACTIVE / CLOSED) -->

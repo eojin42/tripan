@@ -22,4 +22,38 @@
             #{changeReason}, #{pointAmount}, #{remPoint}, SYSDATE
         )
     </insert>
+
+ 	<!-- 전체 포인트 내역 (최신순) -->
+     <select id="selectPointList" resultType="com.tripan.app.domain.dto.PointDto">
+        SELECT
+            point_id      AS pointId,
+            member_id     AS memberId,
+            order_id      AS orderId,
+            change_reason AS changeReason,
+            point_amount  AS pointAmount,
+            rem_point     AS remPoint,
+            TO_CHAR(reg_date, 'YYYY-MM-DD HH24:MI') AS regDate
+        FROM point
+        WHERE member_id = #{memberId}
+        ORDER BY point_id DESC
+    </select>
+
+    <!-- 이번 달 적립 합계 (point_amount > 0) -->
+    <select id="selectMonthEarn" resultType="int">
+        SELECT NVL(SUM(point_amount), 0)
+        FROM point
+        WHERE member_id = #{memberId}
+          AND point_amount > 0
+          AND reg_date >= TRUNC(SYSDATE, 'MM')
+    </select>
+
+    <!-- 이번 달 사용 합계 (point_amount < 0, 절댓값 반환) -->
+    <select id="selectMonthUse" resultType="int">
+        SELECT NVL(ABS(SUM(point_amount)), 0)
+        FROM point
+        WHERE member_id = #{memberId}
+          AND point_amount &lt; 0
+          AND reg_date >= TRUNC(SYSDATE, 'MM')
+    </select>
+
 </mapper>

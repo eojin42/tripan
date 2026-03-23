@@ -17,29 +17,35 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.tripan.app.domain.dto.ConquestMapDto;
 import com.tripan.app.domain.dto.MemberCouponDto;
 import com.tripan.app.domain.dto.MemberDto;
+import com.tripan.app.domain.dto.PointSummaryDto;
+import com.tripan.app.domain.dto.SessionInfo;
 import com.tripan.app.domain.dto.TripDto;
+import com.tripan.app.security.LoginMemberUtil;
 import com.tripan.app.service.MemberCouponService;
 import com.tripan.app.service.MyPageService;
 import com.tripan.app.service.MyTripsService;
+import com.tripan.app.service.PointService;
 
 import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 @RestController
-@RequestMapping("/mypage/api/*")
+@RequestMapping("/mypage/api/**")
 @RequiredArgsConstructor
 @Slf4j
 public class MyPageRestController {
 	private final MyPageService myPageService;
 	private final MyTripsService myTripService;
 	private final MemberCouponService memberCouponService;
+	private final PointService pointService;
 	
 	@GetMapping("summary")
 	public ResponseEntity<?> getSummary(HttpSession session){
@@ -270,13 +276,29 @@ public class MyPageRestController {
         }
     }
     
-	private MemberDto getLoginUser(HttpSession session) {
+    /** 포인트 데이터 API (JSP에서 fetch로 호출) */
+    @GetMapping("point/list")
+    @ResponseBody
+    public ResponseEntity<?> pointList() {
+        SessionInfo info = LoginMemberUtil.getsessionInfo();
+        if (info == null) {
+            return ResponseEntity.status(401).body("로그인이 필요합니다.");
+        }
+ 
+        try {
+            PointSummaryDto summary = pointService.getPointSummary(info.getMemberId());
+            return ResponseEntity.ok(summary);
+        } catch (Exception e) {
+            log.error("포인트 내역 조회 오류 - memberId: {}", info.getMemberId(), e);
+            return ResponseEntity.status(500).body("데이터 조회 중 오류가 발생했습니다.");
+        }
+    }
+    
+    private MemberDto getLoginUser(HttpSession session) {
 		return (MemberDto) session.getAttribute("loginUser");
 	}
 	
 	private ResponseEntity<?> unauthorized(){
 		return ResponseEntity.status(401).body(Map.of("message","로그인이 필요합니다."));
 	}
-	
-	 
 }
