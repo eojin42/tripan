@@ -1,6 +1,7 @@
 package com.tripan.app.service;
 
 import java.util.List;
+import java.util.Map;
 
 import com.tripan.app.domain.dto.AccommodationDetailDto;
 import com.tripan.app.domain.dto.AccommodationDto;
@@ -14,6 +15,10 @@ public interface AccommodationService {
 	public List<AccommodationDto> searchAccommodations(AdSearchConditionDto condition);
 	
 	public AccommodationDetailDto getAccommodationDetail(Long placeId, Long memberId, String checkin, String checkout);
+	
+	public Map<String, Object> getRoomDetailWithFacilities(String roomId);
+	
+	public List<String> getRoomImagesByRoomId(String roomId);
 	
 	public RoomDto findRoomById(String roomId);
 	
@@ -50,5 +55,6 @@ public interface AccommodationService {
 	public List<String> getReviewPhotos(Long placeId, String roomId);
 
 	void cancelReservation(Long reservationId, Long memberId);
+
 	
 }
