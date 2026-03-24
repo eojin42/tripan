@@ -13,6 +13,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.tripan.app.common.StorageService;
+import com.tripan.app.domain.dto.AccommodationDetailDto;
 import com.tripan.app.mapper.AccommodationMapper;
 import com.tripan.app.partner.domain.dto.PartnerRoomDto;
 import com.tripan.app.partner.mapper.PartnerRoomMapper;
@@ -193,6 +194,22 @@ public class PartnerRoomServiceImpl implements PartnerRoomService {
                 }
             }
         }
+    }
+    
+    @Override
+    public AccommodationDetailDto getAccommodationDetailForPartner(Long placeId, Long memberId) {
+        return accommodationMapper.selectAccommodationDetailForPartner(placeId, memberId);
+    }
+
+    @Override
+    public List<PartnerRoomDto> getRoomsByPlaceId(Long placeId) {
+        return partnerRoomMapper.getRoomsByPlaceId(placeId);
+    }
+    
+    @Override
+    public List<Map<String, Object>> getBookingListForPartner(Map<String, Object> params) {
+
+    	return partnerRoomMapper.selectBookingListForPartner(params);
     }
     
 }
