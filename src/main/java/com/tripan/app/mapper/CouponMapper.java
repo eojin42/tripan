@@ -9,7 +9,7 @@ import org.apache.ibatis.annotations.Param;
 import com.tripan.app.domain.dto.CheckoutCouponDto;
 
 @Mapper
-public interface CouponMapper2 {
+public interface CouponMapper {
     
     List<CheckoutCouponDto> selectMyCouponsForCheckout(
     	    @Param("memberId") Long memberId, 

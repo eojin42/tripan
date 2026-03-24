@@ -7,14 +7,14 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.tripan.app.domain.dto.CheckoutCouponDto;
-import com.tripan.app.mapper.CouponMapper2;
+import com.tripan.app.mapper.CouponMapper;
 
 import lombok.RequiredArgsConstructor;
 
 @Service("userCouponService")
 @RequiredArgsConstructor
 public class CouponServiceImpl implements CouponService{
-	private final CouponMapper2 couponMapper;
+	private final CouponMapper couponMapper;
 
 	@Override
 	public List<CheckoutCouponDto> getCouponsForCheckout(Long memberId, Long placeId, String roomId, long totalAmount) {
