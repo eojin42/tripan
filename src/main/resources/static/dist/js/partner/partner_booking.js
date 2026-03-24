@@ -50,10 +50,18 @@ function submitCancel() {
     });
 }
 
-function openBookingDetail(id, name, phone, room, date, amount, status) {
-	
-	currentCancelReservationId = id;
-	
+function openBookingDetail(btnElement) {
+    const id = btnElement.getAttribute('data-id');
+    const name = btnElement.getAttribute('data-name');
+    const phone = btnElement.getAttribute('data-phone');
+    const room = btnElement.getAttribute('data-room');
+    const date = btnElement.getAttribute('data-date');
+    const amount = btnElement.getAttribute('data-amount');
+    const status = btnElement.getAttribute('data-status');
+    const fullRequest = btnElement.getAttribute('data-request') || '요청사항 없음';
+
+    currentCancelReservationId = id;
+    
     document.getElementById('dtlResId').innerText = "RES-" + id;
     document.getElementById('dtlName').innerText = name;
     document.getElementById('dtlPhone').innerText = phone;
@@ -62,13 +70,28 @@ function openBookingDetail(id, name, phone, room, date, amount, status) {
     document.getElementById('dtlAmount').innerText = Number(amount).toLocaleString();
     document.getElementById('dtlStatus').innerText = (status === 'SUCCESS') ? '예약 확정' : '취소됨';
     
+    let normalRequest = fullRequest;
+    let cancelReasonText = "고객이 직접 취소한 예약입니다."; // 기본값 (고객 취소)
+
     if (status === 'CANCELED') {
-        document.getElementById('cancelActionArea').style.display = 'none';
+        document.getElementById('cancelActionArea').style.display = 'none'; // 취소 폼 숨기기
         document.getElementById('dtlStatus').style.color = 'red';
+        
+        if (fullRequest.includes('[강제취소]')) {
+            const parts = fullRequest.split('[강제취소]');
+            normalRequest = parts[0].trim() || '요청사항 없음';
+            cancelReasonText = "파트너 강제 취소 ➡️ " + parts[1].trim(); // 사장님이 남긴 로그
+        }
+
+        document.getElementById('cancelLogArea').style.display = 'block'; 
+        document.getElementById('dtlCancelReason').innerText = cancelReasonText;
     } else {
         document.getElementById('cancelActionArea').style.display = 'block';
+        document.getElementById('cancelLogArea').style.display = 'none';
         document.getElementById('dtlStatus').style.color = 'green';
     }
+
+    document.getElementById('dtlRequest').innerText = normalRequest;
 
     document.getElementById('bookingDetailModal').style.display = 'flex';
 }
