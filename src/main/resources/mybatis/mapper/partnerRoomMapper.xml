@@ -153,7 +153,8 @@
 	        TO_CHAR(r.CHECK_OUT_DATE, 'YYYY-MM-DD') as "checkOut",
 	        r.AMOUNT as "amount",
 	        r.GUEST_COUNT as "guestCount",
-	        r.STATUS as "status"
+	        r.STATUS as "status",
+	        TO_CHAR(r.REQUEST) as "requset"
 	    FROM RESERVATION r
 	    JOIN MEMBER1 m1 ON r.MEMBER_ID = m1.MEMBER_ID
 	    JOIN MEMBER2 m2 ON r.MEMBER_ID = m2.MEMBER_ID

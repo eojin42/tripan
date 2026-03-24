@@ -77,20 +77,25 @@
                             </c:choose>
                         </td>
                         <td>
-                            <c:if test="${booking.status != 'CANCELED'}">
-							  <button onclick="openBookingDetail(
-							    '${booking.reservationId}', 
-							    '${booking.guestName}', 
-							    '${booking.guestPhone}', 
-							    '${booking.roomName}', 
-							    '${booking.checkIn} ~ ${booking.checkOut}', 
-							    '${booking.amount}', 
-							    '${booking.status}'
-							)" style="background: white; border: 1px solid #64748B; color: #475569; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 12px; font-weight: 700;">
-							    예약 관리
-							</button>
-							</c:if>
-                        </td>
+						    <button type="button"
+						        data-id="${booking.reservationId}"
+						        data-name="${booking.guestName}"
+						        data-phone="${booking.guestPhone}"
+						        data-room="${booking.roomName}"
+						        data-date="${booking.checkIn} ~ ${booking.checkOut}"
+						        data-amount="${booking.amount}"
+						        data-status="${booking.status}"
+						        data-request="${booking.request}"
+						        onclick="openBookingDetail(this)"
+						        style="background: white; border: 1px solid #64748B; color: #475569; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 12px; font-weight: 700;">
+						        
+						        <c:choose>
+						            <c:when test="${booking.status == 'CANCELED'}">내역 확인</c:when>
+						            <c:otherwise>예약 관리</c:otherwise>
+						        </c:choose>
+						        
+						    </button>
+						</td>
                     </tr>
                 </c:forEach>
                 
@@ -117,9 +122,18 @@
             <p><strong>일정:</strong> <span id="dtlDate"></span></p>
             <p><strong>결제 금액:</strong> <span id="dtlAmount" style="font-weight: 700; color: #0F172A;"></span>원</p>
             <p><strong>현재 상태:</strong> <span id="dtlStatus"></span></p>
+            
+            <p><strong>고객 요청사항:</strong> 
+                <span id="dtlRequest" style="display:block; background:#F8FAFC; padding:10px; border-radius:6px; margin-top:5px; min-height:40px; color:#475569;"></span>
+            </p>
         </div>
 
         <div style="border-top: 1px solid #E2E8F0; margin: 20px 0;"></div>
+
+        <div id="cancelLogArea" style="display: none; background: #FEF2F2; padding: 15px; border-radius: 8px; border: 1px solid #FECACA; margin-bottom: 20px;">
+            <h3 style="font-size: 14px; color: #DC2626; margin-top: 0; margin-bottom: 8px;">🚫 취소 내역</h3>
+            <div id="dtlCancelReason" style="font-size: 13px; color: #991B1B; font-weight: 600; line-height: 1.5; white-space: pre-wrap;"></div>
+        </div>
 
         <div id="cancelActionArea">
             <h3 style="font-size: 14px; color: #EF4444; margin-bottom: 10px;">⚠️ 파트너 권한 강제 취소 (환불)</h3>
