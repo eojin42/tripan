@@ -250,7 +250,15 @@
         <div class="acc-tags">
             <c:if test="${not empty detail.tags}">
                 <c:forEach var="tag" items="${detail.tags}">
-                    <span class="acc-tag">${tag}</span>
+                    <c:set var="cleanTag" value="${fn:replace(tag, '#', '')}" />
+                    
+                    <span class="acc-tag" 
+                          style="cursor: pointer; transition: background 0.2s;" 
+                          onclick="location.href='${pageContext.request.contextPath}/accommodation/list?tag=${cleanTag}'"
+                          onmouseover="this.style.background='#E2E8F0'" 
+                          onmouseout="this.style.background='#F5F7FA'">
+                        #${cleanTag}
+                    </span>
                 </c:forEach>
             </c:if>
         </div>

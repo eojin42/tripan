@@ -12,7 +12,11 @@
             MIN(r.AMOUNT + (GREATEST(0, (#{adult} + #{child}) - r.ROOMBASECOUNT) * 20000)) as minPrice,
             
             (SELECT COUNT(*) FROM PLACE_REVIEW pr WHERE pr.PLACE_ID = p.PLACE_ID) as reviewCount,
-            (SELECT COUNT(*) FROM BOOKMARK bk2 WHERE bk2.PLACE_ID = p.PLACE_ID) as bookmarkCount
+            (SELECT COUNT(*) FROM BOOKMARK bk2 WHERE bk2.PLACE_ID = p.PLACE_ID) as bookmarkCount,
+            (SELECT LISTAGG(REPLACE(t.TAG_NAME, '#', ''), ',') WITHIN GROUP (ORDER BY t.TAG_ID) 
+             FROM PLACE_TAG pt 
+             JOIN TAG t ON pt.TAG_ID = t.TAG_ID 
+             WHERE pt.PLACE_ID = p.PLACE_ID) as tagsStr
             
             <choose>
                 <when test="memberId != null">

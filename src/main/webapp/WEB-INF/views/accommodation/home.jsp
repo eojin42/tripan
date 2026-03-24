@@ -132,25 +132,32 @@
       <p class="section-desc">지금 가장 사랑받는 도시들을 만나보세요.</p>
       <div class="dest-grid">
         <div class="dest-item" onclick="location.href='${pageContext.request.contextPath}/accommodation/list?regions=서울'">
-          <div class="dest-img"><img src="https://images.unsplash.com/photo-1516815231560-8f41ec531527?w=300" alt="서울"></div><div class="dest-name">서울</div>
+          <%-- 서울: 한강과 도심 전경 --%>
+          <div class="dest-img"><img src="https://images.unsplash.com/photo-1532649097480-b67d52743b69?q=80&w=1332&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D" alt="서울"></div><div class="dest-name">서울</div>
         </div>
         <div class="dest-item" onclick="location.href='${pageContext.request.contextPath}/accommodation/list?regions=제주'">
-          <div class="dest-img"><img src="https://images.unsplash.com/photo-1512453979798-5ea266f8880c?w=300" alt="제주"></div><div class="dest-name">제주도</div>
+          <%-- 제주: 성산일출봉과 바다 --%>
+          <div class="dest-img"><img src="https://images.unsplash.com/photo-1612977512598-3b8d6a498bbb?q=80&w=1074&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D" alt="제주"></div><div class="dest-name">제주도</div>
         </div>
         <div class="dest-item" onclick="location.href='${pageContext.request.contextPath}/accommodation/list?regions=부산'">
-          <div class="dest-img"><img src="https://images.unsplash.com/photo-1588668214407-6ea9a6d8c272?w=300" alt="부산"></div><div class="dest-name">부산</div>
+          <%-- 부산: 해운대 광안대교 전경 --%>
+          <div class="dest-img"><img src="https://images.unsplash.com/photo-1638591751482-1a7d27fcea15?q=80&w=1171&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D" alt="부산"></div><div class="dest-name">부산</div>
         </div>
         <div class="dest-item" onclick="location.href='${pageContext.request.contextPath}/accommodation/list?regions=강릉'">
-          <div class="dest-img"><img src="https://images.unsplash.com/photo-1520167115830-4e5084931a29?w=300" alt="강릉"></div><div class="dest-name">강릉</div>
+          <%-- 강릉: 시원한 동해 바다와 해변 --%>
+          <div class="dest-img"><img src="https://images.unsplash.com/photo-1542086094-a61c1ab7c4b8?q=80&w=687&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D" alt="강릉"></div><div class="dest-name">강릉</div>
         </div>
         <div class="dest-item" onclick="location.href='${pageContext.request.contextPath}/accommodation/list?regions=경주'">
-          <div class="dest-img"><img src="https://images.unsplash.com/photo-1515093156589-9e8c33f2e1df?w=300" alt="경주"></div><div class="dest-name">경주</div>
+          <%-- 경주: 고즈넉한 대릉원/첨성대 전경 --%>
+          <div class="dest-img"><img src="https://images.unsplash.com/photo-1656980593245-b54c8c0828f0?q=80&w=1170&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D" alt="경주"></div><div class="dest-name">경주</div>
         </div>
         <div class="dest-item" onclick="location.href='${pageContext.request.contextPath}/accommodation/list?regions=전주'">
-          <div class="dest-img"><img src="https://images.unsplash.com/photo-1536647228807-6db27f818cc9?w=300" alt="전주"></div><div class="dest-name">전주</div>
+          <%-- 전주: 예쁜 한옥마을 기와지붕 전경 --%>
+          <div class="dest-img"><img src="https://images.unsplash.com/photo-1548115184-bc6544d06a58?q=80&w=1170&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D" alt="전주"></div><div class="dest-name">전주</div>
         </div>
         <div class="dest-item" onclick="location.href='${pageContext.request.contextPath}/accommodation/list?regions=여수'">
-          <div class="dest-img"><img src="https://images.unsplash.com/photo-1555026938-16eebdfa4049?w=300" alt="여수"></div><div class="dest-name">여수</div>
+          <%-- 여수: 화려한 여수 밤바다와 돌산대교 야경 --%>
+          <div class="dest-img"><img src="https://images.unsplash.com/photo-1651375562199-65caae096ace?q=80&w=735&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D" alt="여수"></div><div class="dest-name">여수</div>
         </div>
         <div class="dest-item" onclick="location.href='${pageContext.request.contextPath}/accommodation/list'">
           <div class="dest-img" style="border: 2px solid #E2E8F0; background:#F8F9FA; display:flex; justify-content:center; align-items:center;">
@@ -168,7 +175,7 @@
         </div>
     </section>
 
-    <div class="promo-banner" onclick="location.href='${pageContext.request.contextPath}/member/login'">
+    <div class="promo-banner" onclick="try { showLoginModal(); } catch(e) { location.href='${pageContext.request.contextPath}/member/login'; }">
         <div class="promo-text">
             <h3>Tripan이 처음이신가요?</h3>
             <p>신규 가입하고 웰컴 할인 쿠폰팩과 첫 결제 1% 마일리지 적립 혜택을 누려보세요!</p>
@@ -219,35 +226,35 @@
       <p class="section-desc">내가 원하는 스타일의 숙소만 쏙쏙 골라보세요.</p>
       
       <div class="theme-grid">
-        <div class="theme-card" onclick="location.href='${pageContext.request.contextPath}/accommodation/list?tags=도심속휴식'">
+        <div class="theme-card" onclick="location.href='${pageContext.request.contextPath}/accommodation/list?tag=도심속휴식'">
           <img src="https://images.unsplash.com/photo-1517840901100-8179e982acb7?w=600" alt="도심속휴식">
           <div class="theme-overlay"><div class="theme-title">#도심속휴식</div></div>
         </div>
-        <div class="theme-card" onclick="location.href='${pageContext.request.contextPath}/accommodation/list?tags=감성숙소'">
+        <div class="theme-card" onclick="location.href='${pageContext.request.contextPath}/accommodation/list?tag=감성숙소'">
           <img src="https://images.unsplash.com/photo-1499916078039-922301b0eb9b?w=600" alt="감성숙소">
           <div class="theme-overlay"><div class="theme-title">#감성숙소</div></div>
         </div>
-        <div class="theme-card" onclick="location.href='${pageContext.request.contextPath}/accommodation/list?tags=오션뷰'">
+        <div class="theme-card" onclick="location.href='${pageContext.request.contextPath}/accommodation/list?tag=오션뷰'">
           <img src="https://images.unsplash.com/photo-1499793983690-e29da59ef1c2?w=600" alt="오션뷰">
           <div class="theme-overlay"><div class="theme-title">#오션뷰</div></div>
         </div>
-        <div class="theme-card" onclick="location.href='${pageContext.request.contextPath}/accommodation/list?tags=반려동물'">
+        <div class="theme-card" onclick="location.href='${pageContext.request.contextPath}/accommodation/list?tag=반려동물'">
           <img src="https://images.unsplash.com/photo-1583337130417-3346a1be7dee?w=600" alt="반려동물">
           <div class="theme-overlay"><div class="theme-title">#반려동물동반</div></div>
         </div>
-        <div class="theme-card" onclick="location.href='${pageContext.request.contextPath}/accommodation/list?tags=한옥'">
-          <img src="https://images.unsplash.com/photo-1515093156589-9e8c33f2e1df?w=600" alt="한옥">
+        <div class="theme-card" onclick="location.href='${pageContext.request.contextPath}/accommodation/list?tag=한옥'">
+          <img src="https://images.unsplash.com/photo-1618237586696-d3690dad22e3?q=80&w=687&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D" alt="한옥">
           <div class="theme-overlay"><div class="theme-title">#고즈넉한_한옥</div></div>
         </div>
-        <div class="theme-card" onclick="location.href='${pageContext.request.contextPath}/accommodation/list?tags=수영장'">
-          <img src="https://images.unsplash.com/photo-1576013551627-11971f366050?w=600" alt="풀빌라">
+        <div class="theme-card" onclick="location.href='${pageContext.request.contextPath}/accommodation/list?tag=수영장'">
+          <img src="https://images.unsplash.com/photo-1596178067639-5c6e68aea6dc?q=80&w=1170&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D" alt="풀빌라">
           <div class="theme-overlay"><div class="theme-title">#프라이빗_풀빌라</div></div>
         </div>
-        <div class="theme-card" onclick="location.href='${pageContext.request.contextPath}/accommodation/list?tags=가족여행'">
+        <div class="theme-card" onclick="location.href='${pageContext.request.contextPath}/accommodation/list?tag=가족여행'">
           <img src="https://images.unsplash.com/photo-1566552881560-0be862a7c445?w=600" alt="가족여행">
           <div class="theme-overlay"><div class="theme-title">#가족여행</div></div>
         </div>
-        <div class="theme-card" onclick="location.href='${pageContext.request.contextPath}/accommodation/list?tags=바비큐'">
+        <div class="theme-card" onclick="location.href='${pageContext.request.contextPath}/accommodation/list?tag=바비큐'">
           <img src="https://images.unsplash.com/photo-1555939594-58d7cb561ad1?w=600" alt="바비큐">
           <div class="theme-overlay"><div class="theme-title">#맛있는_바비큐</div></div>
         </div>
@@ -274,6 +281,8 @@
 
   </div>
 </div>
+
+<jsp:include page="../member/loginModal.jsp" />
 
 <jsp:include page="../accommodation/searchModal.jsp" />
 

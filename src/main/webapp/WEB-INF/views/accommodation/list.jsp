@@ -563,7 +563,18 @@
 	      const isZzim = item.isBookmarked > 0;
 	      const svgFill = isZzim ? '#4A44F2' : 'none';
 	      const svgStroke = isZzim ? '#4A44F2' : 'white';
-
+			
+	      let tagsHtml = '';
+	      if (item.tagsStr) {
+	          const tagsArray = item.tagsStr.split(',');
+	          tagsArray.slice(0, 3).forEach(tag => {
+	              tagsHtml += `<span style="background:#F1F3F5; color:var(--text-dark); padding:4px 8px; border-radius:6px; font-size:12px; font-weight:700;">#\${tag.trim()}</span>`;
+	          });
+	          if(tagsArray.length > 3) {
+	               tagsHtml += `<span style="color:var(--text-gray); font-size:12px; font-weight:700; align-self:center;">+\${tagsArray.length - 3}</span>`;
+            	}
+	      }
+	      
 	      html += `
 	        <div class="accommodation-item" onclick="location.href='${pageContext.request.contextPath}/accommodation/detail/\${item.placeId}\${currentQueryString}'">
 	          <div class="accommodation-thumb">
@@ -579,6 +590,10 @@
 	              <h3>\${item.name}</h3>
 	              
 	              <p class="accommodation-desc">\${regionName} · \${korTypeName}</p>
+	              
+	              <div style="display:flex; gap:6px; flex-wrap:wrap; margin-bottom:12px;">
+	                  \${tagsHtml}
+	              </div>
 	          
 	              <div style="display:flex; gap:10px; font-size:13px; color:var(--text-gray); margin-bottom:12px; font-weight:600;">
 	              <span style="display:flex; align-items:center; gap:5px;">
