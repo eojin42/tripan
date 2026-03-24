@@ -1,7 +1,6 @@
 package com.tripan.app.partner.controller;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -133,12 +132,18 @@ public class PartnerMainController {
     public ResponseEntity<?> saveRoom(
             @ModelAttribute PartnerRoomDto dto, 
             @RequestParam(value = "images", required = false) List<MultipartFile> images,
-            @AuthenticationPrincipal CustomUserDetails userDetails) {
+            @AuthenticationPrincipal CustomUserDetails userDetails,
+            jakarta.servlet.http.HttpSession session) { // 🌟 세션 파라미터 추가
         try {
-            Long placeId = partnerInfoService.getPlaceIdByMemberId(userDetails.getMember().getMemberId());
+            Long currentPartnerId = (Long) session.getAttribute("currentPartnerId");
+            Long placeId = partnerInfoService.getPlaceIdByPartnerId(currentPartnerId);
             dto.setPlaceId(placeId);
             
-            partnerRoomService.registerNewRoom(dto, images);
+            if (dto.getRoomId() == null || dto.getRoomId().trim().isEmpty()) {
+                partnerRoomService.registerNewRoom(dto, images);
+            } else {
+                partnerRoomService.updateRoomInfo(dto, images);
+            }
 
             return ResponseEntity.ok(Map.of("message", "success"));
         } catch (Exception e) {

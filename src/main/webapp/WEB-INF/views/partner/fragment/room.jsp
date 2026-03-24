@@ -18,7 +18,20 @@
         </div>
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; font-size: 13px;">
             <div><span style="color:#8B92A5; display:inline-block; width:80px;">숙소명</span> <strong>${partnerInfo.partnerName}</strong></div>
-            <div><span style="color:#8B92A5; display:inline-block; width:80px;">카테고리</span> <strong>${not empty accommodation.accommodationType ? accommodation.accommodationType : '숙박'}</strong></div>
+            <div>
+                <span style="color:#8B92A5; display:inline-block; width:80px;">카테고리</span> 
+                <strong>
+                    <c:choose>
+                        <c:when test="${accommodation.accommodationType == 'HOTEL'}">호텔/리조트</c:when>
+                        <c:when test="${accommodation.accommodationType == 'MOTEL'}">모텔</c:when>
+                        <c:when test="${accommodation.accommodationType == 'PENSION'}">펜션/풀빌라</c:when>
+                        <c:when test="${accommodation.accommodationType == 'GUESTHOUSE'}">게스트하우스/한옥</c:when>
+                        <c:when test="${accommodation.accommodationType == 'CAMPING'}">캠핑/글램핑</c:when>
+                        <c:when test="${accommodation.accommodationType == '기타'}">기타</c:when>
+                        <c:otherwise>숙박</c:otherwise>
+                    </c:choose>
+                </strong>
+            </div>
         </div>
     </div>
 

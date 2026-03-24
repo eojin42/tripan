@@ -20,6 +20,7 @@ public interface AccommodationMapper {
 	
 	AccommodationDetailDto selectAccommodationDetail(@Param("placeId") Long placeId, @Param("memberId") Long memberId);
 	AccommodationDetailDto selectAccommodationDetailForPartner(@Param("placeId") Long placeId, @Param("memberId") Long memberId);
+	void cancelReservationByPartnerStatus(@Param("reservationId") Long reservationId, @Param("reason")String cancelReason);
     
     public List<String> selectAccommodationImages(Long placeId);
     

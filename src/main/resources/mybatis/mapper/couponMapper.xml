@@ -2,7 +2,7 @@
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 
-<mapper namespace="com.tripan.app.mapper.CouponMapper2">
+<mapper namespace="com.tripan.app.mapper.CouponMapper">
 
     <select id="selectMyCouponsForCheckout" resultType="com.tripan.app.domain.dto.CheckoutCouponDto">
 	    SELECT 

@@ -538,7 +538,8 @@
             p.ADDRESS as region, 
             p.DESCRIPTION as description,
             p.LATITUDE as latitude,      
-            p.LONGITUDE as longitude,    
+            p.LONGITUDE as longitude,
+            a.ACCOMMODATION_TYPE as accommodationType,    
             a.CHECKINTIME as checkinTime,    
             a.CHECKOUTTIME as checkoutTime,  
             a.PARKINGLODGING as parkinglodging,
@@ -562,6 +563,15 @@
         LEFT JOIN ACCOMMODATION_FACILITY af ON a.AF_ID = af.AF_ID 
         WHERE p.PLACE_ID = #{placeId}
     </select>
+    
+    <update id="cancelReservationByPartnerStatus">
+	    UPDATE RESERVATION 
+	    SET STATUS = 'CANCELED',
+	        REQUEST = REQUEST || CHR(10) || #{reason}
+	    WHERE RESERVATION_ID = #{reservationId}
+	</update>
+    
+    <!--  파트너용 메서드 끝  -->
 	
 	
 	<!-- 예약 취소 관련 -->
