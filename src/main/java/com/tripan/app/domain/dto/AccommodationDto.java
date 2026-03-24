@@ -23,4 +23,5 @@ public class AccommodationDto {
     
     private Integer isActive;
     
+    private String tagsStr;
 }
