@@ -251,5 +251,21 @@
         LEFT JOIN MENU m ON r.place_id = m.place_id
         WHERE r.place_id = #{placeId}
     </select>
+    
+    <update id="upsertPlace" parameterType="com.tripan.app.domain.dto.PlaceDto">
+        MERGE INTO place p
+        USING DUAL ON (p.place_id = #{placeId})
+        WHEN MATCHED THEN
+            UPDATE SET 
+                place_name = #{placeName},
+                address = #{address},
+                latitude = #{latitude},
+                longitude = #{longitude},
+                category = #{category},
+                image_url = #{imageUrl}
+        WHEN NOT MATCHED THEN
+            INSERT (place_id, place_name, address, latitude, longitude, category, image_url)
+            VALUES (#{placeId}, #{placeName}, #{address}, #{latitude}, #{longitude}, #{category}, #{imageUrl})
+    </update>
 
 </mapper>
