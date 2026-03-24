@@ -2,318 +2,408 @@
 <%@ page import="java.util.*" %>
 <%
     Map<String, Object> place = new HashMap<>();
-    place.put("id", 5);
-    place.put("name", "제주 파르나스 호텔");
-    place.put("desc", "제주 중문 바다를 품은 럭셔리 호캉스. 국내 최장 110m 인피니티 풀에서 황홀한 선셋과 함께 인생샷을 남겨보세요. 전 객실에서 제주 바다의 파도 소리를 들을 수 있습니다.");
-    
-    // 이미지 슬라이더 데이터
+    place.put("id",        "2593245");
+    place.put("name",      "서울도서관");
+    place.put("category",  "문화시설");
+    place.put("location",  "서울 중구");
+    place.put("address",   "서울특별시 중구 세종대로 110 (태평로1가)");
+    place.put("phone",     "02-2133-0300");
+    place.put("homepage",  "http://lib.seoul.go.kr");
+    place.put("hours",     "[일반자료실, 디지털자료실, 장애인자료실]\n평일 09:00 ~ 21:00, 수일 09:00 ~ 18:00\n[서울자료실, 세계자료실]\n평일 09:00 ~ 18:00, 수일 09:00 ~ 18:00");
+    place.put("holiday",   "[정기휴관일] 매주 월요일");
+    place.put("parking",   "서울시청 주차장 이용");
+    place.put("desc",      "서울도서관은 서울 시청 옆에 있는 도서관이다. 서울시민이 언제 어디서나 편리하게 도서관 서비스를 받을 수 있도록 서울시에서 도서관 정책을 개발하고 있으며, 이를 기반으로 서울시에 소재하고 있는 천여 개 도서관과 함께 정보제공, 독서 진흥, 평생학습 및 문화 활동 증진을 위해 다양한 서비스를 제공한다. 이곳은 서울에 관한 자료를 폭넓게 받을 수 있고, 역사, 문화, 도시계획, 교통, 환경, 행정 등 모든 분야에 관한 자료와 해외여행 보고서, 연구논문, 영상자료, 전자정보 등을 이용할 수 있다. 서울도서관이 디지털 대전환 시대에 통합적 모바일, 웹 서비스 강화로 서울시민의 정보 접근권을 확대하고, 서울시민의 꿈과 희망을 실현하기 위한 다양한 경험과 교류를 할 수 있는 공간으로 자리매김하고 있다.");
+    place.put("rating",    4.8);
+    place.put("reviewCount", 128);
+
     List<String> images = Arrays.asList(
-        "https://images.unsplash.com/photo-1499793983690-e29da59ef1c2?ixlib=rb-4.0.3&auto=format&fit=crop&w=1200&q=80",
-        "https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?ixlib=rb-4.0.3&auto=format&fit=crop&w=1200&q=80",
-        "https://images.unsplash.com/photo-1566073771259-6a8506099945?ixlib=rb-4.0.3&auto=format&fit=crop&w=1200&q=80",
-        "https://images.unsplash.com/photo-1551882547-ff40c0d12c5a?ixlib=rb-4.0.3&auto=format&fit=crop&w=1200&q=80"
+        "https://tong.visitkorea.or.kr/cms/resource/05/2478105_image2_1.jpg",
+        "https://tong.visitkorea.or.kr/cms/resource/59/2478159_image2_1.jpg",
+        "https://tong.visitkorea.or.kr/cms/resource/81/4009781_image2_1.jpg"
     );
     place.put("images", images);
-    
-    place.put("tags", Arrays.asList("호캉스", "오션뷰", "인피니티풀"));
-    place.put("category", "숙소"); 
-    place.put("rating", 4.9);
-    place.put("reviewCount", 128);
-    
-    // 📍 [핵심 추가] 캡처본 반영을 위한 상세 위치 및 연락처 데이터
-    place.put("address", "제주특별자치도 서귀포시 중문관광로72번길 100");
-    place.put("parkingInfo", "건물 외부에 전용 주차장(무료)이 마련되어 있습니다.");
-    place.put("phone", "010-4099-3948");
-    place.put("email", "cksud2@naver.com");
-    place.put("instagram", "@___nightletter");
-    place.put("naver", "cksud2");
-
-    // 객실 리스트
-    List<Map<String, Object>> rooms = new ArrayList<>();
-    rooms.add(Map.of("id", 101, "name", "디럭스 오션뷰", "price", 350000, "capacity", 2, "image", "https://images.unsplash.com/photo-1611892440504-42a792e24d32?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80"));
-    rooms.add(Map.of("id", 102, "name", "프리미어 스위트", "price", 650000, "capacity", 4, "image", "https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80"));
+    List<String> imageUrls = (List<String>) place.get("images");
 %>
 
 <jsp:include page="../layout/header.jsp" />
 
 <style>
-    /* 전체 배경 */
-    .detail-wrapper {
-        min-height: 100vh; background: linear-gradient(135deg, #F0F8FF 0%, #FFF0F5 100%);
-        font-family: 'Pretendard', sans-serif; padding-bottom: 100px; padding-top: 140px; 
-    }
-    .content-container { max-width: 1200px; margin: 0 auto; padding: 0 20px; }
+@import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
 
-    /* 🖼️ 이미지 슬라이더 */
-    .carousel-container {
-        position: relative; width: 100%; height: 500px; border-radius: 20px;
-        overflow: hidden; margin-bottom: 40px; box-shadow: 0 16px 32px rgba(137, 207, 240, 0.15);
-    }
-    .carousel-track { display: flex; height: 100%; transition: transform 0.5s cubic-bezier(0.4, 0, 0.2, 1); }
-    .carousel-slide { min-width: 100%; height: 100%; }
-    .carousel-slide img { width: 100%; height: 100%; object-fit: cover; }
-    .carousel-btn {
-        position: absolute; top: 50%; transform: translateY(-50%); background: rgba(255, 255, 255, 0.5);
-        backdrop-filter: blur(8px); color: #2D3748; border: none; width: 48px; height: 48px;
-        border-radius: 50%; font-size: 20px; cursor: pointer; display: flex; align-items: center; justify-content: center; z-index: 10;
-    }
-    .carousel-btn:hover { background: rgba(255, 255, 255, 0.9); }
-    .carousel-btn.prev { left: 24px; } .carousel-btn.next { right: 24px; }
-    .carousel-indicator {
-        position: absolute; bottom: 24px; right: 24px; background: rgba(0, 0, 0, 0.6);
-        backdrop-filter: blur(4px); color: white; padding: 8px 16px; border-radius: 30px; font-size: 14px; z-index: 10;
-    }
+.dt-page {  
+    background: #f8fafc;
+    min-height: 100vh;
+    padding-top: 130px !important; 
+    padding-left: 5%; 
+    padding-right: 5%;
+}
 
-    /* 🌟 하단 레이아웃 분할 */
-    .detail-split { display: flex; gap: 40px; }
+/* 컨테이너 — 좌우 여백 넓게 */
+.dt-container {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 0 64px;
+}
 
-    /* 📌 좌측 정보 영역 */
-    .main-info {
-        flex: 1; min-width: 0; background: rgba(255, 255, 255, 0.95);
-        border-radius: 24px; padding: 40px; box-shadow: 0 16px 32px rgba(137, 207, 240, 0.1); border: 1px solid rgba(255, 255, 255, 0.8);
-    }
+/* ── 캐러셀: 컨테이너 너비 안에서 제한 ── */
+.dt-carousel-wrap {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 0 64px;
+}
+.dt-carousel {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 16 / 7;
+    max-height: 400px;
+    overflow: hidden;
+    border-radius: 14px;
+    background: #111;
+}
+.dt-carousel-track {
+    display: flex; height: 100%;
+    transition: transform .45s cubic-bezier(.4,0,.2,1);
+}
+.dt-carousel-slide { min-width: 100%; height: 100%; }
+.dt-carousel-slide img { width: 100%; height: 100%; object-fit: cover; }
+.dt-carousel-btn {
+    position: absolute; top: 50%; transform: translateY(-50%);
+    width: 38px; height: 38px;
+    background: rgba(255,255,255,.2); backdrop-filter: blur(8px);
+    border: 1.5px solid rgba(255,255,255,.35); border-radius: 50%;
+    color: #fff; font-size: 14px; cursor: pointer;
+    display: flex; align-items: center; justify-content: center; z-index: 10;
+    transition: background .15s;
+}
+.dt-carousel-btn:hover { background: rgba(255,255,255,.45); }
+.dt-carousel-btn.prev { left: 14px; }
+.dt-carousel-btn.next { right: 14px; }
+.dt-carousel-counter {
+    position: absolute; bottom: 12px; right: 14px;
+    background: rgba(0,0,0,.55); backdrop-filter: blur(4px);
+    color: #fff; font-size: 12px; font-weight: 700;
+    padding: 4px 10px; border-radius: 50px;
+}
 
-    .header-tags { display: flex; gap: 8px; margin-bottom: 16px; flex-wrap: wrap; }
-    .tag { font-size: 14px; font-weight: 700; color: #89CFF0; background: rgba(137, 207, 240, 0.15); padding: 6px 14px; border-radius: 8px; }
-    
-    .place-title { font-size: 34px; font-weight: 900; color: #2D3748; margin-bottom: 12px; line-height: 1.2; }
-    .place-address { font-size: 16px; color: #718096; display: flex; align-items: center; gap: 6px; margin-bottom: 24px; }
-    
-    .divider { height: 1px; background: #E2E8F0; margin: 40px 0; }
-    .section-title { font-size: 22px; font-weight: 800; color: #2D3748; margin-bottom: 20px; }
-    .place-desc { font-size: 16px; color: #4A5568; line-height: 1.7; }
+/* 썸네일 */
+.dt-thumb-row { display: flex; gap: 6px; padding: 8px 0 0; }
+.dt-thumb {
+    width: 56px; height: 38px; border-radius: 6px; overflow: hidden;
+    cursor: pointer; opacity: .45; transition: opacity .15s;
+    border: 2px solid transparent; flex-shrink: 0;
+}
+.dt-thumb.active { opacity: 1; border-color: #89CFF0; }
+.dt-thumb img { width: 100%; height: 100%; object-fit: cover; }
 
-    /* ==========================================================
-       🛁 [신규] 편의시설 영역 (캡처본 스타일 적용)
-       ========================================================== */
-    .amenity-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-        gap: 24px;
-        margin-bottom: 16px;
-    }
-    .amenity-item {
-        display: flex; align-items: center; gap: 10px;
-        font-size: 17px; font-weight: 600; color: #2D3748;
-    }
-    .amenity-icon {
-        width: 28px; height: 28px; fill: none; stroke: #4A5568; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round;
-    }
-    .amenity-note {
-        font-size: 14px; color: #A0AEC0; margin-top: 10px;
-    }
+/* ── 타이틀 ── */
+.dt-title-row {
+    display: flex; align-items: flex-start;
+    justify-content: space-between; gap: 16px;
+    padding: 0 0 14px; 
+    border-bottom: 1px solid #EBEBEB;
+}
+.dt-cat-badge {
+    display: inline-flex; align-items: center; gap: 4px;
+    font-size: 12px; font-weight: 800; color: #3a8fb7;
+    background: rgba(137,207,240,.12);
+    border: 1px solid rgba(137,207,240,.3);
+    padding: 4px 10px; border-radius: 50px; margin-bottom: 10px;
+}
+.dt-name { font-size: 26px; font-weight: 900; color: #1A1A1A; margin-bottom: 6px; line-height: 1.25; }
+.dt-location { font-size: 14px; color: #888; font-weight: 600; display: flex; align-items: center; gap: 4px; }
+.dt-rating-box { display: flex; align-items: center; gap: 5px; font-size: 15px; font-weight: 800; padding-top: 4px; flex-shrink: 0; }
+.dt-rating-box small { font-size: 12px; font-weight: 500; color: #AAA; }
 
-    /* ==========================================================
-       📍 [신규] 스테이 위치 및 주변 정보 영역 (캡처본 스타일 적용)
-       ========================================================== */
-    .location-info-text {
-        font-size: 16px; color: #4A5568; line-height: 1.7; margin-bottom: 24px;
-    }
-    .contact-list {
-        list-style: none; padding: 0; margin: 0;
-        display: flex; flex-direction: column; gap: 12px;
-    }
-    .contact-item {
-        display: flex; align-items: center; gap: 10px;
-        font-size: 16px; color: #4A5568; font-weight: 500;
-    }
-    .contact-icon {
-        width: 20px; height: 20px; fill: none; stroke: #718096; stroke-width: 1.5;
-        display: flex; justify-content: center; align-items: center;
-    }
+/* ── 탭 ── */
+.dt-tabs { display: flex; border-bottom: 1px solid #EBEBEB; }
+.dt-tab {
+    padding: 14px 22px; font-size: 14px; font-weight: 700; color: #888;
+    background: none; border: none; border-bottom: 2px solid transparent;
+    cursor: pointer; transition: all .15s; margin-bottom: -1px;
+}
+.dt-tab:hover { color: #1A1A1A; }
+.dt-tab.active { color: #1A1A1A; border-bottom-color: #1A1A1A; }
 
-    /* 🛏️ 객실 리스트 */
-    .room-card { display: flex; border: 1px solid #E2E8F0; border-radius: 16px; overflow: hidden; margin-bottom: 20px; transition: transform 0.2s; }
-    .room-img { width: 240px; height: 180px; object-fit: cover; }
-    .room-info { padding: 24px; flex: 1; display: flex; flex-direction: column; justify-content: center; }
-    .room-name { font-size: 20px; font-weight: 800; color: #2D3748; margin-bottom: 8px; }
-    .room-capa { font-size: 14px; color: #718096; margin-bottom: auto; }
-    .room-price-box { display: flex; justify-content: space-between; align-items: flex-end; }
-    .room-price { font-size: 24px; font-weight: 900; color: #2D3748; }
+/* ── 본문 2단 ── */
+.dt-body { 
+    display: flex; 
+    gap: 48px; 
+    align-items: flex-start; 
+    padding: 24px 0;
+}
+.dt-main { flex: 1; min-width: 0; }
+.dt-side { width: 280px; flex-shrink: 0; position: sticky; top: 100px; }
 
-    /* 📌 우측 사이드바 (Action Panel) */
-    .action-panel {
-        width: 380px; flex-shrink: 0; position: sticky; top: 140px; height: fit-content;
-        background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(16px);
-        border-radius: 24px; padding: 32px; box-shadow: 0 20px 40px rgba(137, 207, 240, 0.15); border: 1px solid rgba(255, 255, 255, 0.8);
-    }
-    .panel-rating { display: flex; align-items: center; gap: 8px; font-size: 18px; font-weight: 800; color: #2D3748; margin-bottom: 24px; }
-    .panel-rating span { color: #718096; font-size: 14px; font-weight: 500; text-decoration: underline; cursor: pointer; }
+/* ── 섹션 ── */
+.dt-section { margin-bottom: 44px; }
+.dt-section-title { font-size: 18px; font-weight: 900; color: #1A1A1A; margin-bottom: 18px; }
 
-    .date-picker { border: 1px solid #E2E8F0; border-radius: 12px; padding: 16px; margin-bottom: 24px; }
-    .date-picker p { font-size: 13px; color: #718096; font-weight: 700; margin-bottom: 4px; }
-    .date-picker div { font-size: 16px; font-weight: 800; color: #2D3748; }
+.dt-desc {
+    font-size: 15px; line-height: 1.9; color: #333;
+    display: -webkit-box; -webkit-line-clamp: 6; -webkit-box-orient: vertical; overflow: hidden;
+}
+.dt-desc.expanded { -webkit-line-clamp: unset; }
+.dt-more-btn {
+    display: flex; align-items: center; justify-content: flex-end; gap: 4px;
+    width: 100%; margin-top: 8px; background: none; border: none;
+    font-size: 13px; font-weight: 700; color: #555; cursor: pointer; padding: 0;
+}
+.dt-more-btn:hover { color: #1A1A1A; }
 
-    .btn-primary {
-        width: 100%; background: linear-gradient(135deg, #89CFF0, #FFB6C1); color: white; border: none;
-        padding: 18px; border-radius: 16px; font-weight: 900; font-size: 18px; cursor: pointer; transition: opacity 0.2s, transform 0.2s; margin-bottom: 12px;
-    }
-    .btn-primary:hover { opacity: 0.9; transform: translateY(-2px); }
+/* 지도 */
+.dt-map {
+    width: 100%; height: 280px; border-radius: 10px;
+    background: #F0F0F0; margin: 28px 0 22px;
+    border: 1px solid #E8E8E8;
+    display: flex; align-items: center; justify-content: center;
+    color: #AAA; font-size: 14px; font-weight: 600;
+}
 
-    .btn-secondary {
-        width: 100%; background: transparent; color: #4A5568; border: 2px solid #E2E8F0;
-        padding: 16px; border-radius: 16px; font-weight: 800; font-size: 16px; cursor: pointer; transition: all 0.2s;
-    }
-    .btn-secondary:hover { background: #F7FAFC; border-color: #CBD5E0; }
+/* 정보 그리드 */
+.dt-info-grid {
+    display: grid; grid-template-columns: 1fr 1fr;
+    gap: 0; border-top: 1px solid #E8E8E8;
+}
+.dt-info-row {
+    display: flex; align-items: flex-start; gap: 12px;
+    padding: 16px 0; border-bottom: 1px solid #F0F0F0;
+}
+.dt-info-row:nth-child(odd)  { padding-right: 28px; }
+.dt-info-row:nth-child(even) { padding-left: 28px; border-left: 1px solid #F0F0F0; }
+.dt-info-dot { width: 5px; height: 5px; border-radius: 50%; background: #3a8fb7; flex-shrink: 0; margin-top: 7px; }
+.dt-info-label { font-size: 12px; font-weight: 700; color: #888; margin-bottom: 4px; }
+.dt-info-value { font-size: 13px; font-weight: 600; color: #333; line-height: 1.7; white-space: pre-line; }
+.dt-info-value a { color: #3a8fb7; text-decoration: none; }
+.dt-info-value a:hover { text-decoration: underline; }
+.dt-more-info { display: flex; justify-content: flex-end; padding: 10px 0 4px; }
+.dt-more-info-btn { background: none; border: none; font-size: 13px; font-weight: 700; color: #3a8fb7; cursor: pointer; }
+.dt-more-info-btn:hover { text-decoration: underline; }
 
-    @media (max-width: 1024px) {
-        .detail-split { flex-direction: column; }
-        .action-panel { width: 100%; position: static; }
-        .room-card { flex-direction: column; }
-        .room-img { width: 100%; height: 200px; }
-    }
+/* ── 사이드 패널 ── */
+.dt-side-panel {
+    background: #fff; border: 1.5px solid #E0E0E0; border-radius: 16px;
+    padding: 24px; box-shadow: 0 4px 20px rgba(0,0,0,.06);
+}
+.dt-side-rating { display: flex; align-items: center; gap: 6px; font-size: 16px; font-weight: 800; margin-bottom: 16px; }
+.dt-side-rating small { font-size: 12px; font-weight: 500; color: #AAA; }
+.dt-side-divider { height: 1px; background: #F0F0F0; margin: 14px 0; }
+.dt-side-meta { font-size: 12px; color: #888; font-weight: 600; line-height: 1.8; }
+.dt-side-meta strong { color: #1A1A1A; font-weight: 700; display: block; margin-bottom: 3px; font-size: 13px; }
+
+@media (max-width: 960px) {
+    .dt-container, .dt-carousel-wrap { padding: 0 28px; }
+    .dt-body { flex-direction: column; }
+    .dt-side { width: 100%; position: static; }
+    .dt-info-grid { grid-template-columns: 1fr; }
+    .dt-info-row:nth-child(even) { padding-left: 0; border-left: none; }
+    .dt-name { font-size: 22px; }
+    .dt-title-row {
+	    display: flex; align-items: flex-start;
+	    justify-content: space-between; gap: 16px;
+	    padding: 16px 0 18px; /* 🔥 기존 28px에서 16px로 줄여서 바짝 땡김! */
+	    border-bottom: 1px solid #EBEBEB;
+	}
+}
 </style>
 
-<div class="detail-wrapper">
-    <div class="content-container">
-        
-        <div class="carousel-container">
-            <div class="carousel-track" id="carouselTrack">
-                <% 
-                   List<String> imageUrls = (List<String>) place.get("images");
-                   for(String imgUrl : imageUrls) { 
-                %>
-                    <div class="carousel-slide"><img src="<%= imgUrl %>" alt="<%= place.get("name") %>"></div>
-                <% } %>
-            </div>
-            <button class="carousel-btn prev" onclick="moveSlide(-1)">&#10094;</button>
-            <button class="carousel-btn next" onclick="moveSlide(1)">&#10095;</button>
-            <div class="carousel-indicator" id="carouselIndicator">1 / <%= imageUrls.size() %> | 더 보기</div>
-        </div>
+<div class="dt-page">
 
-        <div class="detail-split">
-            <div class="main-info">
-                <div class="header-tags">
-                    <span class="tag" style="background: #2D3748; color: white;"><%= place.get("category") %></span>
-                    <% for(String tag : (List<String>) place.get("tags")) { %>
-                        <span class="tag">#<%= tag %></span>
-                    <% } %>
-                </div>
-                
-                <h1 class="place-title"><%= place.get("name") %></h1>
-
-                <div class="divider"></div>
-
-                <h2 class="section-title">어떤 곳인가요?</h2>
-                <p class="place-desc"><%= place.get("desc") %></p>
-
-                <div class="divider"></div>
-
-                <%-- 🛁 [캡처본 반영] 편의시설 영역 --%>
-                <% if ("숙소".equals(place.get("category"))) { %>
-                    <h2 class="section-title">편의시설</h2>
-                    <div class="amenity-grid">
-                        <div class="amenity-item">
-                            <svg class="amenity-icon" viewBox="0 0 24 24"><path d="M4 10v9a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-9M2 10h20M7 10V6a2 2 0 0 1 2-2h6M16 21v2M8 21v2M13 6v4"/></svg>
-                            반신욕
-                        </div>
-                        <div class="amenity-item">
-                            <svg class="amenity-icon" viewBox="0 0 24 24"><rect x="2" y="7" width="20" height="15" rx="2" ry="2"/><polyline points="17 2 12 7 7 2"/></svg>
-                            빔프로젝터 또는 TV
-                        </div>
-                        <div class="amenity-item">
-                            <svg class="amenity-icon" viewBox="0 0 24 24"><path d="M5 10h14a1 1 0 0 1 1 1v4a5 5 0 0 1-5 5H9a5 5 0 0 1-5-5v-4a1 1 0 0 1 1-1zM2 10h20M12 3v7M9 5v5M15 5v5"/></svg>
-                            취사
-                        </div>
-                    </div>
-                    <p class="amenity-note">* 객실별 제공 여부 상세 페이지 참고</p>
-
-                    <div class="divider"></div>
-                <% } %>
-
-                <%-- 📍 [캡처본 반영] 스테이 위치 및 주변 정보 영역 --%>
-                <h2 class="section-title">스테이 위치 및 주변 정보</h2>
-                <p class="location-info-text">
-                    <%= place.get("name") %>의 위치는 [ <%= place.get("address") %> ] 입니다.<br>
-                    <%= place.get("parkingInfo") %>
-                </p>
-
-                <ul class="contact-list">
-                    <li class="contact-item">
-                        <svg class="contact-icon" viewBox="0 0 24 24"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
-                        <%= place.get("phone") %>
-                    </li>
-                    <li class="contact-item">
-                        <svg class="contact-icon" viewBox="0 0 24 24"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
-                        <%= place.get("email") %>
-                    </li>
-                    <li class="contact-item">
-                        <svg class="contact-icon" viewBox="0 0 24 24"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/></svg>
-                        <%= place.get("instagram") %>
-                    </li>
-                    <li class="contact-item">
-                        <span class="contact-icon" style="font-weight: 900; font-size: 18px; color: #4A5568; stroke: none; fill: currentColor;">N</span>
-                        <%= place.get("naver") %>
-                    </li>
-                </ul>
-
-                <div class="divider"></div>
-
-                <% if ("숙소".equals(place.get("category"))) { %>
-                    <h2 class="section-title">객실 선택</h2>
-                    <% for(Map<String, Object> room : rooms) { %>
-                    <div class="room-card">
-                        <img src="<%= room.get("image") %>" class="room-img" alt="객실 사진">
-                        <div class="room-info">
-                            <div class="room-name"><%= room.get("name") %></div>
-                            <div class="room-capa">기준 <%= room.get("capacity") %>인 (최대 <%= (int)room.get("capacity") + 1 %>인)</div>
-                            <div class="room-price-box">
-                                <div class="room-price">₩<%= String.format("%,d", room.get("price")) %> <span style="font-size: 14px; font-weight: 500; color: #718096;">/ 1박</span></div>
-                                <button style="padding: 10px 20px; background: #2D3748; color: white; border-radius: 8px; font-weight: 700; border: none; cursor: pointer;">선택</button>
-                            </div>
-                        </div>
-                    </div>
-                    <% } %>
-                    <div class="divider"></div>
-                <% } %>
-                
-                <h2 class="section-title">지도 및 길찾기</h2>
-                <div style="width: 100%; height: 300px; background: #E2E8F0; border-radius: 16px; display: flex; justify-content: center; align-items: center; color: #A0AEC0; font-weight: 700;">
-                    (여기에 카카오 맵 API가 렌더링 됩니다)
-                </div>
-
-            </div>
-
-            <div class="action-panel">
-                <div class="panel-rating">⭐ <%= place.get("rating") %> <span>(리뷰 <%= place.get("reviewCount") %>개)</span></div>
-
-                <% if ("숙소".equals(place.get("category"))) { %>
-                    <div class="date-picker">
-                        <p>체크인 - 체크아웃</p>
-                        <div>2026.03.15 (금) - 2026.03.16 (토)</div>
-                    </div>
-                    <button class="btn-primary" onclick="alert('PG사 결제창으로 이동합니다.')">객실 예약하기</button>
-                    <button class="btn-secondary" onclick="alert('내 여행 일정(보드)에 핀을 꽂았습니다!')">🗺️ 내 여행 일정에 담기</button>
-                <% } else { %>
-                    <p style="color: #718096; font-size: 15px; margin-bottom: 24px; line-height: 1.5;">
-                        이곳은 예약 상품이 아닙니다.<br>나만의 여행 일정표에 담아 방문 일정을 계획해보세요!
-                    </p>
-                    <button class="btn-primary" onclick="alert('내 여행 일정(보드)에 핀을 꽂았습니다!')">🗺️ 내 여행 일정에 담기</button>
-                <% } %>
-                
-                <button style="width: 100%; background: transparent; border: none; color: #A0AEC0; font-weight: 700; margin-top: 20px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px;">
-                    <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
-                    찜하기 목록에 저장
-                </button>
-            </div>
-        </div>
+  <!-- 캐러셀 -->
+  <div class="dt-carousel-wrap">
+    <div class="dt-carousel">
+      <div class="dt-carousel-track" id="dtTrack">
+        <% for(String img : imageUrls) { %>
+          <div class="dt-carousel-slide">
+            <img src="<%= img %>" alt="<%= place.get("name") %>">
+          </div>
+        <% } %>
+      </div>
+      <button class="dt-carousel-btn prev" onclick="slideMove(-1)">&#10094;</button>
+      <button class="dt-carousel-btn next" onclick="slideMove(1)">&#10095;</button>
+      <div class="dt-carousel-counter" id="dtCounter">1 / <%= imageUrls.size() %></div>
     </div>
-</div>
+    <div class="dt-thumb-row">
+      <% for(int i = 0; i < imageUrls.size(); i++) { %>
+        <div class="dt-thumb <%= i==0?"active":"" %>" onclick="goSlide(<%= i %>)">
+          <img src="<%= imageUrls.get(i) %>" alt="">
+        </div>
+      <% } %>
+    </div>
+  </div>
+
+  <!-- 본문 -->
+  <div class="dt-container">
+
+    <!-- 타이틀 -->
+    <div class="dt-title-row">
+      <div>
+        <div class="dt-cat-badge">
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+          <%= place.get("category") %>
+        </div>
+        <div class="dt-name"><%= place.get("name") %></div>
+        <div class="dt-location">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#AAA" stroke-width="2.5" stroke-linecap="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+          <%= place.get("location") %>
+        </div>
+      </div>
+      <div class="dt-rating-box">
+        ⭐ <%= place.get("rating") %>
+        <small>(<%= place.get("reviewCount") %>개)</small>
+      </div>
+    </div>
+
+    <!-- 탭 -->
+    <div class="dt-tabs">
+      <button class="dt-tab active" onclick="scrollToSection('secInfo',this)">상세정보</button>
+      <button class="dt-tab" onclick="scrollToSection('secNearby',this)">주변</button>
+    </div>
+
+    <!-- 본문 2단 -->
+    <div class="dt-body">
+      <div class="dt-main">
+
+        <!-- 상세정보 -->
+        <section class="dt-section" id="secInfo">
+          <div class="dt-section-title">상세정보</div>
+
+          <p class="dt-desc" id="dtDesc"><%= place.get("desc") %></p>
+          <button class="dt-more-btn" id="dtMoreBtn" onclick="toggleDesc()">
+            내용 더보기
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="6 9 12 15 18 9"/></svg>
+          </button>
+
+          <!-- 지도 -->
+          <div class="dt-map">
+            <div style="text-align:center;">
+              <div style="font-size:30px;margin-bottom:8px;">🗺️</div>
+              <div style="font-weight:700;">카카오 지도 API 영역</div>
+              <div style="font-size:12px;margin-top:6px;color:#CCC;"><%= place.get("address") %></div>
+            </div>
+          </div>
+
+          <!-- 정보 그리드 -->
+          <div class="dt-info-grid">
+            <div class="dt-info-row">
+              <div class="dt-info-dot"></div>
+              <div>
+                <div class="dt-info-label">문의 및 안내</div>
+                <div class="dt-info-value"><%= place.get("phone") %></div>
+              </div>
+            </div>
+            <div class="dt-info-row">
+              <div class="dt-info-dot"></div>
+              <div>
+                <div class="dt-info-label">홈페이지</div>
+                <div class="dt-info-value">
+                  <a href="<%= place.get("homepage") %>" target="_blank"><%= place.get("homepage") %></a>
+                </div>
+              </div>
+            </div>
+            <div class="dt-info-row">
+              <div class="dt-info-dot"></div>
+              <div>
+                <div class="dt-info-label">주소</div>
+                <div class="dt-info-value"><%= place.get("address") %></div>
+              </div>
+            </div>
+            <div class="dt-info-row">
+              <div class="dt-info-dot"></div>
+              <div>
+                <div class="dt-info-label">이용시간</div>
+                <div class="dt-info-value"><%= place.get("hours") %></div>
+              </div>
+            </div>
+            <div class="dt-info-row">
+              <div class="dt-info-dot"></div>
+              <div>
+                <div class="dt-info-label">휴일</div>
+                <div class="dt-info-value"><%= place.get("holiday") %></div>
+              </div>
+            </div>
+            <div class="dt-info-row">
+              <div class="dt-info-dot"></div>
+              <div>
+                <div class="dt-info-label">주차</div>
+                <div class="dt-info-value"><%= place.get("parking") %></div>
+              </div>
+            </div>
+          </div>
+          <div class="dt-more-info">
+            <button class="dt-more-info-btn">더보기 +</button>
+          </div>
+        </section>
+
+        <!-- 주변 -->
+        <section class="dt-section" id="secNearby">
+          <div class="dt-section-title">주변 장소</div>
+          <div style="text-align:center;padding:52px;color:#AAA;border:1.5px dashed #E8E8E8;border-radius:12px;">
+            <div style="font-size:36px;margin-bottom:10px;">📍</div>
+            <div style="font-size:14px;font-weight:700;">주변 장소 정보는 곧 추가됩니다</div>
+          </div>
+        </section>
+
+      </div><!-- .dt-main -->
+
+      <!-- 사이드 패널 -->
+      <div class="dt-side">
+        <div class="dt-side-panel">
+          <div class="dt-side-rating">
+            ⭐ <%= place.get("rating") %>
+            <small>(<%= place.get("reviewCount") %>개 평가)</small>
+          </div>
+          <div class="dt-side-divider"></div>
+          <div class="dt-side-meta">
+            <strong>카테고리</strong><%= place.get("category") %>
+          </div>
+          <div class="dt-side-divider"></div>
+          <div class="dt-side-meta">
+            <strong>주소</strong><%= place.get("address") %>
+          </div>
+          <div class="dt-side-divider"></div>
+          <div class="dt-side-meta">
+            <strong>문의</strong><%= place.get("phone") %>
+          </div>
+          <div class="dt-side-divider"></div>
+          <div class="dt-side-meta">
+            <strong>홈페이지</strong>
+            <a href="<%= place.get("homepage") %>" target="_blank"
+               style="color:#3a8fb7;font-size:12px;font-weight:600;">바로가기 →</a>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- .dt-body -->
+  </div><!-- .dt-container -->
+</div><!-- .dt-page -->
 
 <jsp:include page="../layout/footer.jsp" />
 
 <script>
-    let currentSlide = 0;
-    const totalSlides = <%= imageUrls.size() %>;
-    const track = document.getElementById('carouselTrack');
-    const indicator = document.getElementById('carouselIndicator');
+let slide = 0, total = <%= imageUrls.size() %>;
+const track = document.getElementById('dtTrack');
+const counter = document.getElementById('dtCounter');
 
-    function moveSlide(direction) {
-        currentSlide += direction;
-        if (currentSlide < 0) currentSlide = totalSlides - 1;
-        else if (currentSlide >= totalSlides) currentSlide = 0;
-        
-        track.style.transform = `translateX(-${currentSlide * 100}%)`;
-        indicator.innerHTML = `${currentSlide + 1} / ${totalSlides} | 더 보기`;
-    }
+function goSlide(n) {
+    slide = n;
+    track.style.transform = 'translateX(-' + (slide * 100) + '%)';
+    counter.textContent = (slide + 1) + ' / ' + total;
+    document.querySelectorAll('.dt-thumb').forEach((t, i) => t.classList.toggle('active', i === slide));
+}
+function slideMove(d) { goSlide((slide + d + total) % total); }
+
+let expanded = false;
+function toggleDesc() {
+    expanded = !expanded;
+    document.getElementById('dtDesc').classList.toggle('expanded', expanded);
+    document.getElementById('dtMoreBtn').innerHTML = expanded
+        ? '내용 접기 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="18 15 12 9 6 15"/></svg>'
+        : '내용 더보기 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="6 9 12 15 18 9"/></svg>';
+}
+
+function scrollToSection(id, el) {
+    document.querySelectorAll('.dt-tab').forEach(t => t.classList.remove('active'));
+    el.classList.add('active');
+    document.getElementById(id).scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
 </script>

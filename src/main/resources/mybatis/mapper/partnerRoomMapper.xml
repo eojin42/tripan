@@ -130,6 +130,19 @@
 	      AND r.CHECK_IN_DATE &lt;= TO_DATE(#{end}, 'YYYY-MM-DD')
 	</select>
 	
+	<update id="restoreMemberCouponForPartner">
+	    UPDATE member_coupon 
+	    SET status = 'AVAILABLE' 
+	    WHERE member_coupon_id = #{memberCouponId}
+	</update>
+	
+	<update id="cancelCouponUsageForPartner">
+	    UPDATE coupon_usage 
+	    SET status = 'CANCELED', 
+	        cancelled_at = SYSDATE, 
+	        cancel_reason = '파트너 오버부킹 강제 취소'
+	    WHERE order_id = #{orderId} AND member_coupon_id = #{memberCouponId}
+	</update>
 	<select id="selectBookingListForPartner" resultType="map">
 	    SELECT 
 	        r.RESERVATION_ID as "reservationId",
@@ -145,22 +158,29 @@
 	    JOIN MEMBER1 m1 ON r.MEMBER_ID = m1.MEMBER_ID
 	    JOIN MEMBER2 m2 ON r.MEMBER_ID = m2.MEMBER_ID
 	    JOIN ROOM rm ON r.ROOM_ID = rm.ROOM_ID
-	    WHERE rm.PLACE_ID = #{placeId}
+	    <where>
+	        rm.PLACE_ID = #{placeId}
+	        
+	        <if test="roomId != null and roomId != ''">
+	            AND r.ROOM_ID = #{roomId}
+	        </if>
+	        
+	        <if test="startDate != null and startDate != ''">
+	            AND r.CHECK_IN_DATE <![CDATA[>=]]> TO_DATE(#{startDate}, 'YYYY-MM-DD')
+	        </if>
+	        <if test="endDate != null and endDate != ''">
+	            AND r.CHECK_IN_DATE <![CDATA[<=]]> TO_DATE(#{endDate}, 'YYYY-MM-DD')
+	        </if>
+	        
+	        <if test="status != null and status != ''">
+	            AND r.STATUS = #{status}
+	        </if>
+	        
+	        <if test="keyword != null and keyword != ''">
+	            AND (m1.USERNAME LIKE '%' || #{keyword} || '%' OR m2.PHONE_NUMBER LIKE '%' || #{keyword} || '%')
+	        </if>
+	    </where>
 	    ORDER BY r.RESERVATION_ID DESC
 	</select>
-	
-	<update id="restoreMemberCouponForPartner">
-	    UPDATE member_coupon 
-	    SET status = 'AVAILABLE' 
-	    WHERE member_coupon_id = #{memberCouponId}
-	</update>
-	
-	<update id="cancelCouponUsageForPartner">
-	    UPDATE coupon_usage 
-	    SET status = 'CANCELED', 
-	        cancelled_at = SYSDATE, 
-	        cancel_reason = '파트너 오버부킹 강제 취소'
-	    WHERE order_id = #{orderId} AND member_coupon_id = #{memberCouponId}
-	</update>
 	
 </mapper>
