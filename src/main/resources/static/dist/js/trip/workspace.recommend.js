@@ -407,8 +407,12 @@ function openPlaceDetailModal(p) {
     document.body.appendChild(modal);
   }
 
-  var bi  = _categoryBadgeInfo(p.category);
-  var ph  = _categoryPlaceholder(p.category);
+  var cat             = (p.category || '').toUpperCase();
+  var isAccommodation = cat === 'ACCOMMODATION';
+  var isRestaurant    = cat === 'RESTAURANT' || cat === 'CAFE';
+
+  var bi     = _categoryBadgeInfo(p.category);
+  var ph     = _categoryPlaceholder(p.category);
   var hasImg = p.imageUrl && p.imageUrl.trim() !== '';
 
   var imgSec = hasImg
@@ -418,9 +422,16 @@ function openPlaceDetailModal(p) {
     : '<div style="width:100%;height:100px;background:var(--bg,#F7FAFC);border-radius:20px 20px 0 0;'
         + 'display:flex;align-items:center;justify-content:center;font-size:48px;">' + ph + '</div>';
 
+  /* ── 식당 상세 섹션 스켈레톤 ── */
+  var restaurantSec = isRestaurant
+    ? '<div id="rpRestaurantDetail" style="margin-bottom:16px;">' +
+        _rpShimmerRow() + _rpShimmerRow() + _rpShimmerRow() +
+      '</div>'
+    : '';
+
   modal.innerHTML =
-    '<div style="background:#fff;border-radius:20px;width:380px;max-width:92vw;' +
-               'max-height:82vh;overflow-y:auto;box-shadow:0 24px 64px rgba(0,0,0,.22);">' +
+    '<div style="background:#fff;border-radius:20px;width:400px;max-width:94vw;' +
+               'max-height:86vh;overflow-y:auto;box-shadow:0 24px 64px rgba(0,0,0,.22);">' +
       imgSec +
       '<div style="padding:20px 22px 24px;">' +
         '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">' +
@@ -432,36 +443,132 @@ function openPlaceDetailModal(p) {
         '<div style="font-size:18px;font-weight:800;color:#1A202C;margin-bottom:8px;line-height:1.3;">'
           + _esc(p.placeName || '') + '</div>' +
         (p.address     ? '<div style="font-size:12px;color:#718096;margin-bottom:8px;display:flex;gap:4px;"><span>📍</span><span>' + _esc(p.address) + '</span></div>' : '') +
-        (p.phoneNumber ? '<div style="font-size:12px;color:#718096;margin-bottom:8px;">📞 ' + _esc(p.phoneNumber) + '</div>' : '') +
+        (p.phoneNumber ? '<div style="font-size:12px;color:#718096;margin-bottom:10px;">📞 ' + _esc(p.phoneNumber) + '</div>' : '') +
         (p.description
-          ? '<div style="font-size:12px;color:#4A5568;line-height:1.75;margin-bottom:18px;' +
-              'padding:12px;background:#F7FAFC;border-radius:12px;max-height:160px;overflow-y:auto;">' +
+          ? '<div style="font-size:12px;color:#4A5568;line-height:1.75;margin-bottom:16px;' +
+              'padding:12px;background:#F7FAFC;border-radius:12px;max-height:120px;overflow-y:auto;">' +
               _esc(p.description || '') +
             '</div>'
           : '') +
-        '<button id="rpDetailAddBtn" '
-          + 'style="width:100%;padding:14px;border:none;border-radius:14px;'
-          + 'background:linear-gradient(135deg,#89CFF0,#B8A9D9);'
-          + 'color:#fff;font-size:14px;font-weight:800;cursor:pointer;">+ 일정에 추가하기</button>' +
+        restaurantSec +
+        _rpDetailBtnHtml(p) +
       '</div>' +
     '</div>';
 
-	// 추가 버튼: 안전하게 addEventListener로 처리
-	  document.getElementById('rpDetailAddBtn').addEventListener('click', function (e) {
-	    e.stopPropagation(); 
-	    _pendingRpCard = {
-	      placeName : p.placeName  || '',
-	      address   : p.address    || '',
-	      latitude  : p.latitude   || 0,
-	      longitude : p.longitude  || 0,
-	      placeId   : p.placeId    || null,
-	      category  : p.category   || 'ETC' 
-	    };
-	    closePlaceDetailModal();
-	    openDayPicker();
-	  });
+  /* ── 식당일 때: 로컬 DB 상세 정보 비동기 로드 (TourAPI 실시간 호출 제거) ── */
+  if (isRestaurant && p.placeId && !String(p.placeId).startsWith('custom_')) {
+    var base = (typeof CTX_PATH !== 'undefined' ? CTX_PATH : '');
+    
+    // 🔥 KTO API 대신 조장님이 만든 로컬 DB API 호출
+    fetch(base + '/api/places/restaurant/' + p.placeId)
+      .then(function (r) { return r.ok ? r.json() : {}; })
+      .then(function (d) {
+        var box = document.getElementById('rpRestaurantDetail');
+        if (!box) return;
+
+        // DB 컬럼명에 맞추고, 0/1 데이터는 isBool: true 로 체크
+        var rows = [
+          { icon: '🕐', label: '영업시간',   key: 'opentimefood' },
+          { icon: '📅', label: '휴무일',     key: 'restdatefood' },
+          { icon: '🅿️', label: '주차',       key: 'parkingfood' },
+          { icon: '📋', label: '대표메뉴',   key: 'firstmenu' },
+          { icon: '🍲', label: '취급메뉴',   key: 'treatmenu' },
+          { icon: '💳', label: '신용카드',   key: 'chkcreditcardfood', isBool: true },
+          { icon: '📦', label: '포장',       key: 'packing', isBool: true },
+          { icon: '👶', label: '키즈존',     key: 'kidsfacility', isBool: true }
+        ];
+
+        var html =
+          '<div style="border:1px solid #E2E8F0;border-radius:12px;overflow:hidden;background:#FAFBFC;">' +
+            '<div style="padding:10px 16px 6px;font-size:10px;font-weight:800;' +
+              'color:#9B8DBE;letter-spacing:.7px;text-transform:uppercase;' +
+              'border-bottom:1px solid #EDF2F7;">🍴 식당 정보</div>';
+
+        var shown = 0;
+        rows.forEach(function (r) {
+          var val = d[r.key];
+          
+          // 🔥 0/1 불리언 데이터 변환 로직 ("가능" / "불가")
+          if (r.isBool) {
+              if (val == 1) val = "가능";
+              else if (val == 0) val = "불가";
+              else return; // 값이 아예 없으면 패스
+          }
+
+          if (!val || String(val).trim() === '' || val === '-') return;
+
+          /* 긴 텍스트는 줄바꿈 처리 */
+          val = String(val).replace(/<br\s*\/?>/gi, '\n').trim();
+          var isLong = val.length > 40;
+          
+          html +=
+            '<div style="display:flex;' + (isLong ? 'flex-direction:column;' : 'align-items:baseline;') +
+              'gap:' + (isLong ? '3' : '8') + 'px;' +
+              'padding:9px 16px;border-bottom:1px solid #EDF2F7;' +
+              'font-size:12px;">' +
+              '<span style="display:flex;align-items:center;gap:5px;flex-shrink:0;' +
+                'font-weight:700;color:#4A5568;min-width:' + (isLong ? 'unset' : '72px') + ';">' +
+                r.icon + ' ' + r.label +
+              '</span>' +
+              '<span style="color:#1A202C;font-weight:' + (isLong ? '500' : '700') + ';' +
+                'white-space:pre-wrap;word-break:break-word;">' +
+                _esc(val) +
+              '</span>' +
+            '</div>';
+          shown++;
+        });
+
+        html += '</div>';
+
+        if (shown === 0) { box.style.display = 'none'; return; }
+        box.innerHTML = html;
+      })
+      .catch(function () {
+        var box = document.getElementById('rpRestaurantDetail');
+        if (box) box.style.display = 'none';
+      });
+  }
+
+  /* ── 일정에 추가하기 버튼 이벤트 ── */
+  document.getElementById('rpDetailAddBtn').addEventListener('click', function (e) {
+    e.stopPropagation();
+    _pendingRpCard = {
+      placeName : p.placeName  || '',
+      address   : p.address    || '',
+      latitude  : p.latitude   || 0,
+      longitude : p.longitude  || 0,
+      placeId   : p.placeId    || null,
+      category  : p.category   || 'ETC'
+    };
+    closePlaceDetailModal();
+    openDayPicker();
+  });
+
+  /* ── 숙소 예약하기 버튼 (ACCOMMODATION 카테고리일 때만) ── */
+  var bookBtn = document.getElementById('rpDetailBookBtn');
+  if (bookBtn) {
+    bookBtn.addEventListener('click', function (e) {
+      e.stopPropagation();
+      var pid = p.placeId || '';
+      if (!pid) {
+        if (typeof showToast === 'function') showToast('\u26a0\ufe0f 숙소 정보를 찾을 수 없어요.');
+        return;
+      }
+      var base = (typeof CTX_PATH !== 'undefined' ? CTX_PATH : '');
+      window.location.href = base + '/accommodation/detail/' + pid;
+    });
+  }
 
   modal.style.display = 'flex';
+}
+
+/* 스켈레톤 shimmer 행 */
+function _rpShimmerRow() {
+  return '<div style="display:flex;align-items:center;gap:10px;padding:8px 0;">' +
+    '<span style="display:inline-block;width:20px;height:20px;border-radius:4px;background:#EDF2F7;flex-shrink:0;"></span>' +
+    '<span style="display:inline-block;width:56px;height:12px;border-radius:4px;background:#EDF2F7;flex-shrink:0;"></span>' +
+    '<span style="display:inline-block;flex:1;height:12px;border-radius:4px;background:#EDF2F7;"></span>' +
+  '</div>';
 }
 
 function closePlaceDetailModal() {
@@ -1213,6 +1320,62 @@ function _initPlaceResultsScroll() {
     }
   }, { root: wrap, threshold: 0.1 });
   _prObserver.observe(sentinel);
+}
+
+
+/* ══════════════════════════════════════════════════════
+   장소 상세 모달 — 하단 버튼 HTML 생성 헬퍼
+   - ACCOMMODATION 카테고리: 버튼 2개 (일정 추가 + 숙소 예약)
+   - 그 외 카테고리:         버튼 1개 (일정 추가만)
+══════════════════════════════════════════════════════ */
+function _rpDetailBtnHtml(p) {
+  var isAccommodation = (p.category || '').toUpperCase() === 'ACCOMMODATION';
+
+  /* ── 공통: 일정에 추가하기 버튼 ── */
+  var addBtnStyle =
+    'flex:1;padding:14px 10px;border:none;border-radius:14px;' +
+    'background:linear-gradient(135deg,#89CFF0,#B8A9D9);' +
+    'color:#fff;font-size:13px;font-weight:800;cursor:pointer;' +
+    'display:flex;align-items:center;justify-content:center;gap:5px;' +
+    'transition:opacity .15s;white-space:nowrap;' +
+    (isAccommodation ? '' : 'width:100%;');
+
+  var addBtn =
+    '<button id="rpDetailAddBtn" ' +
+      'style="' + addBtnStyle + '" ' +
+      'onmouseover="this.style.opacity=\'.85\'" ' +
+      'onmouseout="this.style.opacity=\'1\'">' +
+      '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" ' +
+        'stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;">' +
+        '<line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>' +
+      '</svg>' +
+      '일정에 추가' +
+    '</button>';
+
+  if (!isAccommodation) {
+    return addBtn;
+  }
+
+  /* ── 숙소 전용: 숙소 예약하기 버튼 ── */
+  var bookBtn =
+    '<button id="rpDetailBookBtn" ' +
+      'style="flex:1;padding:14px 10px;border:none;border-radius:14px;' +
+      'background:linear-gradient(135deg,#F6AD55,#F687B3);' +
+      'color:#fff;font-size:13px;font-weight:800;cursor:pointer;' +
+      'display:flex;align-items:center;justify-content:center;gap:5px;' +
+      'transition:opacity .15s;white-space:nowrap;" ' +
+      'onmouseover="this.style.opacity=\'.85\'" ' +
+      'onmouseout="this.style.opacity=\'1\'">' +
+      '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" ' +
+        'stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;">' +
+        '<path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>' +
+        '<polyline points="9 22 9 12 15 12 15 22"/>' +
+      '</svg>' +
+      '숙소 예약하기' +
+    '</button>';
+
+  /* ── 2버튼 래퍼 ── */
+  return '<div style="display:flex;gap:9px;width:100%;">' + addBtn + bookBtn + '</div>';
 }
 
 /* ══════════════════════════

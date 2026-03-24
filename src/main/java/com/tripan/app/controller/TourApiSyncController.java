@@ -19,10 +19,18 @@ public class TourApiSyncController {
 
     private final TourApiSyncService syncService;
 
-    // 🟢 이 주소로 접속하면 강제로 50개씩 동기화가 실행됩니다!
     @GetMapping("/places")
     public ResponseEntity<Map<String, String>> triggerSync() {
         String resultMessage = syncService.forceSyncPlaceDetails();
         return ResponseEntity.ok(Map.of("result", resultMessage));
     }
+    
+    // http://localhost:9090/api/admin/sync/restaurants
+    @GetMapping("/restaurants")
+    public ResponseEntity<String> syncRestaurants() {
+        String result = syncService.forceSyncRestaurantDetails();
+        return ResponseEntity.ok(result);
+    }
+    
+    
 }

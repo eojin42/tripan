@@ -15,6 +15,7 @@ import com.tripan.app.service.PlaceService;
 import com.tripan.app.service.TripPlaceService;
 
 import jakarta.servlet.http.HttpSession;
+import com.tripan.app.service.TourApiSyncService;
 import lombok.RequiredArgsConstructor;
 
 @RestController
@@ -29,6 +30,9 @@ public class TripPlaceApiController {
     // [Track 2] 나만의 장소 (카카오맵)
     private final TripPlaceService tripPlaceService;
     private final TripPlaceMapper  tripPlaceMapper;
+
+    // [Track 3] TourAPI 동기화 서비스 (식당 상세 실시간 조회)
+    private final TourApiSyncService tourApiSyncService;
 
     // ── [KTO] 카테고리별 추천 (무한스크롤 offset 지원) ───────────
     // GET /api/places/recommend?category=RESTAURANT&city=부산,제주&limit=12&offset=0
@@ -133,6 +137,20 @@ public class TripPlaceApiController {
     }
 
 
+    // ── [식당] 상세 정보 실시간 조회 (TourAPI detailIntro2) ─────────
+    // GET /api/places/restaurant-detail/{contentId}
+    @GetMapping("/restaurant-detail/{contentId}")
+    public ResponseEntity<Map<String, Object>> restaurantDetail(
+            @PathVariable("contentId") String contentId) {
+
+        if (contentId == null || contentId.startsWith("custom_")) {
+            return ResponseEntity.ok(new HashMap<>());
+        }
+
+        Map<String, Object> detail = tourApiSyncService.getRestaurantDetail(contentId);
+        return ResponseEntity.ok(detail);
+    }
+
     // ── [KTO] 배치 수동 트리거 ────────────────────────────────────
     @PostMapping("/sync")
     public ResponseEntity<Map<String, Object>> syncBatch() {
@@ -146,5 +164,15 @@ public class TripPlaceApiController {
         if (user == null) return null;
         try { return (Long) user.getClass().getMethod("getMemberId").invoke(user); }
         catch (Exception e) { return null; }
+    }
+    
+    // [식당 전용 상세 조회 API] 프론트 모달에서 호출함
+    @GetMapping("/restaurant/{placeId}")
+    public ResponseEntity<Map<String, Object>> getLocalRestaurantDetail(@PathVariable("placeId") Long placeId) {
+        Map<String, Object> detail = placeMapper.getRestaurantDetailByPlaceId(placeId);
+        if (detail == null) {
+            return ResponseEntity.ok(new HashMap<>()); // 없으면 빈 객체 반환
+        }
+        return ResponseEntity.ok(detail);
     }
 }

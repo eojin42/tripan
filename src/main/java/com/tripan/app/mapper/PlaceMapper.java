@@ -57,4 +57,21 @@ public interface PlaceMapper {
                            @Param("phoneNumber") String phoneNumber, 
                            @Param("description") String description);
     
+    List<Long> findRestaurantsWithoutDetails();
+
+    int upsertRestaurant(@Param("placeId") Long placeId,
+                         @Param("openTime") String openTime, @Param("restDate") String restDate,
+                         @Param("parking") String parking, @Param("infoCenter") String infoCenter,
+                         @Param("reservation") String reservation);
+
+    int upsertRestaurantFacility(@Param("placeId") Long placeId,
+                                 @Param("chkCreditCard") int chkCreditCard,
+                                 @Param("kidsFacility") int kidsFacility,
+                                 @Param("packing") int packing);
+
+    int upsertRestaurantMenu(@Param("placeId") Long placeId,
+                             @Param("firstMenu") String firstMenu, @Param("treatMenu") String treatMenu,
+                             @Param("smallImageUrl") String smallImageUrl);
+    
+    java.util.Map<String, Object> getRestaurantDetailByPlaceId(@Param("placeId") Long placeId);
 }
