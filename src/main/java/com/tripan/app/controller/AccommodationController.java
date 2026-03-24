@@ -132,6 +132,25 @@ public class AccommodationController {
         return "accommodation/detail";
     }
     
+    @GetMapping("room/detail/api/{roomId}")
+    @ResponseBody
+    public Map<String, Object> getRoomDetailModalApi(@PathVariable("roomId") String roomId) {
+        Map<String, Object> response = new HashMap<>();
+        try {
+            Map<String, Object> roomInfo = accommodationService.getRoomDetailWithFacilities(roomId);
+            List<String> roomImages = accommodationService.getRoomImagesByRoomId(roomId);
+            
+            response.put("success", true);
+            response.put("room", roomInfo);
+            response.put("images", roomImages);
+        } catch (Exception e) {
+            e.printStackTrace();
+            response.put("success", false);
+            response.put("message", "객실 정보를 불러오는 데 실패했습니다.");
+        }
+        return response;
+    }
+    
     @GetMapping("reservation")
     public String reservationForm(
             @RequestParam("roomId") String roomId,

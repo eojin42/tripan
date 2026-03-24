@@ -88,4 +88,10 @@ public interface AccommodationMapper {
     void cancelOrderStatus(String orderId);
     void cancelOrderDetailStatus(String orderId);
     void cancelPaymentStatus(String orderId);
+    
+    // 객실 상세 정보 및 편의시설 조회
+    Map<String, Object> selectRoomDetailWithFacilities(String roomId);
+    
+    // 객실 상세 모달용 여러 장의 사진 조회
+    List<String> selectRoomImagesByRoomId(String roomId);
 }

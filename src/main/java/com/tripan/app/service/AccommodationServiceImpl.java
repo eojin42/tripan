@@ -83,6 +83,16 @@ public class AccommodationServiceImpl implements AccommodationService{
         
         return detail;
 	}
+	
+	@Override
+    public Map<String, Object> getRoomDetailWithFacilities(String roomId) {
+        return mapper.selectRoomDetailWithFacilities(roomId);
+    }
+
+    @Override
+    public List<String> getRoomImagesByRoomId(String roomId) {
+        return mapper.selectRoomImagesByRoomId(roomId);
+    }
 
 
 	@Override

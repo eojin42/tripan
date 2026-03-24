@@ -149,7 +149,11 @@
             af.BEVERAGE as beverage, 
             af.KARAOKE as karaoke, 
             af.PUBLICPC as publicpc, 
-            af.SAUNA as sauna
+            af.SAUNA as sauna,
+            
+            (SELECT LISTAGG(aof.facility_name, ', ') WITHIN GROUP (ORDER BY aof.facility_name) 
+             FROM accommodation_other_facility aof 
+             WHERE aof.af_id = a.af_id) as otherFacility
             
             <choose>
                 <when test="memberId != null">
@@ -164,6 +168,39 @@
         JOIN ACCOMMODATION a ON p.PLACE_ID = a.PLACE_ID
         LEFT JOIN ACCOMMODATION_FACILITY af ON a.AF_ID = af.AF_ID 
         WHERE p.PLACE_ID = #{placeId} AND p.IS_ACTIVE = 1
+    </select>
+    
+    <select id="selectRoomDetailWithFacilities" resultType="map">
+        SELECT 
+            r.ROOM_ID as "roomId", 
+            r.ROOM_NAME as "roomName", 
+            r.ROOMINTRO as "roomIntro",
+            r.ROOMBASECOUNT as "baseCount", 
+            r.MAX_CAPACITY as "maxCount", 
+            r.AMOUNT as "amount",
+            
+            NVL(rf.ROOMBATHFACILITY, 0) as "bathFacility", 
+            NVL(rf.ROOMBATH, 0) as "bath", 
+            NVL(rf.ROOMHOMETHEATER, 0) as "homeTheater", 
+            NVL(rf.ROOMAIRCONDITION, 0) as "airCondition", 
+            NVL(rf.ROOMTV, 0) as "tv", 
+            NVL(rf.ROOMPC, 0) as "pc", 
+            NVL(rf.ROOMINTERNET, 0) as "internet", 
+            NVL(rf.ROOMREFRIGERATOR, 0) as "refrigerator", 
+            NVL(rf.ROOMTOILETRIES, 0) as "toiletries", 
+            NVL(rf.ROOMSOFA, 0) as "sofa", 
+            NVL(rf.ROOMTABLE, 0) as "table", 
+            NVL(rf.ROOMHAIRDRYER, 0) as "hairdryer"
+        FROM ROOM r
+        LEFT JOIN ROOM_FACILITY rf ON r.RF_ID = rf.RF_ID
+        WHERE r.ROOM_ID = #{roomId}
+    </select>
+
+    <select id="selectRoomImagesByRoomId" resultType="string">
+        SELECT IMAGE_URL 
+        FROM ROOM_IMAGE 
+        WHERE ROOM_ID = #{roomId} 
+        ORDER BY ROOM_IMAGE_ID ASC
     </select>
 
     <select id="selectAccommodationImages" resultType="string">
