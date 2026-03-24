@@ -7,6 +7,39 @@
         <h1>예약 내역 관리</h1>
         <p>실시간 예약 현황을 확인하고 예약을 확정/취소합니다.</p>
     </div>
+    
+    <div class="search-filter-box" style="background: #F8FAFC; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
+	    <form action="main" method="GET" style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+	        <input type="hidden" name="tab" value="booking">
+	        
+	        <div style="display: flex; align-items: center; gap: 5px;">
+	            <input type="date" name="startDate" value="${param.startDate}" style="padding: 8px; border: 1px solid #E2E8F0; border-radius: 6px;">
+	            <span>~</span>
+	            <input type="date" name="endDate" value="${param.endDate}" style="padding: 8px; border: 1px solid #E2E8F0; border-radius: 6px;">
+	        </div>
+	        
+	        <select name="roomId" style="padding: 8px; border: 1px solid #E2E8F0; border-radius: 6px;">
+			    <option value="">객실 전체</option>
+			    <c:forEach var="room" items="${roomList}">
+			        <option value="${room.roomId}" ${param.roomId == room.roomId ? 'selected' : ''}>
+			            ${room.roomName}
+			        </option>
+			    </c:forEach>
+			</select>
+	
+	        <select name="status" style="padding: 8px; border: 1px solid #E2E8F0; border-radius: 6px;">
+	            <option value="">상태 전체</option>
+	            <option value="SUCCESS" ${param.status == 'SUCCESS' ? 'selected' : ''}>예약확정</option>
+	            <option value="CANCELED" ${param.status == 'CANCELED' ? 'selected' : ''}>취소됨</option>
+	        </select>
+	
+	        <input type="text" name="keyword" value="${param.keyword}" placeholder="예약자명 또는 연락처" style="padding: 8px; border: 1px solid #E2E8F0; border-radius: 6px; flex-grow: 1; min-width: 200px;">
+	        
+	        <button type="submit" style="padding: 8px 24px; background: var(--primary); color: white; border: none; border-radius: 6px; font-weight: 700; cursor: pointer;">검색</button>
+	        <a href="?tab=booking" style="padding: 8px 16px; background: white; color: #64748B; border: 1px solid #E2E8F0; border-radius: 6px; font-weight: 700; text-decoration: none; font-size: 13px; display: flex; align-items: center;">초기화</a>
+	    </form>
+	</div>
+    
     <div class="card" style="padding: 0; overflow: hidden;">
         <table style="width: 100%; border-collapse: collapse; text-align: left;">
             <thead style="background: #F8FAFC; border-bottom: 1px solid #E2E8F0;">
