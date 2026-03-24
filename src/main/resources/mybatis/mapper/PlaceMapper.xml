@@ -191,5 +191,65 @@
             description = #{description}
         WHERE place_id = #{placeId}
     </update>
+    
+    
+   <select id="findRestaurantsWithoutDetails" resultType="java.lang.Long">
+        SELECT p.place_id
+        FROM place p
+        LEFT JOIN restaurant r ON p.place_id = r.place_id
+        WHERE p.category = 'RESTAURANT' 
+          AND r.place_id IS NULL
+        FETCH FIRST 1000 ROWS ONLY
+    </select>
+
+    <update id="upsertRestaurant">
+        MERGE INTO restaurant r
+        USING DUAL ON (r.place_id = #{placeId})
+        WHEN MATCHED THEN
+            UPDATE SET 
+                opentimefood = #{openTime}, restdatefood = #{restDate}, parkingfood = #{parking},
+                infocenterfood = #{infoCenter}, reservationfood = #{reservation}
+        WHEN NOT MATCHED THEN
+            INSERT (place_id, opentimefood, restdatefood, parkingfood, infocenterfood, reservationfood)
+            VALUES (#{placeId}, #{openTime}, #{restDate}, #{parking}, #{infoCenter}, #{reservation})
+    </update>
+
+    <update id="upsertRestaurantFacility">
+        MERGE INTO restaurant_facility f
+        USING DUAL ON (f.place_id = #{placeId})
+        WHEN MATCHED THEN
+            UPDATE SET 
+                chkcreditcardfood = #{chkCreditCard}, kidsfacility = #{kidsFacility}, packing = #{packing}
+        WHEN NOT MATCHED THEN
+            INSERT (facility_id, place_id, chkcreditcardfood, kidsfacility, packing)
+            VALUES (SEQ_FACILITY_ID.NEXTVAL, #{placeId}, #{chkCreditCard}, #{kidsFacility}, #{packing})
+    </update>
+
+    <update id="upsertRestaurantMenu">
+        MERGE INTO MENU m
+        USING DUAL ON (m.place_id = #{placeId})
+        WHEN MATCHED THEN
+            UPDATE SET 
+                firstmenu = #{firstMenu}, treatmenu = #{treatMenu}, smallimageurl = #{smallImageUrl}
+        WHEN NOT MATCHED THEN
+            INSERT (menu_id, place_id, firstmenu, treatmenu, smallimageurl)
+            VALUES (SEQ_MENU_ID.NEXTVAL, #{placeId}, #{firstMenu}, #{treatMenu}, #{smallImageUrl})
+    </update>
+    
+    <select id="getRestaurantDetailByPlaceId" resultType="java.util.Map">
+        SELECT 
+            r.opentimefood AS "opentimefood", 
+            r.restdatefood AS "restdatefood", 
+            r.parkingfood AS "parkingfood",
+            f.chkcreditcardfood AS "chkcreditcardfood", 
+            f.kidsfacility AS "kidsfacility", 
+            f.packing AS "packing",
+            m.firstmenu AS "firstmenu", 
+            m.treatmenu AS "treatmenu"
+        FROM restaurant r
+        LEFT JOIN restaurant_facility f ON r.place_id = f.place_id
+        LEFT JOIN MENU m ON r.place_id = m.place_id
+        WHERE r.place_id = #{placeId}
+    </select>
 
 </mapper>
