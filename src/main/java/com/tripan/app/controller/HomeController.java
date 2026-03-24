@@ -10,6 +10,7 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 
+import com.tripan.app.admin.service.BannerService;
 import com.tripan.app.domain.dto.TripDto;
 import com.tripan.app.mapper.TripMapper;
 
@@ -23,6 +24,8 @@ import lombok.extern.slf4j.Slf4j;
 public class HomeController {
 
     private final TripMapper tripMapper;
+    private final BannerService bannerService;
+    
 
     @GetMapping("/start")
     public String startForGuest(HttpSession session) {
@@ -32,7 +35,9 @@ public class HomeController {
 
     @GetMapping("/")
     public String handleHome(HttpSession session, Model model) {
-
+    	 
+    	model.addAttribute("banners", bannerService.getVisible());
+    	
         Object loginUser = session.getAttribute("loginUser");
 
         // ── 5순위: 비로그인 ──

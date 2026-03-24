@@ -4,11 +4,10 @@
 
 <mapper namespace="com.tripan.app.admin.mapper.BannerMapper">
 
-    <resultMap id="bannerRM" type="com.tripan.app.admin.domain.dto.MainBannerDto">
+   <resultMap id="bannerRM" type="com.tripan.app.admin.domain.dto.MainBannerDto">
         <id     property="bannerId"   column="banner_id"/>
         <result property="bannerName" column="banner_name"/>
         <result property="imageUrl"   column="image_url"/>
-        <result property="linkUrl"    column="link_url"/>
         <result property="eyebrowText" column="eyebrow_text"/>
         <result property="mainTitle"  column="main_title"/>
         <result property="subTitle"   column="sub_title"/>
@@ -17,14 +16,14 @@
         <result property="regDate"    column="reg_date"/>
         <result property="modDate"    column="mod_date"/>
     </resultMap>
-
-    <!-- 전체 목록 (정렬 순서대로) -->
+ 
+    <!-- 전체 목록 -->
     <select id="selectAll" resultMap="bannerRM">
         SELECT *
         FROM   main_banner
         ORDER  BY sort_order ASC, reg_date DESC
     </select>
-
+ 
     <!-- 노출 중인 배너만 (홈 페이지용) -->
     <select id="selectVisible" resultMap="bannerRM">
         SELECT *
@@ -32,32 +31,33 @@
         WHERE  is_visible = 'Y'
         ORDER  BY sort_order ASC
     </select>
-
+ 
     <!-- 단건 조회 -->
     <select id="selectById" parameterType="int" resultMap="bannerRM">
         SELECT *
         FROM   main_banner
         WHERE  banner_id = #{bannerId}
     </select>
-
-    <!-- 등록 -->
-    <insert id="insert" parameterType="com.tripan.app.admin.domain.dto.MainBannerDto"
-            useGeneratedKeys="true" keyProperty="bannerId">
+ 
+    <!-- 등록 (Oracle — selectKey로 시퀀스 채번) -->
+    <insert id="insert" parameterType="com.tripan.app.admin.domain.dto.MainBannerDto">
+        <selectKey keyProperty="bannerId" resultType="int" order="BEFORE">
+            SELECT SEQ_MAIN_BANNER.NEXTVAL FROM DUAL
+        </selectKey>
         INSERT INTO main_banner
-            (banner_name, image_url, link_url, eyebrow_text,
+            (banner_id, banner_name, image_url, eyebrow_text,
              main_title, sub_title, sort_order, is_visible)
         VALUES
-            (#{bannerName}, #{imageUrl}, #{linkUrl}, #{eyebrowText},
+            (#{bannerId}, #{bannerName}, #{imageUrl}, #{eyebrowText},
              #{mainTitle}, #{subTitle}, #{sortOrder}, #{isVisible})
     </insert>
-
+ 
     <!-- 수정 -->
     <update id="update" parameterType="com.tripan.app.admin.domain.dto.MainBannerDto">
         UPDATE main_banner
         SET
             banner_name  = #{bannerName},
             image_url    = #{imageUrl},
-            link_url     = #{linkUrl},
             eyebrow_text = #{eyebrowText},
             main_title   = #{mainTitle},
             sub_title    = #{subTitle},
@@ -65,19 +65,26 @@
             is_visible   = #{isVisible}
         WHERE banner_id = #{bannerId}
     </update>
-
-    <!-- 노출 여부만 토글 -->
+ 
+    <!-- 순서 변경 -->
+    <update id="updateSortOrder">
+        UPDATE main_banner
+        SET    sort_order = #{sortOrder}
+        WHERE  banner_id  = #{bannerId}
+    </update>
+ 
+    <!-- 노출 여부 토글 -->
     <update id="updateVisibility">
         UPDATE main_banner
         SET    is_visible = #{isVisible}
         WHERE  banner_id  = #{bannerId}
     </update>
-
+ 
     <!-- 삭제 -->
     <delete id="delete" parameterType="int">
         DELETE FROM main_banner WHERE banner_id = #{bannerId}
     </delete>
-
+ 
     <!-- 현재 배너 수 -->
     <select id="countAll" resultType="int">
         SELECT COUNT(*) FROM main_banner

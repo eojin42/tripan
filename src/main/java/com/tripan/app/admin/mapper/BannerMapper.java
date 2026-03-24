@@ -14,6 +14,7 @@ public interface BannerMapper {
     MainBannerDto selectById(int bannerId);
     int insert(MainBannerDto dto);
     int update(MainBannerDto dto);
+    int updateSortOrder(@Param("bannerId") int bannerId, @Param("sortOrder") int sortOrder);
     int updateVisibility(@Param("bannerId") int bannerId, @Param("isVisible") String isVisible);
     int delete(int bannerId);
     int countAll();

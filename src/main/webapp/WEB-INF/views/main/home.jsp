@@ -8,23 +8,183 @@
 <main>
 
   <%-- ══════════════════════════════════════════════
-       HERO SECTION
+       HERO CAROUSEL SECTION — DB 연동
   ══════════════════════════════════════════════ --%>
-  <div class="hero">
-    <div class="hero-img" id="heroBg">
-      <img src="https://images.unsplash.com/photo-1507525428034-b723cf961d3e?q=80&w=2073&auto=format&fit=crop"
-           alt="차분한 파스텔톤 해변">
+  <div class="hero hero-carousel" id="heroCarousel">
+
+    <div class="carousel-track">
+
+      <%-- DB 배너가 있으면 DB에서, 없으면 기본 슬라이드 --%>
+      <c:choose>
+        <c:when test="${not empty banners}">
+          <c:forEach var="banner" items="${banners}" varStatus="vs">
+            <div class="carousel-slide ${vs.first ? 'active' : ''}">
+              <div class="hero-img">
+                <c:choose>
+				  <c:when test="${banner.imageUrl.startsWith('http')}">
+				    <img src="${banner.imageUrl}" alt="${banner.bannerName}">
+				  </c:when>
+				  <c:otherwise>
+				    <img src="${pageContext.request.contextPath}/uploads/banner/${banner.imageUrl}" alt="${banner.bannerName}">
+				  </c:otherwise>
+				</c:choose>
+              </div>
+              <div class="hero-overlay">
+                <p class="hero-eyebrow">${banner.eyebrowText}</p>
+                <h2 class="hero-title">${banner.mainTitle}</h2>
+                <p class="hero-subtitle">${banner.subTitle}</p>
+              </div>
+            </div>
+          </c:forEach>
+        </c:when>
+        <c:otherwise>
+          <%-- DB 배너 없을 때 기본 슬라이드 3개 --%>
+          <div class="carousel-slide active">
+            <div class="hero-img">
+              <img src="https://images.unsplash.com/photo-1507525428034-b723cf961d3e?q=80&w=2073&auto=format&fit=crop" alt="해변">
+            </div>
+            <div class="hero-overlay">
+              <p class="hero-eyebrow">여행 플래너 Tripan</p>
+              <h2 class="hero-title">다음 여행을,<br>더 가볍고 선명하게</h2>
+              <p class="hero-subtitle">일정은 같이, 정산은 쉽게 - 여행의 처음부터 끝까지 한 곳에서</p>
+            </div>
+          </div>
+          <div class="carousel-slide">
+            <div class="hero-img">
+              <img src="https://images.unsplash.com/photo-1469474968028-56623f02e42e?q=80&w=2074&auto=format&fit=crop" alt="산">
+            </div>
+            <div class="hero-overlay">
+              <p class="hero-eyebrow">일정 관리</p>
+              <h2 class="hero-title">함께라서 더 좋은<br>여행 일정 플래너</h2>
+              <p class="hero-subtitle">팀원과 실시간으로 일정을 함께 짜고 공유하세요</p>
+            </div>
+          </div>
+          <div class="carousel-slide">
+            <div class="hero-img">
+              <img src="https://images.unsplash.com/photo-1476514525535-07fb3b4ae5f1?q=80&w=2070&auto=format&fit=crop" alt="호수">
+            </div>
+            <div class="hero-overlay">
+              <p class="hero-eyebrow">정산 기능</p>
+              <h2 class="hero-title">복잡한 여행 경비,<br>자동으로 정산</h2>
+              <p class="hero-subtitle">누가 얼마를 썼는지 한눈에 - 엑셀 없이 깔끔하게</p>
+            </div>
+          </div>
+        </c:otherwise>
+      </c:choose>
+
+    </div><%-- /carousel-track --%>
+
+    <%-- 좌우 화살표 --%>
+    <button class="carousel-arrow carousel-prev" id="carouselPrev" aria-label="이전 슬라이드">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+        <polyline points="15 18 9 12 15 6"/>
+      </svg>
+    </button>
+    <button class="carousel-arrow carousel-next" id="carouselNext" aria-label="다음 슬라이드">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+        <polyline points="9 18 15 12 9 6"/>
+      </svg>
+    </button>
+
+    <%-- 인디케이터 도트 — 슬라이드 수만큼 동적 생성 --%>
+    <div class="carousel-dots" id="carouselDots">
+      <c:choose>
+        <c:when test="${not empty banners}">
+          <c:forEach var="banner" items="${banners}" varStatus="vs">
+            <button class="dot ${vs.first ? 'active' : ''}"
+                    data-index="${vs.index}"
+                    aria-label="슬라이드 ${vs.index + 1}"></button>
+          </c:forEach>
+        </c:when>
+        <c:otherwise>
+          <button class="dot active" data-index="0" aria-label="슬라이드 1"></button>
+          <button class="dot"        data-index="1" aria-label="슬라이드 2"></button>
+          <button class="dot"        data-index="2" aria-label="슬라이드 3"></button>
+        </c:otherwise>
+      </c:choose>
     </div>
-    <div class="hero-overlay">
-      <p class="hero-eyebrow reveal active delay-100">여행 플래너 Tripan</p>
-      <h2 class="hero-title reveal active delay-100">
-        다음 여행을,<br>더 가볍고 선명하게
-      </h2>
-      <p class="hero-subtitle reveal active delay-200">
-        일정은 같이, 정산은 쉽게 — 여행의 처음부터 끝까지 한 곳에서
-      </p>
-    </div>
-  </div>
+
+  </div><%-- /hero-carousel --%>
+
+  <style>
+    /* ── 캐러셀 오버라이드 ── */
+	.hero-carousel { position: relative; overflow: hidden; height: 500px; }
+	.carousel-track { position: relative; height: 100%; }
+
+    /* 이미지 꽉 채우기 (안 나오는 문제 해결) */
+    .hero-img { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 1; }
+    .hero-img img { width: 100%; height: 100%; object-fit: cover;
+      filter: brightness(0.8) saturate(1.1) contrast(0.95); }
+
+    /* 비활성 슬라이드 숨김 */
+    .carousel-slide { display: none; position: absolute; inset: 0; width: 100%; height: 100%; }
+    .carousel-slide.active { display: block; position: relative; height: 100%; }
+
+    /* 화살표 */
+    .carousel-arrow {
+      position: absolute; top: 50%; transform: translateY(-50%); z-index: 10;
+      background: rgba(255,255,255,0.18); backdrop-filter: blur(6px);
+      -webkit-backdrop-filter: blur(6px);
+      border: 1.5px solid rgba(255,255,255,0.4);
+      color: #fff; width: 44px; height: 44px; border-radius: 50%;
+      cursor: pointer; display: flex; align-items: center; justify-content: center;
+      transition: background 0.2s;
+    }
+    .carousel-arrow:hover { background: rgba(255,255,255,0.35); }
+    .carousel-prev { left: 20px; }
+    .carousel-next { right: 20px; }
+
+    /* 인디케이터 도트 */
+    .carousel-dots {
+      position: absolute; bottom: 22px; left: 50%; transform: translateX(-50%);
+      display: flex; gap: 8px; z-index: 10;
+    }
+    .dot {
+      width: 8px; height: 8px; border-radius: 50%;
+      background: rgba(255,255,255,0.45); border: none; cursor: pointer;
+      padding: 0; transition: background 0.25s, transform 0.25s;
+    }
+    .dot.active { background: #fff; transform: scale(1.3); }
+  </style>
+
+  <script>
+  (function () {
+    var slides  = document.querySelectorAll('#heroCarousel .carousel-slide');
+    var dots    = document.querySelectorAll('#heroCarousel .dot');
+    var current = 0;
+    var timer;
+
+    // 슬라이드 1개면 화살표/도트 숨기기
+    if (slides.length <= 1) {
+      var prev = document.getElementById('carouselPrev');
+      var next = document.getElementById('carouselNext');
+      var dotsWrap = document.getElementById('carouselDots');
+      if (prev) prev.style.display = 'none';
+      if (next) next.style.display = 'none';
+      if (dotsWrap) dotsWrap.style.display = 'none';
+      return;
+    }
+
+    function goTo(idx) {
+      slides[current].classList.remove('active');
+      dots[current].classList.remove('active');
+      current = (idx + slides.length) % slides.length;
+      slides[current].classList.add('active');
+      dots[current].classList.add('active');
+    }
+
+    function startAuto() { timer = setInterval(function () { goTo(current + 1); }, 4500); }
+    function resetAuto()  { clearInterval(timer); startAuto(); }
+
+    document.getElementById('carouselNext').addEventListener('click', function () { goTo(current + 1); resetAuto(); });
+    document.getElementById('carouselPrev').addEventListener('click', function () { goTo(current - 1); resetAuto(); });
+    dots.forEach(function (dot) {
+      dot.addEventListener('click', function () { goTo(parseInt(this.dataset.index)); resetAuto(); });
+    });
+
+    startAuto();
+  })();
+  </script>
 
   <%-- ══════════════════════════════════════════════
        메인 여행 위젯
@@ -32,22 +192,13 @@
   <section class="widget-section reveal">
     <div class="widget-container">
 
-      <%-- ─────────────────────────────────────
-           A. 비로그인 — 정사각형 + 구름 애니메이션
-           [무료로 시작하기] → /start → 로그인 → 홈 리다이렉트
-      ───────────────────────────────────── --%>
+      <%-- A. 비로그인 --%>
       <c:if test="${widgetType == 'GUEST'}">
         <div class="trip-widget guest-widget">
           <div class="widget-accent accent-brand"></div>
-
           <div class="widget-visual guest-visual">
-            <img
-              src="${pageContext.request.contextPath}/dist/images/logo.png"
-              alt="Tripan 로고"
-              class="guest-logo-img"
-            >
+            <img src="${pageContext.request.contextPath}/dist/images/logo.png" alt="Tripan 로고" class="guest-logo-img">
           </div>
-
           <div class="widget-body">
             <p class="widget-eyebrow">Travel Planner</p>
             <h3 class="widget-title">함께 만드는 여행,<br>정리는 더 간단하게</h3>
@@ -56,18 +207,13 @@
               복잡한 엑셀 없이 한 화면에서 모두 해결됩니다.
             </p>
             <div class="widget-actions">
-              <%-- /start 엔드포인트: session에 redirectAfterLogin="/" 설정 후 로그인 페이지로 이동 --%>
-              <a href="${pageContext.request.contextPath}/start" class="btn-widget-primary">
-                무료로 시작하기 →
-              </a>
+              <a href="${pageContext.request.contextPath}/start" class="btn-widget-primary">무료로 시작하기 →</a>
             </div>
           </div>
         </div>
       </c:if>
 
-      <%-- ─────────────────────────────────────
-           B. 로그인 · 여행 없음
-      ───────────────────────────────────── --%>
+      <%-- B. 로그인 · 여행 없음 --%>
       <c:if test="${widgetType == 'EMPTY'}">
         <div class="trip-widget empty-widget">
           <div class="widget-accent accent-empty"></div>
@@ -77,17 +223,13 @@
             <h3 class="widget-title">아직 만들어진 여행이 없네요</h3>
             <p class="widget-desc">첫 여행을 만들고 일정과 지출을 한 번에 관리해보세요</p>
             <div class="widget-actions centered">
-              <a href="${pageContext.request.contextPath}/trip/trip_create" class="btn-widget-primary">
-                ＋ 새 여행 만들기
-              </a>
+              <a href="${pageContext.request.contextPath}/trip/trip_create" class="btn-widget-primary">＋ 새 여행 만들기</a>
             </div>
           </div>
         </div>
       </c:if>
 
-      <%-- ─────────────────────────────────────
-           C. PLANNING (예정된 여행)
-      ───────────────────────────────────── --%>
+      <%-- C. PLANNING --%>
       <c:if test="${widgetType == 'PLANNING'}">
         <div class="trip-widget planning-widget">
           <div class="widget-accent accent-planning"></div>
@@ -96,9 +238,7 @@
               <c:when test="${not empty representativeTrip.thumbnailUrl}">
                 <img src="${representativeTrip.thumbnailUrl}" alt="${representativeTrip.tripName}">
               </c:when>
-              <c:otherwise>
-                <div class="thumb-placeholder planning-bg">🌅</div>
-              </c:otherwise>
+              <c:otherwise><div class="thumb-placeholder planning-bg">🌅</div></c:otherwise>
             </c:choose>
             <span class="widget-badge planning-badge">예정된 여행</span>
           </div>
@@ -138,18 +278,14 @@
               </c:choose>
             </div>
             <div class="widget-actions">
-              <a href="${pageContext.request.contextPath}/trip/${representativeTrip.tripId}/workspace"
-                 class="btn-widget-primary">여행으로 가기 →</a>
-              <a href="${pageContext.request.contextPath}/trip/my_trips"
-                 class="btn-widget-secondary">내 여행 전체보기</a>
+              <a href="${pageContext.request.contextPath}/trip/${representativeTrip.tripId}/workspace" class="btn-widget-primary">여행으로 가기 →</a>
+              <a href="${pageContext.request.contextPath}/trip/my_trips" class="btn-widget-secondary">내 여행 전체보기</a>
             </div>
           </div>
         </div>
       </c:if>
 
-      <%-- ─────────────────────────────────────
-           D. ONGOING (진행 중)
-      ───────────────────────────────────── --%>
+      <%-- D. ONGOING --%>
       <c:if test="${widgetType == 'ONGOING'}">
         <div class="trip-widget ongoing-widget">
           <div class="widget-accent accent-ongoing"></div>
@@ -158,9 +294,7 @@
               <c:when test="${not empty representativeTrip.thumbnailUrl}">
                 <img src="${representativeTrip.thumbnailUrl}" alt="${representativeTrip.tripName}">
               </c:when>
-              <c:otherwise>
-                <div class="thumb-placeholder ongoing-bg">🌊</div>
-              </c:otherwise>
+              <c:otherwise><div class="thumb-placeholder ongoing-bg">🌊</div></c:otherwise>
             </c:choose>
             <span class="widget-badge ongoing-badge">
               <span class="live-dot"></span>여행 중
@@ -187,18 +321,14 @@
             </div>
             <p class="widget-desc">일정과 지출을 지금 바로 확인하고 정산도 놓치지 마세요</p>
             <div class="widget-actions">
-              <a href="${pageContext.request.contextPath}/trip/${representativeTrip.tripId}/workspace"
-                 class="btn-widget-primary">지금 여행 보기 →</a>
-              <a href="${pageContext.request.contextPath}/trip/my_trips"
-                 class="btn-widget-secondary">내 여행 전체보기</a>
+              <a href="${pageContext.request.contextPath}/trip/${representativeTrip.tripId}/workspace" class="btn-widget-primary">지금 여행 보기 →</a>
+              <a href="${pageContext.request.contextPath}/trip/my_trips" class="btn-widget-secondary">내 여행 전체보기</a>
             </div>
           </div>
         </div>
       </c:if>
 
-      <%-- ─────────────────────────────────────
-           E. COMPLETED (모두 완료)
-      ───────────────────────────────────── --%>
+      <%-- E. COMPLETED --%>
       <c:if test="${widgetType == 'COMPLETED'}">
         <div class="trip-widget completed-widget">
           <div class="widget-accent accent-complete"></div>
@@ -207,9 +337,7 @@
               <c:when test="${not empty representativeTrip.thumbnailUrl}">
                 <img src="${representativeTrip.thumbnailUrl}" alt="${representativeTrip.tripName}">
               </c:when>
-              <c:otherwise>
-                <div class="thumb-placeholder completed-bg">🏞️</div>
-              </c:otherwise>
+              <c:otherwise><div class="thumb-placeholder completed-bg">🏞️</div></c:otherwise>
             </c:choose>
             <span class="widget-badge completed-badge">완료된 여행</span>
           </div>
@@ -234,10 +362,8 @@
             </div>
             <p class="widget-desc">다음 목적지를 정하고 새로운 여행을 만들어보세요</p>
             <div class="widget-actions">
-              <a href="${pageContext.request.contextPath}/trip/trip_create"
-                 class="btn-widget-primary">＋ 새 여행 만들기</a>
-              <a href="${pageContext.request.contextPath}/trip/my_trips"
-                 class="btn-widget-secondary">지난 여행 보기</a>
+              <a href="${pageContext.request.contextPath}/trip/trip_create" class="btn-widget-primary">＋ 새 여행 만들기</a>
+              <a href="${pageContext.request.contextPath}/trip/my_trips" class="btn-widget-secondary">지난 여행 보기</a>
             </div>
           </div>
         </div>
@@ -247,7 +373,7 @@
   </section>
 
   <%-- ══════════════════════════════════════════════
-       피드 섹션 — API 연동 (디자인 기존 그대로)
+       피드 섹션
   ══════════════════════════════════════════════ --%>
   <section>
     <div class="feed-header reveal">
@@ -259,9 +385,7 @@
     </div>
     <div class="carousel-wrapper reveal">
       <button class="nav-arrow prev">←</button>
-      <div class="horizontal-list" id="homeFeedList">
-        <%-- JS로 채워짐 --%>
-      </div>
+      <div class="horizontal-list" id="homeFeedList"></div>
       <button class="nav-arrow next">→</button>
     </div>
   </section>
@@ -370,9 +494,7 @@
   if (!container) return;
 
   function escHtml(s) {
-    return String(s||'')
-      .replace(/&/g,'&amp;').replace(/</g,'&lt;')
-      .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
   }
 
   function makeItem(t) {
@@ -383,51 +505,21 @@
     var likes   = t.likeCount || 0;
     var leader  = t.leaderNickname || '트리패너';
     var profImg = t.leaderProfileImage || '';
-
-    // 지역 태그 (최대 2개)
-    var tags = cities
-      ? cities.split(',').slice(0,2).map(function(c){ return '#'+c.trim(); }).filter(Boolean).join(' ')
-      : '#국내여행';
-
-    // 설명 (description이 있으면 사용, 없으면 담기수 표시)
-    var desc = (t.description && t.description.trim())
-      ? t.description.trim()
-      : '🗂 ' + scrap + '회 담겨진 여행';
-
-    // 썸네일
-    var imgHtml = thumb
-      ? '<img src="'+escHtml(thumb.startsWith('http')?thumb:CP+thumb)+'" alt="'+escHtml(name)+'" loading="lazy">'
-      : '';
-
-    // 프로필 이미지
-    var avHtml = profImg
-      ? '<img src="'+escHtml(profImg.startsWith('http')?profImg:CP+'/'+profImg)+'" alt="">'
-      : '<img src="'+CP+'/dist/images/trip_icon.png" alt="">';
+    var tags    = cities ? cities.split(',').slice(0,2).map(function(c){ return '#'+c.trim(); }).filter(Boolean).join(' ') : '#국내여행';
+    var desc    = (t.description && t.description.trim()) ? t.description.trim() : '🗂 ' + scrap + '회 담겨진 여행';
+    var imgHtml = thumb ? '<img src="'+escHtml(thumb.startsWith('http')?thumb:CP+thumb)+'" alt="'+escHtml(name)+'" loading="lazy">' : '';
+    var avHtml  = profImg ? '<img src="'+escHtml(profImg.startsWith('http')?profImg:CP+'/'+profImg)+'" alt="">' : '<img src="'+CP+'/dist/images/trip_icon.png" alt="">';
 
     return '<div class="list-item" onclick="location.href=\''+CP+'/feed/feed_detail?tripId='+t.tripId+'\'" style="cursor:pointer">'
-      + '<div class="list-img">'
-      + '<div class="floating-badge">❤️ '+likes+' &nbsp; 🗂 '+scrap+'</div>'
-      + imgHtml
-      + '</div>'
-      + '<div class="list-info">'
-      + '<span class="tag">'+escHtml(tags)+'</span>'
-      + '<h4>'+escHtml(name)+'</h4>'
+      + '<div class="list-img"><div class="floating-badge">❤️ '+likes+' &nbsp; 🗂 '+scrap+'</div>'+imgHtml+'</div>'
+      + '<div class="list-info"><span class="tag">'+escHtml(tags)+'</span><h4>'+escHtml(name)+'</h4>'
       + '<p class="desc">'+escHtml(desc)+'</p>'
-      + '<div class="author-info">'
-      + '<div class="author-pic">'+avHtml+'</div>'
-      + '@'+escHtml(leader)
-      + '</div>'
-      + '</div>'
-      + '</div>';
+      + '<div class="author-info"><div class="author-pic">'+avHtml+'</div>@'+escHtml(leader)+'</div></div></div>';
   }
 
   fetch(CP + '/feed/public-trips?page=0&size=8')
     .then(function(r){
-      // 401/403이면 Security 설정 문제 → 빈 목록으로 graceful 처리
-      if (!r.ok) {
-        console.warn('[HomeFeed] API 응답 오류:', r.status, '— SecurityConfig에 /feed/public-trips permitAll 추가 필요');
-        return [];
-      }
+      if (!r.ok) { console.warn('[HomeFeed] API 오류:', r.status); return []; }
       return r.json();
     })
     .then(function(list) {
@@ -437,10 +529,7 @@
       }
       container.innerHTML = list.slice(0, 8).map(makeItem).join('');
     })
-    .catch(function(e){
-      console.error('[HomeFeed] fetch 실패:', e);
-      container.innerHTML = '';
-    });
+    .catch(function(e){ console.error('[HomeFeed] fetch 실패:', e); container.innerHTML = ''; });
 })();
 </script>
 <script src="${pageContext.request.contextPath}/dist/js/home.js"></script>

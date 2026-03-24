@@ -185,7 +185,7 @@
         <div class="w-header" style="margin-bottom:18px">
           <div>
             <h2>메인 배너 목록</h2>
-            <p style="font-size:12px;color:var(--muted);margin-top:3px">홈 히어로 섹션 배너 · 최대 5개 · 드래그로 순서 변경</p>
+            <p style="font-size:12px;color:var(--muted);margin-top:3px">홈 히어로 섹션 배너 · 최대 5개 · ⠿ 드래그로 순서 변경 후 자동 저장</p>
           </div>
           <button class="btn btn-primary btn-sm" onclick="openBanner()">+ 새 배너 추가</button>
         </div>
@@ -193,11 +193,18 @@
         <div class="card" style="padding:20px">
           <div class="bn-list" id="bnList">
             <c:forEach var="b" items="${banners}" varStatus="vs">
-              <div class="bn-row fade-up" style="animation-delay:${vs.index * 0.05}s">
+              <div class="bn-row fade-up" data-id="${b.bannerId}" style="animation-delay:${vs.index * 0.05}s">
                 <span class="drag-h">⠿</span>
                 <c:choose>
                   <c:when test="${not empty b.imageUrl}">
-                    <img class="bn-thumb" src="${b.imageUrl}" alt="${b.bannerName}">
+                   <c:choose>
+					  <c:when test="${b.imageUrl.startsWith('http')}">
+					    <img class="bn-thumb" src="${b.imageUrl}" alt="${b.bannerName}">
+					  </c:when>
+					  <c:otherwise>
+					    <img class="bn-thumb" src="${pageContext.request.contextPath}/uploads/banner/${b.imageUrl}" alt="${b.bannerName}">
+					  </c:otherwise>
+					</c:choose>
                   </c:when>
                   <c:otherwise>
                     <div class="bn-thumb-ph">🏞️</div>
@@ -333,15 +340,9 @@
         </div>
       </div>
 
-      <div class="fg-2">
-        <div class="fg">
-          <label>배너 제목 (내부용) *</label>
-          <input type="text" id="bnName" name="bannerName" placeholder="ex) 여름 해변 메인 배너" required>
-        </div>
-        <div class="fg">
-          <label>링크 URL</label>
-          <input type="url" id="bnLink" name="linkUrl" placeholder="ex) /trip/create">
-        </div>
+      <div class="fg">
+        <label>배너 제목 (내부용) *</label>
+        <input type="text" id="bnName" name="bannerName" placeholder="ex) 여름 해변 메인 배너" required>
       </div>
 
       <div class="fg">
@@ -548,7 +549,11 @@ function openBanner(mode, bannerId){
         document.getElementById('bnSub').value       = d.subTitle || '';
         document.getElementById('bnOrder').value     = d.sortOrder || 1;
         document.getElementById('bnVisible').value   = d.isVisible || 'Y';
-        if(d.imageUrl){ document.getElementById('pvImg').src = d.imageUrl; }
+        if(d.imageUrl){
+        	  document.getElementById('pvImg').src = d.imageUrl.startsWith('http') 
+        	    ? d.imageUrl 
+        	    : CP + '/uploads/banner/' + d.imageUrl;
+        	}
         updatePv();
       });
   } else {
@@ -613,6 +618,53 @@ function prevIU(input, wrId, prevId){
   r.readAsDataURL(f);
 }
 
+/* ── BANNER DRAG SORT ── */
+(function(){
+  const list = document.getElementById('bnList');
+  if (!list) return;
+  let dragEl = null;
+
+  list.addEventListener('dragstart', function(e){
+    dragEl = e.target.closest('.bn-row');
+    if (!dragEl) return;
+    dragEl.style.opacity = '0.4';
+    e.dataTransfer.effectAllowed = 'move';
+  });
+  list.addEventListener('dragend', function(){
+    if (dragEl) dragEl.style.opacity = '1';
+    dragEl = null;
+    saveSortOrder();
+  });
+  list.addEventListener('dragover', function(e){
+    e.preventDefault();
+    const target = e.target.closest('.bn-row');
+    if (!target || target === dragEl) return;
+    const rect = target.getBoundingClientRect();
+    const mid  = rect.top + rect.height / 2;
+    if (e.clientY < mid) list.insertBefore(dragEl, target);
+    else list.insertBefore(dragEl, target.nextSibling);
+  });
+
+  // bn-row들에 draggable 속성 동적 부여
+  document.querySelectorAll('.bn-row').forEach(function(row){
+    row.setAttribute('draggable', 'true');
+  });
+})();
+
+function saveSortOrder(){
+  const rows  = document.querySelectorAll('#bnList .bn-row');
+  const orders = [];
+  rows.forEach(function(row, idx){
+    orders.push({ bannerId: parseInt(row.dataset.id), sortOrder: idx + 1 });
+  });
+  fetch(CP + '/admin/curation/banner/sort', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(orders)
+  }).then(function(r){ return r.json(); })
+    .then(function(d){ if(d.success) showToast('순서가 저장되었습니다 ✅'); });
+}
+
 /* ── BANNER LIVE PREVIEW ── */
 function updatePv(){
   document.getElementById('pvEy').textContent = document.getElementById('bnEyebrow').value;
@@ -637,10 +689,8 @@ function submitBanner(){
 /* ── DELETE BANNER ── */
 function deleteBanner(bannerId, btn){
   if(!confirm('배너를 삭제하시겠습니까?')) return;
-  fetch(CP+'/admin/curation/banner/delete',{
+  fetch(CP+'/admin/curation/banner/delete/'+bannerId,{
     method:'POST',
-    headers:{'Content-Type':'application/x-www-form-urlencoded'},
-    body:'bannerId='+bannerId
   }).then(r=>r.json()).then(d=>{
     if(d.success){ btn.closest('.bn-row').remove(); showToast('배너가 삭제되었습니다'); }
     else alert('삭제 실패');

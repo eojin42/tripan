@@ -33,7 +33,7 @@ public class SpringSecurityConfig {
 				"/member/userIdCheck", "/member/complete", "/member/pwdFind", "/member/expired", "/partner/login",
 				"/dist/**",
 				"/guest/main", "/guest/list", 
-				"/uploads/photo/**", "/uploads/feed/**", "/uploads/review/**",
+				"/uploads/banner/**", "/uploads/photo/**", "/uploads/feed/**", "/uploads/review/**",
 				"/favicon.ico", "/WEB-INF/views/**",
 				"/oauth/kakao/callback", 
 				"/accommodation/home", "/accommodation/list", "/accommodation/search", "/accommodation/detail/*", "/accommodation/review/list/*", "/accommodation/review/photos/*",
