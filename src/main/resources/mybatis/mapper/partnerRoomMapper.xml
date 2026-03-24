@@ -148,6 +148,19 @@
 	    WHERE rm.PLACE_ID = #{placeId}
 	    ORDER BY r.RESERVATION_ID DESC
 	</select>
-
+	
+	<update id="restoreMemberCouponForPartner">
+	    UPDATE member_coupon 
+	    SET status = 'AVAILABLE' 
+	    WHERE member_coupon_id = #{memberCouponId}
+	</update>
+	
+	<update id="cancelCouponUsageForPartner">
+	    UPDATE coupon_usage 
+	    SET status = 'CANCELED', 
+	        cancelled_at = SYSDATE, 
+	        cancel_reason = '파트너 오버부킹 강제 취소'
+	    WHERE order_id = #{orderId} AND member_coupon_id = #{memberCouponId}
+	</update>
 	
 </mapper>

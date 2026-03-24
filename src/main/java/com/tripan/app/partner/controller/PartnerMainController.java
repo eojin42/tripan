@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.stereotype.Controller;
@@ -25,6 +26,7 @@ import com.tripan.app.partner.mapper.PartnerRoomMapper;
 import com.tripan.app.partner.service.PartnerInfoService;
 import com.tripan.app.partner.service.PartnerRoomService;
 import com.tripan.app.security.CustomUserDetails;
+import com.tripan.app.service.AccommodationService;
 
 import lombok.RequiredArgsConstructor;
 
@@ -36,7 +38,7 @@ public class PartnerMainController {
     private final PartnerInfoService partnerInfoService;
     private final PartnerRoomMapper partnerRoomMapper; 
     private final AccommodationMapper accommodationMapper;
-    private final PartnerRoomService partnerRoomService; 
+    private final PartnerRoomService partnerRoomService;
 
     @GetMapping("/main")
     public String main(
@@ -197,4 +199,30 @@ public class PartnerMainController {
             return ResponseEntity.badRequest().body(new ArrayList<>());
         }
     }
+
+    @ResponseBody
+    @PostMapping("/api/booking/cancel")
+    public ResponseEntity<?> cancelBookingByPartner(
+            @RequestBody Map<String, Object> payload,
+            jakarta.servlet.http.HttpSession session) {
+            
+        try {
+            Long currentPartnerId = (Long) session.getAttribute("currentPartnerId");
+            if (currentPartnerId == null) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("message", "파트너 권한이 없습니다."));
+            }
+            
+            Long reservationId = Long.valueOf(payload.get("reservationId").toString());
+            String reason = (String) payload.get("reason");
+
+            partnerRoomService.cancelReservationByPartner(reservationId, currentPartnerId, reason);
+
+            return ResponseEntity.ok(Map.of("message", "success"));
+            
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.badRequest().body(Map.of("message", e.getMessage()));
+        }
+    }
+    
 }

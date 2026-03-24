@@ -12,19 +12,18 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
-import com.tripan.app.admin.service.CouponService;
 import com.tripan.app.common.StorageService;
 import com.tripan.app.mapper.AccommodationMapper;
 import com.tripan.app.partner.domain.dto.PartnerRoomDto;
 import com.tripan.app.partner.mapper.PartnerRoomMapper;
 import com.tripan.app.service.PointService;
 import com.tripan.app.service.PortOneService;
+
 import lombok.RequiredArgsConstructor;
 
 @Service
 @RequiredArgsConstructor
 public class PartnerRoomServiceImpl implements PartnerRoomService {
-
 
     private final PartnerRoomMapper partnerRoomMapper;
     private final AccommodationMapper accommodationMapper;
@@ -32,7 +31,6 @@ public class PartnerRoomServiceImpl implements PartnerRoomService {
     private final PortOneService portOneService;
     private final StorageService storageService;
     private final PointService pointService;
-    private final CouponService couponService;
 
     @Value("${file.upload-root}")
     private String uploadRoot;
@@ -161,7 +159,8 @@ public class PartnerRoomServiceImpl implements PartnerRoomService {
 	    accommodationMapper.cancelPaymentStatus(orderId);
 
 	    if (memberCouponId != null && memberCouponId > 0) {
-//	       couponService.restoreCoupon(memberCouponId, orderId);
+	        partnerRoomMapper.restoreMemberCouponForPartner(memberCouponId);
+	        partnerRoomMapper.cancelCouponUsageForPartner(orderId, memberCouponId);
 	    }
 	    long earnPoint = (long) (realAmount * 0.01); 
 	    if (cancelPoint > 0 || earnPoint > 0) {

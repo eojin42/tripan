@@ -145,5 +145,5 @@
 	    ) VALUES (
 	        MEMBER_COUPON_SEQ.NEXTVAL, #{memberId}, #{couponId}, 'AVAILABLE', SYSDATE, SYSDATE + 30
 	    )
-	</insert>
+	</insert>	
 </mapper>
