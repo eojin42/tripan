@@ -96,7 +96,7 @@
   // 🌟 [수정] 전역(window) 변수로 만들어 list.jsp와 상태를 공유합니다!
   window.filterState = {
     minPrice: 0,
-    maxPrice: 500000,
+    maxPrice: 1000000,
     accTypes: [],        
     accFacilities: [],   
     roomFacilities: []   
