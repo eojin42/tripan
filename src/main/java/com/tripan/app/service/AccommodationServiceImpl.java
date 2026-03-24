@@ -79,6 +79,9 @@ public class AccommodationServiceImpl implements AccommodationService{
                 }
             }
             detail.setRooms(rooms);
+            
+            List<String> tags = mapper.selectTagsByPlaceId(placeId);
+            detail.setTags(tags);
         }
         
         return detail;
@@ -456,7 +459,6 @@ public class AccommodationServiceImpl implements AccommodationService{
 	    // 4. 포트원 실제 결제 취소 요청
 	    // -------------------------------------------------------------------
 	    if (cancelRealAmount > 0) {
-	        // 환불할 카드 금액이 있을 때만 포트원에 API 요청!
 	        portOneService.cancelPayment(orderId, "환불 규정에 따른 사용자 취소", cancelRealAmount);
 	    }
 	}

@@ -31,4 +31,5 @@ public class AccommodationDetailDto extends AccommodationDto{
     private Integer sauna;
     
     private String otherFacility;
+    private List<String> tags;
 }

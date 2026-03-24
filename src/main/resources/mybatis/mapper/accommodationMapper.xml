@@ -46,6 +46,16 @@
         <if test="region != null and region != ''">
             AND p.ADDRESS LIKE '%' || #{region} || '%'
         </if>
+        
+        <if test="tag != null and tag != ''">
+            AND EXISTS (
+                SELECT 1 
+                FROM PLACE_TAG pt
+                JOIN TAG t ON pt.TAG_ID = t.TAG_ID
+                WHERE pt.PLACE_ID = p.PLACE_ID
+                AND REPLACE(t.TAG_NAME, '#', '') = REPLACE(#{tag}, '#', '')
+            )
+        </if>
 
         <if test="accTypes != null and accTypes.size() > 0">
             AND (
@@ -605,4 +615,12 @@
 	<update id="cancelPaymentStatus">
 	    UPDATE PAYMENT SET STATUS = 'CANCELED' WHERE ORDER_ID = #{orderId}
 	</update>
+	
+	<!-- 태그 관련 -->
+	<select id="selectTagsByPlaceId" resultType="string">
+        SELECT t.TAG_NAME 
+        FROM TAG t
+        JOIN PLACE_TAG pt ON t.TAG_ID = pt.TAG_ID
+        WHERE pt.PLACE_ID = #{placeId}
+    </select>
 </mapper>

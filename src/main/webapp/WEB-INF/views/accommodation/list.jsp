@@ -360,6 +360,17 @@
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="4" y1="21" x2="4" y2="14"/><line x1="4" y1="10" x2="4" y2="3"/><line x1="12" y1="21" x2="12" y2="12"/><line x1="12" y1="8" x2="12" y2="3"/><line x1="20" y1="21" x2="20" y2="16"/><line x1="20" y1="12" x2="20" y2="3"/><line x1="1" y1="14" x2="7" y2="14"/><line x1="9" y1="8" x2="15" y2="8"/><line x1="17" y1="16" x2="23" y2="16"/></svg>
     </button>
   </div>
+  
+  <c:if test="${not empty param.tag}">
+	    <div style="margin-bottom: 16px;">
+	        <span style="background: var(--text-black); color: white; padding: 6px 16px; border-radius: 20px; font-weight: 800; font-size: 15px;">
+	            #${param.tag}
+	        </span>
+	        <span style="font-size: 15px; font-weight: 600; color: var(--text-dark); margin-left: 8px;">
+	            태그가 포함된 숙소입니다.
+	        </span>
+	    </div>
+	</c:if>
 
   <div class="content-wrapper">
       
@@ -530,7 +541,6 @@
 	      child: parseInt(urlParams.get('child')) || 0,
 	      
 	      
-	      // 🌟 [추가됨] 필터 모달의 값들을 안전하게 가져오기 (없으면 기본값)
 	      minPrice: window.filterState ? window.filterState.minPrice : 0,
 	      maxPrice: window.filterState ? window.filterState.maxPrice : 500000,
 	      accTypes: window.filterState ? window.filterState.accTypes : [],
@@ -539,6 +549,7 @@
    		  sort: currentSortOption,
           userLat: userLat,
           userLng: userLng,
+          tag: urlParams.get('tag') || '',
 	    	
 	      offset: currentOffset,
 	      size: PAGE_SIZE // 🚨 이제 정상적으로 페이징 개수(9개)가 날아갑니다!

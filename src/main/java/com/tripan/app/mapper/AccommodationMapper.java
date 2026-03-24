@@ -95,4 +95,7 @@ public interface AccommodationMapper {
     
     // 객실 상세 모달용 여러 장의 사진 조회
     List<String> selectRoomImagesByRoomId(String roomId);
+    
+    // 태그 관련
+    List<String> selectTagsByPlaceId(Long placeId);
 }
