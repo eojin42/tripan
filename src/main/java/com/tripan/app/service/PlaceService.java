@@ -19,4 +19,6 @@ public interface PlaceService {
      * @param limit       반환 개수
      */
     List<PlaceDto> getRecommendPlaces(String category, String cityKeyword, int limit);
+
+    List<PlaceDto> searchPlaces(String keyword);
 }

@@ -1,21 +1,27 @@
 package com.tripan.app.service;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.tripan.app.domain.dto.PlaceDto;
-import com.tripan.app.mapper.PlaceMapper;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
+import java.net.URI;
+import java.util.ArrayList;
+import java.util.List;
+
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.scheduling.annotation.Scheduled;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.DefaultUriBuilderFactory;
 import org.springframework.web.util.UriComponentsBuilder;
 
-import java.net.URI;
-import java.util.List;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.tripan.app.domain.dto.PlaceDto;
+import com.tripan.app.mapper.PlaceMapper;
+
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 /**
  * KTO 한국관광공사 Open API 동기화 서비스
@@ -44,6 +50,8 @@ public class PlaceServiceImpl implements PlaceService {
 
     private final PlaceMapper  placeMapper;
     private final ObjectMapper objectMapper = new ObjectMapper();
+    private final RestTemplate restTemplate = new RestTemplate();
+
 
     @Value("${tripan.api.kto-service-key}")
     private String serviceKey;
@@ -235,5 +243,78 @@ public class PlaceServiceImpl implements PlaceService {
                 .queryParam("MobileOS",  "ETC")
                 .queryParam("MobileApp", "Tripan")
                 .queryParam("_type",     "json");
+    }
+    
+    @Override
+    public List<PlaceDto> searchPlaces(String keyword) {
+        //  내 구역(로컬 DB) 먼저 검색
+    	List<PlaceDto> localPlaces = placeMapper.searchPlacesByName(keyword, null);
+        
+        // DB에 데이터가 1개라도 있으면 KTO 찌르지 않고 바로 화면에 던져줌
+        if (localPlaces != null && !localPlaces.isEmpty()) {
+            return localPlaces;
+        }
+
+        // 내 DB에 없으면 외부에 구조요청 (KTO searchKeyword2 API 호출)
+        List<PlaceDto> apiPlaces = new ArrayList<>();
+        try {
+            URI uri = UriComponentsBuilder.fromUriString(baseUrl + "/searchKeyword2")
+                    .queryParam("ServiceKey", serviceKey)
+                    .queryParam("MobileOS", "ETC")
+                    .queryParam("MobileApp", "Tripan")
+                    .queryParam("_type", "json")
+                    .queryParam("keyword", keyword)    // 검색어
+                    .queryParam("arrange", "O")        // 제목순 정렬
+                    .queryParam("numOfRows", "15")     // 최대 15개만
+                    .queryParam("pageNo", "1")
+                    .build(true).toUri();
+
+            HttpHeaders headers = new HttpHeaders();
+            ResponseEntity<String> response = restTemplate.exchange(uri, HttpMethod.GET, new HttpEntity<>(headers), String.class);
+            JsonNode items = objectMapper.readTree(response.getBody()).path("response").path("body").path("items").path("item");
+
+            if (items.isArray()) {
+                for (JsonNode node : items) {
+                    PlaceDto dto = new PlaceDto();
+                    dto.setPlaceId(node.path("contentid").asLong());
+                    dto.setPlaceName(node.path("title").asText(""));
+                    dto.setAddress(node.path("addr1").asText(""));
+                    dto.setLatitude(node.path("mapy").asDouble(0.0));
+                    dto.setLongitude(node.path("mapx").asDouble(0.0));
+                    
+                    // 사진 가져오기 (우선 썸네일, 없으면 원본)
+                    String img = node.path("firstimage2").asText("");
+                    if (img.isEmpty()) img = node.path("firstimage").asText("");
+                    dto.setImageUrl(img);
+
+                    // KTO의 contentTypeId를 우리 카테고리로 변환
+                    String typeId = node.path("contenttypeid").asText("");
+                    dto.setCategory(convertKtoTypeToCategory(typeId));
+
+                    apiPlaces.add(dto);
+
+                    //  KTO에서 가져온 새 데이터를 DB에 저장
+                    placeMapper.upsertPlace(dto); 
+                }
+            }
+        } catch (Exception e) {
+            log.error("🚨 KTO 키워드 검색 실패: {}", e.getMessage());
+        }
+
+        return apiPlaces;
+    }
+
+    // KTO 타입 번호를 카테고리 영문명으로 변환
+    private String convertKtoTypeToCategory(String typeId) {
+        switch (typeId) {
+            case "12": case "25": return "TOUR";          // 관광지, 여행코스
+            case "14": return "CULTURE";                  // 문화시설
+            case "15": return "FESTIVAL";                 // 축제/공연
+            case "28": return "LEISURE";                  // 레포츠
+            case "32": return "ACCOMMODATION";            // 숙박
+            case "38": return "SHOPPING";                 // 쇼핑
+            case "39": return "RESTAURANT";               // 음식점
+            default: return "ETC";
+        }
     }
 }
