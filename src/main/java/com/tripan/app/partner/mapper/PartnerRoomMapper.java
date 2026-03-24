@@ -28,4 +28,7 @@ public interface PartnerRoomMapper {
     List<Map<String, Object>> selectReservationsForCalendar( @Param("placeId") Long placeId, 
     														 @Param("start") String startDate, 
     														 @Param("end") String endDate );
+    
+    
+    List<Map<String, Object>> selectBookingListForPartner( @Param("placeId") Long placeId);
 }

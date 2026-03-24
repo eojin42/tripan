@@ -99,6 +99,11 @@ public class PartnerMainController {
             List<PartnerRoomDto> roomList = partnerRoomMapper.getRoomsByPlaceId(placeId);
             model.addAttribute("roomList", roomList);
         }
+        
+        if ("booking".equals(tab)) {
+            List<Map<String, Object>> bookingList = partnerRoomMapper.selectBookingListForPartner(placeId);
+            model.addAttribute("bookingList", bookingList);
+        }
 
         return "partner/main";
     }

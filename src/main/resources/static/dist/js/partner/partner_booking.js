@@ -36,3 +36,23 @@ function submitCancel() {
     alert("취소 사유가 등록되며 예약이 강제 취소되었습니다.\n사유: " + reason);
     closeCancelModal();
 }
+
+function openBookingDetail(id, name, phone, room, date, amount, status) {
+    document.getElementById('dtlResId').innerText = "RES-" + id;
+    document.getElementById('dtlName').innerText = name;
+    document.getElementById('dtlPhone').innerText = phone;
+    document.getElementById('dtlRoom').innerText = room;
+    document.getElementById('dtlDate').innerText = date;
+    document.getElementById('dtlAmount').innerText = Number(amount).toLocaleString();
+    document.getElementById('dtlStatus').innerText = (status === 'SUCCESS') ? '예약 확정' : '취소됨';
+    
+    if (status === 'CANCELED') {
+        document.getElementById('cancelActionArea').style.display = 'none';
+        document.getElementById('dtlStatus').style.color = 'red';
+    } else {
+        document.getElementById('cancelActionArea').style.display = 'block';
+        document.getElementById('dtlStatus').style.color = 'green';
+    }
+
+    document.getElementById('bookingDetailModal').style.display = 'flex';
+}
