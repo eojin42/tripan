@@ -129,6 +129,25 @@
 	      AND r.CHECK_OUT_DATE >= TO_DATE(#{start}, 'YYYY-MM-DD')
 	      AND r.CHECK_IN_DATE &lt;= TO_DATE(#{end}, 'YYYY-MM-DD')
 	</select>
+	
+	<select id="selectBookingListForPartner" resultType="map">
+	    SELECT 
+	        r.RESERVATION_ID as "reservationId",
+	        m1.USERNAME as "guestName",
+	        m2.PHONE_NUMBER as "guestPhone",
+	        rm.ROOM_NAME as "roomName",
+	        TO_CHAR(r.CHECK_IN_DATE, 'YYYY-MM-DD') as "checkIn",
+	        TO_CHAR(r.CHECK_OUT_DATE, 'YYYY-MM-DD') as "checkOut",
+	        r.AMOUNT as "amount",
+	        r.GUEST_COUNT as "guestCount",
+	        r.STATUS as "status"
+	    FROM RESERVATION r
+	    JOIN MEMBER1 m1 ON r.MEMBER_ID = m1.MEMBER_ID
+	    JOIN MEMBER2 m2 ON r.MEMBER_ID = m2.MEMBER_ID
+	    JOIN ROOM rm ON r.ROOM_ID = rm.ROOM_ID
+	    WHERE rm.PLACE_ID = #{placeId}
+	    ORDER BY r.RESERVATION_ID DESC
+	</select>
 
 	
 </mapper>
