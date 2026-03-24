@@ -48,4 +48,7 @@ public interface CouponMapper {
             @Param("memberId") Long memberId, 
             @Param("couponId") Long couponId
     );
+    
+	void updateMemberCouponToAvailable(@Param("memberCouponId") Long memberCouponId);
+    void cancelCouponUsage(@Param("memberCouponId") Long memberCouponId, @Param("orderId") String orderId);
 }
