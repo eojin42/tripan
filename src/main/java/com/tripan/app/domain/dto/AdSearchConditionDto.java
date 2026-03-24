@@ -33,4 +33,6 @@ public class AdSearchConditionDto {
     private String sort;      // 정렬 기준 (POPULAR, NEW, PRICE_ASC, PRICE_DESC, DISTANCE)
     private Double userLat;   // 사용자 현재 위도 (거리순 정렬 시 사용)
     private Double userLng;   // 사용자 현재 경도 (거리순 정렬 시 사용)
+    
+    private String tag;
 }

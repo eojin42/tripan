@@ -248,8 +248,11 @@
         </div>
         
         <div class="acc-tags">
-            <span class="acc-tag">사색</span>
-            <span class="acc-tag">도심 속 휴식</span>
+            <c:if test="${not empty detail.tags}">
+                <c:forEach var="tag" items="${detail.tags}">
+                    <span class="acc-tag">${tag}</span>
+                </c:forEach>
+            </c:if>
         </div>
 
         <c:if test="${couponCount > 0}">

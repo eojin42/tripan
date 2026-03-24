@@ -57,11 +57,25 @@ public class AccommodationController {
 	@Value("${portone.imp.code}")
 	private String impCode;
 	
-	@GetMapping("home")
-	public String main() {
-		
-		return "accommodation/home";
-	}
+	@GetMapping("home") 
+    public String home(Model model, HttpSession session) {
+        AdSearchConditionDto condition = new AdSearchConditionDto();
+        condition.setSort("POPULAR"); 
+        condition.setOffset(0);
+        condition.setSize(10);         
+        
+        
+        MemberDto loginUser = (MemberDto) session.getAttribute("loginUser");
+        if (loginUser != null) {
+            condition.setMemberId(loginUser.getMemberId());
+        }
+        
+        
+        List<AccommodationDto> popularList = accommodationService.searchAccommodations(condition);
+        model.addAttribute("popularList", popularList);
+        
+        return "accommodation/home";
+    }
 	
     @GetMapping("list")
     public String list(@RequestParam(value = "region", defaultValue = "서울 전체") String region,
