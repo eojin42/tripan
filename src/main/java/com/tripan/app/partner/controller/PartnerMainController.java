@@ -19,14 +19,11 @@ import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.tripan.app.domain.dto.AccommodationDetailDto;
-import com.tripan.app.mapper.AccommodationMapper;
 import com.tripan.app.partner.domain.dto.PartnerInfoDto;
 import com.tripan.app.partner.domain.dto.PartnerRoomDto;
-import com.tripan.app.partner.mapper.PartnerRoomMapper;
 import com.tripan.app.partner.service.PartnerInfoService;
 import com.tripan.app.partner.service.PartnerRoomService;
 import com.tripan.app.security.CustomUserDetails;
-import com.tripan.app.service.AccommodationService;
 
 import lombok.RequiredArgsConstructor;
 
@@ -36,14 +33,13 @@ import lombok.RequiredArgsConstructor;
 public class PartnerMainController {
 
     private final PartnerInfoService partnerInfoService;
-    private final PartnerRoomMapper partnerRoomMapper; 
-    private final AccommodationMapper accommodationMapper;
     private final PartnerRoomService partnerRoomService;
 
     @GetMapping("/main")
     public String main(
             @RequestParam(value = "tab", defaultValue = "dashboard") String tab,
             @RequestParam(value = "partnerId", required = false) Long requestedPartnerId,
+            @RequestParam Map<String, Object> searchParams,
             @AuthenticationPrincipal CustomUserDetails userDetails,
             jakarta.servlet.http.HttpSession session,
             Model model) {
@@ -94,15 +90,16 @@ public class PartnerMainController {
         Long placeId = partnerInfoService.getPlaceIdByPartnerId(currentPartnerId);
         
         if (placeId != null) {
-            AccommodationDetailDto accommodation = accommodationMapper.selectAccommodationDetailForPartner(placeId, memberId);
+            AccommodationDetailDto accommodation = partnerRoomService.getAccommodationDetailForPartner(placeId, memberId);
             model.addAttribute("accommodation", accommodation);
             
-            List<PartnerRoomDto> roomList = partnerRoomMapper.getRoomsByPlaceId(placeId);
+            List<PartnerRoomDto> roomList = partnerRoomService.getRoomsByPlaceId(placeId);
             model.addAttribute("roomList", roomList);
         }
         
         if ("booking".equals(tab)) {
-            List<Map<String, Object>> bookingList = partnerRoomMapper.selectBookingListForPartner(placeId);
+            searchParams.put("placeId", placeId); 
+            List<Map<String, Object>> bookingList = partnerRoomService.getBookingListForPartner(searchParams);
             model.addAttribute("bookingList", bookingList);
         }
 

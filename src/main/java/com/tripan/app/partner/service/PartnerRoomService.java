@@ -5,6 +5,7 @@ import java.util.Map;
 
 import org.springframework.web.multipart.MultipartFile;
 
+import com.tripan.app.domain.dto.AccommodationDetailDto;
 import com.tripan.app.partner.domain.dto.PartnerRoomDto;
 
 public interface PartnerRoomService {
@@ -19,6 +20,12 @@ public interface PartnerRoomService {
     void cancelReservationByPartner(Long reservationId, Long partnerId, String cancelReason);
     
     void updateRoomInfo(PartnerRoomDto dto, List<MultipartFile> images) throws Exception;
+    
+    List<Map<String, Object>> getBookingListForPartner(Map<String, Object> params);
+    
+    AccommodationDetailDto getAccommodationDetailForPartner(Long placeId, Long memberId);
+
+    List<PartnerRoomDto> getRoomsByPlaceId(Long placeId);
     
     
 }
