@@ -10,17 +10,26 @@ public class WebMvcConfig implements WebMvcConfigurer {
 
     @Value("${tripan.upload.dir:${user.home}/tripan-uploads/thumbnails}")
     private String uploadDir;
+    
+    @Value("${file.upload-root}")
+    private String uploadRoot;
 
     @Override
     public void addResourceHandlers(ResourceHandlerRegistry registry) {
-        // 기존 thumbnails
+    	
+    	// 기존 thumbnails
         registry.addResourceHandler("/dist/images/thumbnails/**")
                 .addResourceLocations("file:" + uploadDir + "/");
+        
+        // 메인 배너 이미지
+        registry.addResourceHandler("/uploads/banner/**")
+        .addResourceLocations("file:" + uploadRoot + "/banner/");
 
         // 영수증 이미지 
         registry.addResourceHandler("/receipts/**")
                 .addResourceLocations("file:" + System.getProperty("user.home") + "/tripan-uploads/receipts/");
-
+        
+       
         registry.addResourceHandler("/dist/**")
                 .addResourceLocations("classpath:/static/dist/");
     }
