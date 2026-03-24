@@ -1,0 +1,142 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.tripan.app.mapper.PlaceRecommendMapper">
+
+    <sql id="placeColumns">
+        p.place_id      AS placeId,
+        p.place_name    AS placeName,
+        p.category,
+        p.address,
+        p.phone_number  AS phoneNumber,
+        p.description,
+        p.longitude     AS longitude,
+        p.latitude      AS latitude,
+        p.image_url     AS imageUrl
+    </sql>
+
+    <select id="selectRecommendPlaces" resultType="com.tripan.app.domain.dto.PlaceDto">
+        SELECT 
+            <include refid="placeColumns"/>
+        FROM place p
+        <where>
+            <if test="category != null and category != '전체' and category != ''">
+                AND p.category = #{category}
+            </if>
+            <if test="region != null and region != '전체' and region != ''">
+                AND p.address LIKE #{region} || '%'
+            </if>
+            <if test="keyword != null and keyword != ''">
+                AND (
+                    p.place_name LIKE '%' || #{keyword} || '%'
+                    OR p.address LIKE '%' || #{keyword} || '%'
+                )
+            </if>
+        </where>
+        ORDER BY p.place_id DESC
+        OFFSET #{offset} ROWS FETCH NEXT #{limit} ROWS ONLY
+    </select>
+
+    <select id="countRecommendPlaces" resultType="long">
+        SELECT COUNT(*)
+        FROM place p
+        <where>
+            <if test="category != null and category != '전체' and category != ''">
+                AND p.category = #{category}
+            </if>
+            <if test="region != null and region != '전체' and region != ''">
+                AND p.address LIKE #{region} || '%'
+            </if>
+            <if test="keyword != null and keyword != ''">
+                AND (
+                    p.place_name LIKE '%' || #{keyword} || '%'
+                    OR p.address LIKE '%' || #{keyword} || '%'
+                )
+            </if>
+        </where>
+    </select>
+
+    <select id="searchPlacesByName" resultType="com.tripan.app.domain.dto.PlaceDto">
+        SELECT 
+            <include refid="placeColumns"/>
+        FROM place p
+        <where>
+            <if test="keyword != null and keyword != ''">
+                AND (
+                    p.place_name LIKE '%' || #{keyword} || '%'
+                    OR p.address LIKE '%' || #{keyword} || '%'
+                )
+            </if>
+            <if test="category != null and category != '전체' and category != ''">
+                AND p.category = #{category}
+            </if>
+        </where>
+        ORDER BY p.place_id DESC
+        FETCH FIRST 50 ROWS ONLY
+    </select>
+
+    <resultMap id="placeDetailMap" type="com.tripan.app.domain.dto.PlaceDto">
+        <id     property="placeId"     column="place_id"/>
+        <result property="placeName"   column="place_name"/>
+        <result property="category"    column="category"/>
+        <result property="address"     column="address"/>
+        <result property="phoneNumber" column="phone_number"/>
+        <result property="description" column="description" jdbcType="BLOB" />
+        <result property="longitude"   column="longitude"/>
+        <result property="latitude"    column="latitude"/>
+        <result property="imageUrl"    column="image_url"/>
+        <collection property="images" ofType="String" column="place_id" select="selectPlaceImages"/>
+    </resultMap>
+
+    <select id="selectPlaceDetailById" resultMap="placeDetailMap">
+        SELECT *
+        FROM place
+        WHERE place_id = #{id}
+    </select>
+
+    <select id="selectPlaceImages" resultType="String">
+        SELECT image_url
+        FROM place_image
+        WHERE place_id = #{placeId}
+    </select>
+
+    <select id="getRestaurantDetailByPlaceId" resultType="java.util.HashMap">
+        SELECT
+            p.place_id  AS id,
+            p.place_name AS name,
+            p.address,
+            p.phone_number AS phone,
+            r.opentimefood AS openTime,
+            r.restdatefood AS restDate
+        FROM place p
+        LEFT JOIN restaurant r ON r.place_id = p.place_id
+        WHERE p.place_id = #{placeId}
+          AND p.category = 'RESTAURANT'
+    </select>
+
+    <select id="selectNearbyPlaces" resultType="com.tripan.app.domain.dto.PlaceDto">
+        SELECT * FROM (
+            SELECT
+                <include refid="placeColumns"/>,
+                (
+                    6371 * ACOS(
+                        COS(WIDTH_BUCKET(#{mapY}, -90, 90, 180)) * COS(WIDTH_BUCKET(p.latitude, -90, 90, 180))
+                    )
+                ) AS distance
+            FROM place p
+            WHERE p.place_id != #{placeId}
+              AND p.longitude IS NOT NULL
+              AND p.latitude IS NOT NULL
+        ) 
+        WHERE ROWNUM &lt;= #{limit}
+        ORDER BY id DESC
+    </select>
+
+    <select id="selectDistinctRegions" resultType="String">
+        SELECT DISTINCT SIDO_NAME 
+        FROM region 
+        ORDER BY SIDO_NAME ASC
+    </select>
+
+</mapper>

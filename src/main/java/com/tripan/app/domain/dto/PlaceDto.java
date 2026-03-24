@@ -1,6 +1,8 @@
 package com.tripan.app.domain.dto;
 
-import java.time.LocalDateTime; 
+import java.time.LocalDateTime;
+import java.util.List;
+
 import lombok.Data;
 
 @Data
@@ -17,6 +19,8 @@ public class PlaceDto {
     private String phoneNumber;    // 전화번호
     private String description;    // 개요
     private String imageUrl;       // 썸네일 이미지
+    
+    private List<String> images;
     
     //지역 필터링을 위한 도시명
     private String city; 

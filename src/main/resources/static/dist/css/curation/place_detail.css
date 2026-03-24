@@ -1,0 +1,165 @@
+@import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
+
+.dt-page {
+    background: #f8fafc;
+    min-height: 100vh;
+    padding-top: 130px;
+    padding-left: 5%;
+    padding-right: 5%;
+}
+
+/* ── 캐러셀 ── */
+.dt-carousel-wrap {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 0 64px;
+}
+.dt-carousel {
+    position: relative; width: 100%;
+    aspect-ratio: 16 / 7; max-height: 400px;
+    overflow: hidden; border-radius: 14px; background: #111;
+}
+.dt-carousel-track { display: flex; height: 100%; transition: transform .45s cubic-bezier(.4,0,.2,1); }
+.dt-carousel-slide { min-width: 100%; height: 100%; }
+.dt-carousel-slide img { width: 100%; height: 100%; object-fit: cover; }
+
+.dt-carousel-btn {
+    position: absolute; top: 50%; transform: translateY(-50%);
+    width: 38px; height: 38px;
+    background: rgba(255,255,255,.2); backdrop-filter: blur(8px);
+    border: 1.5px solid rgba(255,255,255,.35); border-radius: 50%;
+    color: #fff; font-size: 14px; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    z-index: 10; transition: background .15s;
+}
+.dt-carousel-btn:hover { background: rgba(255,255,255,.45); }
+.dt-carousel-btn.prev { left: 14px; }
+.dt-carousel-btn.next { right: 14px; }
+
+.dt-carousel-counter {
+    position: absolute; bottom: 12px; right: 14px;
+    background: rgba(0,0,0,.55); backdrop-filter: blur(4px);
+    color: #fff; font-size: 12px; font-weight: 700;
+    padding: 4px 10px; border-radius: 50px;
+}
+
+/* ── 썸네일 ── */
+.dt-thumb-row { display: flex; gap: 6px; padding: 8px 0 0; }
+.dt-thumb {
+    width: 56px; height: 38px; border-radius: 6px; overflow: hidden;
+    cursor: pointer; opacity: .45; transition: opacity .15s;
+    border: 2px solid transparent; flex-shrink: 0;
+}
+.dt-thumb.active { opacity: 1; border-color: #89CFF0; }
+.dt-thumb img { width: 100%; height: 100%; object-fit: cover; }
+
+/* ── 본문 컨테이너 ── */
+.dt-container { max-width: 1100px; margin: 0 auto; padding: 0 64px; }
+
+/* ── 타이틀 ── */
+.dt-title-row {
+    display: flex; align-items: flex-start;
+    justify-content: space-between; gap: 16px;
+    padding: 28px 0 14px;
+    border-bottom: 1px solid #EBEBEB;
+}
+.dt-cat-badge {
+    display: inline-flex; align-items: center; gap: 4px;
+    font-size: 12px; font-weight: 800; color: #3a8fb7;
+    background: rgba(137,207,240,.12);
+    border: 1px solid rgba(137,207,240,.3);
+    padding: 4px 10px; border-radius: 50px; margin-bottom: 10px;
+}
+.dt-name { font-size: 26px; font-weight: 900; color: #1A1A1A; margin-bottom: 6px; line-height: 1.25; }
+.dt-location { font-size: 14px; color: #888; font-weight: 600; display: flex; align-items: center; gap: 4px; }
+.dt-rating-box {
+    display: flex; align-items: center; gap: 5px;
+    font-size: 15px; font-weight: 800; padding-top: 4px; flex-shrink: 0;
+}
+.dt-rating-box small { font-size: 12px; font-weight: 500; color: #AAA; }
+
+/* ── 탭 ── */
+.dt-tabs { display: flex; border-bottom: 1px solid #EBEBEB; }
+.dt-tab {
+    padding: 14px 22px; font-size: 14px; font-weight: 700; color: #888;
+    background: none; border: none; border-bottom: 2px solid transparent;
+    cursor: pointer; transition: all .15s; margin-bottom: -1px;
+}
+.dt-tab:hover { color: #1A1A1A; }
+.dt-tab.active { color: #1A1A1A; border-bottom-color: #1A1A1A; }
+
+/* ── 본문 2단 ── */
+.dt-body { display: flex; gap: 48px; align-items: flex-start; padding: 24px 0; }
+.dt-main { flex: 1; min-width: 0; }
+.dt-side { width: 280px; flex-shrink: 0; position: sticky; top: 100px; }
+
+/* ── 섹션 ── */
+.dt-section { margin-bottom: 44px; }
+.dt-section-title { font-size: 18px; font-weight: 900; color: #1A1A1A; margin-bottom: 18px; }
+
+.dt-desc {
+    font-size: 15px; line-height: 1.9; color: #333;
+    display: -webkit-box; -webkit-line-clamp: 6;
+    -webkit-box-orient: vertical; overflow: hidden;
+}
+.dt-desc.expanded { -webkit-line-clamp: unset; }
+
+.dt-more-btn {
+    display: flex; align-items: center; justify-content: flex-end; gap: 4px;
+    width: 100%; margin-top: 8px; background: none; border: none;
+    font-size: 13px; font-weight: 700; color: #555; cursor: pointer; padding: 0;
+}
+.dt-more-btn:hover { color: #1A1A1A; }
+
+/* ── 지도 ── */
+.dt-map {
+    width: 100%; height: 280px; border-radius: 10px;
+    background: #F0F0F0; margin: 28px 0 22px;
+    border: 1px solid #E8E8E8;
+}
+
+/* ── 정보 그리드 ── */
+.dt-info-grid {
+    display: grid; grid-template-columns: 1fr 1fr;
+    gap: 0; border-top: 1px solid #E8E8E8;
+}
+.dt-info-row {
+    display: flex; align-items: flex-start; gap: 12px;
+    padding: 16px 0; border-bottom: 1px solid #F0F0F0;
+}
+.dt-info-row:nth-child(odd)  { padding-right: 28px; }
+.dt-info-row:nth-child(even) { padding-left: 28px; border-left: 1px solid #F0F0F0; }
+.dt-info-dot { width: 5px; height: 5px; border-radius: 50%; background: #3a8fb7; flex-shrink: 0; margin-top: 7px; }
+.dt-info-label { font-size: 12px; font-weight: 700; color: #888; margin-bottom: 4px; }
+.dt-info-value { font-size: 13px; font-weight: 600; color: #333; line-height: 1.7; white-space: pre-line; }
+.dt-info-value a { color: #3a8fb7; text-decoration: none; }
+.dt-info-value a:hover { text-decoration: underline; }
+
+/* ── 주변 ── */
+.dt-nearby-list {
+    border: 1.5px dashed #E8E8E8;
+    border-radius: 12px; padding: 32px;
+}
+.dt-nearby-empty { text-align: center; color: #AAA; font-size: 14px; font-weight: 700; }
+
+/* ── 사이드 패널 ── */
+.dt-side-panel {
+    background: #fff; border: 1.5px solid #E0E0E0; border-radius: 16px;
+    padding: 24px; box-shadow: 0 4px 20px rgba(0,0,0,.06);
+}
+.dt-side-rating { display: flex; align-items: center; gap: 6px; font-size: 16px; font-weight: 800; margin-bottom: 16px; }
+.dt-side-rating small { font-size: 12px; font-weight: 500; color: #AAA; }
+.dt-side-divider { height: 1px; background: #F0F0F0; margin: 14px 0; }
+.dt-side-meta { font-size: 12px; color: #888; font-weight: 600; line-height: 1.8; }
+.dt-side-meta strong { color: #1A1A1A; font-weight: 700; display: block; margin-bottom: 3px; font-size: 13px; }
+
+/* ── 반응형 ── */
+@media (max-width: 960px) {
+    .dt-container, .dt-carousel-wrap { padding: 0 28px; }
+    .dt-body { flex-direction: column; }
+    .dt-side { width: 100%; position: static; }
+    .dt-info-grid { grid-template-columns: 1fr; }
+    .dt-info-row:nth-child(even) { padding-left: 0; border-left: none; }
+    .dt-name { font-size: 22px; }
+    .dt-title-row { padding: 16px 0 18px; }
+}
