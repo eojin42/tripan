@@ -49,11 +49,11 @@ public class MagazineServiceImpl implements MagazineService{
  
         if (thumbFile != null && !thumbFile.isEmpty()) {
             String saved = storageService.uploadFileToServer(thumbFile, uploadPath);
-            dto.setThumbnailUrl("/dist/images/magazine/" + saved);
+            dto.setThumbnailUrl(saved);
         }
         if (heroFile != null && !heroFile.isEmpty()) {
             String saved = storageService.uploadFileToServer(heroFile, uploadPath);
-            dto.setHeroImgUrl("/dist/images/magazine/" + saved);
+            dto.setHeroImgUrl(saved);
         }
  
         magazineMapper.insertArticle(dto);
@@ -70,22 +70,20 @@ public class MagazineServiceImpl implements MagazineService{
  
         if (thumbFile != null && !thumbFile.isEmpty()) {
             if (prev.getThumbnailUrl() != null && !prev.getThumbnailUrl().isBlank()) {
-                storageService.deleteFile(uploadPath,
-                        prev.getThumbnailUrl().replace("/dist/images/magazine/", ""));
+                storageService.deleteFile(uploadPath,prev.getThumbnailUrl());
             }
             String saved = storageService.uploadFileToServer(thumbFile, uploadPath);
-            dto.setThumbnailUrl("/dist/images/magazine/" + saved);
+            dto.setThumbnailUrl(saved);
         } else {
             dto.setThumbnailUrl(prev.getThumbnailUrl());
         }
  
         if (heroFile != null && !heroFile.isEmpty()) {
             if (prev.getHeroImgUrl() != null && !prev.getHeroImgUrl().isBlank()) {
-                storageService.deleteFile(uploadPath,
-                        prev.getHeroImgUrl().replace("/dist/images/magazine/", ""));
+                storageService.deleteFile(uploadPath,prev.getHeroImgUrl());
             }
             String saved = storageService.uploadFileToServer(heroFile, uploadPath);
-            dto.setHeroImgUrl("/dist/images/magazine/" + saved);
+            dto.setHeroImgUrl(saved);
         }
  
         magazineMapper.updateArticle(dto);

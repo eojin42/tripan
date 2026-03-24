@@ -101,7 +101,7 @@
       <div class="alert-banner fade-up">
         <div class="alert-icon">⚠️</div>
         <div class="alert-body">
-          <strong>미정산 파트너 <span id="pendingCount">3</span>개 &nbsp;·&nbsp; 대기 금액 <span id="pendingAmt">₩82,000,000</span></strong>
+          <strong>미정산 파트너 <span id="pendingCount">0</span>개 &nbsp;·&nbsp; 대기 금액 <span id="pendingAmt">₩82,000,000</span></strong>
           <p>정산 승인이 완료되지 않은 파트너가 있습니다.</p>
         </div>
         <a href="${pageContext.request.contextPath}/admin/settlement/partner/main" class="btn-link">파트너 정산 관리 →</a>

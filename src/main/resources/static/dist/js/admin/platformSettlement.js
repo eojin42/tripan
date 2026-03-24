@@ -70,8 +70,13 @@ function loadData() {
    미정산 배너
 ───────────────────────────────────────── */
 function renderBanner(kpi) {
-  setText('pendingCount', kpi.pendingPartnerCount);
-  setText('pendingAmt',   '₩' + fmtWon(kpi.pendingAmount));
+	const count = kpi.pendingPartnerCount ?? 0;
+	 setText('pendingCount', count);
+	 setText('pendingAmt',   '₩' + fmtWon(kpi.pendingAmount));
+
+	 // 0이면 배너 숨기기
+	 const banner = document.querySelector('.alert-banner');
+	 if (banner) banner.style.display = count > 0 ? 'flex' : 'none';
 }
 
 /* ─────────────────────────────────────────
