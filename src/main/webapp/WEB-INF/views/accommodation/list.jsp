@@ -470,11 +470,23 @@
       return;
     }
 
+    const typeMap = {
+        'HOTEL': '호텔/리조트',
+        'MOTEL': '모텔',
+        'PENSION': '펜션/풀빌라',
+        'GUESTHOUSE': '게스트하우스/한옥',
+        'CAMPING': '캠핑/글램핑',
+        '기타': '기타'
+    };
+
     let html = '';
     list.forEach(item => {
       const formattedPrice = item.minPrice ? item.minPrice.toLocaleString() : '0';
       const imgPath = item.imageUrl ? item.imageUrl : 'https://images.unsplash.com/photo-1542314831-068cd1dbfeeb?w=600';
       const regionName = item.region ? item.region.split(' ')[0] : '숙소';
+      
+      const korTypeName = typeMap[item.accommodationType] || '숙박';
+      
       const isZzim = item.isBookmarked > 0;
       const svgFill = isZzim ? '#4A44F2' : 'none';
       const svgStroke = isZzim ? '#4A44F2' : 'white';
@@ -491,27 +503,28 @@
             </div>
           </div>
           <div class="accommodation-meta">
-	          <h3>\${item.name}</h3>
-	          <p class="accommodation-desc">\${regionName} · \${item.accommodationType || '숙소'}</p>
-	          
-	          <div style="display:flex; gap:10px; font-size:13px; color:var(--text-gray); margin-bottom:12px; font-weight:600;">
-	          <span style="display:flex; align-items:center; gap:5px;">
-	              <svg width="15" height="15" viewBox="0 0 24 24" fill="#4A44F2" stroke="#4A44F2" stroke-width="2.2">
-	                  <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"></path>
-	              </svg>
-	              <span style="color:var(--text-black);">\${item.bookmarkCount || 0}</span>
-	          </span>
-	          <span style="display:flex; align-items:center; gap:4px;">
-	              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-	                  <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
-	              </svg>
-	              \${item.reviewCount || 0}
-	          </span>
-	          </div>
-	          <div class="accommodation-price">₩\${formattedPrice}~</div>
-	          
-	          <button class="btn-view-location" onclick="panToMap(\${item.latitude}, \${item.longitude}, event)">위치보기</button>
-	      </div>
+              <h3>\${item.name}</h3>
+              
+              <p class="accommodation-desc">\${regionName} · \${korTypeName}</p>
+          
+              <div style="display:flex; gap:10px; font-size:13px; color:var(--text-gray); margin-bottom:12px; font-weight:600;">
+              <span style="display:flex; align-items:center; gap:5px;">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="#4A44F2" stroke="#4A44F2" stroke-width="2.2">
+                      <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"></path>
+                  </svg>
+                  <span style="color:var(--text-black);">\${item.bookmarkCount || 0}</span>
+              </span>
+              <span style="display:flex; align-items:center; gap:4px;">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+                  </svg>
+                  \${item.reviewCount || 0}
+              </span>
+              </div>
+              <div class="accommodation-price">₩\${formattedPrice}~</div>
+              
+              <button class="btn-view-location" onclick="panToMap(\${item.latitude}, \${item.longitude}, event)">위치보기</button>
+          </div>
         </div>
       `;
     });
@@ -521,7 +534,80 @@
     } else {
         container.innerHTML = html;
     }
-  };
+  };window.renderAccommodations = function(list, isAppend) {
+	    const container = document.getElementById('accommodation-list-container');
+	    const currentQueryString = window.location.search;
+	    
+	    if (!isAppend && (!list || list.length === 0)) {
+	      container.innerHTML = '<div style="grid-column:1/-1; text-align:center; padding:80px 0; font-size:16px; color:#718096;">조건에 맞는 숙소가 없습니다. 텅! 🗑️</div>';
+	      return;
+	    }
+
+	    const typeMap = {
+	        'HOTEL': '호텔/리조트',
+	        'MOTEL': '모텔',
+	        'PENSION': '펜션/풀빌라',
+	        'GUESTHOUSE': '게스트하우스/한옥',
+	        'CAMPING': '캠핑/글램핑',
+	        '기타': '기타'
+	    };
+
+	    let html = '';
+	    list.forEach(item => {
+	      const formattedPrice = item.minPrice ? item.minPrice.toLocaleString() : '0';
+	      const imgPath = item.imageUrl ? item.imageUrl : 'https://images.unsplash.com/photo-1542314831-068cd1dbfeeb?w=600';
+	      const regionName = item.region ? item.region.split(' ')[0] : '숙소';
+	      
+	      const korTypeName = typeMap[item.accommodationType] || '숙박';
+	      
+	      const isZzim = item.isBookmarked > 0;
+	      const svgFill = isZzim ? '#4A44F2' : 'none';
+	      const svgStroke = isZzim ? '#4A44F2' : 'white';
+
+	      html += `
+	        <div class="accommodation-item" onclick="location.href='${pageContext.request.contextPath}/accommodation/detail/\${item.placeId}\${currentQueryString}'">
+	          <div class="accommodation-thumb">
+	            <img src="\${imgPath}" alt="\${item.name}">
+	            <div class="wish-btn" onclick="toggleBookmark(event, \${item.placeId}, this)" 
+	                 style="position:absolute; top:12px; right:12px; cursor:pointer; z-index:10;">
+	                <svg width="24" height="24" viewBox="0 0 24 24" fill="\${svgFill}" stroke="\${svgStroke}" stroke-width="2">
+	                    <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"></path>
+	                </svg>
+	            </div>
+	          </div>
+	          <div class="accommodation-meta">
+	              <h3>\${item.name}</h3>
+	              
+	              <p class="accommodation-desc">\${regionName} · \${korTypeName}</p>
+	          
+	              <div style="display:flex; gap:10px; font-size:13px; color:var(--text-gray); margin-bottom:12px; font-weight:600;">
+	              <span style="display:flex; align-items:center; gap:5px;">
+	                  <svg width="15" height="15" viewBox="0 0 24 24" fill="#4A44F2" stroke="#4A44F2" stroke-width="2.2">
+	                      <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"></path>
+	                  </svg>
+	                  <span style="color:var(--text-black);">\${item.bookmarkCount || 0}</span>
+	              </span>
+	              <span style="display:flex; align-items:center; gap:4px;">
+	                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+	                      <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+	                  </svg>
+	                  \${item.reviewCount || 0}
+	              </span>
+	              </div>
+	              <div class="accommodation-price">₩\${formattedPrice}~</div>
+	              
+	              <button class="btn-view-location" onclick="panToMap(\${item.latitude}, \${item.longitude}, event)">위치보기</button>
+	          </div>
+	        </div>
+	      `;
+	    });
+	    
+	    if (isAppend) {
+	        container.insertAdjacentHTML('beforeend', html);
+	    } else {
+	        container.innerHTML = html;
+	    }
+	  };
 
  	 async function fetchAccommodations(isReset = false) {
 	    if (isFetching || (!hasMore && !isReset)) return;
