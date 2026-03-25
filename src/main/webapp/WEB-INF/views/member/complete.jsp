@@ -18,27 +18,15 @@
   <main class="complete-section">
     <div class="complete-card">
       
-      
-      
       <div class="brand-logo" style="margin-bottom: 16px; justify-content: center;">
         <span class="tri" style="font-size: 32px;">Trip</span><span class="pan" style="font-size: 32px;">an</span><span class="dot" style="color: var(--light-pink); font-size: 34px;">.</span>
       </div>
 
+
 	<c:choose>
-	  <%-- 성공 케이스 --%>
-	  <c:when test="${not empty title}">
-	  <div class="icon-wrapper">
-        <svg class="check-icon" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
-          <polyline points="22 4 12 14.01 9 11.01"></polyline>
-        </svg>
-      </div>
-	    <h2 class="complete-title" style="color: var(--point-blue);">${title}</h2>
-	    <p class="complete-desc">${message}${name}</p>
-	  </c:when>
 	
-	  <%-- 실패 케이스 --%>
-	  <c:otherwise>
+	<%-- 에러 케이스 (isError=true) --%>
+	  <c:when test="${isError}">
 	    <div class="icon-wrapper" style="background: #fdecea;">
 	      <svg class="check-icon" style="color: #e53935;" width="40" height="40" viewBox="0 0 24 24"
 	           fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
@@ -49,16 +37,37 @@
 	    </div>
 	    <h2 class="complete-title" style="color: #e53935;">${title}</h2>
 	    <p class="complete-desc">${message}</p>
-	  </c:otherwise>
-	</c:choose>
-	
-      <div class="action-buttons">
-        <button type="button" class="btn-outline" onclick="location.href='${pageContext.request.contextPath}/';">홈으로 이동</button>
-        <button type="button" class="btn-primary" onclick="location.href='${pageContext.request.contextPath}/member/login';">로그인하기</button>
-      </div>
-
+	  </c:when>
+	  
+	   <%-- 성공 케이스 --%>
+  <c:when test="${not empty title}">
+    <div class="icon-wrapper">
+      <svg class="check-icon" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+        <polyline points="22 4 12 14.01 9 11.01"></polyline>
+      </svg>
     </div>
-  </main>
+    <h2 class="complete-title" style="color: var(--point-blue);">${title}</h2>
+    <p class="complete-desc">${message}</p>
+  </c:when>
+</c:choose>
+
+<div class="action-buttons">
+  <button type="button" class="btn-outline" onclick="location.href='${pageContext.request.contextPath}/';">홈으로 이동</button>
+  <%-- 로그인 버튼: 로그인 필요한 경우(회원가입 완료, 실패 등)에만 표시 --%>
+  <c:if test="${showLogin != false}">
+    <c:choose>
+      <c:when test="${isError}">
+        <button type="button" class="btn-primary" onclick="history.back();">다시 시도</button>
+      </c:when>
+      <c:otherwise>
+        <button type="button" class="btn-primary" onclick="location.href='${pageContext.request.contextPath}/member/login';">로그인하기</button>
+      </c:otherwise>
+    </c:choose>
+  </c:if>
+</div>
+</div>
+</main>
 </div>
 
 <footer>

@@ -25,8 +25,8 @@
       <div class="stat-box" onclick="openFollowModal('following')">
         <strong id="stat-following">-</strong>팔로잉
       </div>
-      <div class="stat-box" onclick="openBadgeModal()">
-        <strong id="stat-badge">-</strong>내 여행
+      <div class="stat-box" onclick="location.href='${pageContext.request.contextPath}/mypage/schedule'">
+        <strong id="stat-mytrip">-</strong>내 여행
       </div>
     </div>
   </div>
@@ -72,3 +72,59 @@
   </div>
  
 </aside>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+
+  // ── 사이드바 통계 로드 ──
+  const ctxPath = document.querySelector('meta[name="ctx-path"]')?.content
+    || (window.location.pathname.startsWith('/tripan') ? '/tripan' : '');
+
+  fetch(ctxPath + '/mypage/api/summary')
+    .then(r => r.json())
+    .then(data => {
+      const set = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v ?? 0; };
+      set('stat-follower',  data.followerCount  ?? 0);
+      set('stat-following', data.followingCount ?? 0);
+      set('stat-mytrip',    data.totalTripCount ?? 0);
+    })
+    .catch(() => {});
+
+  // ── 팔로우 모달 ──
+  window.openFollowModal = async function (type) {
+    const modal = document.getElementById('followModal');
+    const title = document.getElementById('follow-modal-title');
+    const body  = document.getElementById('follow-modal-body');
+    if (!modal) return;
+    title.textContent = type === 'follower' ? '팔로워' : '팔로잉';
+    body.innerHTML = '<div style="text-align:center;padding:30px;color:var(--muted);">불러오는 중...</div>';
+    modal.classList.add('active');
+    try {
+      const res  = await fetch(ctxPath + '/mypage/api/' + type);
+      const list = await res.json();
+      if (!list.length) {
+        body.innerHTML = '<div style="text-align:center;padding:30px;color:var(--muted);font-size:13px;">목록이 없습니다</div>';
+        return;
+      }
+      const esc = s => s ? String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;') : '';
+      body.innerHTML = list.map(function(u) {
+        var pic = u.profileImage
+          ? '<img src="' + esc(u.profileImage) + '">'
+          : esc((u.nickname || '?')[0]);
+        return '<div class="user-item">' +
+          '<div class="user-pic">' + pic + '</div>' +
+          '<div>' +
+            '<div class="user-name">' + esc(u.nickname) + '</div>' +
+            '<div class="user-id" style="font-size:11px;color:var(--muted);">@' + esc(u.nickname || '') + '</div>' +
+          '</div>' +
+        '</div>';
+      }).join('');
+    } catch (e) {
+      body.innerHTML = '<div style="text-align:center;padding:30px;color:#FC8181;font-size:13px;">불러오기 실패</div>';
+    }
+  };
+
+  window.closeModal = id => document.getElementById(id)?.classList.remove('active');
+
+});
+</script>

@@ -129,6 +129,8 @@
 <footer><jsp:include page="/WEB-INF/views/layout/footer.jsp"/></footer>
 
 <script>
+const originalNick = '${dto.nickname}';
+
   document.addEventListener('DOMContentLoaded', function() {
     let img = '${dto.profilePhoto}';
     const ctx = '${pageContext.request.contextPath}';
@@ -138,6 +140,13 @@
     const inputEl    = document.querySelector('form[name=memberForm] input[name=selectFile]');
     const placeholderEl = document.getElementById('placeholderIcon');
     const btnInitEl  = document.querySelector('form[name=memberForm] .btn-photo-init');
+    
+    const nickInput = document.memberForm.nickname;
+    nickInput.addEventListener('input', function() {
+        if (this.value !== originalNick) {
+            document.memberForm.nickChecked.value = "false";
+        }
+    });
 
     // 기존 사진 있으면 표시
     if (img) {
@@ -309,8 +318,9 @@
         f.password.focus(); return;
       }
     }
-
-    if (!isUpdate && f.nickChecked.value !== "true") {
+    
+    const currentNick = f.nickname.value;
+    if (isUpdate && currentNick !== originalNick && f.nickChecked.value !== "true") {
       showMsg('nick-msg', '닉네임 중복확인이 필요합니다.', true);
       f.nickname.focus(); return;
     }

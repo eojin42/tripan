@@ -222,7 +222,7 @@ public class MyPageRestController {
         return ResponseEntity.ok(myPageService.getFollowingList(loginUser.getMemberId()));
     }
 
-    @GetMapping("/followers")
+    @GetMapping("/follower")
     public ResponseEntity<?> getFollowers(HttpSession session) {
         MemberDto loginUser = getLoginUser(session);
         if (loginUser == null) return unauthorized();
