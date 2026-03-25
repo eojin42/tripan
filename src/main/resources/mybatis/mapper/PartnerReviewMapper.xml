@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.tripan.app.partner.mapper.PartnerReviewMapper">
+
+   <select id="selectReviewListForPartner" resultType="com.tripan.app.partner.domain.dto.PartnerReviewDto">
+        SELECT 
+            pr.REVIEW_ID as reviewId, 
+            pr.PLACE_ID as placeId, 
+            pr.MEMBER_ID as memberId, 
+            pr.RATING as rating, 
+            pr.CONTENT as content,
+            TO_CHAR(pr.CREATED_AT, 'YYYY-MM-DD HH24:MI') as createdAt,
+            m2.NICKNAME as memberName,
+            r.ROOM_NAME as roomName
+        FROM PLACE_REVIEW pr
+        LEFT JOIN MEMBER2 m2 ON pr.MEMBER_ID = m2.MEMBER_ID
+        LEFT JOIN RESERVATION res ON pr.RESERVATION_ID = res.RESERVATION_ID
+        LEFT JOIN ROOM r ON res.ROOM_ID = r.ROOM_ID
+        WHERE pr.PLACE_ID = #{placeId}
+        
+        <if test="startDate != null and startDate != ''">
+            AND pr.CREATED_AT >= TO_DATE(#{startDate} || ' 00:00:00', 'YYYY-MM-DD HH24:MI:SS')
+        </if>
+        <if test="endDate != null and endDate != ''">
+            AND pr.CREATED_AT &lt;= TO_DATE(#{endDate} || ' 23:59:59', 'YYYY-MM-DD HH24:MI:SS')
+        </if>
+        <if test="roomId != null and roomId != ''">
+            AND r.ROOM_ID = #{roomId}
+        </if>
+        <if test="rating != null and rating != ''">
+            AND pr.RATING = #{rating}
+        </if>
+        <if test="keyword != null and keyword != ''">
+            AND (m2.NICKNAME LIKE '%' || #{keyword} || '%' OR pr.CONTENT LIKE '%' || #{keyword} || '%')
+        </if>
+
+        ORDER BY pr.CREATED_AT DESC
+    </select>
+
+    <delete id="deleteReviewImages">
+        DELETE FROM REVIEW_IMG 
+        WHERE REVIEW_ID = #{reviewId}
+    </delete>
+
+    <delete id="deleteReview">
+        DELETE FROM PLACE_REVIEW 
+        WHERE REVIEW_ID = #{reviewId}
+    </delete>
+	
+</mapper>

@@ -47,7 +47,7 @@
     </a>
     <a href="?tab=review" class="menu-item ${activeTab == 'review' ? 'active' : ''}" data-tooltip="리뷰 관리">
       <svg class="menu-icon" viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
-      <span class="menu-text">리뷰 답글 관리</span>
+      <span class="menu-text">리뷰 관리</span>
     </a>
     <a href="?tab=coupon" class="menu-item ${activeTab == 'coupon' ? 'active' : ''}" data-tooltip="쿠폰 발행">
       <svg class="menu-icon" viewBox="0 0 24 24"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"></path></svg>

@@ -159,7 +159,7 @@
 	    JOIN MEMBER1 m1 ON r.MEMBER_ID = m1.MEMBER_ID
 	    JOIN MEMBER2 m2 ON r.MEMBER_ID = m2.MEMBER_ID
 	    JOIN ROOM rm ON r.ROOM_ID = rm.ROOM_ID
-	    <where>
+	 <where>
 	        rm.PLACE_ID = #{placeId}
 	        
 	        <if test="roomId != null and roomId != ''">
