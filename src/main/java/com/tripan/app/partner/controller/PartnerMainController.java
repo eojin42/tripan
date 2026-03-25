@@ -20,8 +20,10 @@ import org.springframework.web.multipart.MultipartFile;
 
 import com.tripan.app.domain.dto.AccommodationDetailDto;
 import com.tripan.app.partner.domain.dto.PartnerInfoDto;
+import com.tripan.app.partner.domain.dto.PartnerReviewDto;
 import com.tripan.app.partner.domain.dto.PartnerRoomDto;
 import com.tripan.app.partner.service.PartnerInfoService;
+import com.tripan.app.partner.service.PartnerReviewService;
 import com.tripan.app.partner.service.PartnerRoomService;
 import com.tripan.app.security.CustomUserDetails;
 
@@ -34,12 +36,21 @@ public class PartnerMainController {
 
     private final PartnerInfoService partnerInfoService;
     private final PartnerRoomService partnerRoomService;
+    private final PartnerReviewService partnerReviewService;
 
     @GetMapping("/main")
     public String main(
             @RequestParam(value = "tab", defaultValue = "dashboard") String tab,
             @RequestParam(value = "partnerId", required = false) Long requestedPartnerId,
             @RequestParam Map<String, Object> searchParams,
+            
+            @RequestParam(value = "startDate", required = false) String startDate,
+            @RequestParam(value = "endDate", required = false) String endDate,
+            @RequestParam(value = "roomId", required = false) String searchRoomId,
+            @RequestParam(value = "status", required = false) String searchStatus,
+            @RequestParam(value = "keyword", required = false) String keyword,
+            @RequestParam(value = "rating", required = false) String rating,
+            
             @AuthenticationPrincipal CustomUserDetails userDetails,
             jakarta.servlet.http.HttpSession session,
             Model model) {
@@ -102,7 +113,13 @@ public class PartnerMainController {
             List<Map<String, Object>> bookingList = partnerRoomService.getBookingListForPartner(searchParams);
             model.addAttribute("bookingList", bookingList);
         }
-
+        
+        if ("review".equals(tab)) {
+            List<PartnerReviewDto> reviewList = partnerReviewService.getReviewList(
+                    placeId, startDate, endDate, searchRoomId, rating, keyword);
+            model.addAttribute("reviewList", reviewList);
+        }
+        
         return "partner/main";
     }
 
@@ -132,7 +149,7 @@ public class PartnerMainController {
             @ModelAttribute PartnerRoomDto dto, 
             @RequestParam(value = "images", required = false) List<MultipartFile> images,
             @AuthenticationPrincipal CustomUserDetails userDetails,
-            jakarta.servlet.http.HttpSession session) { // 🌟 세션 파라미터 추가
+            jakarta.servlet.http.HttpSession session) { // 
         try {
             Long currentPartnerId = (Long) session.getAttribute("currentPartnerId");
             Long placeId = partnerInfoService.getPlaceIdByPartnerId(currentPartnerId);
@@ -219,6 +236,19 @@ public class PartnerMainController {
         } catch (Exception e) {
             e.printStackTrace();
             return ResponseEntity.badRequest().body(Map.of("message", e.getMessage()));
+        }
+    }
+    
+    @ResponseBody
+    @PostMapping("/api/review/delete")
+    public ResponseEntity<?> deleteReview(@RequestBody Map<String, Long> payload) {
+        try {
+            Long reviewId = payload.get("reviewId"); 
+            partnerReviewService.deleteReview(reviewId);
+            return ResponseEntity.ok(Map.of("message", "success"));
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.badRequest().body(Map.of("message", "fail"));
         }
     }
     
