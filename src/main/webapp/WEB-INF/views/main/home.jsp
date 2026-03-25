@@ -486,6 +486,8 @@
 
 </main>
 
+<jsp:include page="/WEB-INF/views/main/chat.jsp" />
+
 <script>
 /* ━━━ 실시간 인기피드 API 로딩 ━━━ */
 (function(){
