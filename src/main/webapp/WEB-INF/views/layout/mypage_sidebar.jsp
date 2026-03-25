@@ -73,6 +73,78 @@
  
 </aside>
 
+<%-- ── 팔로우 모달 HTML (사이드바 공통) ── --%>
+<div id="followModal" class="modal-overlay" onclick="closeModal('followModal')">
+  <div class="modal-box" onclick="event.stopPropagation()">
+    <div class="modal-header">
+      <span id="follow-modal-title"></span>
+      <button onclick="closeModal('followModal')">&times;</button>
+    </div>
+    <div id="follow-modal-body"></div>
+  </div>
+</div>
+<style>
+  .modal-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.4);
+    z-index: 9999;
+    align-items: center;
+    justify-content: center;
+  }
+  .modal-overlay.active {
+    display: flex;
+  }
+  .modal-box {
+    background: var(--bg-white, #fff);
+    border-radius: 16px;
+    width: 360px;
+    max-height: 70vh;
+    overflow-y: auto;
+    padding: 24px;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.15);
+  }
+  .modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-weight: 700;
+    font-size: 16px;
+    margin-bottom: 16px;
+  }
+  .modal-header button {
+    background: none;
+    border: none;
+    font-size: 20px;
+    cursor: pointer;
+    color: var(--text-gray, #888);
+  }
+  .user-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--border-light, #f0f0f0);
+  }
+  .user-pic {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    overflow: hidden;
+    background: var(--bg-light, #f5f5f5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 14px;
+  }
+  .user-pic img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+</style>
 <script>
 document.addEventListener('DOMContentLoaded', function () {
 
@@ -108,17 +180,26 @@ document.addEventListener('DOMContentLoaded', function () {
       }
       const esc = s => s ? String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;') : '';
       body.innerHTML = list.map(function(u) {
-        var pic = u.profileImage
-          ? '<img src="' + esc(u.profileImage) + '">'
-          : esc((u.nickname || '?')[0]);
-        return '<div class="user-item">' +
-          '<div class="user-pic">' + pic + '</div>' +
-          '<div>' +
-            '<div class="user-name">' + esc(u.nickname) + '</div>' +
-            '<div class="user-id" style="font-size:11px;color:var(--muted);">@' + esc(u.nickname || '') + '</div>' +
-          '</div>' +
-        '</div>';
-      }).join('');
+    	  return '<div class="user-item" style="cursor:pointer;" onclick="location.href=\'' + ctxPath + '/community/feed?tab=profile&memberId=' + u.memberId + '\'">' +
+    	    '<div class="user-pic">' +
+    	      '<img src="' + ctxPath + '/dist/images/trip_icon.png" ' +
+    	      (u.profileImage ? 'data-src="' + ctxPath + '/uploads/member/' + esc(u.profileImage) + '" ' : '') +
+    	      'style="width:100%;height:100%;object-fit:cover;">' +
+    	    '</div>' +
+    	    '<div>' +
+    	      '<div class="user-name">' + esc(u.nickname) + '</div>' +
+    	      '<div class="user-id" style="font-size:11px;color:var(--muted);">@' + esc(u.nickname || '') + '</div>' +
+    	    '</div>' +
+    	  '</div>';
+    	}).join('');
+
+    	// 프로필 이미지 있는 것만 따로 로드 시도
+    	body.querySelectorAll('img[data-src]').forEach(function(img) {
+    	  var testImg = new Image();
+    	  testImg.onload  = function() { img.src = img.dataset.src; };
+    	  testImg.onerror = function() { /* 기본 이미지 유지 */ };
+    	  testImg.src = img.dataset.src;
+    	});
     } catch (e) {
       body.innerHTML = '<div style="text-align:center;padding:30px;color:#FC8181;font-size:13px;">불러오기 실패</div>';
     }
