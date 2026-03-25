@@ -136,9 +136,23 @@ public class AccommodationController {
         
         try {
             List<Map<String, Object>> downloadableCoupons = couponService.getDownloadableCoupons(id, memberId);
-            model.addAttribute("couponCount", downloadableCoupons != null ? downloadableCoupons.size() : 0);
+            
+            int totalCouponCount = (downloadableCoupons != null) ? downloadableCoupons.size() : 0;
+            int availableCouponCount = 0;
+
+            if (downloadableCoupons != null) {
+                for (Map<String, Object> coupon : downloadableCoupons) {
+                    if (((Number) coupon.get("isDownloaded")).intValue() == 0) {
+                        availableCouponCount++;
+                    }
+                }
+            }
+            
+            model.addAttribute("totalCouponCount", totalCouponCount);
+            model.addAttribute("availableCouponCount", availableCouponCount);
         } catch (Exception e) {
-            model.addAttribute("couponCount", 0);
+            model.addAttribute("totalCouponCount", 0);
+            model.addAttribute("availableCouponCount", 0);
         }
         
         model.addAttribute("kakaoApiKey", kakaoApiKey);

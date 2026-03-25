@@ -263,12 +263,11 @@
             </c:if>
         </div>
 
-        <c:if test="${couponCount > 0}">
-		    <div class="coupon-section">
+        <c:if test="${totalCouponCount > 0}"> <div class="coupon-section">
 		        <div class="coupon-info">
 		            <span class="coupon-label">쿠폰</span>
-		            <span class="coupon-desc">${couponCount}개 쿠폰 발급 가능</span>
-		        </div>
+		            
+		            <span class="coupon-desc">${availableCouponCount}개 쿠폰 발급 가능</span> </div>
 		        <button class="btn-download-coupon" onclick="openCouponModal()">
 		            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right:6px;">
 		                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line>
@@ -644,7 +643,7 @@ const roomFacDict = [
 
 let rdCurrentSlide = 0;
 let rdTotalSlides = 0;
-let rdImagesArray = []; // 객실 사진을 갤러리로 넘기기 위한 배열
+let rdImagesArray = []; 
 
 function moveRdCarousel(dir) {
     if(rdTotalSlides <= 1) return;
@@ -655,9 +654,8 @@ function moveRdCarousel(dir) {
     document.getElementById('rdCurr').innerText = rdCurrentSlide + 1;
 }
 
-// 🌟 객실 모달 안의 사진을 클릭했을 때 공용 갤러리를 띄우는 함수
 function openRoomGallery(index) {
-    currentAccoPhotos = rdImagesArray; // 갤러리에 현재 객실 사진 목록 덮어쓰기
+    currentAccoPhotos = rdImagesArray; 
     currentAccoIndex = index;
     modalAccoTotal = currentAccoPhotos.length;
     
@@ -683,7 +681,6 @@ function openRoomDetailModal(roomId) {
 
     fetch('${pageContext.request.contextPath}/accommodation/room/detail/api/' + roomId)
     .then(res => {
-        // 🌟 방어 코드: 로그인 창으로 리다이렉트 되는지 확인
         if (res.redirected || !res.headers.get('content-type')?.includes('application/json')) {
             alert("로그인이 만료되었거나 권한이 없습니다.");
             window.location.href = '${pageContext.request.contextPath}/member/login';
@@ -699,13 +696,11 @@ function openRoomDetailModal(roomId) {
             rdImagesArray = [];
             let trackHtml = '';
             
-            // 이미지 캐러셀 세팅
             if (images && images.length > 0) {
                 rdTotalSlides = images.length;
                 images.forEach((img, idx) => {
                     let imgSrc = img.startsWith('http') ? img : '${pageContext.request.contextPath}' + img;
                     rdImagesArray.push(imgSrc);
-                    // 클릭 시 갤러리 열리도록 이벤트 부착
                     trackHtml += `<img src="\${imgSrc}" class="rd-carousel-slide" onclick="openRoomGallery(\${idx})">`;
                 });
             } else {
@@ -719,7 +714,6 @@ function openRoomDetailModal(roomId) {
             document.getElementById('rdCurr').innerText = 1;
             document.getElementById('rdTotal').innerText = rdTotalSlides;
             
-            // 사진 장수에 따라 버튼 숨기기/보이기
             const btnPrev = document.getElementById('rdBtnPrev');
             const btnNext = document.getElementById('rdBtnNext');
             const counterWrapper = document.getElementById('rdCounterWrapper');
@@ -730,12 +724,10 @@ function openRoomDetailModal(roomId) {
                 btnPrev.style.display = 'flex'; btnNext.style.display = 'flex'; counterWrapper.style.display = 'block';
             }
             
-            // 텍스트 정보 세팅
             document.getElementById('rdName').innerText = room.roomName;
             document.getElementById('rdCapa').innerText = `기준 \${room.baseCount}명 / 최대 \${room.maxCount}명`;
             document.getElementById('rdIntro').innerText = room.roomIntro || '등록된 객실 상세 설명이 없습니다.';
             
-            // 편의시설
             let facHtml = '';
             roomFacDict.forEach(fac => {
                 if (room[fac.key] == 1) facHtml += `<div class="rd-fac-item"><span class="rd-fac-icon">\${fac.icon}</span>\${fac.name}</div>`;

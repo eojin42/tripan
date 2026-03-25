@@ -112,7 +112,8 @@
 	        (SELECT COUNT(*) FROM member_coupon mc 
 	         WHERE mc.coupon_id = c.coupon_id AND mc.member_id = #{memberId}) as "isDownloaded"
 	    FROM coupon c
-	    WHERE (
+	    WHERE c.issue_condition_type = 'NONE'  
+	    	AND c.valid_until >= SYSDATE  AND (
 	        -- 1. 조건이 없는 공용 쿠폰이거나
 	        (SELECT COUNT(*) FROM coupon_target ct WHERE ct.coupon_id = c.coupon_id) = 0
 	        
@@ -141,9 +142,20 @@
 
 	<insert id="insertMemberCoupon">
 	    INSERT INTO member_coupon (
-	        member_coupon_id, member_id, coupon_id, status, issued_at, expired_at
-	    ) VALUES (
-	        MEMBER_COUPON_SEQ.NEXTVAL, #{memberId}, #{couponId}, 'AVAILABLE', SYSDATE, SYSDATE + 30
-	    )
-	</insert>	
+	        member_coupon_id, 
+	        member_id, 
+	        coupon_id, 
+	        status, 
+	        issued_at, 
+	        expired_at
+	    ) 
+	    SELECT 
+	        MEMBER_COUPON_SEQ.NEXTVAL, 
+	        #{memberId}, 
+	        #{couponId}, 
+	        'AVAILABLE', 
+	        SYSDATE, 
+	        valid_until  FROM coupon
+	    WHERE coupon_id = #{couponId}
+</insert>
 </mapper>
