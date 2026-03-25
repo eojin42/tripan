@@ -36,6 +36,11 @@ public class LoginSuccessHandler implements AuthenticationSuccessHandler {
             "/ws-tripan/" 
         };
     
+    private static final String[] IGNORE_REDIRECT_EXTENSIONS = {
+            ".jpg", ".jpeg", ".png", ".gif", ".svg", ".ico",
+            ".css", ".js", ".woff", ".woff2", ".ttf", ".webp"
+        };
+    
     @Override
     public void onAuthenticationSuccess(HttpServletRequest request, HttpServletResponse response,
             Authentication authentication) throws IOException, ServletException {
@@ -80,6 +85,15 @@ public class LoginSuccessHandler implements AuthenticationSuccessHandler {
         if (savedRequest != null) {
             String targetUrl = savedRequest.getRedirectUrl();
             
+            boolean isStaticFile = false;
+            String lowerUrl = targetUrl.toLowerCase();
+            for (String ext : IGNORE_REDIRECT_EXTENSIONS) {
+                if (lowerUrl.contains(ext)) {
+                    isStaticFile = true;
+                    break;
+                }
+            }
+            
             boolean isIgnorePath = false;
             for (String path : IGNORE_REDIRECT_PATHS) {
                 if (targetUrl.contains(path)) {
@@ -88,7 +102,7 @@ public class LoginSuccessHandler implements AuthenticationSuccessHandler {
                 }
             }
             
-            if (isIgnorePath) {
+            if (isIgnorePath || isStaticFile) {
                 String referer = request.getHeader("Referer");
                 if (referer != null && !referer.contains("/member/login")) {
                     redirectStrategy.sendRedirect(request, response, referer);            		

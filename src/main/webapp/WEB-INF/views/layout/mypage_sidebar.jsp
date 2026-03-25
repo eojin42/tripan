@@ -26,7 +26,7 @@
         <strong id="stat-following">-</strong>팔로잉
       </div>
       <div class="stat-box" onclick="openBadgeModal()">
-        <strong id="stat-badge">-</strong>배지
+        <strong id="stat-badge">-</strong>내 여행
       </div>
     </div>
   </div>

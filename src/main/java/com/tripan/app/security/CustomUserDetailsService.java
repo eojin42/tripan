@@ -49,6 +49,7 @@ public class CustomUserDetailsService implements UserDetailsService{
 				.equippedBadgeId(member.getEquippedBadgeId())
 				.provider(member.getSnsProvider())
 				.providerId(member.getSnsId())
+				.bio(member.getBio())
 				.build();
 		
 		return CustomUserDetails.builder()
