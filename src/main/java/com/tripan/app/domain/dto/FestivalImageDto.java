@@ -1,5 +1,7 @@
 package com.tripan.app.domain.dto;
 
+import java.util.Date;
+
 import lombok.Data;
 
 @Data
@@ -9,4 +11,5 @@ public class FestivalImageDto {
     private String originImgUrl;
     private String smallImgUrl;
     private String imgName;
+    private Date createAt;
 }

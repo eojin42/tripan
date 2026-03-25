@@ -2,13 +2,6 @@
  * workspace_expense.js — 전면 개편
  * ──────────────────────────────────────────────────────────
  * 담당: 가계부 · 정산 CRUD + 내부 3탭 (홈 / 내역 / 정산)
- * 의존: workspace.ui.js (showToast, openModal, closeModal, normalizeRow)
- *       TRIP_ID, CTX_PATH, MY_MEMBER_ID, MEMBER_DICT
- *
- * ★ 개편 사항:
- *   [홈] 대시보드 + 정산 요청 건수 재정의 + 카테고리 카드 UI + 내 지출 요약
- *   [내역] 카테고리 UI 통일 + 지출 상세 모달 개선 (영수증 이미지)
- *   [정산] P2P 워크플로우 (받을 정산 / 줘야 할 정산 / 완료 내역)
  * ──────────────────────────────────────────────────────────
  */
 
@@ -22,9 +15,11 @@ var _CAT_META = {
   TOUR:          { icon: '🎯', name: '관광',   color: '#3B82F6', bg: 'linear-gradient(135deg,#3B82F6,#93C5FD)', light: 'rgba(59,130,246,.12)' },
   CAFE:          { icon: '☕', name: '카페',   color: '#F59E0B', bg: 'linear-gradient(135deg,#F59E0B,#FCD34D)', light: 'rgba(245,158,11,.12)' },
   SHOPPING:      { icon: '🛍️', name: '쇼핑',  color: '#10B981', bg: 'linear-gradient(135deg,#10B981,#6EE7B7)', light: 'rgba(16,185,129,.12)' },
+  DRINK:         { icon: '🍺', name: '술',     color: '#EAB308', bg: 'linear-gradient(135deg,#EAB308,#FDE047)', light: 'rgba(234,179,8,.12)' },
+  SNACK:         { icon: '🍩', name: '간식',   color: '#D946EF', bg: 'linear-gradient(135deg,#D946EF,#F5D0FE)', light: 'rgba(217,70,239,.12)' },
   ETC:           { icon: '📦', name: '기타',   color: '#94A3B8', bg: 'linear-gradient(135deg,#94A3B8,#CBD5E1)', light: 'rgba(148,163,184,.12)' }
 };
-var _CAT_ORDER = ['FOOD', 'TRANSPORT', 'ACCOMMODATION', 'TOUR', 'CAFE', 'SHOPPING', 'ETC'];
+var _CAT_ORDER = ['FOOD', 'CAFE', 'DRINK', 'SNACK', 'TRANSPORT', 'ACCOMMODATION', 'TOUR', 'SHOPPING', 'ETC'];
 function _cat(k) { return _CAT_META[(k||'ETC').toUpperCase()] || _CAT_META.ETC; }
 function _esc(str) { return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
 function _getMyMid() {
@@ -101,7 +96,6 @@ function _loadHomeTab() {
       if (sendEl) sendEl.textContent = myBal < 0 ? _fmtAmt(Math.abs(myBal)) : '₩ 0';
 
       /* ── 나의 잔액 상태 ── */
-      /* ★ 수정: myBalanceLine 배지 제거 — 정신없어서 삭제 */
       var myBalEl = document.getElementById('myBalanceLine');
       if (myBalEl) myBalEl.innerHTML = '';
 
@@ -133,17 +127,21 @@ function _renderSettleStatusChip() {
     .then(function(r) { return r.ok ? r.json() : null; })
     .then(function(data) {
       var list = data && data.settlements ? data.settlements : [];
-      /* 나에게 온 정산 요청 = fromMemberId = 나 (내가 돈 보내야 함) + REQUESTED/PENDING */
       var incoming = list.filter(function(s) {
         return (s.status === 'REQUESTED' || s.status === 'PENDING')
           && Number(s.fromMemberId) === myMid;
       });
-      if (!incoming.length) { el.innerHTML = ''; return; }
-      /* ★ 수정: 정산 대기 칩은 유지하되 금액 배지만 단순하게 */
-      el.innerHTML = '<div class="exp-home-settle-chip" onclick="switchExpTab(\'settle\', document.querySelectorAll(\'.exp-itab\')[2])">'
-        + '<span class="exp-home-settle-chip__icon">📬</span>'
-        + '<span class="exp-home-settle-chip__title">정산 요청 ' + incoming.length + '건 대기 중 · 정산 탭에서 확인</span>'
-        + '</div>';
+	  if (!incoming.length) { el.innerHTML = ''; return; }
+	        el.innerHTML = '<div class="exp-home-settle-chip" onclick="switchExpTab(\'settle\', document.querySelectorAll(\'.exp-itab\')[2])">'
+	          + '<div class="exp-home-settle-chip__left">'
+	          +   '<div class="exp-home-settle-chip__icon-bg">📬</div>'
+	          +   '<div class="exp-home-settle-chip__text">'
+	          +     '<div class="exp-home-settle-chip__title">정산 요청이 도착했어요!</div>'
+	          +     '<div class="exp-home-settle-chip__sub">' + incoming.length + '건의 요청 대기 중 · 눌러서 확인</div>'
+	          +   '</div>'
+	          + '</div>'
+	          + '<div class="exp-home-settle-chip__right">〉</div>'
+	          + '</div>';
     })
     .catch(function() { el.innerHTML = ''; });
 }
@@ -1172,12 +1170,19 @@ function openExpenseDetail(expenseId) {
         + '<div class="ed-hero__name">' + _esc(e.description||'') + '</div>'
         + '</div>';
 
+	  /* 결제 수단 뱃지 만들기 */
+      var payType = e.paymentType || 'NONE';
+      var payBadgeHtml = '';
+      if (payType === 'CARD') payBadgeHtml = '<span class="pay-badge CARD">💳 카드</span>';
+      else if (payType === 'CASH') payBadgeHtml = '<span class="pay-badge CASH">💵 현금</span>';
+      else payBadgeHtml = '<span class="pay-badge NONE">➖ 미선택</span>';
+
       /* ── 기본 정보 그리드 ── */
       html += '<div class="ed-info-grid">'
         + _edInfoItem('📅', '날짜', date)
         + _edInfoItem(m.icon, '카테고리', m.name)
         + _edInfoItem('👤', '결제자', _esc(e.payerNickname||'?'))
-        + (e.paymentType ? _edInfoItem('💳', '결제 수단', _esc(e.paymentType)) : '')
+        + _edInfoItem('💳', '결제 수단', payBadgeHtml) /* ← 여기 적용! */
         + '</div>';
 
       /* ── 분담 내역 ── */
@@ -1605,21 +1610,27 @@ function _resetExpenseForm() {
   recalcSharePreview();
 }
 
-function deleteExpenseItem(expenseId) {
+function deleteExpenseItem(expenseId, event) {
+  if (event) event.stopPropagation();
+
   if (!confirm('이 지출을 삭제할까요?')) return;
+  
+  if(window.isDeleting) return;
+  window.isDeleting = true;
+
   fetch(CTX_PATH + '/api/expenses/' + expenseId, { method: 'DELETE' })
     .then(function(r) {
       if (r.ok || r.status === 204) {
         showToast('🗑️ 지출이 삭제됐어요');
-        /* ★ 수정: 상세 모달이 열려있으면 먼저 닫고 목록 갱신 */
         if (typeof closeModal === 'function') closeModal('expenseDetailModal');
         loadExpenseList();
         _loadHomeTab();
       } else {
-        showToast('⚠️ 삭제에 실패했어요');
+        showToast('⚠️ 이미 삭제되었거나 실패했어요');
       }
     })
-    .catch(function() { showToast('⚠️ 삭제에 실패했어요'); });
+    .catch(function() { showToast('⚠️ 삭제 에러 발생'); })
+    .finally(function() { window.isDeleting = false; });
 }
 
 function recalcSharePreview() {

@@ -13,7 +13,8 @@
       <span class="pl-filter-title">검색필터</span>
       <button class="pl-filter-reset" onclick="resetFilters()">
         초기화
-        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+             stroke-width="2.5" stroke-linecap="round">
           <polyline points="1 4 1 10 7 10"/>
           <path d="M3.51 15a9 9 0 1 0 .49-3.5"/>
         </svg>
@@ -36,7 +37,7 @@
     <div class="pl-topbar">
       <div class="pl-search-row">
         <div class="pl-search-box">
-          <svg class="pl-search-ico" width="17" height="17" viewBox="0 0 24 24" fill="none"
+          <svg class="pl-search-ico" width="16" height="16" viewBox="0 0 24 24" fill="none"
                stroke="currentColor" stroke-width="2" stroke-linecap="round">
             <circle cx="11" cy="11" r="8"/>
             <line x1="21" y1="21" x2="16.65" y2="16.65"/>
@@ -76,33 +77,49 @@
         <c:when test="${not empty placeList}">
           <c:forEach var="p" items="${placeList}">
             <div class="pl-card" onclick="goDetail(${p.placeId})">
-              <div class="pl-card-img-wrap">
-                <img class="pl-card-img"
-                     src="${not empty p.imageUrl ? p.imageUrl : pageContext.request.contextPath.concat('/dist/images/logo.png')}"
-                     alt="${p.placeName}"
-                     onerror="this.src='${pageContext.request.contextPath}/dist/images/logo.png'">
-                <button class="pl-card-bookmark" onclick="event.stopPropagation();">
-                  <svg viewBox="0 0 24 24"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>
-                </button>
-              </div>
-              <div class="pl-card-name">${p.placeName}</div>
-              <div class="pl-card-loc">
-                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#AAA" stroke-width="2.5" stroke-linecap="round">
+
+              <%-- 이미지가 있을 때만 이미지 영역 렌더링 --%>
+              <c:if test="${not empty p.imageUrl}">
+                <div class="pl-card-img-wrap">
+                  <img class="pl-card-img"
+                       src="${p.imageUrl}"
+                       alt="${p.placeName}"
+                       onerror="this.closest('.pl-card-img-wrap').style.display='none'">
+                  <button class="pl-card-bookmark" onclick="event.stopPropagation();">
+                    <svg viewBox="0 0 24 24">
+                      <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/>
+                    </svg>
+                  </button>
+                </div>
+              </c:if>
+
+              <div class="pl-card-body">
+                <div class="pl-card-name">${p.placeName}</div>
+                <div class="pl-card-loc">
+                  <svg width="10" height="10" viewBox="0 0 24 24" fill="none"
+                       stroke="#BDC7D3" stroke-width="2.5" stroke-linecap="round">
                     <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
                     <circle cx="12" cy="10" r="3"/>
-                </svg>
-                ${p.address}
-              </div>
-              <div class="pl-card-stats">
-                <div class="pl-card-stat">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
-                  0
+                  </svg>
+                  ${p.address}
                 </div>
-                <div class="pl-card-stat">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
-                  0
+                <div class="pl-card-stats">
+                  <div class="pl-card-stat">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
+                    </svg>
+                    0
+                  </div>
+                  <div class="pl-card-stat">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                      <circle cx="12" cy="12" r="3"/>
+                    </svg>
+                    0
+                  </div>
                 </div>
               </div>
+
             </div>
           </c:forEach>
         </c:when>
@@ -125,10 +142,10 @@
 
 <script>
   const PLACE_CONFIG = {
-    contextPath: '${pageContext.request.contextPath}',
-    initialKeyword: '${keyword}',
+    contextPath:     '${pageContext.request.contextPath}',
+    initialKeyword:  '${keyword}',
     initialCategory: '${category}',
-    initialRegion: '${region}'
+    initialRegion:   '${region}'
   };
 </script>
 <script src="${pageContext.request.contextPath}/dist/js/curation/place_list.js"></script>

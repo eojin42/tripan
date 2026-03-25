@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.*;
 import com.tripan.app.domain.dto.PlaceDto;
 import com.tripan.app.domain.dto.TripPlaceDto;
 import com.tripan.app.mapper.PlaceMapper;
+import com.tripan.app.mapper.PlaceRecommendMapper;
 import com.tripan.app.mapper.TripPlaceMapper;
 import com.tripan.app.service.PlaceService;
 import com.tripan.app.service.TripPlaceService;
@@ -27,6 +28,9 @@ public class TripPlaceApiController {
     private final PlaceService  placeService;
     private final PlaceMapper   placeMapper;
 
+    // [Track 1-B] 큐레이션 목록/상세 전용 매퍼 (place_list.js, place_detail.js)
+    private final PlaceRecommendMapper placeRecommendMapper;
+
     // [Track 2] 나만의 장소 (카카오맵)
     private final TripPlaceService tripPlaceService;
     private final TripPlaceMapper  tripPlaceMapper;
@@ -34,37 +38,75 @@ public class TripPlaceApiController {
     // [Track 3] TourAPI 동기화 서비스 (식당 상세 실시간 조회)
     private final TourApiSyncService tourApiSyncService;
 
-    // ── [KTO] 카테고리별 추천 (무한스크롤 offset 지원) ───────────
-    // GET /api/places/recommend?category=RESTAURANT&city=부산,제주&limit=12&offset=0
-    @GetMapping("/recommend")
-    public ResponseEntity<Map<String, Object>> recommend(
-            @RequestParam(value = "category", defaultValue = "all") String category,
-            @RequestParam(value = "city",     defaultValue = "")    String city,
+    // ─────────────────────────────────────────────────────────────
+    // [큐레이션 목록] 이미지 있는 장소만 – place_list.js 전용
+    // ─────────────────────────────────────────────────────────────
+    @GetMapping("/curation")
+    public ResponseEntity<Map<String, Object>> curation(
+            @RequestParam(value = "category", defaultValue = "전체") String category,
+            @RequestParam(value = "region",   defaultValue = "전체") String region,
+            @RequestParam(value = "keyword",  defaultValue = "")    String keyword,
             @RequestParam(value = "limit",    defaultValue = "12")  int    limit,
             @RequestParam(value = "offset",   defaultValue = "0")   int    offset) {
 
-        // "부산,제주" → ["부산", "제주"] — 다중 도시 지원
-        List<String> cityList = city.isBlank()
-            ? List.of()
-            : List.of(city.split(","));
-
-        List<PlaceDto> results = placeMapper.selectRecommendPlaces(category, cityList, limit, offset);
-        long total             = placeMapper.countRecommendPlaces(category, cityList);
+        List<PlaceDto> places = placeRecommendMapper.selectCurationPlaces(
+                category, region, keyword, limit, offset);
+        long total = placeRecommendMapper.countCurationPlaces(category, region, keyword);
 
         Map<String, Object> body = new HashMap<>();
-        body.put("places",  results);
+        body.put("places",  places);
         body.put("total",   total);
-        body.put("offset",  offset);
-        body.put("limit",   limit);
         body.put("hasMore", (offset + limit) < total);
 
         return ResponseEntity.ok(body);
     }
 
-    // ── [통합] 키워드 검색 ────────────────────────────────────────
-    // GET /api/places/search?keyword=제주&category=RESTAURANT
-    // category 생략 또는 "all" → 전체 검색
-    // 반환: { officialPlaces: [...PlaceDto], myPlaces: [...TripPlaceDto] }
+    // ─────────────────────────────────────────────────────────────
+    // [큐레이션] 카테고리 + 지역 + 키워드 추천 목록
+    // ─────────────────────────────────────────────────────────────
+    @GetMapping("/recommend")
+    public ResponseEntity<Map<String, Object>> recommend(
+            @RequestParam(value = "category", defaultValue = "전체") String category,
+            @RequestParam(value = "region",   defaultValue = "전체") String region,
+            @RequestParam(value = "keyword",  defaultValue = "")    String keyword,
+            @RequestParam(value = "limit",    defaultValue = "12")  int    limit,
+            @RequestParam(value = "offset",   defaultValue = "0")   int    offset) {
+
+        List<PlaceDto> places = placeRecommendMapper.selectRecommendPlaces(
+                category, region, keyword, limit, offset);
+        long total = placeRecommendMapper.countRecommendPlaces(category, region, keyword);
+
+        Map<String, Object> body = new HashMap<>();
+        body.put("places",  places);
+        body.put("total",   total);
+        body.put("hasMore", (offset + limit) < total);
+
+        return ResponseEntity.ok(body);
+    }
+
+    // ─────────────────────────────────────────────────────────────
+    // [큐레이션] 주변 장소
+    // ─────────────────────────────────────────────────────────────
+    @GetMapping("/{placeId}/nearby")
+    public ResponseEntity<List<PlaceDto>> nearby(@PathVariable Long placeId) {
+        // lat/lng만 필요 → 경량 쿼리 사용 (attraction 테이블 JOIN 없음)
+        PlaceDto place = placeRecommendMapper.selectPlaceLatLng(placeId);
+        if (place == null
+                || place.getLatitude()  == null
+                || place.getLongitude() == null) {
+            return ResponseEntity.ok(List.of());
+        }
+        List<PlaceDto> nearbyList = placeRecommendMapper.selectNearbyPlaces(
+                placeId,
+                place.getLatitude(),
+                place.getLongitude(),
+                5);
+        return ResponseEntity.ok(nearbyList);
+    }
+
+    // ─────────────────────────────────────────────────────────────
+    // [통합] 키워드 검색
+    // ─────────────────────────────────────────────────────────────
     @GetMapping("/search")
     public ResponseEntity<Map<String, Object>> search(
             @RequestParam("keyword") String keyword,
@@ -73,10 +115,8 @@ public class TripPlaceApiController {
 
         Long memberId = getLoginMemberId(session);
 
-        // KTO 공식 장소 검색 (place 테이블) - category 필터 포함
         List<PlaceDto> officialPlaces = placeMapper.searchPlacesByName(keyword, category);
 
-        // 나만의 장소 검색 (trip_place 테이블, 로그인 시만)
         List<TripPlaceDto> myPlaces = (memberId != null)
             ? tripPlaceService.searchPlaces(keyword, memberId)
             : List.of();
@@ -88,7 +128,9 @@ public class TripPlaceApiController {
         return ResponseEntity.ok(body);
     }
 
-    // ── [나만의 장소] 목록 ─────────────────────────────────────────
+    // ─────────────────────────────────────────────────────────────
+    // [나만의 장소] 목록
+    // ─────────────────────────────────────────────────────────────
     @GetMapping("/my")
     public ResponseEntity<?> myPlaces(HttpSession session) {
         Long memberId = getLoginMemberId(session);
@@ -98,7 +140,9 @@ public class TripPlaceApiController {
         return ResponseEntity.ok(tripPlaceService.getMyPlaces(memberId));
     }
 
-    // ── [나만의 장소] 등록 ─────────────────────────────────────────
+    // ─────────────────────────────────────────────────────────────
+    // [나만의 장소] 등록
+    // ─────────────────────────────────────────────────────────────
     @PostMapping("/my")
     public ResponseEntity<?> registerMyPlace(
             @RequestBody TripPlaceDto dto,
@@ -115,8 +159,10 @@ public class TripPlaceApiController {
         TripPlaceDto saved = tripPlaceService.registerMyPlace(dto, memberId);
         return ResponseEntity.ok(Map.of("success", true, "place", saved));
     }
-    
-    // ── [나만의 장소] 삭제 ──────────────────────────────
+
+    // ─────────────────────────────────────────────────────────────
+    // [나만의 장소] 삭제
+    // ─────────────────────────────────────────────────────────────
     @DeleteMapping("/my/{placeId}")
     public ResponseEntity<?> deleteMyPlace(
             @PathVariable("placeId") Long placeId,
@@ -136,9 +182,9 @@ public class TripPlaceApiController {
                     "message", "삭제 권한이 없거나 존재하지 않는 장소입니다"));
     }
 
-
-    // ── [식당] 상세 정보 실시간 조회 (TourAPI detailIntro2) ─────────
-    // GET /api/places/restaurant-detail/{contentId}
+    // ─────────────────────────────────────────────────────────────
+    // [식당] 상세 정보 실시간 조회 (TourAPI detailIntro2)
+    // ─────────────────────────────────────────────────────────────
     @GetMapping("/restaurant-detail/{contentId}")
     public ResponseEntity<Map<String, Object>> restaurantDetail(
             @PathVariable("contentId") String contentId) {
@@ -151,28 +197,37 @@ public class TripPlaceApiController {
         return ResponseEntity.ok(detail);
     }
 
-    // ── [KTO] 배치 수동 트리거 ────────────────────────────────────
+    // ─────────────────────────────────────────────────────────────
+    // [식당] 로컬 DB 상세 조회 (프론트 모달)
+    // ─────────────────────────────────────────────────────────────
+    @GetMapping("/restaurant/{placeId}")
+    public ResponseEntity<Map<String, Object>> getLocalRestaurantDetail(
+            @PathVariable("placeId") Long placeId) {
+
+        Map<String, Object> detail = placeMapper.getRestaurantDetailByPlaceId(placeId);
+        if (detail == null) {
+            return ResponseEntity.ok(new HashMap<>());
+        }
+        return ResponseEntity.ok(detail);
+    }
+
+    // ─────────────────────────────────────────────────────────────
+    // [KTO] 배치 수동 트리거
+    // ─────────────────────────────────────────────────────────────
     @PostMapping("/sync")
     public ResponseEntity<Map<String, Object>> syncBatch() {
         placeService.syncPlacesBatch();
         return ResponseEntity.ok(Map.of("success", true, "message", "KTO 동기화 완료"));
     }
 
-    // ──────────────────────────────────────────────────────────────
+    // ─────────────────────────────────────────────────────────────
     private Long getLoginMemberId(HttpSession session) {
         Object user = session.getAttribute("loginUser");
         if (user == null) return null;
-        try { return (Long) user.getClass().getMethod("getMemberId").invoke(user); }
-        catch (Exception e) { return null; }
-    }
-    
-    // [식당 전용 상세 조회 API] 프론트 모달에서 호출함
-    @GetMapping("/restaurant/{placeId}")
-    public ResponseEntity<Map<String, Object>> getLocalRestaurantDetail(@PathVariable("placeId") Long placeId) {
-        Map<String, Object> detail = placeMapper.getRestaurantDetailByPlaceId(placeId);
-        if (detail == null) {
-            return ResponseEntity.ok(new HashMap<>()); // 없으면 빈 객체 반환
+        try {
+            return (Long) user.getClass().getMethod("getMemberId").invoke(user);
+        } catch (Exception e) {
+            return null;
         }
-        return ResponseEntity.ok(detail);
     }
 }

@@ -188,9 +188,27 @@
     <update id="updatePlaceDetails">
         UPDATE place
         SET phone_number = #{phoneNumber},
-            description = #{description}
+            description  = #{description}
         WHERE place_id = #{placeId}
     </update>
+
+    <!-- image_url 단독 업데이트 (이미지 없는 장소 이미지 채우기용) -->
+    <update id="updatePlaceImage">
+        UPDATE place
+        SET image_url = #{imageUrl}
+        WHERE place_id = #{placeId}
+          AND image_url IS NULL
+    </update>
+
+    <!-- 이미지 없는 장소 placeId 목록 (KTO contentId = place_id) -->
+    <select id="findPlacesWithNullImage" resultType="java.lang.Long">
+        SELECT place_id
+        FROM place
+        WHERE image_url IS NULL
+          AND place_id > 100000
+          AND category NOT IN ('ACCOMMODATION')
+        FETCH FIRST 500 ROWS ONLY
+    </select>
     
     
    <select id="findRestaurantsWithoutDetails" resultType="java.lang.Long">

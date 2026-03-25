@@ -1332,8 +1332,8 @@
         <div class="exp-v2-cats" id="expCatChips" ondragstart="return false;">
           <button class="exp-cat-chip active" data-val="FOOD"         onclick="selectExpCat('FOOD',this)">        🍽️ 식사</button>
           <button class="exp-cat-chip"        data-val="CAFE"         onclick="selectExpCat('CAFE',this)">        ☕ 카페</button>
-          <button class="exp-cat-chip"        data-val="SNACK"        onclick="selectExpCat('ETC',this)">         🍩 간식</button>
-          <button class="exp-cat-chip"        data-val="DRINK"        onclick="selectExpCat('ETC',this)">         🍺 술</button>
+          <button class="exp-cat-chip" 		  data-val="SNACK" 		  onclick="selectExpCat('SNACK',this)"> 🍩 간식</button>
+		  <button class="exp-cat-chip" 		  data-val="DRINK" 		  onclick="selectExpCat('DRINK',this)"> 🍺 술</button>
           <button class="exp-cat-chip"        data-val="TRANSPORT"    onclick="selectExpCat('TRANSPORT',this)">   🚗 교통</button>
           <button class="exp-cat-chip"        data-val="ACCOMMODATION" onclick="selectExpCat('ACCOMMODATION',this)">🏨 숙소</button>
           <button class="exp-cat-chip"        data-val="SHOPPING"     onclick="selectExpCat('SHOPPING',this)">    🛍️ 쇼핑</button>

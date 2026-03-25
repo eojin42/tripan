@@ -1,6 +1,7 @@
 package com.tripan.app.mapper;
 
 import java.util.List;
+import java.util.Map;
 
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
@@ -56,6 +57,13 @@ public interface PlaceMapper {
     int updatePlaceDetails(@Param("placeId") Long placeId, 
                            @Param("phoneNumber") String phoneNumber, 
                            @Param("description") String description);
+
+    /** 이미지 URL 업데이트 (image_url IS NULL인 경우만) */
+    int updatePlaceImage(@Param("placeId") Long placeId,
+                         @Param("imageUrl") String imageUrl);
+
+    /** 이미지 없는 장소 placeId 목록 */
+    List<Long> findPlacesWithNullImage();
     
     List<Long> findRestaurantsWithoutDetails();
 
@@ -76,4 +84,12 @@ public interface PlaceMapper {
     java.util.Map<String, Object> getRestaurantDetailByPlaceId(@Param("placeId") Long placeId);
     
     int upsertPlace(PlaceDto place);
+    
+    List<Map<String, Object>> findAttractionsWithoutDetails();
+    
+    void upsertAttraction(
+            @Param("placeId")    Long   placeId,
+            @Param("closedDays") String closedDays,
+            @Param("usetime")    String usetime
+        );
 }
