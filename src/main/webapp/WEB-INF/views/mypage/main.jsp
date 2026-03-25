@@ -371,15 +371,13 @@
         <a href="${pageContext.request.contextPath}/mypage/bookmark" class="section-more">전체 보기</a>
       </div>
       <p class="section-subtitle">찜해둔 숙소를 빠르게 확인하세요</p>
-      <div class="clean-card" style="padding:16px;">
+
         <div id="wish-list-area">
           <div class="skeleton" style="height:70px;border-radius:12px;margin-bottom:10px;"></div>
           <div class="skeleton" style="height:70px;border-radius:12px;margin-bottom:10px;"></div>
           <div class="skeleton" style="height:70px;border-radius:12px;"></div>
         </div>
-      </div>
     </div>
-
   </div>
 </main>
 

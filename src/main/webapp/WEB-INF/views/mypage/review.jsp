@@ -29,7 +29,8 @@
     .btn-edit-profile:hover { background:var(--text-black);color:white;border-color:transparent; }
     .profile-stats { display:flex;justify-content:space-around;margin-top:20px;padding-top:20px;border-top:1px dashed rgba(45,55,72,.1); }
     .stat-box { display:flex;flex-direction:column;align-items:center;font-size:12px;color:var(--text-gray);font-weight:600;padding:4px 8px;border-radius:8px;transition:.2s;gap:2px; }
-    .stat-box strong { font-size:18px;color:var(--text-black);font-weight:900; }
+	.stat-box:hover { background:rgba(137,207,240,.15);color:var(--sky-blue);cursor:pointer;transform:translateY(-2px); } /* ← 이거 추가 */
+	.stat-box strong { font-size:18px;color:var(--text-black);font-weight:900; }
     .side-nav { list-style:none;padding:0;margin:0;display:flex;flex-direction:column;gap:6px; }
     .side-nav li { border-radius:16px;overflow:hidden; }
     .side-nav a { display:flex;align-items:center;gap:12px;padding:13px 20px;color:var(--text-dark);font-weight:700;font-size:14px;text-decoration:none;transition:all .3s; }
