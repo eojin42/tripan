@@ -193,7 +193,7 @@
       <div class="horizontal-scroll">
         <c:if test="${not empty popularList}">
             <c:forEach var="stay" items="${popularList}">
-                <div class="stay-card" onclick="location.href='${pageContext.request.contextPath}/accommodation/detail?placeId=${stay.placeId}'">
+                <div class="stay-card" onclick="location.href='${pageContext.request.contextPath}/accommodation/detail/${stay.placeId}'">
                   <div class="sc-img-box">
                     <img src="${fn:startsWith(stay.imageUrl, 'http') ? stay.imageUrl : pageContext.request.contextPath += stay.imageUrl}" onerror="this.src='https://images.unsplash.com/photo-1611892440504-42a792e24d32?w=600'">
                     <div class="sc-bookmark" onclick="event.stopPropagation();">
@@ -287,26 +287,23 @@
 <jsp:include page="../accommodation/searchModal.jsp" />
 
 <script>
-// --- 최근 본 숙소 JS 로직 (서버 요청 X, 로컬스토리지 전용) ---
 function loadRecentViews() {
     const key = '${sessionScope.loginUser.memberId}' ? 'tripan_recent_stays_${sessionScope.loginUser.memberId}' : 'tripan_recent_stays_guest';
     const list = JSON.parse(localStorage.getItem(key) || '[]');
     const container = document.getElementById('recentViewsContainer');
     const section = document.getElementById('recentViewsSection');
     
-    // 데이터가 없으면 영역 자체를 완전히 숨깁니다.
     if(list.length === 0) {
         section.style.display = 'none';
         return;
     }
     
-    // 데이터가 있으면 화면에 그립니다.
     section.style.display = 'block';
     let html = '';
     list.forEach(item => {
         const imgSrc = item.thumbnailUrl.startsWith('http') ? item.thumbnailUrl : '${pageContext.request.contextPath}' + item.thumbnailUrl;
         html += `
-        <div class="stay-card" onclick="location.href='${pageContext.request.contextPath}/accommodation/detail?placeId=\${item.accommodationId}'">
+        <div class="stay-card" onclick="location.href='${pageContext.request.contextPath}/accommodation/detail/\${item.accommodationId}'">
             <div class="sc-img-box">
                 <img src="\${imgSrc}" onerror="this.src='https://images.unsplash.com/photo-1611892440504-42a792e24d32?w=600'">
             </div>

@@ -412,6 +412,8 @@
       const area = document.getElementById('recentSearchArea');
       const searches = getRecentSearches();
       
+      if (!list || !area) return;
+      
       if(searches.length === 0) {
           area.style.display = 'none';
           return;
@@ -538,6 +540,14 @@
     if (selectedDates.length === 0) {
         selectedDates.push(date);
     } else {
+    	
+    	if (selectedDates[0] === date) {
+            selectedDates = [date]; 
+            updateCalendarUI();
+            updateHeaderText();
+            return;
+        }
+    	
         const start = selectedDates[0] < date ? selectedDates[0] : date;
         const end = selectedDates[0] < date ? date : selectedDates[0];
         
