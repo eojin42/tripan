@@ -20,6 +20,7 @@ public class SessionInfo {
 	private int status;
 	private String role;
 	private int failureCnt;
+	private String bio;
 	
 	private String nickname;
 	private String avatar; 
