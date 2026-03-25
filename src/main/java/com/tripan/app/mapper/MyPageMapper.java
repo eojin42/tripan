@@ -14,7 +14,6 @@ import com.tripan.app.domain.dto.FollowDto;
 import com.tripan.app.domain.dto.MyPageSummaryDto;
 import com.tripan.app.domain.dto.MyPageSummaryDto.ActivityItem;
 import com.tripan.app.domain.dto.MyReviewDto;
-import com.tripan.app.domain.dto.MyTripDto;
 
 
 @Mapper

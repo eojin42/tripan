@@ -72,13 +72,13 @@ public class MemberController {
             session.invalidate();
             rAttr.addFlashAttribute("title", "회원 가입 완료!");
             rAttr.addFlashAttribute("message", dto.getUsername() + "님, 회원가입이 완료되었습니다! <br>메인화면으로 이동 하여 로그인해주시기 바랍니다.<br>"); 
-            // rAttr.addFlashAttribute("name", dto.getUsername());  ← 삭제
             return "redirect:/member/complete";
 
         } catch (Exception e) {
             log.error("회원가입 처리 중 오류", e);
             model.addAttribute("mode", "account");
             model.addAttribute("title", "회원가입 실패!");
+            model.addAttribute("isError", true);
         }
         return "member/member";
     }
@@ -107,7 +107,9 @@ public class MemberController {
         String p = "false";
         try {
             MemberDto dto = service.findByNickname(nickname);
-            if (dto == null) p = "true";
+            SessionInfo info = LoginMemberUtil.getsessionInfo();
+            if (dto == null || (info != null && dto.getMemberId().equals(info.getMemberId()))) 
+            	p = "true";
         } catch (Exception e) {
             log.error("닉네임 중복 체크 중 에러 발생", e);
         }
@@ -135,7 +137,7 @@ public class MemberController {
         try {
             SessionInfo info = LoginMemberUtil.getsessionInfo();
             MemberDto dto = Objects.requireNonNull(service.findById(info.getMemberId()));
-            boolean bPwd = service.isPasswordCheck(info.getLoginId(), password);
+            boolean bPwd = service.isPasswordCheck(info.getMemberId(), password);
             if (!bPwd) {
                 model.addAttribute("mode", mode);
                 model.addAttribute("message", "패스워드가 일치하지 않습니다.");
@@ -160,18 +162,26 @@ public class MemberController {
     }
 
     @PostMapping("update")
-    public String updateSubmit(MemberDto dto, final RedirectAttributes reAttr, Model model) throws Exception {
+    public String updateSubmit(MemberDto dto, final RedirectAttributes reAttr, Model model, HttpSession session) throws Exception {
         StringBuilder sb = new StringBuilder();
         try {
             SessionInfo info = LoginMemberUtil.getsessionInfo();
             dto.setMemberId(info.getMemberId());
             service.updateMember(dto, uploadPath);
             info.setAvatar(dto.getProfilePhoto());
+            
+            MemberDto updatedDto = service.findById(info.getMemberId());
+   
+            session.setAttribute("loginUser", updatedDto); 
+            
             sb.append(dto.getUsername()).append("님의 회원정보가 정상적으로 변경되었습니다.<br>메인화면으로 이동 하시기 바랍니다.<br>");
-            reAttr.addFlashAttribute("title", "회원정보수정 완료!");  // ← title도 여기서
+            reAttr.addFlashAttribute("title", "회원정보수정 완료!"); 
+            reAttr.addFlashAttribute("showLogin", false);
         } catch (Exception e) {
             sb.append("회원정보 변경이 실패했습니다.<br>잠시후 다시 변경 하시기 바랍니다.<br>");
-            reAttr.addFlashAttribute("title", "회원정보수정 실패");   // ← 실패 title
+            reAttr.addFlashAttribute("title", "회원정보수정 실패"); 
+            reAttr.addFlashAttribute("isError", true);
+            reAttr.addFlashAttribute("showLogin", false);
             log.error("회원정보 수정 중 에러 발생", e);
         }
         reAttr.addFlashAttribute("message", sb.toString());

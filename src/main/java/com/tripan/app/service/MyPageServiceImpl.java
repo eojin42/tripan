@@ -17,7 +17,6 @@ import com.tripan.app.domain.dto.MyPageSummaryDto;
 import com.tripan.app.domain.dto.MyPageSummaryDto.ActivityItem;
 import com.tripan.app.domain.dto.MyReviewDto;
 import com.tripan.app.mapper.MyPageMapper;
-import com.tripan.app.mapper.TripMapper;
 import com.tripan.app.repository.BookmarkRepository;
 import com.tripan.app.repository.FollowRepository;
 import com.tripan.app.repository.Member2Repository;
@@ -33,7 +32,6 @@ import lombok.extern.slf4j.Slf4j;
 public class MyPageServiceImpl implements MyPageService {
 
     private final MyPageMapper mapper;
-    private final TripMapper tripMapper;
     private final Member2Repository member2Repository;
     private final BookmarkRepository bookmarkRepository;
     private final MemberBadgeRepository memberBadgeRepository;

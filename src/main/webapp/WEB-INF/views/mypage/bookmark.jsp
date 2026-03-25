@@ -125,6 +125,7 @@
 </main>
 
 <jsp:include page="/WEB-INF/views/layout/footer.jsp"/>
+<script src="${pageContext.request.contextPath}/js/mypage/main.js"></script>
 <script>
   async function loadStats() {
     try {

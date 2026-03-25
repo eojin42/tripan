@@ -15,18 +15,25 @@ async function loadSummary() {
     if (!res.ok) return;
     const data = await res.json();
 
-    const setVal = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val ?? '-'; };
-    setVal('val-trips',   data.totalTripCount   ?? 0);
-    setVal('val-regions', data.visitedRegionCount ?? 0);
-    setVal('val-avgdays', data.avgTripDays       ?? '-');
-    setVal('val-history', data.completedTripCount ?? 0);
+	const setVal = (id, val) => {
+	      const el = document.getElementById(id);
+	      if (el) el.textContent = val ?? 0;
+	    };
 
-    if (data.member) {
-      setVal('stat-follower',  data.member.followerCount);
-      setVal('stat-following', data.member.followingCount);
-      setVal('stat-badge',     data.member.badgeCount);
-    }
-  } catch (e) { console.error('요약 로드 실패', e); }
+	    setVal('val-trips',   data.totalTripCount ?? 0);
+	    setVal('val-regions', data.visitedRegionCount ?? 0);
+	    setVal('val-avgdays', data.avgTripDays ?? '-');
+	    setVal('val-history', data.completedTripCount ?? 0);
+
+	    // 팔로워/팔로잉
+	    setVal('stat-follower',  data.followerCount ?? 0);
+	    setVal('stat-following', data.followingCount ?? 0);
+
+	    setVal('stat-mytrip', data.totalTripCount ?? 0);
+
+	  } catch (e) {
+	    console.error('요약 로드 실패', e);
+	  }
 }
 
 // ── 다가오는 일정 ──
@@ -151,10 +158,10 @@ async function openFollowModal(type) {
     }
     body.innerHTML = list.map(u => `
       <div class="user-item">
-        <div class="user-pic">${u.profileImg ? `<img src="${escHtml(u.profileImg)}">` : escHtml((u.nickname||'?')[0])}</div>
+        <div class="user-pic">${u.profileImage ? `<img src="${escHtml(u.profileImage)}">` : escHtml((u.nickname||'?')[0])}</div>
         <div>
           <div class="user-name">${escHtml(u.nickname)}</div>
-          <div class="user-id" style="font-size:11px;color:var(--muted);">@${escHtml(u.username||'')}</div>
+          <div class="user-id" style="font-size:11px;color:var(--muted);">@${escHtml(u.nickname||'')}</div>
         </div>
       </div>`).join('');
   } catch (e) {
@@ -168,6 +175,7 @@ window.closeModal = (id) => document.getElementById(id)?.classList.remove('activ
 document.addEventListener('DOMContentLoaded', () => {
   loadSummary();
   loadUpcoming();
-  loadRecentAccom();
+   if (typeof loadRecentAccom === 'function') loadRecentAccom();
   loadWishlist();
+  
 });

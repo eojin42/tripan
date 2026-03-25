@@ -139,7 +139,7 @@ public class MemberServiceImpl implements MemberService {
     // 패스워드 변경
     @Override
     public void updatePassword(MemberDto dto) throws Exception {
-        if (isPasswordCheck(dto.getLoginId(), dto.getPassword())) {
+        if (isPasswordCheck(dto.getMemberId(), dto.getPassword())) {
             throw new RuntimeException("패스워드가 기존 패스워드와 일치합니다.");
         }
         try {
@@ -407,9 +407,9 @@ public class MemberServiceImpl implements MemberService {
 
     // 패스워드 일치 여부 확인
     @Override
-    public boolean isPasswordCheck(String loginId, String password) {
+    public boolean isPasswordCheck(Long memberId, String password) {
         try {
-            MemberDto dto = Objects.requireNonNull(findById(loginId));
+            MemberDto dto = Objects.requireNonNull(findById(memberId));
             return bcryptEncoder.matches(password, dto.getPassword());
         } catch (Exception e) {
         }

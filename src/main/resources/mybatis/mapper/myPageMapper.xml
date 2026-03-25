@@ -23,7 +23,13 @@
 	         FROM trip t
 	         JOIN trip_member tm ON t.trip_id = tm.trip_id
 	         WHERE tm.member_id = #{memberId}
-	         AND tm.invitation_status = 'ACCEPTED') AS avgTripDays
+	         AND tm.invitation_status = 'ACCEPTED') AS avgTripDays,
+	        (SELECT COUNT(*)
+	         FROM follow
+	         WHERE follower_id = #{memberId}) AS followingCount,
+	        (SELECT COUNT(*)
+	         FROM follow
+	         WHERE following_id = #{memberId}) AS followerCount
 	    FROM dual
 	</select>
 
@@ -215,5 +221,33 @@
                    WHERE  member_id = #{memberId}
                )
     </delete>
+    
+    <!-- 팔로우 -->
+    <select id="selectFollowingList" resultType="com.tripan.app.domain.dto.FollowDto">
+    SELECT
+        f.following_id AS memberId,
+        m1.login_id AS loginId,
+        NVL(m2.nickname, m1.username) AS nickname,
+        m2.profile_image AS profileImage
+    FROM follow f
+    JOIN member1 m1 ON f.following_id = m1.member_id
+    LEFT JOIN member2 m2 ON f.following_id = m2.member_id
+    WHERE f.follower_id = #{memberId}
+    ORDER BY f.follow_id DESC
+</select>
+
+<select id="selectFollowerList" resultType="com.tripan.app.domain.dto.FollowDto">
+    SELECT
+        f.follower_id AS memberId,
+        m1.login_id AS loginId,
+        NVL(m2.nickname, m1.username) AS nickname,
+        m2.profile_image AS profileImage
+    FROM follow f
+    JOIN member1 m1 ON f.follower_id = m1.member_id
+    LEFT JOIN member2 m2 ON f.follower_id = m2.member_id
+    WHERE f.following_id = #{memberId}
+    ORDER BY f.follow_id DESC
+</select>
+    
 
 </mapper>

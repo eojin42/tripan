@@ -14,8 +14,8 @@ public class MyPageSummaryDto {
 	private BadgeInfoDto equippedBadge;
 	
     // follow 집계
-    private long followerCount;
-    private long followingCount;
+    private int followerCount;
+    private int followingCount;
     private long postCount; // 게시물 수
 
     // 장착 배지
