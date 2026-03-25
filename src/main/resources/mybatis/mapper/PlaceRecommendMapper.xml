@@ -16,12 +16,12 @@
         p.image_url     AS imageUrl
     </sql>
 
+    <!-- ─── 장소 목록 (워크스페이스용 - 이미지 없어도 포함) ─── -->
     <select id="selectRecommendPlaces" resultType="com.tripan.app.domain.dto.PlaceDto">
-        SELECT 
-            <include refid="placeColumns"/>
+        SELECT <include refid="placeColumns"/>
         FROM place p
         <where>
-            <if test="category != null and category != '전체' and category != ''">
+            <if test="category != null and category != '전체' and category != '' and category != 'all'">
                 AND p.category = #{category}
             </if>
             <if test="region != null and region != '전체' and region != ''">
@@ -30,7 +30,7 @@
             <if test="keyword != null and keyword != ''">
                 AND (
                     p.place_name LIKE '%' || #{keyword} || '%'
-                    OR p.address LIKE '%' || #{keyword} || '%'
+                    OR p.address  LIKE '%' || #{keyword} || '%'
                 )
             </if>
         </where>
@@ -38,11 +38,11 @@
         OFFSET #{offset} ROWS FETCH NEXT #{limit} ROWS ONLY
     </select>
 
+    <!-- ─── 총 건수 (워크스페이스용) ─── -->
     <select id="countRecommendPlaces" resultType="long">
-        SELECT COUNT(*)
-        FROM place p
+        SELECT COUNT(*) FROM place p
         <where>
-            <if test="category != null and category != '전체' and category != ''">
+            <if test="category != null and category != '전체' and category != '' and category != 'all'">
                 AND p.category = #{category}
             </if>
             <if test="region != null and region != '전체' and region != ''">
@@ -51,21 +51,64 @@
             <if test="keyword != null and keyword != ''">
                 AND (
                     p.place_name LIKE '%' || #{keyword} || '%'
-                    OR p.address LIKE '%' || #{keyword} || '%'
+                    OR p.address  LIKE '%' || #{keyword} || '%'
                 )
             </if>
         </where>
     </select>
 
+    <!-- ─── 큐레이션 목록 (이미지 있는 장소만) ─── -->
+    <select id="selectCurationPlaces" resultType="com.tripan.app.domain.dto.PlaceDto">
+        SELECT <include refid="placeColumns"/>
+        FROM place p
+        <where>
+            AND p.image_url IS NOT NULL
+            <if test="category != null and category != '전체' and category != '' and category != 'all'">
+                AND p.category = #{category}
+            </if>
+            <if test="region != null and region != '전체' and region != ''">
+                AND p.address LIKE #{region} || '%'
+            </if>
+            <if test="keyword != null and keyword != ''">
+                AND (
+                    p.place_name LIKE '%' || #{keyword} || '%'
+                    OR p.address  LIKE '%' || #{keyword} || '%'
+                )
+            </if>
+        </where>
+        ORDER BY p.place_id DESC
+        OFFSET #{offset} ROWS FETCH NEXT #{limit} ROWS ONLY
+    </select>
+
+    <!-- ─── 큐레이션 총 건수 (이미지 있는 장소만) ─── -->
+    <select id="countCurationPlaces" resultType="long">
+        SELECT COUNT(*) FROM place p
+        <where>
+            AND p.image_url IS NOT NULL
+            <if test="category != null and category != '전체' and category != '' and category != 'all'">
+                AND p.category = #{category}
+            </if>
+            <if test="region != null and region != '전체' and region != ''">
+                AND p.address LIKE #{region} || '%'
+            </if>
+            <if test="keyword != null and keyword != ''">
+                AND (
+                    p.place_name LIKE '%' || #{keyword} || '%'
+                    OR p.address  LIKE '%' || #{keyword} || '%'
+                )
+            </if>
+        </where>
+    </select>
+
+    <!-- ─── 키워드 검색 ─── -->
     <select id="searchPlacesByName" resultType="com.tripan.app.domain.dto.PlaceDto">
-        SELECT 
-            <include refid="placeColumns"/>
+        SELECT <include refid="placeColumns"/>
         FROM place p
         <where>
             <if test="keyword != null and keyword != ''">
                 AND (
                     p.place_name LIKE '%' || #{keyword} || '%'
-                    OR p.address LIKE '%' || #{keyword} || '%'
+                    OR p.address  LIKE '%' || #{keyword} || '%'
                 )
             </if>
             <if test="category != null and category != '전체' and category != ''">
@@ -76,67 +119,164 @@
         FETCH FIRST 50 ROWS ONLY
     </select>
 
+    <!-- ─── 장소 상세 ResultMap ─── -->
     <resultMap id="placeDetailMap" type="com.tripan.app.domain.dto.PlaceDto">
-        <id     property="placeId"     column="place_id"/>
-        <result property="placeName"   column="place_name"/>
-        <result property="category"    column="category"/>
-        <result property="address"     column="address"/>
-        <result property="phoneNumber" column="phone_number"/>
-        <result property="description" column="description" jdbcType="BLOB" />
-        <result property="longitude"   column="longitude"/>
-        <result property="latitude"    column="latitude"/>
-        <result property="imageUrl"    column="image_url"/>
-        <collection property="images" ofType="String" column="place_id" select="selectPlaceImages"/>
+        <id     property="placeId"      column="place_id"/>
+        <result property="placeName"    column="place_name"/>
+        <result property="category"     column="category"/>
+        <result property="address"      column="address"/>
+        <result property="phoneNumber"  column="phone_number"/>
+        <result property="description"  column="description"/>
+        <result property="longitude"    column="longitude"/>
+        <result property="latitude"     column="latitude"/>
+        <result property="imageUrl"     column="image_url"/>
+        <result property="opentime"     column="opentime"/>
+        <result property="restdate"     column="restdate"/>
+        <result property="parking"      column="parking"/>
+        <result property="usetime"      column="usetime"/>
+        <result property="closedDays"   column="closed_days"/>
+        <result property="checkintime"  column="checkintime"/>
+        <result property="checkouttime" column="checkouttime"/>
     </resultMap>
 
+    <!-- ─── 장소 상세 ───
+         attraction 테이블 생성 후 JOIN 복원
+         테이블 미생성 시: LEFT JOIN이므로 NULL 반환 (에러 없음)
+    ─────────────────────── -->
     <select id="selectPlaceDetailById" resultMap="placeDetailMap">
-        SELECT *
-        FROM place
-        WHERE place_id = #{id}
+        SELECT
+            p.place_id, p.place_name, p.category, p.address,
+            p.phone_number, p.description, p.longitude, p.latitude, p.image_url,
+            r.opentimefood    AS opentime,
+            r.restdatefood    AS restdate,
+            r.parkingfood     AS parking,
+            atr.usetime       AS usetime,
+            atr.closed_days   AS closed_days,
+            a.checkintime     AS checkintime,
+            a.checkouttime    AS checkouttime
+        FROM place p
+        LEFT JOIN restaurant    r   ON r.place_id   = p.place_id AND p.category = 'RESTAURANT'
+        LEFT JOIN attraction    atr ON atr.place_id  = p.place_id AND p.category IN ('TOUR','CULTURE','LEISURE')
+        LEFT JOIN accommodation a   ON a.place_id   = p.place_id AND p.category = 'ACCOMMODATION'
+        WHERE p.place_id = #{placeId}
     </select>
 
-    <select id="selectPlaceImages" resultType="String">
-        SELECT image_url
-        FROM place_image
+    <!-- ─── 주변 장소용 경량 조회 (lat/lng만 필요, JOIN 없음) ─── -->
+    <select id="selectPlaceLatLng" resultMap="placeDetailMap">
+        SELECT place_id, place_name, category, address,
+               latitude, longitude, image_url
+        FROM place
         WHERE place_id = #{placeId}
     </select>
 
+    <!-- ─── place 단일 이미지 ─── -->
+    <select id="selectPlaceImages" resultType="String">
+        SELECT image_url FROM place
+        WHERE place_id = #{placeId} AND image_url IS NOT NULL
+    </select>
+
+    <!-- ════════════════════════════════
+         축제 상세 ResultMap
+         ※ FestivalDto 기존 필드명 기준
+    ════════════════════════════════ -->
+    <resultMap id="festivalDetailMap" type="com.tripan.app.domain.dto.FestivalDto">
+        <id     property="festivalId"     column="festival_id"/>
+        <result property="placeId"        column="place_id"/>
+        <result property="apiContentId"   column="api_content_id"/>
+        <result property="eventStartDate" column="event_start_date"/>
+        <result property="eventEndDate"   column="event_end_date"/>
+        <result property="playTime"       column="play_time"/>
+        <result property="eventPlace"     column="event_place"/>
+        <result property="spendTime"      column="spend_time"/>
+        <result property="festivalGrade"  column="festival_grade"/>
+        <result property="usageFee"       column="usage_fee"/>
+        <result property="program"        column="program"/>
+        <result property="subEvent"       column="sub_event"/>
+        <result property="sponsor1"       column="sponsor1"/>
+        <result property="sponsor1Tel"    column="sponsor1_tel"/>
+        <!-- 이미지 목록 (festival_image 테이블) -->
+        <collection property="imageList"
+                    ofType="com.tripan.app.domain.dto.FestivalImageDto"
+                    column="festival_id"
+                    select="selectFestivalImagesByFestivalId"/>
+    </resultMap>
+
+    <!-- ─── 축제 이미지 서브쿼리 (collection용) ─── -->
+    <select id="selectFestivalImagesByFestivalId"
+            resultType="com.tripan.app.domain.dto.FestivalImageDto">
+        SELECT
+            image_id      AS imageId,
+            festival_id   AS festivalId,
+            origin_img_url AS originImgUrl,
+            small_img_url  AS smallImgUrl,
+            img_name       AS imgName
+        FROM festival_image
+        WHERE festival_id = #{festivalId}
+          AND origin_img_url IS NOT NULL
+        ORDER BY image_id ASC
+    </select>
+
+    <!-- ─── 축제 상세 ─── -->
+    <select id="selectFestivalDetailByPlaceId" resultMap="festivalDetailMap">
+        SELECT
+            festival_id, place_id, api_content_id,
+            event_start_date, event_end_date,
+            play_time, event_place, spend_time, festival_grade,
+            usage_fee, program, sub_event,
+            sponsor1, sponsor1_tel
+        FROM festival
+        WHERE place_id = #{placeId}
+    </select>
+
+    <!-- ─── 축제 이미지 URL 목록 (캐러셀용 List<String>) ─── -->
+    <select id="selectFestivalImages" resultType="String">
+        SELECT fi.origin_img_url
+        FROM festival_image fi
+        JOIN festival f ON fi.festival_id = f.festival_id
+        WHERE f.place_id = #{placeId}
+          AND fi.origin_img_url IS NOT NULL
+        ORDER BY fi.image_id ASC
+    </select>
+
+    <!-- ─── 식당 상세 ─── -->
     <select id="getRestaurantDetailByPlaceId" resultType="java.util.HashMap">
         SELECT
-            p.place_id  AS id,
-            p.place_name AS name,
+            p.place_id     AS id,
+            p.place_name   AS name,
             p.address,
             p.phone_number AS phone,
             r.opentimefood AS openTime,
             r.restdatefood AS restDate
         FROM place p
         LEFT JOIN restaurant r ON r.place_id = p.place_id
-        WHERE p.place_id = #{placeId}
-          AND p.category = 'RESTAURANT'
+        WHERE p.place_id = #{placeId} AND p.category = 'RESTAURANT'
     </select>
 
+    <!-- ─── 주변 장소 (Haversine) ─── -->
     <select id="selectNearbyPlaces" resultType="com.tripan.app.domain.dto.PlaceDto">
         SELECT * FROM (
             SELECT
                 <include refid="placeColumns"/>,
-                (
-                    6371 * ACOS(
-                        COS(WIDTH_BUCKET(#{mapY}, -90, 90, 180)) * COS(WIDTH_BUCKET(p.latitude, -90, 90, 180))
+                6371 * ACOS(
+                    LEAST(1,
+                        COS(#{lat} * 3.14159265358979 / 180)
+                        * COS(p.latitude  * 3.14159265358979 / 180)
+                        * COS((p.longitude - #{lng}) * 3.14159265358979 / 180)
+                        + SIN(#{lat} * 3.14159265358979 / 180)
+                        * SIN(p.latitude  * 3.14159265358979 / 180)
                     )
                 ) AS distance
             FROM place p
-            WHERE p.place_id != #{placeId}
-              AND p.longitude IS NOT NULL
-              AND p.latitude IS NOT NULL
-        ) 
-        WHERE ROWNUM &lt;= #{limit}
-        ORDER BY id DESC
+            WHERE p.place_id  != #{placeId}
+              AND p.longitude  IS NOT NULL
+              AND p.latitude   IS NOT NULL
+            ORDER BY distance ASC
+        ) WHERE ROWNUM &lt;= #{limit}
     </select>
 
+    <!-- ─── 시/도 목록 ─── -->
     <select id="selectDistinctRegions" resultType="String">
-        SELECT DISTINCT SIDO_NAME 
-        FROM region 
-        ORDER BY SIDO_NAME ASC
+        SELECT DISTINCT SIDO_NAME FROM region ORDER BY SIDO_NAME ASC
     </select>
 
 </mapper>

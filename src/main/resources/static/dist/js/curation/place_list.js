@@ -15,23 +15,25 @@ let hasMore       = true;
 /* ── 초기화 ── */
 document.addEventListener('DOMContentLoaded', () => {
   restoreActiveStates();
-  initInfiniteScroll();
-  // 초기 데이터가 JSP에서 이미 뿌려졌으므로, 다음 조회를 위해 오프셋을 설정
+
+  // ★ currentOffset / hasMore를 먼저 세팅 후 observer 등록
+  //   (순서가 반대면 observer가 offset=0으로 중복 fetch)
   const initialCards = document.querySelectorAll('.pl-card').length;
   currentOffset = initialCards > 0 ? initialCards : 0;
+  if (initialCards < PAGE_SIZE) hasMore = false;
+
+  initInfiniteScroll();
 });
 
 function restoreActiveStates() {
-  if (currentCat !== '전체') {
-    document.querySelectorAll('.pl-cat-tab').forEach(btn => {
-      btn.classList.toggle('active', btn.getAttribute('onclick').includes(`'${currentCat}'`));
-    });
-  }
-  if (currentRegion !== '전체') {
-    document.querySelectorAll('.pl-region-btn').forEach(btn => {
-      btn.classList.toggle('active', btn.textContent.trim() === currentRegion);
-    });
-  }
+  document.querySelectorAll('.pl-cat-tab').forEach(btn => {
+    const onclickVal = btn.getAttribute('onclick') || '';
+    const match = onclickVal.match(/selectCat\(this,\s*'([^']+)'\)/);
+    if (match) btn.classList.toggle('active', match[1] === currentCat);
+  });
+  document.querySelectorAll('.pl-region-btn').forEach(btn => {
+    btn.classList.toggle('active', btn.textContent.trim() === currentRegion);
+  });
 }
 
 /* ── 카테고리 선택 ── */
@@ -60,50 +62,60 @@ function resetFilters() {
   currentRegion = '전체';
   currentOffset = 0;
   hasMore       = true;
-
-  document.querySelectorAll('.pl-cat-tab').forEach((b, i) => b.classList.toggle('active', i === 0));
+  document.querySelectorAll('.pl-cat-tab').forEach((b, i)    => b.classList.toggle('active', i === 0));
   document.querySelectorAll('.pl-region-btn').forEach((b, i) => b.classList.toggle('active', i === 0));
-  document.getElementById('mainSearchInput').value = '';
-
+  const searchInput = document.getElementById('mainSearchInput');
+  if (searchInput) searchInput.value = '';
   fetchPlaces(true);
 }
 
 /* ── 장소 목록 API 호출 ── */
 function fetchPlaces(reset = false) {
-    if (isFetching || (!reset && !hasMore)) return;
-    isFetching = true;
+  if (isFetching || (!reset && !hasMore)) return;
+  isFetching = true;
 
-    if (reset) {
-        currentOffset = 0;
-        hasMore = true;
-        const grid = document.getElementById('placeGrid');
-        if(grid) grid.innerHTML = '';
-    }
+  if (reset) {
+    currentOffset = 0;
+    hasMore       = true;
+    const grid = document.getElementById('placeGrid');
+    if (grid) grid.innerHTML = '';
+  }
 
-    const keyword = (document.getElementById('mainSearchInput').value || '').trim();
-    
-    const url = `${PLACE_CONFIG.contextPath}/api/places/recommend?category=${encodeURIComponent(currentCat)}&region=${encodeURIComponent(currentRegion)}&keyword=${encodeURIComponent(keyword)}&offset=${currentOffset}&limit=${PAGE_SIZE}`;
+  const keyword = (document.getElementById('mainSearchInput')?.value || '').trim();
+  const sortEl  = document.getElementById('sortSelect');
+  const sort    = sortEl ? sortEl.value : 'recent';
 
-    setLoading(true);
+  const url = `${PLACE_CONFIG.contextPath}/api/places/curation`
+    + `?category=${encodeURIComponent(currentCat)}`
+    + `&region=${encodeURIComponent(currentRegion)}`
+    + `&keyword=${encodeURIComponent(keyword)}`
+    + `&offset=${currentOffset}`
+    + `&limit=${PAGE_SIZE}`
+    + `&sort=${encodeURIComponent(sort)}`;
 
-    fetch(url)
-        .then(res => res.json())
-        .then(data => {
-            const list = Array.isArray(data) ? data : (data.places || []);
-            renderPlaces(list, reset);
-            
-            hasMore = list.length === PAGE_SIZE;
-            currentOffset += list.length;
-            
-            if (data.total !== undefined) {
-                updateResultCount(data.total);
-            }
-        })
-        .catch(err => console.error('로드 실패:', err))
-        .finally(() => {
-            isFetching = false;
-            setLoading(false);
-        });
+  setLoading(true);
+
+  fetch(url)
+    .then(res => {
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      return res.json();
+    })
+    .then(data => {
+      const list  = Array.isArray(data) ? data : (data.places || []);
+      const total = data.total !== undefined ? data.total : null;
+      renderPlaces(list, reset);
+      hasMore        = list.length === PAGE_SIZE;
+      currentOffset += list.length;
+      if (total !== null) updateResultCount(total);
+    })
+    .catch(err => {
+      console.error('장소 로드 실패:', err);
+      showError();
+    })
+    .finally(() => {
+      isFetching = false;
+      setLoading(false);
+    });
 }
 
 /* ── 카드 렌더링 ── */
@@ -125,45 +137,51 @@ function renderPlaces(places, reset) {
   const defaultImg = `${PLACE_CONFIG.contextPath}/dist/images/logo.png`;
 
   places.forEach(p => {
-    // 🔥 변수명 수정: p.id -> p.placeId / p.name -> p.placeName / p.image -> p.imageUrl / p.location -> p.address
-    const card = document.createElement('div');
+    const card     = document.createElement('div');
     card.className = 'pl-card';
     card.onclick   = () => goDetail(p.placeId);
-    
-    card.innerHTML = `
+
+    /* 이미지가 없으면 이미지 영역 자체를 숨김 */
+    const imgSection = p.imageUrl ? `
       <div class="pl-card-img-wrap">
         <img class="pl-card-img"
-             src="${p.imageUrl ? p.imageUrl : defaultImg}"
+             src="${escHtml(p.imageUrl)}"
              alt="${escHtml(p.placeName)}"
-             onerror="this.src='${defaultImg}'">
+             onerror="this.closest('.pl-card-img-wrap').style.display='none'">
         <button class="pl-card-bookmark"
                 onclick="event.stopPropagation(); toggleBookmark(this, ${p.placeId})">
           <svg viewBox="0 0 24 24"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>
         </button>
-      </div>
-      <div class="pl-card-name">${escHtml(p.placeName)}</div>
-      <div class="pl-card-loc">
-        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#AAA" stroke-width="2.5" stroke-linecap="round">
-          <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
-          <circle cx="12" cy="10" r="3"/>
-        </svg>
-        ${escHtml(p.address || '')}
-      </div>
-      <div class="pl-card-stats">
-        <div class="pl-card-stat">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
+      </div>` : '';
+
+    card.innerHTML = `
+      ${imgSection}
+      <div class="pl-card-body">
+        <div class="pl-card-name">${escHtml(p.placeName)}</div>
+        <div class="pl-card-loc">
+          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#BDC7D3" stroke-width="2.5" stroke-linecap="round">
+            <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
+            <circle cx="12" cy="10" r="3"/>
           </svg>
-          0
+          ${escHtml(p.address || '')}
         </div>
-        <div class="pl-card-stat">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
-            <circle cx="12" cy="12" r="3"/>
-          </svg>
-          0
+        <div class="pl-card-stats">
+          <div class="pl-card-stat">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
+            </svg>
+            0
+          </div>
+          <div class="pl-card-stat">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+              <circle cx="12" cy="12" r="3"/>
+            </svg>
+            0
+          </div>
         </div>
       </div>`;
+
     grid.appendChild(card);
   });
 }
@@ -178,13 +196,9 @@ function updateResultCount(total) {
 function initInfiniteScroll() {
   const sentinel = document.getElementById('scrollSentinel');
   if (!sentinel) return;
-
   const observer = new IntersectionObserver(entries => {
-    if (entries[0].isIntersecting && !isFetching && hasMore) {
-      fetchPlaces(false);
-    }
+    if (entries[0].isIntersecting && !isFetching && hasMore) fetchPlaces(false);
   }, { rootMargin: '200px' });
-
   observer.observe(sentinel);
 }
 
@@ -197,13 +211,10 @@ function goDetail(id) {
 function toggleBookmark(el, placeId) {
   el.classList.toggle('saved');
   const isSaved = el.classList.contains('saved');
-
   fetch(`${PLACE_CONFIG.contextPath}/api/places/${placeId}/bookmark`, {
     method: isSaved ? 'POST' : 'DELETE',
     headers: { 'Content-Type': 'application/json' }
-  }).catch(() => {
-    el.classList.toggle('saved');
-  });
+  }).catch(() => el.classList.toggle('saved'));
 }
 
 /* ── 유틸 ── */
