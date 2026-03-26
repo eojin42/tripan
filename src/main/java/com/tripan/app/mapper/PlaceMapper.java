@@ -102,6 +102,8 @@ public interface PlaceMapper {
                              @Param("smallImageUrl") String smallImageUrl);
     
     java.util.Map<String, Object> getRestaurantDetailByPlaceId(@Param("placeId") Long placeId);
+
+    java.util.Map<String, Object> getAttractionDetailByPlaceId(@Param("placeId") Long placeId);
     
     int upsertPlace(PlaceDto place);
     

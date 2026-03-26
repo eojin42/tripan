@@ -142,37 +142,58 @@
 
       <%-- 축제 --%>
       <c:when test="${place.category == 'FESTIVAL' and not empty festival}">
-        <div class="dt-info-grid">
+        <div class="dt-info-list dt-info-list--festival">
           <c:if test="${not empty festival.eventPlace}">
-            <div class="dt-card dt-ic"><span class="dt-ic-emoji">📍</span><div><div class="dt-ic-l">행사 장소</div><div class="dt-ic-v">${festival.eventPlace}</div></div></div>
+            <div class="dt-info-row">
+              <div class="dt-info-row-left"><span class="dt-info-icon">📍</span><span class="dt-info-label">행사 장소</span></div>
+              <div class="dt-info-val">${fn:escapeXml(festival.eventPlace)}</div>
+            </div>
           </c:if>
           <c:if test="${not empty festival.playTime}">
-            <div class="dt-card dt-ic"><span class="dt-ic-emoji">🕐</span><div><div class="dt-ic-l">운영시간</div><div class="dt-ic-v">${festival.playTime}</div></div></div>
+            <div class="dt-info-row">
+              <div class="dt-info-row-left"><span class="dt-info-icon">🕐</span><span class="dt-info-label">운영시간</span></div>
+              <div class="dt-info-val">${fn:escapeXml(festival.playTime)}</div>
+            </div>
           </c:if>
           <c:if test="${not empty festival.usageFee}">
-            <div class="dt-card dt-ic"><span class="dt-ic-emoji">🎟</span><div><div class="dt-ic-l">이용 요금</div><div class="dt-ic-v">${festival.usageFee}</div></div></div>
+            <div class="dt-info-row">
+              <div class="dt-info-row-left"><span class="dt-info-icon">🎟</span><span class="dt-info-label">이용 요금</span></div>
+              <div class="dt-info-val">${fn:escapeXml(festival.usageFee)}</div>
+            </div>
           </c:if>
           <c:if test="${not empty festival.spendTime}">
-            <div class="dt-card dt-ic"><span class="dt-ic-emoji">⏱</span><div><div class="dt-ic-l">관람 소요</div><div class="dt-ic-v">${festival.spendTime}</div></div></div>
+            <div class="dt-info-row">
+              <div class="dt-info-row-left"><span class="dt-info-icon">⏱</span><span class="dt-info-label">관람 소요</span></div>
+              <div class="dt-info-val">${fn:escapeXml(festival.spendTime)}</div>
+            </div>
           </c:if>
           <c:if test="${not empty festival.sponsor1}">
-            <div class="dt-card dt-ic"><span class="dt-ic-emoji">🏛</span><div><div class="dt-ic-l">주최</div><div class="dt-ic-v">${festival.sponsor1}</div></div></div>
+            <div class="dt-info-row">
+              <div class="dt-info-row-left"><span class="dt-info-icon">🏛</span><span class="dt-info-label">주최</span></div>
+              <div class="dt-info-val">${fn:escapeXml(festival.sponsor1)}</div>
+            </div>
           </c:if>
           <c:if test="${not empty festival.sponsor1Tel}">
-            <div class="dt-card dt-ic"><span class="dt-ic-emoji">📞</span><div><div class="dt-ic-l">주최 문의</div><div class="dt-ic-v"><a href="tel:${festival.sponsor1Tel}">${festival.sponsor1Tel}</a></div></div></div>
+            <div class="dt-info-row">
+              <div class="dt-info-row-left"><span class="dt-info-icon">📞</span><span class="dt-info-label">주최 문의</span></div>
+              <div class="dt-info-val"><a href="tel:${festival.sponsor1Tel}">${festival.sponsor1Tel}</a></div>
+            </div>
           </c:if>
           <c:if test="${not empty place.phoneNumber}">
-            <div class="dt-card dt-ic"><span class="dt-ic-emoji">☎</span><div><div class="dt-ic-l">장소 문의</div><div class="dt-ic-v"><a href="tel:${place.phoneNumber}">${place.phoneNumber}</a></div></div></div>
+            <div class="dt-info-row">
+              <div class="dt-info-row-left"><span class="dt-info-icon">☎</span><span class="dt-info-label">장소 문의</span></div>
+              <div class="dt-info-val"><a href="tel:${place.phoneNumber}">${place.phoneNumber}</a></div>
+            </div>
           </c:if>
         </div>
         <c:if test="${not empty festival.program}">
-          <div class="dt-card dt-prog-card">
+          <div class="dt-prog-card">
             <div class="dt-prog-title">📋 행사 프로그램</div>
             <div class="dt-prog-body">${festival.program}</div>
           </div>
         </c:if>
         <c:if test="${not empty festival.subEvent}">
-          <div class="dt-card dt-prog-card">
+          <div class="dt-prog-card">
             <div class="dt-prog-title">⭐ 부대 행사</div>
             <div class="dt-prog-body">${festival.subEvent}</div>
           </div>
@@ -181,32 +202,191 @@
 
       <%-- 비축제 공통 --%>
       <c:otherwise>
-        <div class="dt-info-grid">
-          <c:if test="${not empty place.phoneNumber}">
-            <div class="dt-card dt-ic"><span class="dt-ic-emoji">📞</span><div><div class="dt-ic-l">문의</div><div class="dt-ic-v"><a href="tel:${place.phoneNumber}">${place.phoneNumber}</a></div></div></div>
+        <%-- 표시할 정보가 하나라도 있으면 카드 래퍼 열기 --%>
+        <c:set var="hasInfo" value="${
+          not empty place.phoneNumber or
+          (place.category == 'RESTAURANT' and (not empty place.opentime or not empty place.restdate or not empty place.parking or place.chkcreditcardfood != null or place.packing != null or place.kidsfacility != null or not empty place.firstmenu or not empty place.treatmenu)) or
+          ((place.category == 'TOUR' or place.category == 'CULTURE' or place.category == 'LEISURE') and
+            ((not empty place.usetime and place.usetime != '-') or (not empty place.closedDays and place.closedDays != '-'))) or
+          (place.category == 'ACCOMMODATION' and (not empty place.checkintime or not empty place.checkouttime))
+        }"/>
+        <c:if test="${hasInfo}">
+          <div class="dt-info-list
+            ${place.category == 'RESTAURANT' ? 'dt-info-list--restaurant' : ''}
+            ${place.category == 'ACCOMMODATION' ? 'dt-info-list--accommodation' : ''}
+            ${(place.category == 'TOUR' or place.category == 'CULTURE' or place.category == 'LEISURE') ? 'dt-info-list--tour' : ''}
+          ">
+
+            <c:if test="${not empty place.phoneNumber}">
+              <div class="dt-info-row">
+                <div class="dt-info-row-left">
+                  <span class="dt-info-icon">📞</span>
+                  <span class="dt-info-label">문의</span>
+                </div>
+                <div class="dt-info-val"><a href="tel:${place.phoneNumber}">${place.phoneNumber}</a></div>
+              </div>
+            </c:if>
+
+            <c:if test="${place.category == 'RESTAURANT' and not empty place.opentime}">
+              <div class="dt-info-row">
+                <div class="dt-info-row-left">
+                  <span class="dt-info-icon">🕐</span>
+                  <span class="dt-info-label">영업시간</span>
+                </div>
+                <div class="dt-info-val dt-info-val--pre">${fn:escapeXml(place.opentime)}</div>
+              </div>
+            </c:if>
+            <c:if test="${place.category == 'RESTAURANT' and not empty place.restdate}">
+              <div class="dt-info-row">
+                <div class="dt-info-row-left">
+                  <span class="dt-info-icon">🚫</span>
+                  <span class="dt-info-label">휴무일</span>
+                </div>
+                <div class="dt-info-val">${fn:escapeXml(place.restdate)}</div>
+              </div>
+            </c:if>
+            <c:if test="${place.category == 'RESTAURANT' and not empty place.parking}">
+              <div class="dt-info-row">
+                <div class="dt-info-row-left">
+                  <span class="dt-info-icon">🅿</span>
+                  <span class="dt-info-label">주차</span>
+                </div>
+                <div class="dt-info-val">${fn:escapeXml(place.parking)}</div>
+              </div>
+            </c:if>
+            <c:if test="${place.category == 'RESTAURANT' and place.chkcreditcardfood != null}">
+              <div class="dt-info-row">
+                <div class="dt-info-row-left">
+                  <span class="dt-info-icon">💳</span>
+                  <span class="dt-info-label">신용카드</span>
+                </div>
+                <div class="dt-info-val">
+                  <c:choose>
+                    <c:when test="${place.chkcreditcardfood == 1}"><span class="dt-badge dt-badge--yes">가능</span></c:when>
+                    <c:otherwise><span class="dt-badge dt-badge--no">불가</span></c:otherwise>
+                  </c:choose>
+                </div>
+              </div>
+            </c:if>
+            <c:if test="${place.category == 'RESTAURANT' and place.packing != null}">
+              <div class="dt-info-row">
+                <div class="dt-info-row-left">
+                  <span class="dt-info-icon">📦</span>
+                  <span class="dt-info-label">포장</span>
+                </div>
+                <div class="dt-info-val">
+                  <c:choose>
+                    <c:when test="${place.packing == 1}"><span class="dt-badge dt-badge--yes">가능</span></c:when>
+                    <c:otherwise><span class="dt-badge dt-badge--no">불가</span></c:otherwise>
+                  </c:choose>
+                </div>
+              </div>
+            </c:if>
+            <c:if test="${place.category == 'RESTAURANT' and place.kidsfacility != null}">
+              <div class="dt-info-row">
+                <div class="dt-info-row-left">
+                  <span class="dt-info-icon">👶</span>
+                  <span class="dt-info-label">키즈존</span>
+                </div>
+                <div class="dt-info-val">
+                  <c:choose>
+                    <c:when test="${place.kidsfacility == 1}"><span class="dt-badge dt-badge--yes">있음</span></c:when>
+                    <c:otherwise><span class="dt-badge dt-badge--no">없음</span></c:otherwise>
+                  </c:choose>
+                </div>
+              </div>
+            </c:if>
+            <c:if test="${place.category == 'RESTAURANT' and not empty place.firstmenu}">
+              <div class="dt-info-row">
+                <div class="dt-info-row-left">
+                  <span class="dt-info-icon">🍽</span>
+                  <span class="dt-info-label">대표메뉴</span>
+                </div>
+                <div class="dt-info-val">${fn:escapeXml(place.firstmenu)}</div>
+              </div>
+            </c:if>
+            <c:if test="${place.category == 'RESTAURANT' and not empty place.treatmenu}">
+              <div class="dt-info-row">
+                <div class="dt-info-row-left">
+                  <span class="dt-info-icon">📋</span>
+                  <span class="dt-info-label">취급메뉴</span>
+                </div>
+                <div class="dt-info-val">${fn:escapeXml(place.treatmenu)}</div>
+              </div>
+            </c:if>
+
+            <c:if test="${(place.category == 'TOUR' or place.category == 'CULTURE' or place.category == 'LEISURE') and not empty place.usetime and place.usetime != '-'}">
+              <div class="dt-info-row dt-info-row--top">
+                <div class="dt-info-row-left">
+                  <span class="dt-info-icon">🕐</span>
+                  <span class="dt-info-label">이용시간</span>
+                </div>
+                <div class="dt-info-val dt-info-val--pre">${fn:escapeXml(place.usetime)}</div>
+              </div>
+            </c:if>
+            <c:if test="${(place.category == 'TOUR' or place.category == 'CULTURE' or place.category == 'LEISURE') and not empty place.closedDays and place.closedDays != '-'}">
+              <div class="dt-info-row">
+                <div class="dt-info-row-left">
+                  <span class="dt-info-icon">🚫</span>
+                  <span class="dt-info-label">휴무일</span>
+                </div>
+                <div class="dt-info-val">${fn:escapeXml(place.closedDays)}</div>
+              </div>
+            </c:if>
+
+            <c:if test="${place.category == 'ACCOMMODATION' and not empty place.accommodationType}">
+              <div class="dt-info-row">
+                <div class="dt-info-row-left"><span class="dt-info-icon">🏨</span><span class="dt-info-label">숙소 유형</span></div>
+                <div class="dt-info-val">${fn:escapeXml(place.accommodationType)}</div>
+              </div>
+            </c:if>
+            <c:if test="${place.category == 'ACCOMMODATION' and not empty place.checkintime}">
+              <div class="dt-info-row">
+                <div class="dt-info-row-left"><span class="dt-info-icon">🔑</span><span class="dt-info-label">체크인</span></div>
+                <div class="dt-info-val">${fn:escapeXml(place.checkintime)}</div>
+              </div>
+            </c:if>
+            <c:if test="${place.category == 'ACCOMMODATION' and not empty place.checkouttime}">
+              <div class="dt-info-row">
+                <div class="dt-info-row-left"><span class="dt-info-icon">🏁</span><span class="dt-info-label">체크아웃</span></div>
+                <div class="dt-info-val">${fn:escapeXml(place.checkouttime)}</div>
+              </div>
+            </c:if>
+            <c:if test="${place.category == 'ACCOMMODATION' and not empty place.parkinglodging}">
+              <div class="dt-info-row">
+                <div class="dt-info-row-left"><span class="dt-info-icon">🅿</span><span class="dt-info-label">주차</span></div>
+                <div class="dt-info-val">${fn:escapeXml(place.parkinglodging)}</div>
+              </div>
+            </c:if>
+
+          </div>
+
+          <%-- 숙소 시설 태그 --%>
+          <c:if test="${place.category == 'ACCOMMODATION' and (place.fitness == 1 or place.chkcooking == 1 or place.subfacility == 1 or place.barbecue == 1 or place.beverage == 1 or place.karaoke == 1 or place.publicpc == 1 or place.sauna == 1)}">
+            <div class="dt-facility-section">
+              <div class="dt-facility-title">✨ 편의시설</div>
+              <div class="dt-facility-tags">
+                <c:if test="${place.fitness    == 1}"><span class="dt-ftag">🏋 피트니스</span></c:if>
+                <c:if test="${place.chkcooking == 1}"><span class="dt-ftag">🍳 취사</span></c:if>
+                <c:if test="${place.barbecue   == 1}"><span class="dt-ftag">🔥 바베큐</span></c:if>
+                <c:if test="${place.beverage   == 1}"><span class="dt-ftag">🥤 식음료</span></c:if>
+                <c:if test="${place.karaoke    == 1}"><span class="dt-ftag">🎤 노래방</span></c:if>
+                <c:if test="${place.publicpc   == 1}"><span class="dt-ftag">💻 PC방</span></c:if>
+                <c:if test="${place.sauna      == 1}"><span class="dt-ftag">🛁 사우나</span></c:if>
+                <c:if test="${place.subfacility == 1}"><span class="dt-ftag">🎯 부대시설</span></c:if>
+              </div>
+            </div>
           </c:if>
-          <c:if test="${place.category == 'RESTAURANT' and not empty place.opentime}">
-            <div class="dt-card dt-ic"><span class="dt-ic-emoji">🕐</span><div><div class="dt-ic-l">영업시간</div><div class="dt-ic-v">${place.opentime}</div></div></div>
+
+          <%-- 예약하기 버튼 (숙박만) --%>
+          <c:if test="${place.category == 'ACCOMMODATION'}">
+            <a href="${pageContext.request.contextPath}/accommodation/detail/${place.placeId}"
+               class="dt-book-btn">
+              🛏 이 숙소 예약하기
+            </a>
           </c:if>
-          <c:if test="${place.category == 'RESTAURANT' and not empty place.restdate}">
-            <div class="dt-card dt-ic"><span class="dt-ic-emoji">🚫</span><div><div class="dt-ic-l">휴무일</div><div class="dt-ic-v">${place.restdate}</div></div></div>
-          </c:if>
-          <c:if test="${place.category == 'RESTAURANT' and not empty place.parking}">
-            <div class="dt-card dt-ic"><span class="dt-ic-emoji">🅿</span><div><div class="dt-ic-l">주차</div><div class="dt-ic-v">${place.parking}</div></div></div>
-          </c:if>
-          <c:if test="${(place.category == 'TOUR' or place.category == 'CULTURE' or place.category == 'LEISURE') and not empty place.usetime}">
-            <div class="dt-card dt-ic"><span class="dt-ic-emoji">🕐</span><div><div class="dt-ic-l">이용시간</div><div class="dt-ic-v">${place.usetime}</div></div></div>
-          </c:if>
-          <c:if test="${(place.category == 'TOUR' or place.category == 'CULTURE' or place.category == 'LEISURE') and not empty place.closedDays}">
-            <div class="dt-card dt-ic"><span class="dt-ic-emoji">🚫</span><div><div class="dt-ic-l">휴무일</div><div class="dt-ic-v">${place.closedDays}</div></div></div>
-          </c:if>
-          <c:if test="${place.category == 'ACCOMMODATION' and not empty place.checkintime}">
-            <div class="dt-card dt-ic"><span class="dt-ic-emoji">🔑</span><div><div class="dt-ic-l">체크인</div><div class="dt-ic-v">${place.checkintime}</div></div></div>
-          </c:if>
-          <c:if test="${place.category == 'ACCOMMODATION' and not empty place.checkouttime}">
-            <div class="dt-card dt-ic"><span class="dt-ic-emoji">🏁</span><div><div class="dt-ic-l">체크아웃</div><div class="dt-ic-v">${place.checkouttime}</div></div></div>
-          </c:if>
-        </div>
+
+        </c:if>
       </c:otherwise>
     </c:choose>
 

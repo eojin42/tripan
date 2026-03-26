@@ -187,10 +187,26 @@
         <result property="opentime"     column="opentime"/>
         <result property="restdate"     column="restdate"/>
         <result property="parking"      column="parking"/>
+        <result property="chkcreditcardfood" column="chkcreditcardfood"/>
+        <result property="kidsfacility"      column="kidsfacility"/>
+        <result property="packing"           column="packing"/>
+        <result property="firstmenu"         column="firstmenu"/>
+        <result property="treatmenu"         column="treatmenu"/>
         <result property="usetime"      column="usetime"/>
         <result property="closedDays"   column="closed_days"/>
         <result property="checkintime"  column="checkintime"/>
         <result property="checkouttime" column="checkouttime"/>
+        <result property="accommodationType" column="accommodation_type"/>
+        <result property="parkinglodging"     column="parkinglodging"/>
+        <result property="afId"               column="af_id"/>
+        <result property="fitness"    column="fitness"/>
+        <result property="chkcooking" column="chkcooking"/>
+        <result property="subfacility" column="subfacility"/>
+        <result property="barbecue"   column="barbecue"/>
+        <result property="beverage"   column="beverage"/>
+        <result property="karaoke"    column="karaoke"/>
+        <result property="publicpc"   column="publicpc"/>
+        <result property="sauna"      column="sauna"/>
         <result property="viewCount"    column="view_count"/>
         <result property="likeCount"    column="like_count"/>
     </resultMap>
@@ -206,14 +222,33 @@
             r.opentimefood    AS opentime,
             r.restdatefood    AS restdate,
             r.parkingfood     AS parking,
+            rf.chkcreditcardfood,
+            rf.kidsfacility,
+            rf.packing,
+            m.firstmenu,
+            m.treatmenu,
             atr.usetime       AS usetime,
             atr.closed_days   AS closed_days,
             a.checkintime     AS checkintime,
-            a.checkouttime    AS checkouttime
+            a.checkouttime    AS checkouttime,
+            a.accommodation_type,
+            a.parkinglodging,
+            a.af_id,
+            af.fitness,
+            af.chkcooking,
+            af.subfacility,
+            af.barbecue,
+            af.beverage,
+            af.karaoke,
+            af.publicpc,
+            af.sauna
         FROM place p
-        LEFT JOIN restaurant    r   ON r.place_id   = p.place_id AND p.category = 'RESTAURANT'
-        LEFT JOIN attraction    atr ON atr.place_id  = p.place_id AND p.category IN ('TOUR','CULTURE','LEISURE')
-        LEFT JOIN accommodation a   ON a.place_id   = p.place_id AND p.category = 'ACCOMMODATION'
+        LEFT JOIN restaurant         r   ON r.place_id  = p.place_id AND p.category = 'RESTAURANT'
+        LEFT JOIN restaurant_facility rf  ON rf.place_id = p.place_id AND p.category = 'RESTAURANT'
+        LEFT JOIN menu               m   ON m.place_id  = p.place_id AND p.category = 'RESTAURANT'
+        LEFT JOIN attraction         atr ON atr.place_id = p.place_id AND p.category IN ('TOUR','CULTURE','LEISURE')
+        LEFT JOIN accommodation      a   ON a.place_id  = p.place_id AND p.category = 'ACCOMMODATION'
+        LEFT JOIN accommodation_facility af ON af.af_id = a.af_id AND p.category = 'ACCOMMODATION'
         WHERE p.place_id = #{placeId}
     </select>
 

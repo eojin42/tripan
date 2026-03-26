@@ -213,6 +213,18 @@ public class TripPlaceApiController {
     }
 
     // ─────────────────────────────────────────────────────────────
+    // [관광지/문화/레포츠] 로컬 DB 상세 (attraction 테이블)
+    // ─────────────────────────────────────────────────────────────
+    @GetMapping("/attraction/{placeId}")
+    public ResponseEntity<Map<String, Object>> getAttractionDetail(
+            @PathVariable("placeId") Long placeId) {
+
+        Map<String, Object> detail = placeMapper.getAttractionDetailByPlaceId(placeId);
+        if (detail == null) return ResponseEntity.ok(new HashMap<>());
+        return ResponseEntity.ok(detail);
+    }
+
+    // ─────────────────────────────────────────────────────────────
     // [KTO] 배치 수동 트리거
     // ─────────────────────────────────────────────────────────────
     @PostMapping("/sync")
