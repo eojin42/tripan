@@ -93,6 +93,16 @@
         
         <%-- 로그인 상태 --%>
         <sec:authorize access="isAuthenticated()">
+        
+          <%-- 관리자 전용 버튼 (프로필 왼쪽) --%>
+          <sec:authorize access="hasRole('ROLE_ADMIN')">
+            <a href="${pageContext.request.contextPath}/admin/main" class="admin-icon-btn" title="관리자 페이지">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+              </svg>
+            </a>
+          </sec:authorize>
+          
           <div class="nav-item user-profile-item" style="height: 100%; display: flex; align-items: center;">
              <a href="#" class="nav-link" style="display:flex; align-items:center; gap:8px; padding: 6px 16px;">
 		        <c:choose>
@@ -119,6 +129,7 @@
                <a href="${pageContext.request.contextPath}/member/pwd">내 정보 수정</a>
                 <!--  <a href="#">나의 여행 지도 (국토 정복)</a>
                <a href="#">내 활동 배지 / 칭호</a>-->
+               
                <hr style="border: none; border-top: 1px solid rgba(255, 255, 255, 0.4); margin: 8px 0;">
 				<a href="#" onclick="document.getElementById('logoutForm').submit(); return false;" class="logout-link" style="margin: 0; display: block;">
 				    로그아웃
@@ -132,6 +143,29 @@
               opacity: 1 !important;
               visibility: visible !important;
               pointer-events: auto !important;
+            }
+            .admin-icon-btn {
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              width: 36px;
+              height: 36px;
+              border-radius: 50%;
+              background: linear-gradient(135deg, #89CFF0 0%, #FFB6C1 100%);
+              text-decoration: none !important;
+              transition: transform 0.2s, box-shadow 0.2s;
+              flex-shrink: 0;
+              box-shadow: 0 2px 8px rgba(137, 207, 240, 0.4);
+            }
+            .admin-icon-btn:hover {
+              transform: translateY(-2px);
+              box-shadow: 0 4px 14px rgba(255, 182, 193, 0.5);
+            }
+            .admin-icon-btn svg {
+              width: 16px;
+              height: 16px;
+              flex-shrink: 0;
+              stroke: #fff;
             }
           </style>
         </sec:authorize>
