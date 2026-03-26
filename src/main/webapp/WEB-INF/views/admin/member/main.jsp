@@ -1,6 +1,7 @@
 <%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
 <%@ taglib prefix="c" uri="jakarta.tags.core" %>
 <%@ taglib prefix="fmt" uri="jakarta.tags.fmt" %>
+<%@ taglib prefix="fn" uri="jakarta.tags.functions" %>
 
 <!DOCTYPE html>
 <html lang="ko">
@@ -205,7 +206,7 @@
                     data-email="${member.email}"
                     data-nickname="${member.nickname}"
                     data-role="${member.role}"
-                    data-status="${member.status}"
+                    data-status="${member.statusCode}"
                     data-reason="${member.reason}">
 
                   <td class="col-check">
@@ -236,9 +237,9 @@
 
                   <td class="col-status">
                     <c:choose>
-                      <c:when test="${member.status == '2'}"><span class="badge badge-danger" onclick="showReason(event,'${member.reason}')">BAN(정지)</span></c:when>
-                      <c:when test="${member.status == '3'}"><span class="badge" style="background:#fef3c7;color:#b45309;">휴면</span></c:when>
-                      <c:when test="${member.status == '4'}"><span class="badge" style="background:var(--bg);color:var(--muted)">탈퇴 완료</span></c:when>
+                      <c:when test="${member.statusCode == '2'}"><span class="badge badge-danger" onclick="showReason(event,'${member.reason}')">BAN(정지)</span></c:when>
+                      <c:when test="${member.statusCode == '3'}"><span class="badge" style="background:#fef3c7;color:#b45309;">휴면</span></c:when>
+                      <c:when test="${member.statusCode == '4'}"><span class="badge" style="background:var(--bg);color:var(--muted)">탈퇴 완료</span></c:when>
                       <c:otherwise><span class="badge badge-done">정상</span></c:otherwise>
                     </c:choose>
                   </td>
@@ -250,7 +251,7 @@
                     </c:choose>
                   </td>
 
-                  <td class="num date-cell"><fmt:formatDate value="${member.regDate}" pattern="yyyy-MM-dd"/></td>
+                  <td class="num date-cell">${not empty member.regDate ? fn:substring(member.regDate, 0, 10) : '-'}</td>
 
                   <td class="right">
                     <button class="btn btn-primary btn-sm"
