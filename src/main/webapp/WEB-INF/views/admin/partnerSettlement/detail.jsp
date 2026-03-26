@@ -9,11 +9,7 @@
   <title>TripanSuper &mdash; 정산 상세</title>
   <link rel="stylesheet" href="${pageContext.request.contextPath}/dist/css/admin.css">
   <style>
-    .partner-header {
-      display:flex; align-items:center; gap:16px;
-      padding:22px 28px; background:#fff;
-      border:1.5px solid var(--border); border-radius:16px; margin-bottom:22px;
-    }
+    .partner-header { display:flex; align-items:center; gap:16px; padding:22px 28px; background:#fff; border:1.5px solid var(--border); border-radius:16px; margin-bottom:22px; }
     .ph-avatar { width:52px; height:52px; border-radius:14px; background:var(--primary-10); display:flex; align-items:center; justify-content:center; font-size:22px; flex-shrink:0; }
     .ph-info { flex:1; min-width:0; }
     .ph-info h2 { font-size:20px; font-weight:900; margin:0 0 4px; }
@@ -26,11 +22,7 @@
     .s-kpi-value { font-size:18px; font-weight:900; font-variant-numeric:tabular-nums; }
     .s-kpi-sub   { font-size:11px; color:var(--muted); margin-top:4px; }
 
-    .formula-box {
-      background:#F8FAFC; border:1.5px solid var(--border); border-radius:12px;
-      padding:14px 20px; margin-bottom:22px;
-      display:flex; align-items:center; gap:8px; font-size:13px; flex-wrap:wrap;
-    }
+    .formula-box { background:#F8FAFC; border:1.5px solid var(--border); border-radius:12px; padding:14px 20px; margin-bottom:22px; display:flex; align-items:center; gap:8px; font-size:13px; flex-wrap:wrap; }
     .formula-chip { padding:3px 10px; border-radius:6px; font-size:12px; font-weight:700; }
     .fc-gmv   { background:#EFF6FF; color:#1D4ED8; }
     .fc-comm  { background:#FEF2F2; color:#DC2626; }
@@ -54,6 +46,7 @@
     .badge { display:inline-flex; align-items:center; padding:4px 10px; border-radius:20px; font-size:12px; font-weight:700; white-space:nowrap; }
     .badge-wait    { background:rgba(245,158,11,.12); color:#D97706; }
     .badge-done    { background:rgba(16,185,129,.12);  color:#059669; }
+    .badge-partial { background:rgba(59,110,248,.10);  color:#3B6EF8; }
     .badge-success { background:rgba(16,185,129,.12);  color:#059669; }
     .badge-cancel  { background:rgba(239,68,68,.10);   color:#DC2626; }
     .fee-chip { background:rgba(59,110,248,.10); color:#3B6EF8; padding:3px 9px; border-radius:20px; font-size:11px; font-weight:700; }
@@ -91,7 +84,9 @@
 
     .place-foot { display:flex; align-items:center; justify-content:space-between; padding-top:14px; margin-top:14px; border-top:1px solid var(--border-light,#F3F4F6); }
     .place-foot-info { font-size:12px; color:var(--muted); }
-
+    .btn-approve-place { height:34px; padding:0 14px; border-radius:8px; font-size:12px; font-weight:700; border:1.5px solid var(--primary,#3B6EF8); background:transparent; color:var(--primary,#3B6EF8); cursor:pointer; transition:all .15s; display:inline-flex; align-items:center; gap:5px; }
+    .btn-approve-place:hover { background:var(--primary,#3B6EF8); color:#fff; }
+    .btn-approve-place.approved { border-color:var(--border); color:var(--muted); cursor:default; background:transparent; }
     .btn-excel-place { height:38px; padding:0 16px; border-radius:9px; font-size:13px; font-weight:700; border:1.5px solid #059669; background:transparent; color:#059669; cursor:pointer; transition:all .15s; display:inline-flex; align-items:center; gap:6px; }
     .btn-excel-place:hover { background:#059669; color:#fff; }
 
@@ -127,11 +122,11 @@
       <div class="partner-header fade-up">
         <div class="ph-avatar">&#128102;</div>
         <div class="ph-info">
-          <h2>${partnerNickname} <span style="font-size:14px;font-weight:600;color:var(--muted);">(${partnerLoginId})</span></h2>
-          <p>파트너 ID: ${memberId} &nbsp;&middot;&nbsp; 정산월: <strong>${settlementMonth}</strong> &nbsp;&middot;&nbsp; 숙소 ${fn:length(details)}개</p>
+          <h2>${summary.partnerNickname} <span style="font-size:14px;font-weight:600;color:var(--muted);">(${summary.partnerLoginId})</span></h2>
+          <p>파트너 ID: ${summary.memberId} &nbsp;&middot;&nbsp; 정산월: <strong>${summary.settlementMonth}</strong> &nbsp;&middot;&nbsp; 숙소 ${summary.totalPlaceCount}개</p>
         </div>
         <div class="ph-actions">
-          <button class="btn-excel-all" onclick="downloadPartnerCsv(${memberId}, '${settlementMonth}')">
+          <button class="btn-excel-all" onclick="downloadPartnerCsv(${summary.memberId}, '${summary.settlementMonth}')">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
             전체 CSV
           </button>
@@ -142,31 +137,34 @@
       <div class="summary-grid fade-up">
         <div class="s-kpi">
           <div class="s-kpi-label">총 결제액 (GMV)</div>
-          <div class="s-kpi-value"><fmt:formatNumber value="${totalGmv}" pattern="#,###"/>원</div>
+          <div class="s-kpi-value"><fmt:formatNumber value="${summary.totalGmv}" pattern="#,###"/>원</div>
           <div class="s-kpi-sub">전체 숙소 합산</div>
         </div>
         <div class="s-kpi">
           <div class="s-kpi-label">수수료</div>
-          <div class="s-kpi-value" style="color:#DC2626">- <fmt:formatNumber value="${totalCommission}" pattern="#,###"/>원</div>
+          <div class="s-kpi-value" style="color:#DC2626">- <fmt:formatNumber value="${summary.totalCommission}" pattern="#,###"/>원</div>
           <div class="s-kpi-sub">플랫폼 수수료</div>
         </div>
         <div class="s-kpi">
           <div class="s-kpi-label">쿠폰 파트너 부담</div>
-          <div class="s-kpi-value" style="color:#C2410C">- <fmt:formatNumber value="${totalCouponPartner}" pattern="#,###"/>원</div>
-          <div class="s-kpi-sub">플랫폼 부담: <fmt:formatNumber value="${totalCouponPlatform}" pattern="#,###"/>원</div>
+          <div class="s-kpi-value" style="color:#C2410C">- <fmt:formatNumber value="${summary.totalCouponPartner}" pattern="#,###"/>원</div>
+          <div class="s-kpi-sub">플랫폼 부담: <fmt:formatNumber value="${summary.totalCouponPlatform}" pattern="#,###"/>원</div>
         </div>
         <div class="s-kpi">
           <div class="s-kpi-label">최종 지급액 (Net)</div>
-          <div class="s-kpi-value" style="color:#15803D"><fmt:formatNumber value="${totalNetPayout}" pattern="#,###"/>원</div>
+          <div class="s-kpi-value" style="color:#15803D"><fmt:formatNumber value="${summary.totalNetPayout}" pattern="#,###"/>원</div>
           <div class="s-kpi-sub">파트너 수취액</div>
         </div>
-        <%-- 정산 상태: partner_settlement는 파트너 단위 1건 --%>
         <div class="s-kpi">
           <div class="s-kpi-label">정산 상태</div>
           <c:choose>
-            <c:when test="${approvedPlaceCount > 0}">
+            <c:when test="${summary.allApproved}">
               <div class="s-kpi-value" style="color:#059669;font-size:15px;">&#10003; 승인 완료</div>
               <div class="s-kpi-sub">전체 숙소 정산 완료</div>
+            </c:when>
+            <c:when test="${summary.approvedPlaceCount > 0}">
+              <div class="s-kpi-value" style="color:#3B6EF8;font-size:15px;">부분 승인</div>
+              <div class="s-kpi-sub">${summary.approvedPlaceCount}/${summary.totalPlaceCount}개 완료</div>
             </c:when>
             <c:otherwise>
               <div class="s-kpi-value" style="color:#D97706;font-size:15px;">대기중</div>
@@ -190,9 +188,8 @@
       </div>
 
       <!-- 숙소별 카드 -->
-      <c:forEach var="d" items="${details}" varStatus="vs">
+      <c:forEach var="d" items="${details}">
         <div class="place-card fade-up" id="placeCard_${d.placeId}">
-
           <div class="place-head" onclick="togglePlace(${d.placeId})">
             <div class="place-icon">&#127968;</div>
             <div class="place-meta">
@@ -218,6 +215,14 @@
                 <div class="pa-label">지급액</div>
                 <div class="pa-value text-success"><fmt:formatNumber value="${d.totalNetPayout}" pattern="#,###"/>원</div>
               </div>
+              <c:choose>
+                <c:when test="${d.settlementStatus == 'done'}">
+                  <span class="badge badge-done">승인완료</span>
+                </c:when>
+                <c:otherwise>
+                  <span class="badge badge-wait">대기중</span>
+                </c:otherwise>
+              </c:choose>
               <span class="chevron" id="chevron_${d.placeId}">&#9660;</span>
             </div>
           </div>
@@ -251,26 +256,17 @@
               <table class="o-table">
                 <thead>
                   <tr>
-                    <th>주문번호</th>
-                    <th>예약일</th>
-                    <th>예약자</th>
-                    <th>총금액</th>
-                    <th>쿠폰할인</th>
-                    <th>&#8627; 파트너 부담</th>
-                    <th>&#8627; 플랫폼 부담</th>
-                    <th>포인트할인</th>
-                    <th>실결제액</th>
-                    <th>수수료</th>
-                    <th>파트너 수취액</th>
-                    <th>예약 상태</th>
-                    <th>결제 상태</th>
+                    <th>주문번호</th><th>체크아웃일</th><th>예약자</th>
+                    <th>총금액</th><th>쿠폰할인</th><th>&#8627; 파트너 부담</th>
+                    <th>&#8627; 플랫폼 부담</th><th>포인트할인</th><th>실결제액</th>
+                    <th>수수료</th><th>파트너 수취액</th><th>예약 상태</th><th>결제 상태</th>
                   </tr>
                 </thead>
                 <tbody>
                   <c:forEach var="o" items="${d.orders}">
                     <tr>
                       <td style="font-size:12px;color:var(--muted);">${o.orderId}</td>
-                      <td><fmt:formatDate value="${o.orderDate}" pattern="MM-dd"/></td>
+                      <td><fmt:formatDate value="${o.checkoutDate}" pattern="MM-dd"/></td>
                       <td>${o.guestNickname}</td>
                       <td class="num"><fmt:formatNumber value="${o.totalAmount}" pattern="#,###"/></td>
                       <td class="num text-warn">
@@ -300,32 +296,18 @@
                       <td class="num"><fmt:formatNumber value="${o.realTotalAmount}" pattern="#,###"/></td>
                       <td class="num text-danger">- <fmt:formatNumber value="${o.commissionAmount}" pattern="#,###"/></td>
                       <td class="num text-success" style="font-weight:900;"><fmt:formatNumber value="${o.partnerPayout}" pattern="#,###"/></td>
-                      <%-- 예약 상태 --%>
                       <td>
                         <c:choose>
-                          <c:when test="${o.reservationStatus == 'SUCCESS'}">
-                            <span class="badge badge-success" style="font-size:11px;">이용완료</span>
-                          </c:when>
-                          <c:when test="${o.reservationStatus == 'CANCELED'}">
-                            <span class="badge badge-cancel" style="font-size:11px;">취소</span>
-                          </c:when>
-                          <c:otherwise>
-                            <span class="badge" style="background:var(--bg);color:var(--muted);font-size:11px;">${o.reservationStatus}</span>
-                          </c:otherwise>
+                          <c:when test="${o.reservationStatus == 'SUCCESS'}"><span class="badge badge-success" style="font-size:11px;">이용완료</span></c:when>
+                          <c:when test="${o.reservationStatus == 'CANCELED'}"><span class="badge badge-cancel" style="font-size:11px;">취소</span></c:when>
+                          <c:otherwise><span class="badge" style="background:var(--bg);color:var(--muted);font-size:11px;">${o.reservationStatus}</span></c:otherwise>
                         </c:choose>
                       </td>
-                      <%-- 결제 상태 --%>
                       <td>
                         <c:choose>
-                          <c:when test="${o.paymentStatus == 'SUCCESS'}">
-                            <span class="badge badge-done" style="font-size:11px;">결제완료</span>
-                          </c:when>
-                          <c:when test="${o.paymentStatus == 'CANCELED' or o.paymentStatus == 'CANCELLED'}">
-                            <span class="badge badge-cancel" style="font-size:11px;">취소</span>
-                          </c:when>
-                          <c:otherwise>
-                            <span class="badge" style="background:var(--bg);color:var(--muted);font-size:11px;">${o.paymentStatus}</span>
-                          </c:otherwise>
+                          <c:when test="${o.paymentStatus == 'SUCCESS'}"><span class="badge badge-done" style="font-size:11px;">결제완료</span></c:when>
+                          <c:when test="${o.paymentStatus == 'CANCELED' or o.paymentStatus == 'CANCELLED'}"><span class="badge badge-cancel" style="font-size:11px;">취소</span></c:when>
+                          <c:otherwise><span class="badge" style="background:var(--bg);color:var(--muted);font-size:11px;">${o.paymentStatus}</span></c:otherwise>
                         </c:choose>
                       </td>
                     </tr>
@@ -358,12 +340,25 @@
                 숙소 ID: <strong>#${d.placeId}</strong>
                 &nbsp;&middot;&nbsp; 수수료율: <strong><fmt:formatNumber value="${d.commissionRate}" pattern="#.##"/>%</strong>
               </div>
-              <button class="btn-excel-place" onclick="downloadPlaceCsv(${d.placeId}, '${settlementMonth}')">
-                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-                숙소 CSV
-              </button>
+              <div style="display:flex;gap:8px;align-items:center;">
+                <button class="btn-excel-place" onclick="downloadPlaceCsv(${d.placeId}, '${summary.settlementMonth}')">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                  숙소 CSV
+                </button>
+                <c:choose>
+                  <c:when test="${d.settlementStatus == 'done'}">
+                    <button class="btn-approve-place approved" disabled>&#10003; 승인 완료</button>
+                  </c:when>
+                  <c:otherwise>
+                    <button class="btn-approve-place"
+                            id="approveBtn_${d.placeId}"
+                            onclick="approvePlace(${d.partnerId}, '${summary.settlementMonth}', this)">
+                      &#10003; 이 숙소 정산 승인
+                    </button>
+                  </c:otherwise>
+                </c:choose>
+              </div>
             </div>
-
           </div>
         </div>
       </c:forEach>
@@ -375,27 +370,39 @@
       <!-- 하단 액션바 -->
       <div class="bulk-action-bar">
         <div class="bar-info">
-          파트너: <strong>${partnerNickname}</strong> &nbsp;&middot;&nbsp;
-          정산월: <strong>${settlementMonth}</strong> &nbsp;&middot;&nbsp;
+          파트너: <strong>${summary.partnerNickname}</strong> &nbsp;&middot;&nbsp;
+          정산월: <strong>${summary.settlementMonth}</strong> &nbsp;&middot;&nbsp;
           상태:
           <c:choose>
-            <c:when test="${approvedPlaceCount > 0}"><span class="badge badge-done">승인 완료</span></c:when>
-            <c:otherwise><span class="badge badge-wait">정산 대기</span></c:otherwise>
+            <c:when test="${summary.allApproved}">
+              <span class="badge badge-done">정산 완료</span>
+            </c:when>
+            <c:when test="${summary.approvedPlaceCount > 0}">
+              <span class="badge badge-partial">부분 승인 (${summary.approvedPlaceCount}/${summary.totalPlaceCount})</span>
+            </c:when>
+            <c:otherwise>
+              <span class="badge badge-wait">정산 대기</span>
+            </c:otherwise>
           </c:choose>
+          <span id="barApprovedCount" style="display:none;">${summary.approvedPlaceCount}</span>
         </div>
         <div class="bar-actions">
-          <button class="btn-excel-all" onclick="downloadPartnerCsv('${memberId}', '${settlementMonth}')">
+          <button class="btn-excel-all" onclick="downloadPartnerCsv('${summary.memberId}', '${summary.settlementMonth}')">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
             전체 CSV
           </button>
           <c:choose>
-            <c:when test="${approvedPlaceCount > 0}">
-              <button class="btn-bulk-approve" disabled>&#10003;&nbsp; 승인 완료</button>
+            <c:when test="${summary.allApproved}">
+              <button class="btn-bulk-approve" disabled>&#10003;&nbsp; 전체 승인 완료</button>
             </c:when>
             <c:otherwise>
               <button class="btn-bulk-approve" id="bulkApproveBtn"
-                      onclick="approveAll('${memberId}', '${settlementMonth}')">
-                &#10003;&nbsp; 전체 정산 승인
+                      onclick="approveAll('${summary.memberId}', '${summary.settlementMonth}')">
+                &#10003;&nbsp;
+                <c:choose>
+                  <c:when test="${summary.approvedPlaceCount > 0}">나머지 전체 승인</c:when>
+                  <c:otherwise>전체 정산 승인</c:otherwise>
+                </c:choose>
               </button>
             </c:otherwise>
           </c:choose>

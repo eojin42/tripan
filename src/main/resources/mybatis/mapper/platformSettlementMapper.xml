@@ -4,44 +4,49 @@
 <mapper namespace="com.tripan.app.admin.mapper.PlatformSettlementMapper">
 
     <!--
-        날짜 기준: ORDERS.ORDER_DATE  (결제한 날 = 실제 수익 발생일)
-        상태 기준: ORDERS.STATUS = 'SUCCESS'  (insertOrder 시 'SUCCESS' 로 입력됨)
+        날짜 기준: RESERVATION.CHECK_OUT_DATE (체크아웃 기준 = 실제 서비스 완료일)
+        상태 기준: ORDERS.STATUS != 'CANCELED'
+        금액 기준: ORDERS.REAL_TOTAL_AMOUNT (실결제액)
     -->
 
     <!-- KPI 집계 -->
     <select id="selectKpi"
             resultType="com.tripan.app.admin.domain.dto.PlatformSettlementDto$KpiDto">
         SELECT
-            NVL(SUM(o.TOTAL_AMOUNT),    0)                                                 AS gmv,
-            NVL(SUM(o.COUPON_DISCOUNT), 0)                                                 AS couponDiscount,
-            NVL(SUM(o.POINT_DISCOUNT),  0)                                                 AS pointUsed,
-            NVL(SUM(ROUND(o.TOTAL_AMOUNT * r.COMMISSION_RATE / 100)), 0)                   AS commission,
-            NVL(SUM(o.TOTAL_AMOUNT - ROUND(o.TOTAL_AMOUNT * r.COMMISSION_RATE / 100)), 0)  AS partnerPayout,
-            NVL(SUM(ROUND(o.TOTAL_AMOUNT * r.COMMISSION_RATE / 100))
+            NVL(SUM(o.REAL_TOTAL_AMOUNT), 0)                                                    AS gmv,
+            NVL(SUM(o.COUPON_DISCOUNT), 0)                                                      AS couponDiscount,
+            NVL(SUM(o.POINT_DISCOUNT),  0)                                                      AS pointUsed,
+            NVL(SUM(ROUND(o.REAL_TOTAL_AMOUNT * p.COMMISSION_RATE / 100)), 0)                   AS commission,
+            NVL(SUM(o.REAL_TOTAL_AMOUNT
+                - ROUND(o.REAL_TOTAL_AMOUNT * p.COMMISSION_RATE / 100)), 0)                     AS partnerPayout,
+            NVL(SUM(ROUND(o.REAL_TOTAL_AMOUNT * p.COMMISSION_RATE / 100))
                 - SUM(o.COUPON_DISCOUNT)
-                - SUM(o.POINT_DISCOUNT), 0)                                                AS netProfit,
-            CASE WHEN NVL(SUM(o.TOTAL_AMOUNT), 0) = 0 THEN 0
-                 ELSE ROUND(SUM(ROUND(o.TOTAL_AMOUNT * r.COMMISSION_RATE / 100))
-                            / SUM(o.TOTAL_AMOUNT) * 100, 1)
-            END                                                                             AS commissionRate
+                - SUM(o.POINT_DISCOUNT), 0)                                                     AS netProfit,
+            CASE WHEN NVL(SUM(o.REAL_TOTAL_AMOUNT), 0) = 0 THEN 0
+                 ELSE ROUND(SUM(ROUND(o.REAL_TOTAL_AMOUNT * p.COMMISSION_RATE / 100))
+                            / SUM(o.REAL_TOTAL_AMOUNT) * 100, 1)
+            END                                                                                  AS commissionRate
         FROM ORDERS o
-        INNER JOIN ORDER_DETAIL od ON o.ORDER_ID        = od.ORDER_ID
-        INNER JOIN RESERVATION  r  ON od.RESERVATION_ID = r.RESERVATION_ID
-        WHERE o.STATUS = 'SUCCESS'
-          AND TO_CHAR(o.ORDER_DATE, 'YYYY') = TO_CHAR(#{year})
+        INNER JOIN ORDER_DETAIL od ON o.ORDER_ID           = od.ORDER_ID
+        INNER JOIN RESERVATION  rv ON od.RESERVATION_ID    = rv.RESERVATION_ID
+        INNER JOIN ROOM         rm ON rv.ROOM_ID            = rm.ROOM_ID
+        INNER JOIN PLACE        pl ON rm.PLACE_ID           = pl.PLACE_ID
+        INNER JOIN PARTNER      p  ON pl.PARTNER_ID         = p.PARTNER_ID
+        WHERE o.STATUS != 'CANCELED'
+          AND TO_CHAR(rv.CHECK_OUT_DATE, 'YYYY') = TO_CHAR(#{year})
         <if test="month != null and month != ''">
-          AND TO_CHAR(o.ORDER_DATE, 'MM') = #{month}
+          AND TO_CHAR(rv.CHECK_OUT_DATE, 'MM') = #{month}
         </if>
     </select>
 
     <!-- 전월 GMV -->
     <select id="selectPrevMonthGmv" resultType="java.lang.Long">
-        SELECT NVL(SUM(o.TOTAL_AMOUNT), 0)
+        SELECT NVL(SUM(o.REAL_TOTAL_AMOUNT), 0)
         FROM ORDERS o
-        INNER JOIN ORDER_DETAIL od ON o.ORDER_ID        = od.ORDER_ID
-        INNER JOIN RESERVATION  r  ON od.RESERVATION_ID = r.RESERVATION_ID
-        WHERE o.STATUS = 'SUCCESS'
-          AND TO_CHAR(o.ORDER_DATE, 'YYYY-MM') =
+        INNER JOIN ORDER_DETAIL od ON o.ORDER_ID           = od.ORDER_ID
+        INNER JOIN RESERVATION  rv ON od.RESERVATION_ID    = rv.RESERVATION_ID
+        WHERE o.STATUS != 'CANCELED'
+          AND TO_CHAR(rv.CHECK_OUT_DATE, 'YYYY-MM') =
               TO_CHAR(ADD_MONTHS(TO_DATE(TO_CHAR(#{year}) || '-' || #{month}, 'YYYY-MM'), -1), 'YYYY-MM')
     </select>
 
@@ -49,69 +54,125 @@
     <select id="selectMonthlyList"
             resultType="com.tripan.app.admin.domain.dto.PlatformSettlementDto$MonthlyRowDto">
         SELECT
-            TO_CHAR(o.ORDER_DATE, 'YYYY-MM')                                                   AS settlementMonth,
-            NVL(SUM(o.TOTAL_AMOUNT),    0)                                                      AS gmv,
+            TO_CHAR(rv.CHECK_OUT_DATE, 'YYYY-MM')                                               AS settlementMonth,
+            NVL(SUM(o.REAL_TOTAL_AMOUNT), 0)                                                    AS gmv,
             NVL(SUM(o.COUPON_DISCOUNT), 0)                                                      AS couponDiscount,
             NVL(SUM(o.POINT_DISCOUNT),  0)                                                      AS pointUsed,
-            NVL(SUM(ROUND(o.TOTAL_AMOUNT * r.COMMISSION_RATE / 100)), 0)                        AS commission,
-            NVL(SUM(o.TOTAL_AMOUNT - ROUND(o.TOTAL_AMOUNT * r.COMMISSION_RATE / 100)), 0)       AS partnerPayout,
-            NVL(SUM(ROUND(o.TOTAL_AMOUNT * r.COMMISSION_RATE / 100))
+            NVL(SUM(ROUND(o.REAL_TOTAL_AMOUNT * p.COMMISSION_RATE / 100)), 0)                   AS commission,
+            NVL(SUM(o.REAL_TOTAL_AMOUNT
+                - ROUND(o.REAL_TOTAL_AMOUNT * p.COMMISSION_RATE / 100)), 0)                     AS partnerPayout,
+            NVL(SUM(ROUND(o.REAL_TOTAL_AMOUNT * p.COMMISSION_RATE / 100))
                 - SUM(o.COUPON_DISCOUNT)
                 - SUM(o.POINT_DISCOUNT), 0)                                                     AS netProfit,
-            COUNT(DISTINCT r.PARTNER_ID)                                                        AS partnerCount,
-            'DONE'        AS status,
-            'badge-done'  AS statusBadgeClass,
-            '완료'         AS statusLabel
+            COUNT(DISTINCT p.PARTNER_ID)                                                        AS partnerCount,
+            /* 해당 월 파트너 정산 상태 집계 */
+            CASE
+                WHEN COUNT(DISTINCT p.PARTNER_ID) =
+                     COUNT(DISTINCT CASE WHEN ps.status = 'done' THEN p.PARTNER_ID END)
+                     THEN 'DONE'
+                WHEN COUNT(DISTINCT CASE WHEN ps.status = 'done' THEN p.PARTNER_ID END) > 0
+                     THEN 'PARTIAL'
+                ELSE 'WAIT'
+            END AS status,
+            CASE
+                WHEN COUNT(DISTINCT p.PARTNER_ID) =
+                     COUNT(DISTINCT CASE WHEN ps.status = 'done' THEN p.PARTNER_ID END)
+                     THEN 'badge-done'
+                WHEN COUNT(DISTINCT CASE WHEN ps.status = 'done' THEN p.PARTNER_ID END) > 0
+                     THEN 'badge-partial'
+                ELSE 'badge-wait'
+            END AS statusBadgeClass,
+            CASE
+                WHEN COUNT(DISTINCT p.PARTNER_ID) =
+                     COUNT(DISTINCT CASE WHEN ps.status = 'done' THEN p.PARTNER_ID END)
+                     THEN '완료'
+                WHEN COUNT(DISTINCT CASE WHEN ps.status = 'done' THEN p.PARTNER_ID END) > 0
+                     THEN '부분승인'
+                ELSE '대기'
+            END AS statusLabel
         FROM ORDERS o
-        INNER JOIN ORDER_DETAIL od ON o.ORDER_ID        = od.ORDER_ID
-        INNER JOIN RESERVATION  r  ON od.RESERVATION_ID = r.RESERVATION_ID
-        WHERE o.STATUS = 'SUCCESS'
-          AND TO_CHAR(o.ORDER_DATE, 'YYYY') = TO_CHAR(#{year})
+        INNER JOIN ORDER_DETAIL od ON o.ORDER_ID           = od.ORDER_ID
+        INNER JOIN RESERVATION  rv ON od.RESERVATION_ID    = rv.RESERVATION_ID
+        INNER JOIN ROOM         rm ON rv.ROOM_ID            = rm.ROOM_ID
+        INNER JOIN PLACE        pl ON rm.PLACE_ID           = pl.PLACE_ID
+        INNER JOIN PARTNER      p  ON pl.PARTNER_ID         = p.PARTNER_ID
+        LEFT  JOIN PARTNER_SETTLEMENT ps
+                                   ON ps.PARTNER_ID         = p.PARTNER_ID
+                                  AND ps.SETTLEMENT_MONTH   = TO_CHAR(rv.CHECK_OUT_DATE, 'YYYY-MM')
+        WHERE o.STATUS != 'CANCELED'
+          AND TO_CHAR(rv.CHECK_OUT_DATE, 'YYYY') = TO_CHAR(#{year})
         <if test="month != null and month != ''">
-          AND TO_CHAR(o.ORDER_DATE, 'MM') = #{month}
+          AND TO_CHAR(rv.CHECK_OUT_DATE, 'MM') = #{month}
         </if>
-        GROUP BY TO_CHAR(o.ORDER_DATE, 'YYYY-MM')
-        ORDER BY TO_CHAR(o.ORDER_DATE, 'YYYY-MM') DESC
+        GROUP BY TO_CHAR(rv.CHECK_OUT_DATE, 'YYYY-MM')
+        ORDER BY TO_CHAR(rv.CHECK_OUT_DATE, 'YYYY-MM') DESC
     </select>
 
-    <!-- 일별 수익 추이 (차트) — ORDER_DATE 기준이므로 미래 날짜 없음 -->
+    <!-- 일별 수익 추이 (차트) — CHECK_OUT_DATE 기준 -->
     <select id="selectDailyChart"
             resultType="com.tripan.app.admin.domain.dto.PlatformSettlementDto$DailyChartDto">
         SELECT
-            TO_CHAR(o.ORDER_DATE, 'MM/DD')                                                 AS day,
-            NVL(SUM(ROUND(o.TOTAL_AMOUNT * r.COMMISSION_RATE / 100)), 0)                   AS commission,
-            NVL(SUM(ROUND(o.TOTAL_AMOUNT * r.COMMISSION_RATE / 100))
+            TO_CHAR(rv.CHECK_OUT_DATE, 'MM/DD')                                                 AS day,
+            NVL(SUM(ROUND(o.REAL_TOTAL_AMOUNT * p.COMMISSION_RATE / 100)), 0)                   AS commission,
+            NVL(SUM(ROUND(o.REAL_TOTAL_AMOUNT * p.COMMISSION_RATE / 100))
                 - SUM(o.COUPON_DISCOUNT)
-                - SUM(o.POINT_DISCOUNT), 0)                                                AS netProfit
+                - SUM(o.POINT_DISCOUNT), 0)                                                     AS netProfit
         FROM ORDERS o
-        INNER JOIN ORDER_DETAIL od ON o.ORDER_ID        = od.ORDER_ID
-        INNER JOIN RESERVATION  r  ON od.RESERVATION_ID = r.RESERVATION_ID
-        WHERE o.STATUS = 'SUCCESS'
-          AND TO_CHAR(o.ORDER_DATE, 'YYYY') = TO_CHAR(#{year})
-          AND TO_CHAR(o.ORDER_DATE, 'MM')   = #{month}
-        GROUP BY TO_CHAR(o.ORDER_DATE, 'MM/DD'), TRUNC(o.ORDER_DATE)
-        ORDER BY TRUNC(o.ORDER_DATE) ASC
+        INNER JOIN ORDER_DETAIL od ON o.ORDER_ID           = od.ORDER_ID
+        INNER JOIN RESERVATION  rv ON od.RESERVATION_ID    = rv.RESERVATION_ID
+        INNER JOIN ROOM         rm ON rv.ROOM_ID            = rm.ROOM_ID
+        INNER JOIN PLACE        pl ON rm.PLACE_ID           = pl.PLACE_ID
+        INNER JOIN PARTNER      p  ON pl.PARTNER_ID         = p.PARTNER_ID
+        WHERE o.STATUS != 'CANCELED'
+          AND TO_CHAR(rv.CHECK_OUT_DATE, 'YYYY') = TO_CHAR(#{year})
+          AND TO_CHAR(rv.CHECK_OUT_DATE, 'MM')   = #{month}
+        GROUP BY TO_CHAR(rv.CHECK_OUT_DATE, 'MM/DD'), TRUNC(rv.CHECK_OUT_DATE)
+        ORDER BY TRUNC(rv.CHECK_OUT_DATE) ASC
     </select>
 
     <!-- 미정산 파트너 수
-         파트너 정산관리 페이지와 동일 기준:
-         이달에 예약(SUCCESS)이 있는 파트너 중 아직 ORDERS가 없거나 SUCCESS 아닌 건이 있는 파트너
-         → 간단하게: 이달 RESERVATION.STATUS='SUCCESS' 인 PARTNER_ID 전체 수
-           (파트너 정산관리와 동일하게 RESERVATION 기준)
+         check_out_date 기준 이번 달 체크아웃 완료된 예약 중
+         partner_settlement에 done이 없는 파트너 수
     -->
     <select id="selectPendingPartnerCount" resultType="int">
-        SELECT COUNT(DISTINCT r.PARTNER_ID)
-        FROM RESERVATION r
-        WHERE r.STATUS = 'SUCCESS'
-          AND TO_CHAR(r.CHECK_IN_DATE, 'YYYY-MM') = TO_CHAR(SYSDATE, 'YYYY-MM')
+        SELECT COUNT(DISTINCT p.PARTNER_ID)
+        FROM RESERVATION rv
+        INNER JOIN ROOM   rm ON rm.ROOM_ID   = rv.ROOM_ID
+        INNER JOIN PLACE  pl ON pl.PLACE_ID  = rm.PLACE_ID
+        INNER JOIN PARTNER p ON p.PARTNER_ID = pl.PARTNER_ID
+        WHERE rv.STATUS = 'SUCCESS'
+          AND TO_CHAR(rv.CHECK_OUT_DATE, 'YYYY-MM') = TO_CHAR(SYSDATE, 'YYYY-MM')
+          AND NOT EXISTS (
+              SELECT 1
+              FROM PARTNER_SETTLEMENT ps
+              WHERE ps.PARTNER_ID       = p.PARTNER_ID
+                AND ps.SETTLEMENT_MONTH = TO_CHAR(rv.CHECK_OUT_DATE, 'YYYY-MM')
+                AND ps.STATUS           = 'done'
+          )
     </select>
 
-    <!-- 미정산 대기 금액: 이달 SUCCESS 예약의 파트너 지급 예정액 -->
+    <!-- 미정산 대기 금액
+         이번 달 check_out_date 기준 체크아웃된 예약의 파트너 지급 예정액
+         (아직 done 처리 안 된 파트너만)
+    -->
     <select id="selectPendingAmount" resultType="java.lang.Long">
-        SELECT NVL(SUM(r.AMOUNT - ROUND(r.AMOUNT * r.COMMISSION_RATE / 100)), 0)
-        FROM RESERVATION r
-        WHERE r.STATUS = 'SUCCESS'
-          AND TO_CHAR(r.CHECK_IN_DATE, 'YYYY-MM') = TO_CHAR(SYSDATE, 'YYYY-MM')
+        SELECT NVL(SUM(o.REAL_TOTAL_AMOUNT
+                   - ROUND(o.REAL_TOTAL_AMOUNT * p.COMMISSION_RATE / 100)), 0)
+        FROM ORDERS o
+        INNER JOIN ORDER_DETAIL od ON o.ORDER_ID           = od.ORDER_ID
+        INNER JOIN RESERVATION  rv ON od.RESERVATION_ID    = rv.RESERVATION_ID
+        INNER JOIN ROOM         rm ON rv.ROOM_ID            = rm.ROOM_ID
+        INNER JOIN PLACE        pl ON rm.PLACE_ID           = pl.PLACE_ID
+        INNER JOIN PARTNER      p  ON pl.PARTNER_ID         = p.PARTNER_ID
+        WHERE o.STATUS != 'CANCELED'
+          AND TO_CHAR(rv.CHECK_OUT_DATE, 'YYYY-MM') = TO_CHAR(SYSDATE, 'YYYY-MM')
+          AND NOT EXISTS (
+              SELECT 1
+              FROM PARTNER_SETTLEMENT ps
+              WHERE ps.PARTNER_ID       = p.PARTNER_ID
+                AND ps.SETTLEMENT_MONTH = TO_CHAR(rv.CHECK_OUT_DATE, 'YYYY-MM')
+                AND ps.STATUS           = 'done'
+          )
     </select>
 
 </mapper>

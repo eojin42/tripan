@@ -13,6 +13,7 @@ public class SettlementOrderDto {
     private String  orderId;            // orders.order_id
     private Long    reservationId;      // order_detail.reservation_id
     private Date    orderDate;          // orders.order_date
+    private Date checkoutDate;
     private String  guestNickname;      // 예약자 닉네임
 
     private BigDecimal totalAmount;         // orders.total_amount      (할인 전)

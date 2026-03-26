@@ -85,7 +85,7 @@ function approveAll(memberId, month) {
   fetch(STL_CTX + '/admin/settlement/partner/approve/all', {
     method  : 'POST',
     headers : { 'Content-Type': 'application/x-www-form-urlencoded' },
-    body    : 'partnerId=' + memberId + '&settlementMonth=' + month
+    body    : 'memberId=' + memberId + '&settlementMonth=' + month
   })
   .then(function (r) { return r.text(); })
   .then(function (res) {

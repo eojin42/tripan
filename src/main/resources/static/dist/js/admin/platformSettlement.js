@@ -1,12 +1,5 @@
 /**
  * 플랫폼 정산 JS
- *
- * 숫자 정책:
- *   · KPI 카드          → 원 단위 전체 (예: 42,300,000)  우상단 없음
- *   · 수익흐름(워터폴)   → 천원 단위   (예: 42,300)      우상단 (단위: 천원)
- *   · 수익구조 분해 바   → 천원 단위   (예: 42,300)      우상단 (단위: 천원)
- *   · 차트 Y축           → 천원 단위
- *   · 테이블             → 원 단위 전체
  */
 
 Chart.defaults.font.family = "'Noto Sans KR', sans-serif";
@@ -15,16 +8,11 @@ Chart.defaults.color       = '#8B92A5';
 
 let revenueChart = null;
 
-/* ─────────────────────────────────────────
-   포맷 헬퍼
-───────────────────────────────────────── */
-// 원 단위 전체 (KPI 카드, 테이블)
 function fmtWon(n) {
   if (n == null) return '0';
   return n.toLocaleString();
 }
 
-// 천원 단위 (워터폴, 분해 바, 차트)
 function fmtK(n) {
   if (n == null) return '0';
   return Math.floor(n / 1000).toLocaleString();
@@ -58,7 +46,9 @@ function loadData() {
       renderWaterfall(data.kpi);
       renderBreakdown(data.kpi, year, month);
       renderTable(data.monthlyList, data.total);
-      renderChart(data.dailyChart);
+      // ✅ month 없으면(연간 전체) 현재 월 기준으로 차트 렌더
+      const chartMonth = month || String(new Date().getMonth() + 1).padStart(2, '0');
+      renderChart(data.dailyChart, chartMonth);
     })
     .catch(err => {
       console.error('[PlatformSettlement] 로드 실패', err);
@@ -68,20 +58,17 @@ function loadData() {
 
 /* ─────────────────────────────────────────
    미정산 배너
+   ✅ pendingPartnerCount/pendingAmount는 이번달 기준 고정값
+      → 월 필터 상관없이 항상 렌더 (숨김 조건은 count=0일 때만)
 ───────────────────────────────────────── */
 function renderBanner(kpi) {
-	const count = kpi.pendingPartnerCount ?? 0;
-	 setText('pendingCount', count);
-	 setText('pendingAmt',   '₩' + fmtWon(kpi.pendingAmount));
-
-	 // 0이면 배너 숨기기
-	 const banner = document.querySelector('.alert-banner');
-	 if (banner) banner.style.display = count > 0 ? 'flex' : 'none';
+  const count = kpi.pendingPartnerCount ?? 0;
+  setText('pendingCount', count);
+  setText('pendingAmt',   '₩' + fmtWon(kpi.pendingAmount));
+  const banner = document.querySelector('.alert-banner');
+  if (banner) banner.style.display = count > 0 ? 'flex' : 'none';
 }
 
-/* ─────────────────────────────────────────
-   KPI 카드 — ₩ + 원 단위 전체
-───────────────────────────────────────── */
 function renderKpi(kpi) {
   setText('kpiGmv',        '₩' + fmtWon(kpi.gmv));
   setText('kpiProfit',     '₩' + fmtWon(kpi.netProfit));
@@ -99,9 +86,6 @@ function renderKpi(kpi) {
   setText('kpiPoint',  '포인트 ₩' + fmtWon(kpi.pointUsed));
 }
 
-/* ─────────────────────────────────────────
-   워터폴 — 천원 단위, JS에서 (단위: 천원) 삽입
-───────────────────────────────────────── */
 function renderWaterfall(kpi) {
   const gmv    = kpi.gmv    || 1;
   const payout = kpi.partnerPayout;
@@ -109,7 +93,6 @@ function renderWaterfall(kpi) {
   const point  = kpi.pointUsed;
   const profit = kpi.netProfit;
 
-  // 제목 옆 (단위: 천원) 동적 삽입
   const wfTitle = document.getElementById('waterfallTitle');
   if (wfTitle && !wfTitle.querySelector('.unit-tag')) {
     wfTitle.insertAdjacentHTML('beforeend', '<span class="unit-tag" style="font-size:11px;color:var(--muted);font-weight:600;margin-left:6px;">(단위: 천원)</span>');
@@ -127,9 +110,6 @@ function renderWaterfall(kpi) {
   setBarWidth('wbProfit', Math.max(profit / gmv * 100, 0));
 }
 
-/* ─────────────────────────────────────────
-   수익 구조 분해 바 — 천원 단위, JS에서 (단위: 천원) 삽입
-───────────────────────────────────────── */
 function renderBreakdown(kpi, year, month) {
   const gmv    = kpi.gmv || 1;
   const payout = kpi.partnerPayout;
@@ -140,7 +120,6 @@ function renderBreakdown(kpi, year, month) {
   const label = month ? `${year}년 ${parseInt(month, 10)}월` : `${year}년 전체`;
   setText('bdLabel', label);
 
-  // GMV 우상단 — (단위: 천원) 삽입
   const bdGmvEl = document.getElementById('bdGmvTotal');
   if (bdGmvEl) bdGmvEl.textContent = 'GMV ' + fmtK(gmv);
   const bdUnitEl = document.getElementById('bdUnit');
@@ -157,11 +136,6 @@ function renderBreakdown(kpi, year, month) {
   setBarWidth('bdSegEtc',      etc    / gmv * 100);
 }
 
-/* ─────────────────────────────────────────
-   월별 정산 테이블
-   ※ JSP tbody에 id="settlementTbody",
-      tfoot에 id="settlementTfoot" 반드시 필요!
-───────────────────────────────────────── */
 function renderTable(list, total) {
   const tbody = document.getElementById('settlementTbody');
   const tfoot = document.getElementById('settlementTfoot');
@@ -205,24 +179,25 @@ function renderTable(list, total) {
 
 /* ─────────────────────────────────────────
    일별 수익 추이 차트
-   · ORDER_DATE 기준이므로 오늘 이후 데이터 없음
-   · Y축: 천원 단위
+   ✅ 버그수정1: canvas가 div로 교체된 후 재렌더 안 되는 문제 → canvas 복원
+   ✅ 버그수정2: month 파라미터 추가로 연간 전체 선택시에도 현재 월 차트 표시
 ───────────────────────────────────────── */
-function renderChart(dailyList) {
-  const canvas = document.getElementById('revenueChart');
-  if (!canvas) return;
-
+function renderChart(dailyList, chartMonth) {
   if (revenueChart) { revenueChart.destroy(); revenueChart = null; }
 
+  // canvas가 div로 교체되었을 수 있으므로 항상 복원
+  const wrap = document.querySelector('.chart-wrap');
+  if (!wrap) return;
+  wrap.innerHTML = '<canvas id="revenueChart"></canvas>';
+
   if (!dailyList || dailyList.length === 0) {
-    // 빈 상태 텍스트
-    const parent = canvas.parentElement;
-    parent.innerHTML = `<div style="height:210px;display:flex;align-items:center;
+    wrap.innerHTML = `<div style="height:210px;display:flex;align-items:center;
       justify-content:center;color:var(--muted);font-size:13px;">
       해당 기간의 데이터가 없습니다.</div>`;
     return;
   }
 
+  const canvas     = document.getElementById('revenueChart');
   const labels     = dailyList.map(d => d.day);
   const commData   = dailyList.map(d => Math.round(d.commission / 1000));
   const profitData = dailyList.map(d => Math.round(d.netProfit  / 1000));
@@ -276,16 +251,10 @@ function renderChart(dailyList) {
   });
 }
 
-/* ─────────────────────────────────────────
-   파트너 상세 이동
-───────────────────────────────────────── */
 function goPartner(month) {
   location.href = contextPath + '/admin/settlement/partner/main?month=' + month;
 }
 
-/* ─────────────────────────────────────────
-   초기화
-───────────────────────────────────────── */
 document.addEventListener('DOMContentLoaded', () => {
   loadData();
   document.getElementById('filterYear') .addEventListener('change', loadData);

@@ -31,4 +31,8 @@ public interface PartnerSettlementMapper {
 
     /** 숙소 단위 엑셀용 데이터 */
     List<SettlementOrderDto> selectExcelByPlace(SettlementFilterDto filter);
+
+    List<Long> selectPartnerIdsByMember(Map<String, Object> params);
+    
+    List<String> selectAvailableMonths();
 }
