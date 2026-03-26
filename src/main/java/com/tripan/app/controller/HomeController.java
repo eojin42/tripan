@@ -11,7 +11,9 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 
 import com.tripan.app.admin.service.BannerService;
+import com.tripan.app.domain.dto.PlaceDto;
 import com.tripan.app.domain.dto.TripDto;
+import com.tripan.app.mapper.PlaceRecommendMapper;
 import com.tripan.app.mapper.TripMapper;
 
 import jakarta.servlet.http.HttpSession;
@@ -25,6 +27,7 @@ public class HomeController {
 
     private final TripMapper tripMapper;
     private final BannerService bannerService;
+    private final PlaceRecommendMapper placeMapper;
     
 
     @GetMapping("/start")
@@ -37,6 +40,8 @@ public class HomeController {
     public String handleHome(HttpSession session, Model model) {
     	 
     	model.addAttribute("banners", bannerService.getVisible());
+    	// TOP 10 장소 (조회수 + 좋아요 합산)
+    	model.addAttribute("top10Places", placeMapper.selectTop10Places());
     	
         Object loginUser = session.getAttribute("loginUser");
 

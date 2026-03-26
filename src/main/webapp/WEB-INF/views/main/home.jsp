@@ -1,5 +1,6 @@
 <%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
-<%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
+<%@ taglib prefix="c"  uri="http://java.sun.com/jsp/jstl/core" %>
+<%@ taglib prefix="fn" uri="http://java.sun.com/jsp/jstl/functions" %>
 
 <jsp:include page="../layout/header.jsp" />
 
@@ -372,9 +373,7 @@
     </div>
   </section>
 
-  <%-- ══════════════════════════════════════════════
-       피드 섹션
-  ══════════════════════════════════════════════ --%>
+  <%-- ══ 실시간 인기 피드 ══ --%>
   <section>
     <div class="feed-header reveal">
       <div>
@@ -390,98 +389,112 @@
     </div>
   </section>
 
-  <section>
-    <div class="feed-header reveal">
+  <%-- ══ 매거진 — 인스타 그리드 스타일 ══ --%>
+  <section class="mg-insta-section reveal">
+    <div class="feed-header">
       <div>
-        <h2 style="font-size: 28px; font-weight: 900; margin-bottom: 8px;">최근 살펴본 핫플 리스트 👀</h2>
-        <p style="font-size: 15px; font-weight: 600; color: var(--text-dark);">나의 동선에 맞춰 추천된 감성 숙소</p>
+        <h2 style="font-size: 28px; font-weight: 900; margin-bottom: 8px;">여행 인사이트 ✨</h2>
+        <p style="font-size: 15px; font-weight: 600; color: var(--text-dark);">감성 여행자를 위한 큐레이션 매거진</p>
       </div>
       <button class="btn-more" onclick="location.href='${pageContext.request.contextPath}/curation/magazine_list'">더보기 →</button>
     </div>
-    <div class="carousel-wrapper reveal">
-      <button class="nav-arrow prev">←</button>
-      <div class="horizontal-list">
-        <div class="list-item stay-card">
-          <div class="list-img"><img src="https://images.unsplash.com/photo-1520250497591-112f2f40a3f4?auto=format&fit=crop&w=600&q=80" alt="Gangneung"></div>
-          <div class="list-info">
-            <h4>스테이 폴라리스 (강릉)</h4>
-            <p class="desc">오션뷰 · 인피니티 풀</p>
-            <p class="stay-price">₩ 180,000 ~ <span>⭐ 4.9</span></p>
-          </div>
+    <div class="mg-insta-grid">
+      <a class="mg-ig-card mg-ig-card--big" href="${pageContext.request.contextPath}/curation/magazine_list">
+        <img src="https://images.unsplash.com/photo-1499793983690-e29da59ef1c2?auto=format&fit=crop&w=900&q=85" alt="제주">
+        <div class="mg-ig-overlay">
+          <span class="mg-ig-tag">EDITOR'S CHOICE</span>
+          <h3 class="mg-ig-title">제주, 온전한 쉼을<br>위한 비밀스러운 공간들</h3>
+          <p class="mg-ig-desc">Tripan이 선별한 제주의 숨겨진 스테이 & 로컬 맛집</p>
         </div>
-        <div class="list-item stay-card">
-          <div class="list-img"><img src="https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&w=600&q=80" alt="Namhae"></div>
-          <div class="list-info">
-            <h4>루나 부티크 펜션 (남해)</h4>
-            <p class="desc">프라이빗 바베큐 · 독채 풀빌라</p>
-            <p class="stay-price">₩ 240,000 ~ <span>⭐ 4.8</span></p>
+      </a>
+      <div class="mg-ig-col">
+        <a class="mg-ig-card" href="${pageContext.request.contextPath}/curation/magazine_list">
+          <img src="https://images.unsplash.com/photo-1555939594-58d7cb561ad1?auto=format&fit=crop&w=600&q=80" alt="부산">
+          <div class="mg-ig-overlay">
+            <span class="mg-ig-tag">TASTE</span>
+            <h3 class="mg-ig-title">부산 해운대, 미식가들의 성지</h3>
           </div>
-        </div>
-        <div class="list-item stay-card">
-          <div class="list-img"><img src="https://images.unsplash.com/photo-1582719508461-905c673771fd?auto=format&fit=crop&w=600&q=80" alt="Gapyeong"></div>
-          <div class="list-info">
-            <h4>포레스트 캐빈 (가평)</h4>
-            <p class="desc">감성 글램핑 · 불멍 화로대</p>
-            <p class="stay-price">₩ 150,000 ~ <span>⭐ 4.7</span></p>
+        </a>
+        <a class="mg-ig-card" href="${pageContext.request.contextPath}/curation/magazine_list">
+          <img src="https://images.unsplash.com/photo-1578637387939-43c525550085?auto=format&fit=crop&w=600&q=80" alt="경주">
+          <div class="mg-ig-overlay">
+            <span class="mg-ig-tag">JOURNEY</span>
+            <h3 class="mg-ig-title">경주, 한옥에서의 하룻밤</h3>
           </div>
-        </div>
-        <div class="list-item stay-card">
-          <div class="list-img"><img src="https://images.unsplash.com/photo-1542314831-068cd1dbfeeb?auto=format&fit=crop&w=600&q=80" alt="Seoul"></div>
-          <div class="list-info">
-            <h4>신라 파크뷰 호텔 (서울)</h4>
-            <p class="desc">시티뷰 · 라운지 억세스</p>
-            <p class="stay-price">₩ 420,000 ~ <span>⭐ 4.9</span></p>
-          </div>
-        </div>
+        </a>
       </div>
-      <button class="nav-arrow next">→</button>
+      <div class="mg-ig-col">
+        <a class="mg-ig-card" href="${pageContext.request.contextPath}/curation/magazine_list">
+          <img src="https://images.unsplash.com/photo-1534351590666-13e3e96b5017?auto=format&fit=crop&w=600&q=80" alt="요트">
+          <div class="mg-ig-overlay">
+            <span class="mg-ig-tag">LIFESTYLE</span>
+            <h3 class="mg-ig-title">광안대교 프라이빗 요트</h3>
+          </div>
+        </a>
+        <a class="mg-ig-card" href="${pageContext.request.contextPath}/curation/magazine_list">
+          <img src="https://images.unsplash.com/photo-1551641506-ee5bf4cb45f1?auto=format&fit=crop&w=600&q=80" alt="우도">
+          <div class="mg-ig-overlay">
+            <span class="mg-ig-tag">TRAVEL</span>
+            <h3 class="mg-ig-title">우도 자전거 여행</h3>
+          </div>
+        </a>
+      </div>
     </div>
   </section>
 
-  <section>
-    <div class="feed-header reveal">
-      <div>
-        <h2 style="font-size: 28px; font-weight: 900; margin-bottom: 8px;">Tripan TOP 10 🏆</h2>
-        <p style="font-size: 15px; font-weight: 600; color: var(--text-dark);">유저 평점이 증명하는 믿고 가는 스테이</p>
+  <%-- ══ TOP 10 ══ --%>
+  <section class="home-top10-section reveal">
+    <div class="top10-header">
+      <div class="top10-header-left">
+        <span class="top10-header-badge">LIVE RANKING</span>
+        <h2 class="top10-header-title">지금 뜨는 장소</h2>
+        <p class="top10-header-sub">실시간 조회수 · 좋아요 기준</p>
       </div>
-      <button class="btn-more" onclick="location.href='${pageContext.request.contextPath}/curation/place_list'">랭킹 전체보기 →</button>
+      <button class="btn-more" onclick="location.href='${pageContext.request.contextPath}/curation/place_list?sort=views'">전체보기 →</button>
     </div>
-    <div class="carousel-wrapper reveal">
-      <button class="nav-arrow prev">←</button>
-      <div class="horizontal-list">
-        <div class="list-item stay-card">
-          <div class="list-img">
-            <div class="floating-badge" style="background: var(--text-black); color: var(--point-yellow);">👑 TOP 1</div>
-            <img src="https://images.unsplash.com/photo-1571003123894-1f0594d2b5d9?auto=format&fit=crop&w=600&q=80" alt="Top 1">
+    <c:choose>
+      <c:when test="${not empty top10Places}">
+        <div class="carousel-wrapper">
+          <button class="nav-arrow prev">←</button>
+          <div class="horizontal-list top10-hlist">
+            <c:forEach var="p" items="${top10Places}" varStatus="vs">
+              <a class="top10-card"
+                 href="${pageContext.request.contextPath}/curation/detail?id=${p.placeId}">
+                <div class="top10-card-img">
+                  <img src="${p.imageUrl}" alt="${fn:escapeXml(p.placeName)}"
+                       onerror="this.src='${pageContext.request.contextPath}/dist/images/logo.png'">
+                  <div class="top10-card-stats-overlay">
+                    <span>&#128065; ${p.viewCount != null ? p.viewCount : 0}</span>
+                    <span>&#10084; ${p.likeCount != null ? p.likeCount : 0}</span>
+                  </div>
+                </div>
+                <div class="top10-card-body">
+                  <div class="top10-card-name">${fn:escapeXml(p.placeName)}</div>
+                  <div class="top10-card-cat">
+                    <c:choose>
+                      <c:when test="${p.category == 'TOUR'}">관광지</c:when>
+                      <c:when test="${p.category == 'RESTAURANT'}">음식점</c:when>
+                      <c:when test="${p.category == 'ACCOMMODATION'}">숙박</c:when>
+                      <c:when test="${p.category == 'CULTURE'}">문화시설</c:when>
+                      <c:when test="${p.category == 'LEISURE'}">레포츠</c:when>
+                      <c:when test="${p.category == 'SHOPPING'}">쇼핑</c:when>
+                      <c:when test="${p.category == 'FESTIVAL'}">축제</c:when>
+                      <c:otherwise>${p.category}</c:otherwise>
+                    </c:choose>
+                  </div>
+                </div>
+              </a>
+            </c:forEach>
           </div>
-          <div class="list-info">
-            <h4>아만 스위트 리저브 (제주)</h4>
-            <p class="desc">⭐ 4.9 · 리뷰 1,204개</p>
-          </div>
+          <button class="nav-arrow next">→</button>
         </div>
-        <div class="list-item stay-card">
-          <div class="list-img">
-            <div class="floating-badge" style="color: var(--text-black); background: var(--bg-white);">TOP 2</div>
-            <img src="https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?auto=format&fit=crop&w=600&q=80" alt="Top 2">
-          </div>
-          <div class="list-info">
-            <h4>그랜드 앰배서더 풀빌라</h4>
-            <p class="desc">⭐ 4.8 · 리뷰 890개</p>
-          </div>
+      </c:when>
+      <c:otherwise>
+        <div style="padding:60px;text-align:center;color:#8E8E93;font-size:15px;font-weight:600;">
+          아직 랭킹 데이터가 없습니다
         </div>
-        <div class="list-item stay-card">
-          <div class="list-img">
-            <div class="floating-badge" style="color: var(--text-black); background: var(--bg-white);">TOP 3</div>
-            <img src="https://images.unsplash.com/photo-1445019980597-93fa8acb246c?auto=format&fit=crop&w=600&q=80" alt="Top 3">
-          </div>
-          <div class="list-info">
-            <h4>신라 더 파크 호텔 (서울)</h4>
-            <p class="desc">⭐ 4.8 · 리뷰 750개</p>
-          </div>
-        </div>
-      </div>
-      <button class="nav-arrow next">→</button>
-    </div>
+      </c:otherwise>
+    </c:choose>
   </section>
 
 </main>
@@ -489,50 +502,8 @@
 <jsp:include page="/WEB-INF/views/main/chat.jsp" />
 
 <script>
-/* ━━━ 실시간 인기피드 API 로딩 ━━━ */
-(function(){
-  var CP = '${pageContext.request.contextPath}';
-  var container = document.getElementById('homeFeedList');
-  if (!container) return;
-
-  function escHtml(s) {
-    return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
-  }
-
-  function makeItem(t) {
-    var thumb   = t.thumbnailUrl || '';
-    var cities  = t.citiesStr || '';
-    var name    = t.tripName || '여행';
-    var scrap   = t.scrapCount || 0;
-    var likes   = t.likeCount || 0;
-    var leader  = t.leaderNickname || '트리패너';
-    var profImg = t.leaderProfileImage || '';
-    var tags    = cities ? cities.split(',').slice(0,2).map(function(c){ return '#'+c.trim(); }).filter(Boolean).join(' ') : '#국내여행';
-    var desc    = (t.description && t.description.trim()) ? t.description.trim() : '🗂 ' + scrap + '회 담겨진 여행';
-    var imgHtml = thumb ? '<img src="'+escHtml(thumb.startsWith('http')?thumb:CP+thumb)+'" alt="'+escHtml(name)+'" loading="lazy">' : '';
-    var avHtml  = profImg ? '<img src="'+escHtml(profImg.startsWith('http')?profImg:CP+'/'+profImg)+'" alt="">' : '<img src="'+CP+'/dist/images/trip_icon.png" alt="">';
-
-    return '<div class="list-item" onclick="location.href=\''+CP+'/feed/feed_detail?tripId='+t.tripId+'\'" style="cursor:pointer">'
-      + '<div class="list-img"><div class="floating-badge">❤️ '+likes+' &nbsp; 🗂 '+scrap+'</div>'+imgHtml+'</div>'
-      + '<div class="list-info"><span class="tag">'+escHtml(tags)+'</span><h4>'+escHtml(name)+'</h4>'
-      + '<p class="desc">'+escHtml(desc)+'</p>'
-      + '<div class="author-info"><div class="author-pic">'+avHtml+'</div>@'+escHtml(leader)+'</div></div></div>';
-  }
-
-  fetch(CP + '/feed/public-trips?page=0&size=8')
-    .then(function(r){
-      if (!r.ok) { console.warn('[HomeFeed] API 오류:', r.status); return []; }
-      return r.json();
-    })
-    .then(function(list) {
-      if (!list || !list.length) {
-        container.innerHTML = '<div style="padding:40px;color:#999;font-size:14px;">공개된 여행이 아직 없어요.</div>';
-        return;
-      }
-      container.innerHTML = list.slice(0, 8).map(makeItem).join('');
-    })
-    .catch(function(e){ console.error('[HomeFeed] fetch 실패:', e); container.innerHTML = ''; });
-})();
+  /* home.js에서 사용할 전역 변수 */
+  var HOME_CP = '${pageContext.request.contextPath}';
 </script>
 <script src="${pageContext.request.contextPath}/dist/js/home.js"></script>
 <jsp:include page="../layout/footer.jsp" />

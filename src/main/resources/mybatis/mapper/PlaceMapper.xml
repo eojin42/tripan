@@ -209,6 +209,55 @@
           AND category NOT IN ('ACCOMMODATION')
         FETCH FIRST 500 ROWS ONLY
     </select>
+
+    <!-- ════════════════════════════════
+         조회수 / 좋아요
+    ════════════════════════════════ -->
+
+    <!-- 조회수 +1 -->
+    <update id="incrementViewCount">
+        UPDATE place
+        SET view_count = NVL(view_count, 0) + 1
+        WHERE place_id = #{placeId}
+    </update>
+
+    <!-- 좋아요 추가 -->
+    <insert id="insertLike">
+        INSERT INTO likes (like_id, member_id, target_id, target_type, created_at)
+        VALUES (SEQ_LIKES_ID.NEXTVAL, #{memberId}, #{placeId}, 'PLACE', SYSDATE)
+    </insert>
+
+    <!-- 좋아요 취소 -->
+    <delete id="deleteLike">
+        DELETE FROM likes
+        WHERE member_id   = #{memberId}
+          AND target_id   = #{placeId}
+          AND target_type = 'PLACE'
+    </delete>
+
+    <!-- 좋아요 여부 (0 또는 1) -->
+    <select id="countLike" resultType="int">
+        SELECT COUNT(*) FROM likes
+        WHERE member_id   = #{memberId}
+          AND target_id   = #{placeId}
+          AND target_type = 'PLACE'
+    </select>
+
+    <!-- 좋아요 총 개수 -->
+    <select id="countLikeTotal" resultType="long">
+        SELECT COUNT(*) FROM likes
+        WHERE target_id   = #{placeId}
+          AND target_type = 'PLACE'
+    </select>
+
+    <!-- 조회수 + 좋아요 수 한번에 조회 -->
+    <select id="selectViewAndLikeCount" resultType="java.util.HashMap">
+        SELECT p.view_count AS "viewCount",
+               (SELECT COUNT(*) FROM likes l
+                WHERE l.target_id = p.place_id AND l.target_type = 'PLACE') AS "likeCount"
+        FROM place p
+        WHERE p.place_id = #{placeId}
+    </select>
     
     
    <select id="findRestaurantsWithoutDetails" resultType="java.lang.Long">

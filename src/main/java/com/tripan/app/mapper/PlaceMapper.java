@@ -64,6 +64,26 @@ public interface PlaceMapper {
 
     /** 이미지 없는 장소 placeId 목록 */
     List<Long> findPlacesWithNullImage();
+
+    // ── 조회수 / 좋아요 ─────────────────────────────────────────────
+
+    /** 조회수 +1 */
+    int incrementViewCount(@Param("placeId") Long placeId);
+
+    /** 좋아요 추가 */
+    int insertLike(@Param("memberId") Long memberId, @Param("placeId") Long placeId);
+
+    /** 좋아요 취소 */
+    int deleteLike(@Param("memberId") Long memberId, @Param("placeId") Long placeId);
+
+    /** 좋아요 여부 (0 or 1) */
+    int countLike(@Param("memberId") Long memberId, @Param("placeId") Long placeId);
+
+    /** 좋아요 총 개수 */
+    long countLikeTotal(@Param("placeId") Long placeId);
+
+    /** 조회수 + 좋아요 수 조회 */
+    java.util.Map<String, Object> selectViewAndLikeCount(@Param("placeId") Long placeId);
     
     List<Long> findRestaurantsWithoutDetails();
 
