@@ -39,10 +39,10 @@
 	        COUNT(CASE WHEN m1.role = 'ROLE_USER' THEN 1 END) AS userCount,
 	        COUNT(CASE WHEN m1.role = 'ROLE_PARTNER' THEN 1 END) AS partnerCount,
 	        COUNT(CASE WHEN m1.role = 'ROLE_ADMIN' THEN 1 END) AS adminCount,
-	        COUNT(CASE WHEN m1.status = 1 THEN 1 END) AS activeCount,
-	        COUNT(CASE WHEN m1.status = 2 THEN 1 END) AS banCount,
-	        COUNT(CASE WHEN m1.status = 3 THEN 1 END) AS dormantCount,
-	        COUNT(CASE WHEN m1.status = 4 THEN 1 END) AS withdrawCount,
+	        COUNT(CASE WHEN ms_cur.statusCode = 1 THEN 1 END) AS activeCount,
+	        COUNT(CASE WHEN ms_cur.statusCode = 2 THEN 1 END) AS banCount,
+	        COUNT(CASE WHEN ms_cur.statusCode = 3 THEN 1 END) AS dormantCount,
+	        COUNT(CASE WHEN ms_cur.statusCode = 4 THEN 1 END) AS withdrawCount,
 	        
 	        COUNT(CASE WHEN TRUNC(m1.register_date) = TRUNC(SYSDATE) THEN 1 END) AS todayNewCount,
 	        COUNT(CASE WHEN TRUNC(m1.register_date) = TRUNC(SYSDATE - 1) THEN 1 END) AS yesterdayNewCount

@@ -1,4 +1,5 @@
 <%@ page contentType="text/html; charset=UTF-8"%>
+<%@ taglib prefix="sec" uri="http://www.springframework.org/security/tags" %>
 <header class="top-header">
   
   <div class="header-left" style="display: flex; align-items: center; gap: 12px;">
@@ -74,7 +75,10 @@
         <a href="#">👤 내 프로필</a>
         <a href="#">⚙️ 환경설정</a>
         <div class="pd-sep"></div>
-        <a href="${pageContext.request.contextPath}/logout" class="pd-danger">🚪 로그아웃</a>
+		<a href="#" onclick="document.getElementById('adminLogoutForm').submit(); return false;" class="pd-danger">🚪 로그아웃</a>
+		<form id="adminLogoutForm" action="${pageContext.request.contextPath}/member/logout" method="post" style="display:none;">
+		    <sec:csrfInput/>
+		</form>
       </div>
     </div>
   </div>

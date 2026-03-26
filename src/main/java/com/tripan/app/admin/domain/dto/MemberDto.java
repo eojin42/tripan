@@ -59,6 +59,11 @@ public class MemberDto {
     private String regDate;
     private Long registerId;
     
+    private int totalReservationCount;
+    private Long totalPaymentAmount;
+    private Long pointBalance;
+    private int couponCount;
+    
     private List<ReservationResponseDto> bookingList;
 	private List<Long> targetIds;
 }

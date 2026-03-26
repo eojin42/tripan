@@ -38,39 +38,71 @@
     <!-- 전체 예약 목록 (회원 상세용) -->
     <select id="selectAllBookings" resultType="com.tripan.app.admin.domain.dto.ReservationResponseDto">
         SELECT
-            r.RESERVATION_ID AS id,
-            '#' || r.RESERVATION_ID AS resId,
-            m.USERNAME AS username,
-            rm.ROOM_NAME AS roomName,
-            TO_CHAR(r.CHECK_IN_DATE, 'YYYY-MM-DD') || ' ~ ' ||
-            TO_CHAR(r.CHECK_OUT_DATE, 'YYYY-MM-DD') AS duration,
-            '₩ ' || TO_CHAR(r.AMOUNT, 'FM999,999,999') AS totalPrice,
-            r.STATUS AS statusText,
-            CASE WHEN r.STATUS = 'SUCCESS' THEN 'badge-done'
+            r.RESERVATION_ID                                                AS id,
+            '#' || r.RESERVATION_ID                                         AS resId,
+            m.USERNAME                                                      AS username,
+            pl.PLACE_NAME                                                   AS placeName,
+            rm.ROOM_NAME                                                    AS roomName,
+            TO_CHAR(r.CHECK_IN_DATE,  'YYYY-MM-DD')                        AS checkInDate,
+            TO_CHAR(r.CHECK_OUT_DATE, 'YYYY-MM-DD')                        AS checkOutDate,
+            TO_CHAR(r.CHECK_IN_DATE,  'YYYY-MM-DD') || ' ~ ' ||
+            TO_CHAR(r.CHECK_OUT_DATE, 'YYYY-MM-DD')                        AS duration,
+            NVL(o.TOTAL_AMOUNT, r.AMOUNT)                                  AS totalAmount,
+            NVL(o.COUPON_DISCOUNT, 0)                                      AS couponDiscount,
+            NVL(o.POINT_DISCOUNT, 0)                                       AS pointDiscount,
+            NVL(o.REAL_TOTAL_AMOUNT, r.AMOUNT)                             AS realTotalAmount,
+            '₩ ' || TO_CHAR(NVL(o.REAL_TOTAL_AMOUNT, r.AMOUNT), 'FM999,999,999') AS totalPrice,
+            r.STATUS                                                        AS statusText,
+            CASE WHEN r.STATUS = 'SUCCESS'  THEN 'badge-done'
                  WHEN r.STATUS = 'CANCELED' THEN 'badge-danger'
-                 ELSE 'badge-wait' END AS statusClass
+                 ELSE 'badge-wait' END                                      AS statusClass
         FROM RESERVATION r
-            JOIN MEMBER1 m ON m.MEMBER_ID = r.MEMBER_ID
-            LEFT JOIN ROOM rm ON rm.ROOM_ID = r.ROOM_ID
+            JOIN  MEMBER1 m  ON m.MEMBER_ID  = r.MEMBER_ID
+            LEFT JOIN ROOM rm    ON rm.ROOM_ID   = r.ROOM_ID
+            LEFT JOIN PLACE pl   ON pl.PLACE_ID  = rm.PLACE_ID
+            LEFT JOIN (
+                SELECT RESERVATION_ID, ORDER_ID
+                FROM ORDER_DETAIL
+                WHERE DETAIL_ID IN (
+                    SELECT MIN(DETAIL_ID) FROM ORDER_DETAIL GROUP BY RESERVATION_ID
+                )
+            ) od ON od.RESERVATION_ID = r.RESERVATION_ID
+            LEFT JOIN ORDERS o ON o.ORDER_ID = od.ORDER_ID
         ORDER BY r.RESERVATION_ID DESC
     </select>
 
-    <!-- 회원별 예약 목록 -->
+    <!-- 회원별 예약 목록 (memberDetail.jsp 용) -->
     <select id="selectBookingsByMemberId" parameterType="Long"
             resultType="com.tripan.app.admin.domain.dto.ReservationResponseDto">
         SELECT
-            r.RESERVATION_ID AS id,
-            '#' || r.RESERVATION_ID AS resId,
-            rm.ROOM_NAME AS roomName,
-            TO_CHAR(r.CHECK_IN_DATE, 'YYYY-MM-DD') || ' ~ ' ||
-            TO_CHAR(r.CHECK_OUT_DATE, 'YYYY-MM-DD') AS duration,
-            '₩ ' || TO_CHAR(r.AMOUNT, 'FM999,999,999') AS totalPrice,
-            r.STATUS AS statusText,
-            CASE WHEN r.STATUS = 'SUCCESS' THEN 'badge-done'
+            r.RESERVATION_ID                                                AS id,
+            '#' || r.RESERVATION_ID                                         AS resId,
+            pl.PLACE_NAME                                                   AS placeName,
+            rm.ROOM_NAME                                                    AS roomName,
+            TO_CHAR(r.CHECK_IN_DATE,  'YYYY-MM-DD')                        AS checkInDate,
+            TO_CHAR(r.CHECK_OUT_DATE, 'YYYY-MM-DD')                        AS checkOutDate,
+            TO_CHAR(r.CHECK_IN_DATE,  'YYYY-MM-DD') || ' ~ ' ||
+            TO_CHAR(r.CHECK_OUT_DATE, 'YYYY-MM-DD')                        AS duration,
+            NVL(o.TOTAL_AMOUNT, r.AMOUNT)                                  AS totalAmount,
+            NVL(o.COUPON_DISCOUNT, 0)                                      AS couponDiscount,
+            NVL(o.POINT_DISCOUNT, 0)                                       AS pointDiscount,
+            NVL(o.REAL_TOTAL_AMOUNT, r.AMOUNT)                             AS realTotalAmount,
+            '₩ ' || TO_CHAR(NVL(o.REAL_TOTAL_AMOUNT, r.AMOUNT), 'FM999,999,999') AS totalPrice,
+            r.STATUS                                                        AS statusText,
+            CASE WHEN r.STATUS = 'SUCCESS'  THEN 'badge-done'
                  WHEN r.STATUS = 'CANCELED' THEN 'badge-danger'
-                 ELSE 'badge-wait' END AS statusClass
+                 ELSE 'badge-wait' END                                      AS statusClass
         FROM RESERVATION r
-            LEFT JOIN ROOM rm ON rm.ROOM_ID = r.ROOM_ID
+            LEFT JOIN ROOM rm    ON rm.ROOM_ID   = r.ROOM_ID
+            LEFT JOIN PLACE pl   ON pl.PLACE_ID  = rm.PLACE_ID
+            LEFT JOIN (
+                SELECT RESERVATION_ID, ORDER_ID
+                FROM ORDER_DETAIL
+                WHERE DETAIL_ID IN (
+                    SELECT MIN(DETAIL_ID) FROM ORDER_DETAIL GROUP BY RESERVATION_ID
+                )
+            ) od ON od.RESERVATION_ID = r.RESERVATION_ID
+            LEFT JOIN ORDERS o ON o.ORDER_ID = od.ORDER_ID
         WHERE r.MEMBER_ID = #{memberId}
         ORDER BY r.RESERVATION_ID DESC
     </select>
@@ -137,7 +169,7 @@
         <include refid="searchConditions"/>
     </select>
 
-    <!-- KPI 집계 - 전체 기준 (날짜 필터 없을 때 전체) -->
+    <!-- KPI 집계 -->
     <select id="selectReservationKpi"
             parameterType="com.tripan.app.admin.domain.dto.ReservationSearchDto"
             resultType="com.tripan.app.admin.domain.dto.ReservationDto">
@@ -224,12 +256,11 @@
           AND cu.STATUS != 'canceled'
     </select>
 
-    <!-- 예약 상태 변경 (기존 - Long id) -->
+    <!-- 예약 상태 변경 -->
     <update id="updateBookingStatus">
         UPDATE RESERVATION SET STATUS = #{status} WHERE RESERVATION_ID = #{id}
     </update>
 
-    <!-- 예약 상태 변경 (신규 - Long reservationId) -->
     <update id="updateReservationStatus">
         UPDATE RESERVATION SET STATUS = #{status} WHERE RESERVATION_ID = #{reservationId}
     </update>
