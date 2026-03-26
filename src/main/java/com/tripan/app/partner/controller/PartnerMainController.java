@@ -19,9 +19,11 @@ import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.tripan.app.domain.dto.AccommodationDetailDto;
+import com.tripan.app.partner.domain.dto.PartnerCouponDto;
 import com.tripan.app.partner.domain.dto.PartnerInfoDto;
 import com.tripan.app.partner.domain.dto.PartnerReviewDto;
 import com.tripan.app.partner.domain.dto.PartnerRoomDto;
+import com.tripan.app.partner.service.PartnerCouponService;
 import com.tripan.app.partner.service.PartnerInfoService;
 import com.tripan.app.partner.service.PartnerReviewService;
 import com.tripan.app.partner.service.PartnerRoomService;
@@ -37,6 +39,7 @@ public class PartnerMainController {
     private final PartnerInfoService partnerInfoService;
     private final PartnerRoomService partnerRoomService;
     private final PartnerReviewService partnerReviewService;
+    private final PartnerCouponService partnerCouponService;
 
     @GetMapping("/main")
     public String main(
@@ -118,6 +121,20 @@ public class PartnerMainController {
             List<PartnerReviewDto> reviewList = partnerReviewService.getReviewList(
                     placeId, startDate, endDate, searchRoomId, rating, keyword);
             model.addAttribute("reviewList", reviewList);
+        }
+        
+        if ("coupon".equals(tab)) {
+            searchParams.put("partnerId", currentPartnerId);
+            
+            Map<String, Object> kpiStats = partnerCouponService.getCouponKpiStats(currentPartnerId);
+            model.addAttribute("kpiStats", kpiStats);
+            
+            List<PartnerCouponDto> couponList = partnerCouponService.getCouponList(searchParams);
+            model.addAttribute("couponList", couponList);
+            
+            if (placeId != null && model.getAttribute("accommodation") != null) {
+                model.addAttribute("partnerPlaceList", List.of(model.getAttribute("accommodation")));
+            }
         }
         
         return "partner/main";
@@ -245,6 +262,48 @@ public class PartnerMainController {
         try {
             Long reviewId = payload.get("reviewId"); 
             partnerReviewService.deleteReview(reviewId);
+            return ResponseEntity.ok(Map.of("message", "success"));
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.badRequest().body(Map.of("message", "fail"));
+        }
+    }
+    
+    @ResponseBody
+    @PostMapping("/api/coupon/save")
+    public ResponseEntity<?> saveCoupon(
+            @RequestBody PartnerCouponDto dto, 
+            @RequestParam("placeId") String placeId, 
+            jakarta.servlet.http.HttpSession session) {
+        try {
+            Long currentPartnerId = (Long) session.getAttribute("currentPartnerId");
+            if (currentPartnerId == null) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("message", "권한 없음"));
+            }
+            
+            partnerCouponService.createPartnerCoupon(dto, currentPartnerId, placeId);
+            
+            return ResponseEntity.ok(Map.of("message", "success"));
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.badRequest().body(Map.of("message", "fail"));
+        }
+    }
+    
+    @ResponseBody
+    @PostMapping("/api/coupon/stop")
+    public ResponseEntity<?> stopCoupon(
+            @RequestBody Map<String, Long> payload,
+            jakarta.servlet.http.HttpSession session) {
+        try {
+            Long currentPartnerId = (Long) session.getAttribute("currentPartnerId");
+            if (currentPartnerId == null) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("message", "권한 없음"));
+            }
+            
+            Long couponId = payload.get("couponId");
+            partnerCouponService.stopCoupon(couponId);
+            
             return ResponseEntity.ok(Map.of("message", "success"));
         } catch (Exception e) {
             e.printStackTrace();
