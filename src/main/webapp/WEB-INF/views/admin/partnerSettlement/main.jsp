@@ -91,6 +91,7 @@
         <div class="card kpi-card fade-up fade-up-3">
           <div class="kpi-label">정산 대기 금액</div>
           <div class="kpi-value" style="color:var(--warning)" id="kpiPending">&#8361;0</div>
+          <!-- wait + partial 모두 포함 -->
           <div class="kpi-sub"><span class="badge badge-wait" id="kpiPendingCount">0개 파트너</span></div>
         </div>
         <div class="card kpi-card fade-up fade-up-4">
@@ -105,11 +106,11 @@
         <div class="filter-row">
           <div class="filter-label">정산 검색</div>
           <select class="filter-select" id="filterMonth" style="width:130px;">
-            <option value="">전체 월</option>
-            <option value="2026-03" selected>2026년 3월</option>
-            <option value="2026-02">2026년 2월</option>
-            <option value="2026-01">2026년 1월</option>
-          </select>
+		    <option value="">전체 월</option>
+		    <c:forEach var="m" items="${months}">
+		        <option value="${m}">${m}</option>
+		    </c:forEach>
+		</select>
           <select class="filter-select" id="filterStatus" style="width:130px;">
             <option value="">전체 상태</option>
             <option value="PENDING">정산 대기</option>
@@ -159,7 +160,7 @@
                 <th style="width:40px;"><input type="checkbox" onclick="stlToggleAll(this)" title="전체 선택"></th>
                 <th>파트너 / ID</th>
                 <th>정산월</th>
-                <th>숙소 수</th>
+                <th>숙소 수 (승인/전체)</th>
                 <th>총 결제액 (GMV)</th>
                 <th>수수료 (율)</th>
                 <th>쿠폰 파트너 부담</th>
@@ -169,11 +170,10 @@
               </tr>
             </thead>
             <tbody id="settlementTbody">
-              <tr class="no-result"><td colspan="9">검색 조건을 설정한 후 <strong>[검색]</strong> 버튼을 눌러주세요.</td></tr>
+              <tr class="no-result"><td colspan="10">검색 조건을 설정한 후 <strong>[검색]</strong> 버튼을 눌러주세요.</td></tr>
             </tbody>
           </table>
         </div>
-        <!-- 페이징 -->
         <div id="pagination" style="display:flex;justify-content:center;gap:6px;padding:16px 0;"></div>
       </div>
 

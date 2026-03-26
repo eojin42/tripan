@@ -9,7 +9,8 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
- 
+
+import com.tripan.app.admin.domain.dto.SettlementDetailSummaryDto;
 import com.tripan.app.admin.domain.dto.SettlementFilterDto;
 import com.tripan.app.admin.domain.dto.SettlementManageDto;
 import com.tripan.app.admin.service.PartnerSettlementService;
@@ -23,19 +24,18 @@ public class PartnerSettlementController {
  
     private final PartnerSettlementService settlementService;
  
-    // ─────────────────────────────────────────────
     //  메인 목록 페이지
     //  GET /admin/settlement/main
-    // ─────────────────────────────────────────────
     @GetMapping("/main")
-    public String main() {
+    public String main(Model model) {
+    	
+    	List<String> months = settlementService.getAvailableMonths();
+        model.addAttribute("months", months);
         return "admin/partnerSettlement/main";
     }
  
-    // ─────────────────────────────────────────────
     //  상세 페이지
     //  GET /admin/settlement/detail/{memberId}?month=YYYY-MM
-    // ─────────────────────────────────────────────
     @GetMapping("/detail/{memberId}")
     public String detail(
             @PathVariable("memberId") Long memberId,
@@ -47,6 +47,11 @@ public class PartnerSettlementController {
         filter.setSettlementMonth(month);
  
         List<SettlementManageDto> details = settlementService.getDetailList(filter);
+ 
+        SettlementDetailSummaryDto summary = new SettlementDetailSummaryDto();
+        summary.setMemberId(memberId);
+        summary.setSettlementMonth(month);
+        summary.setTotalPlaceCount(details.size());
  
         BigDecimal totalGmv            = BigDecimal.ZERO;
         BigDecimal totalCommission     = BigDecimal.ZERO;
@@ -61,23 +66,24 @@ public class PartnerSettlementController {
             if (d.getTotalCouponPlatform() != null) totalCouponPlatform = totalCouponPlatform.add(d.getTotalCouponPlatform());
             if (d.getTotalCouponPartner()  != null) totalCouponPartner  = totalCouponPartner.add(d.getTotalCouponPartner());
             if (d.getTotalNetPayout()      != null) totalNetPayout      = totalNetPayout.add(d.getTotalNetPayout());
-            if ("DONE".equals(d.getSettlementStatus())) approvedPlaceCount++;
+            if ("done".equals(d.getSettlementStatus())) approvedPlaceCount++;
         }
  
-        model.addAttribute("memberId",           memberId);
-        model.addAttribute("settlementMonth",     month);
-        model.addAttribute("details",             details);
-        model.addAttribute("totalGmv",            totalGmv);
-        model.addAttribute("totalCommission",     totalCommission);
-        model.addAttribute("totalCouponPlatform", totalCouponPlatform);
-        model.addAttribute("totalCouponPartner",  totalCouponPartner);
-        model.addAttribute("totalNetPayout",      totalNetPayout);
-        model.addAttribute("approvedPlaceCount",  approvedPlaceCount);
+        summary.setTotalGmv(totalGmv);
+        summary.setTotalCommission(totalCommission);
+        summary.setTotalCouponPlatform(totalCouponPlatform);
+        summary.setTotalCouponPartner(totalCouponPartner);
+        summary.setTotalNetPayout(totalNetPayout);
+        summary.setApprovedPlaceCount(approvedPlaceCount);
+        summary.setAllApproved(!details.isEmpty() && approvedPlaceCount == details.size());
  
         if (!details.isEmpty()) {
-            model.addAttribute("partnerNickname", details.get(0).getNickname());
-            model.addAttribute("partnerLoginId",  details.get(0).getLoginId());
+            summary.setPartnerNickname(details.get(0).getNickname());
+            summary.setPartnerLoginId(details.get(0).getLoginId());
         }
+ 
+        model.addAttribute("summary", summary);
+        model.addAttribute("details", details);
  
         return "admin/partnerSettlement/detail";
     }

@@ -15,4 +15,5 @@ public interface PartnerSettlementService {
 	public void approvePlace(Long placeId, String settlementMonth, Long adminId);
 	public void approveAllByPartner(Long memberId, String settlementMonth, Long adminId); 
 	public void aggregateSettlement();
+	public List<String> getAvailableMonths();
 }

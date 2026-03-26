@@ -22,6 +22,7 @@ public class SettlementManageDto {
     private String loginId;
     private String nickname;
     private String settlementMonth;     // YYYY-MM
+    private String partnerId;
 
     /* ── 목록(파트너 단위) 전용 ──────────────── */
     private int    placeCount;          // 관리 숙소 수

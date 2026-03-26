@@ -89,11 +89,20 @@
         <div style="display:flex;gap:8px;align-items:center;">
           <select class="filter-select" id="filterYear"><option value="2026">2026년</option><option value="2025">2025년</option></select>
           <select class="filter-select" id="filterMonth">
-            <option value="">연간 전체</option>
-            <option value="03" selected>3월</option>
-            <option value="02">2월</option>
-            <option value="01">1월</option>
-          </select>
+			  <option value="">연간 전체</option>
+			  <option value="01">1월</option>
+			  <option value="02">2월</option>
+			  <option value="03" selected>3월</option>
+			  <option value="04">4월</option>
+			  <option value="05">5월</option>
+			  <option value="06">6월</option>
+			  <option value="07">7월</option>
+			  <option value="08">8월</option>
+			  <option value="09">9월</option>
+			  <option value="10">10월</option>
+			  <option value="11">11월</option>
+			  <option value="12">12월</option>
+			</select>
         </div>
       </div>
 
@@ -101,7 +110,7 @@
       <div class="alert-banner fade-up">
         <div class="alert-icon">⚠️</div>
         <div class="alert-body">
-          <strong>미정산 파트너 <span id="pendingCount">0</span>개 &nbsp;·&nbsp; 대기 금액 <span id="pendingAmt">₩82,000,000</span></strong>
+          <strong>미정산 파트너 <span id="pendingCount">0</span>개 &nbsp;·&nbsp; 대기 금액 <span id="pendingAmt">₩0</span></strong>
           <p>정산 승인이 완료되지 않은 파트너가 있습니다.</p>
         </div>
         <a href="${pageContext.request.contextPath}/admin/settlement/partner/main" class="btn-link">파트너 정산 관리 →</a>

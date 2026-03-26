@@ -25,7 +25,7 @@ public class PartnerSettlementRestController {
     private final PartnerSettlementService settlementService;
 
     // ─────────────────────────────────────────────
-    //  목록 조회 (main.jsp → settlement.js)
+    //  목록 조회
     //  GET /admin/settlement/partner/list
     // ─────────────────────────────────────────────
     @GetMapping(value = "/list", produces = MediaType.APPLICATION_JSON_VALUE)
@@ -48,14 +48,13 @@ public class PartnerSettlementRestController {
         List<SettlementManageDto> list  = settlementService.getSummaryList(filter);
         int                       total = settlementService.getSummaryCount(filter);
 
-        return ResponseEntity.ok(
-            java.util.Map.of("list", list, "total", total)
-        );
+        return ResponseEntity.ok(java.util.Map.of("list", list, "total", total));
     }
 
     // ─────────────────────────────────────────────
-    //  숙소(room) 단건 정산 승인
+    //  개별 파트너(숙소) 1개 승인
     //  POST /admin/settlement/partner/approve/place
+    //  파라미터: partnerId (partner_id), settlementMonth
     // ─────────────────────────────────────────────
     @PostMapping("/approve/place")
     public ResponseEntity<String> approvePlace(
@@ -66,61 +65,38 @@ public class PartnerSettlementRestController {
         try {
             settlementService.approvePlace(partnerId, settlementMonth, adminId);
             return ResponseEntity.ok("ok");
-        } catch (IllegalStateException e) {
+        } catch (Exception e) {
             return ResponseEntity.badRequest().body(e.getMessage());
         }
     }
 
     // ─────────────────────────────────────────────
-    //  파트너 전체 정산 일괄 승인
+    //  멤버 소속 파트너 전체 일괄 승인
     //  POST /admin/settlement/partner/approve/all
+    //  파라미터: memberId (member_id), settlementMonth
+    //  → 소속 파트너 전체 순회하며 각각 upsertSettlement
+    //  → partial 상태에서 미승인 파트너만 추가 승인도 가능
     // ─────────────────────────────────────────────
     @PostMapping("/approve/all")
     public ResponseEntity<String> approveAll(
-            @RequestParam("partnerId")       Long   partnerId,
+            @RequestParam("memberId")        Long   memberId,
             @RequestParam("settlementMonth") String settlementMonth,
             @RequestParam(value = "adminId", defaultValue = "0") Long adminId
     ) {
         try {
-            settlementService.approveAllByPartner(partnerId, settlementMonth, adminId);
+            settlementService.approveAllByPartner(memberId, settlementMonth, adminId);
             return ResponseEntity.ok("ok");
-        } catch (IllegalStateException e) {
+        } catch (Exception e) {
             return ResponseEntity.badRequest().body(e.getMessage());
         }
     }
 
     // ─────────────────────────────────────────────
-    //  CSV — 파트너 전체 숙소 예약 건별
-    //  GET /admin/settlement/partner/csv/partner
-    // ─────────────────────────────────────────────
-    @GetMapping("/csv/partner")
-    public ResponseEntity<List<SettlementOrderDto>> csvByPartner(
-            @RequestParam("memberId") Long   memberId,
-            @RequestParam("month")    String month
-    ) {
-        SettlementFilterDto filter = new SettlementFilterDto();
-        filter.setMemberId(memberId);
-        filter.setSettlementMonth(month);
-        return ResponseEntity.ok(settlementService.getExcelRowsByPartner(filter));
-    }
-
-    // ─────────────────────────────────────────────
-    //  CSV — 숙소(room) 단위 예약 건별
-    //  GET /admin/settlement/partner/csv/place
-    // ─────────────────────────────────────────────
-    @GetMapping("/csv/place")
-    public ResponseEntity<List<SettlementOrderDto>> csvByPlace(
-            @RequestParam("placeId") Long   placeId,
-            @RequestParam("month")   String month
-    ) {
-        SettlementFilterDto filter = new SettlementFilterDto();
-        filter.setPlaceId(placeId);
-        filter.setSettlementMonth(month);
-        return ResponseEntity.ok(settlementService.getExcelRowsByPlace(filter));
-    }
-    // ─────────────────────────────────────────────
     //  KPI 조회 (main.jsp 상단 카드 4개)
-    //  GET /admin/settlement/partner/kpi?settlementMonth=YYYY-MM
+    //  GET /admin/settlement/partner/kpi
+    //  - done    → doneAmt / doneCount
+    //  - partial → pendingAmt / pendingCount (미완료이므로 대기로 분류)
+    //  - wait    → pendingAmt / pendingCount
     // ─────────────────────────────────────────────
     @GetMapping(value = "/kpi", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<?> kpi(
@@ -142,10 +118,14 @@ public class PartnerSettlementRestController {
         for (SettlementManageDto d : list) {
             if (d.getTotalGmv()        != null) totalGmv        = totalGmv.add(d.getTotalGmv());
             if (d.getTotalCommission() != null) totalCommission = totalCommission.add(d.getTotalCommission());
-            if ("done".equals(d.getSettlementStatus()) || "DONE".equals(d.getSettlementStatus())) {
+
+            String status = d.getSettlementStatus();
+            if ("done".equals(status)) {
+                // 전체 승인 완료
                 if (d.getTotalNetPayout() != null) doneAmt = doneAmt.add(d.getTotalNetPayout());
                 doneCount++;
             } else {
+                // wait(대기) 또는 partial(부분승인) 모두 정산 대기 금액으로 집계
                 if (d.getTotalNetPayout() != null) pendingAmt = pendingAmt.add(d.getTotalNetPayout());
                 pendingCount++;
             }
@@ -159,6 +139,36 @@ public class PartnerSettlementRestController {
             "doneAmt",         doneAmt,
             "doneCount",       doneCount
         ));
+    }
+
+    // ─────────────────────────────────────────────
+    //  CSV — 멤버 소속 전체 파트너 예약 건별
+    //  GET /admin/settlement/partner/csv/partner
+    // ─────────────────────────────────────────────
+    @GetMapping("/csv/partner")
+    public ResponseEntity<List<SettlementOrderDto>> csvByPartner(
+            @RequestParam("memberId") Long   memberId,
+            @RequestParam("month")    String month
+    ) {
+        SettlementFilterDto filter = new SettlementFilterDto();
+        filter.setMemberId(memberId);
+        filter.setSettlementMonth(month);
+        return ResponseEntity.ok(settlementService.getExcelRowsByPartner(filter));
+    }
+
+    // ─────────────────────────────────────────────
+    //  CSV — 숙소(place) 단위 예약 건별
+    //  GET /admin/settlement/partner/csv/place
+    // ─────────────────────────────────────────────
+    @GetMapping("/csv/place")
+    public ResponseEntity<List<SettlementOrderDto>> csvByPlace(
+            @RequestParam("placeId") Long   placeId,
+            @RequestParam("month")   String month
+    ) {
+        SettlementFilterDto filter = new SettlementFilterDto();
+        filter.setPlaceId(placeId);
+        filter.setSettlementMonth(month);
+        return ResponseEntity.ok(settlementService.getExcelRowsByPlace(filter));
     }
 
     // ─────────────────────────────────────────────

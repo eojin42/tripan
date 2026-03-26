@@ -43,11 +43,12 @@ public class PartnerSettlementServiceImpl implements PartnerSettlementService {
 
     @Override
     public List<SettlementManageDto> getDetailList(SettlementFilterDto filter) {
+        // selectDetailList는 이제 memberId 기준으로 파트너(숙소) 목록 반환
         List<SettlementManageDto> details = settlementMapper.selectDetailList(filter);
         for (SettlementManageDto d : details) {
-            // selectOrderLines는 partnerId 기준 — d.getMemberId() = partner_id
             Map<String, Object> params = new HashMap<>();
-            params.put("partnerId",       d.getMemberId());
+            // detail의 각 행은 partner_id 단위 → partnerId 사용
+            params.put("partnerId",       d.getPartnerId());
             params.put("settlementMonth", filter.getSettlementMonth());
             List<SettlementOrderDto> orders = settlementMapper.selectOrderLines(params);
             d.setOrders(orders);
@@ -66,9 +67,7 @@ public class PartnerSettlementServiceImpl implements PartnerSettlementService {
     }
 
     // ─────────────────────────────────────────
-    //  정산 승인 (수동 — 관리자)
-    //  ※ partner_settlement는 partner_id 단위이므로
-    //    placeId 파라미터명을 유지하되 내부에서 partnerId로 사용
+    //  정산 승인 — 개별 파트너(숙소) 1개 승인
     // ─────────────────────────────────────────
 
     @Override
@@ -78,37 +77,46 @@ public class PartnerSettlementServiceImpl implements PartnerSettlementService {
         params.put("partnerId",       partnerId);
         params.put("settlementMonth", settlementMonth);
         settlementMapper.upsertSettlement(params);
+        log.info("[정산 승인] partnerId={}, month={}, adminId={}", partnerId, settlementMonth, adminId);
     }
+
+    // ─────────────────────────────────────────
+    //  정산 승인 — 멤버 소속 파트너 전체 승인
+    //  memberId 소속 파트너 ID 전체를 조회한 뒤
+    //  각 partnerId 별로 upsertSettlement 호출
+    //  → partial 상태에서도 미승인 파트너만 순회하며 done 처리
+    // ─────────────────────────────────────────
 
     @Override
     @Transactional
     public void approveAllByPartner(Long memberId, String settlementMonth, Long adminId) {
-        SettlementFilterDto filter = new SettlementFilterDto();
-        filter.setMemberId(memberId);
-        filter.setSettlementMonth(settlementMonth);
+        Map<String, Object> params = new HashMap<>();
+        params.put("memberId", memberId);
 
-        List<SettlementManageDto> details = settlementMapper.selectDetailList(filter);
+        // 소속 파트너 ID 전체 조회
+        List<Long> partnerIds = settlementMapper.selectPartnerIdsByMember(params);
 
-        // ERD status: 'done' / 'wait'
-        boolean hasUnapproved = details.stream()
-                .anyMatch(d -> !"done".equals(d.getSettlementStatus()));
-
-        if (hasUnapproved) {
-            // partner_settlement는 파트너 단위이므로 1회 upsert
-            approvePlace(memberId, settlementMonth, adminId);
+        if (partnerIds == null || partnerIds.isEmpty()) {
+            log.warn("[전체 정산 승인] 소속 파트너 없음 - memberId={}", memberId);
+            return;
         }
+
+        log.info("[전체 정산 승인] memberId={}, 파트너 수={}, month={}", memberId, partnerIds.size(), settlementMonth);
+
+        for (Long partnerId : partnerIds) {
+            approvePlace(partnerId, settlementMonth, adminId);
+        }
+
+        log.info("[전체 정산 승인] 완료 - memberId={}, month={}", memberId, settlementMonth);
     }
 
     // ─────────────────────────────────────────
-    //  배치 정산 집계 (매일 새벽 2시 — AdminScheduler 호출)
-    //  SettlementBatchMapper를 통해 partner_settlement INSERT/UPDATE
+    //  배치 정산 집계
     // ─────────────────────────────────────────
 
     @Override
     @Transactional(rollbackFor = Exception.class)
     public void aggregateSettlement() {
-        // ※ 운영 시: .minusMonths(1) 로 전월 기준 집계
-        // ※ 테스트 시: 현재 월 체크아웃 포함 집계 (아래가 테스트 모드)
         String targetMonth = LocalDate.now()
                 .format(DateTimeFormatter.ofPattern("yyyy-MM"));
 
@@ -132,8 +140,6 @@ public class PartnerSettlementServiceImpl implements PartnerSettlementService {
                         dto.getPartnerId(), dto.getSettlementMonth());
 
                 if (exists) {
-                    // 레코드가 이미 있으면 금액 누적 UPDATE
-                    // (수동 승인으로 'done'이 된 경우도 금액은 최신화)
                     batchMapper.updateSettlementAmount(dto);
                     log.debug("[정산 배치] UPDATE - partnerId={}, month={}",
                             dto.getPartnerId(), dto.getSettlementMonth());
@@ -152,5 +158,9 @@ public class PartnerSettlementServiceImpl implements PartnerSettlementService {
         }
 
         log.info("[정산 배치] 완료 - 성공: {}건, 실패/스킵: {}건", successCount, skipCount);
+    }
+    
+    public List<String> getAvailableMonths() {
+        return settlementMapper.selectAvailableMonths();
     }
 }
