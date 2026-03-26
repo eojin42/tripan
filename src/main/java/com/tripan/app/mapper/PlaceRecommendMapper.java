@@ -18,12 +18,16 @@ public interface PlaceRecommendMapper {
             @Param("region")   String region,
             @Param("keyword")  String keyword,
             @Param("limit")    int limit,
-            @Param("offset")   int offset);
+            @Param("offset")   int offset,
+            @Param("sort")     String sort);
 
     long countCurationPlaces(
             @Param("category") String category,
             @Param("region")   String region,
             @Param("keyword")  String keyword);
+
+    /** 홈 TOP 10 (조회수+좋아요 합산) */
+    List<PlaceDto> selectTop10Places();
 
     List<PlaceDto> selectRecommendPlaces(
             @Param("category") String category,

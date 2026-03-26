@@ -47,10 +47,11 @@ public class TripPlaceApiController {
             @RequestParam(value = "region",   defaultValue = "전체") String region,
             @RequestParam(value = "keyword",  defaultValue = "")    String keyword,
             @RequestParam(value = "limit",    defaultValue = "12")  int    limit,
-            @RequestParam(value = "offset",   defaultValue = "0")   int    offset) {
+            @RequestParam(value = "offset",   defaultValue = "0")   int    offset,
+            @RequestParam(value = "sort",     defaultValue = "recent") String sort) {
 
         List<PlaceDto> places = placeRecommendMapper.selectCurationPlaces(
-                category, region, keyword, limit, offset);
+                category, region, keyword, limit, offset, sort);
         long total = placeRecommendMapper.countCurationPlaces(category, region, keyword);
 
         Map<String, Object> body = new HashMap<>();

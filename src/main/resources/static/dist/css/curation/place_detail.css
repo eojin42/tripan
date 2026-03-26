@@ -125,10 +125,38 @@
   margin: 0 0 10px; line-height: 1.22; letter-spacing: -.5px;
 }
 
+.dt-header-meta {
+  display: flex; align-items: center;
+  justify-content: space-between; flex-wrap: wrap; gap: 10px;
+}
+
 .dt-address {
   display: flex; align-items: center; gap: 6px;
   font-size: 15px; color: #8E8E93; font-weight: 500; margin: 0;
+  flex: 1; min-width: 0;
 }
+
+.dt-stats {
+  display: flex; align-items: center; gap: 10px; flex-shrink: 0;
+}
+
+.dt-stat {
+  display: flex; align-items: center; gap: 4px;
+  font-size: 13px; font-weight: 600; color: #AEAEB2;
+}
+
+.dt-like-btn {
+  display: flex; align-items: center; gap: 5px;
+  padding: 7px 14px;
+  background: #fff; border: 1.5px solid #E5E5EA;
+  border-radius: 20px; cursor: pointer;
+  font-size: 14px; font-weight: 700; color: #8E8E93;
+  transition: all .2s; font-family: inherit;
+}
+.dt-like-btn:hover     { border-color: #FF3B30; color: #FF3B30; }
+.dt-like-btn.liked     { background: #FFF1F0; border-color: #FF3B30; color: #FF3B30; }
+.dt-like-btn svg       { transition: transform .2s; }
+.dt-like-btn.liked svg { fill: #FF3B30; stroke: #FF3B30; transform: scale(1.15); }
 
 /* ══════════════════════════
    축제 배너

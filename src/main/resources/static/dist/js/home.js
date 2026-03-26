@@ -103,4 +103,60 @@
     }, 300);
   }
 
+  /* ══════════════════════════════════════════
+     5. 실시간 인기 피드 로딩
+     /feed/public-trips API → homeFeedList 캐러셀 렌더링
+  ══════════════════════════════════════════ */
+  var CP = (typeof HOME_CP !== 'undefined') ? HOME_CP : '';
+  var feedContainer = document.getElementById('homeFeedList');
+
+  if (feedContainer) {
+    function escHtml(s) {
+      return String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    }
+
+    function makeFeedItem(t) {
+      var thumb   = t.thumbnailUrl || '';
+      var cities  = t.citiesStr || '';
+      var name    = t.tripName || '여행';
+      var scrap   = t.scrapCount || 0;
+      var likes   = t.likeCount || 0;
+      var leader  = t.leaderNickname || '여행자';
+      var profImg = t.leaderProfileImage || '';
+      var tags    = cities
+        ? cities.split(',').slice(0, 2).map(function (c) { return '#' + c.trim(); }).filter(Boolean).join(' ')
+        : '#국내여행';
+      var desc    = (t.description && t.description.trim()) ? t.description.trim() : '🗂 ' + scrap + '회 담겨진 여행';
+      var imgHtml = thumb
+        ? '<img src="' + escHtml(thumb.startsWith('http') ? thumb : CP + thumb) + '" alt="' + escHtml(name) + '" loading="lazy">'
+        : '';
+      var avHtml  = profImg
+        ? '<img src="' + escHtml(profImg.startsWith('http') ? profImg : CP + '/' + profImg) + '" alt="">'
+        : '<img src="' + CP + '/dist/images/trip_icon.png" alt="">';
+
+      return '<div class="list-item" onclick="location.href=\'' + CP + '/feed/feed_detail?tripId=' + t.tripId + '\'" style="cursor:pointer">'
+        + '<div class="list-img"><div class="floating-badge">❤️ ' + likes + ' &nbsp; 🗂 ' + scrap + '</div>' + imgHtml + '</div>'
+        + '<div class="list-info"><span class="tag">' + escHtml(tags) + '</span><h4>' + escHtml(name) + '</h4>'
+        + '<p class="desc">' + escHtml(desc) + '</p>'
+        + '<div class="author-info"><div class="author-pic">' + avHtml + '</div>@' + escHtml(leader) + '</div></div></div>';
+    }
+
+    fetch(CP + '/feed/public-trips?page=0&size=8')
+      .then(function (r) {
+        if (!r.ok) { console.warn('[HomeFeed] API 오류:', r.status); return []; }
+        return r.json();
+      })
+      .then(function (list) {
+        if (!list || !list.length) {
+          feedContainer.innerHTML = '<div style="padding:40px;color:#999;font-size:14px;">공개된 여행이 아직 없어요.</div>';
+          return;
+        }
+        feedContainer.innerHTML = list.slice(0, 8).map(makeFeedItem).join('');
+      })
+      .catch(function (e) {
+        console.error('[HomeFeed] fetch 실패:', e);
+        feedContainer.innerHTML = '';
+      });
+  }
+
 })();

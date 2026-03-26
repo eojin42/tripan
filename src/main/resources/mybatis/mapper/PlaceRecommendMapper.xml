@@ -57,27 +57,57 @@
         </where>
     </select>
 
-    <!-- ─── 큐레이션 목록 (이미지 있는 장소만) ─── -->
+    <!-- ─── 큐레이션 목록 (이미지 있는 장소만, sort 지원) ─── -->
     <select id="selectCurationPlaces" resultType="com.tripan.app.domain.dto.PlaceDto">
-        SELECT <include refid="placeColumns"/>
-        FROM place p
-        <where>
-            AND p.image_url IS NOT NULL
-            <if test="category != null and category != '전체' and category != '' and category != 'all'">
-                AND p.category = #{category}
-            </if>
-            <if test="region != null and region != '전체' and region != ''">
-                AND p.address LIKE #{region} || '%'
-            </if>
-            <if test="keyword != null and keyword != ''">
-                AND (
-                    p.place_name LIKE '%' || #{keyword} || '%'
-                    OR p.address  LIKE '%' || #{keyword} || '%'
-                )
-            </if>
-        </where>
-        ORDER BY p.place_id DESC
-        OFFSET #{offset} ROWS FETCH NEXT #{limit} ROWS ONLY
+        SELECT placeId, placeName, category, address, phoneNumber, description,
+               longitude, latitude, imageUrl, viewCount, likeCount
+        FROM (
+            SELECT t.*, ROWNUM AS rn
+            FROM (
+                SELECT
+                    p.place_id    AS placeId,
+                    p.place_name  AS placeName,
+                    p.category,
+                    p.address,
+                    p.phone_number AS phoneNumber,
+                    p.description,
+                    p.longitude,
+                    p.latitude,
+                    p.image_url   AS imageUrl,
+                    NVL(p.view_count, 0) AS viewCount,
+                    (SELECT COUNT(*) FROM likes l
+                     WHERE l.target_id = p.place_id AND l.target_type = 'PLACE') AS likeCount
+                FROM place p
+                <where>
+                    AND p.image_url IS NOT NULL
+                    <if test="category != null and category != '전체' and category != '' and category != 'all'">
+                        AND p.category = #{category}
+                    </if>
+                    <if test="region != null and region != '전체' and region != ''">
+                        AND p.address LIKE #{region} || '%'
+                    </if>
+                    <if test="keyword != null and keyword != ''">
+                        AND (
+                            p.place_name LIKE '%' || #{keyword} || '%'
+                            OR p.address  LIKE '%' || #{keyword} || '%'
+                        )
+                    </if>
+                </where>
+                <choose>
+                    <when test="sort == 'views'">
+                        ORDER BY NVL(p.view_count, 0) DESC, p.place_id DESC
+                    </when>
+                    <when test="sort == 'likes'">
+                        ORDER BY likeCount DESC, p.place_id DESC
+                    </when>
+                    <otherwise>
+                        ORDER BY p.place_id DESC
+                    </otherwise>
+                </choose>
+            ) t
+            WHERE ROWNUM &lt;= (#{offset} + #{limit})
+        )
+        WHERE rn > #{offset}
     </select>
 
     <!-- ─── 큐레이션 총 건수 (이미지 있는 장소만) ─── -->
@@ -98,6 +128,30 @@
                 )
             </if>
         </where>
+    </select>
+
+    <!-- ─── HOME TOP 10: (조회수 + 좋아요) 합산 상위 10개 ─── -->
+    <select id="selectTop10Places" resultType="com.tripan.app.domain.dto.PlaceDto">
+        SELECT placeId, placeName, category, address, imageUrl, viewCount, likeCount,
+               ROWNUM AS rankNum
+        FROM (
+            SELECT
+                p.place_id    AS placeId,
+                p.place_name  AS placeName,
+                p.category,
+                p.address,
+                p.image_url   AS imageUrl,
+                NVL(p.view_count, 0) AS viewCount,
+                (SELECT COUNT(*) FROM likes l
+                 WHERE l.target_id = p.place_id AND l.target_type = 'PLACE') AS likeCount
+            FROM place p
+            WHERE p.image_url IS NOT NULL
+            ORDER BY (NVL(p.view_count, 0) +
+                     (SELECT COUNT(*) FROM likes l2
+                      WHERE l2.target_id = p.place_id AND l2.target_type = 'PLACE')) DESC,
+                     p.place_id DESC
+        )
+        WHERE ROWNUM &lt;= 10
     </select>
 
     <!-- ─── 키워드 검색 ─── -->
@@ -137,16 +191,18 @@
         <result property="closedDays"   column="closed_days"/>
         <result property="checkintime"  column="checkintime"/>
         <result property="checkouttime" column="checkouttime"/>
+        <result property="viewCount"    column="view_count"/>
+        <result property="likeCount"    column="like_count"/>
     </resultMap>
 
-    <!-- ─── 장소 상세 ───
-         attraction 테이블 생성 후 JOIN 복원
-         테이블 미생성 시: LEFT JOIN이므로 NULL 반환 (에러 없음)
-    ─────────────────────── -->
+    <!-- ─── 장소 상세 (view_count + like_count 포함) ─── -->
     <select id="selectPlaceDetailById" resultMap="placeDetailMap">
         SELECT
             p.place_id, p.place_name, p.category, p.address,
             p.phone_number, p.description, p.longitude, p.latitude, p.image_url,
+            NVL(p.view_count, 0) AS view_count,
+            (SELECT COUNT(*) FROM likes l
+             WHERE l.target_id = p.place_id AND l.target_type = 'PLACE') AS like_count,
             r.opentimefood    AS opentime,
             r.restdatefood    AS restdate,
             r.parkingfood     AS parking,

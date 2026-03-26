@@ -4,16 +4,22 @@ import java.util.List;
 import java.util.Map;
 
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseBody;
 
 import com.tripan.app.domain.dto.FestivalDto;
 import com.tripan.app.domain.dto.PlaceDto;
+import com.tripan.app.mapper.PlaceMapper;
 import com.tripan.app.mapper.PlaceRecommendMapper;
 
+import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
 
 @Controller
@@ -22,43 +28,55 @@ import lombok.RequiredArgsConstructor;
 public class PlaceController {
 
     private final PlaceRecommendMapper placeMapper;
+    private final PlaceMapper          placeWriteMapper; // 조회수/좋아요 쓰기
 
-    /** application.yml: tripan.api.kakao-map-api-key */
     @Value("${tripan.api.kakao-map-api-key}")
     private String kakaoMapsAppkey;
 
-    /* ─────────────────────────────
+    /* ────────────────────────────────────
        장소 상세
-    ───────────────────────────── */
+    ──────────────────────────────────── */
     @GetMapping("/detail")
-    public String detail(@RequestParam("id") Long id, Model model) {
+    public String detail(@RequestParam("id") Long id,
+                         HttpSession session,
+                         Model model) {
 
         PlaceDto place = placeMapper.selectPlaceDetailById(id);
-        if (place == null) {
-            return "redirect:/curation/place_list";
-        }
+        if (place == null) return "redirect:/curation/place_list";
 
-        // ── 이미지 결정 ──
+        // 조회수 +1 (DB 업데이트는 별도, place 객체의 viewCount는 업데이트 전 값이므로 +1)
+        placeWriteMapper.incrementViewCount(id);
+
+        // 이미지 결정
         List<String> images;
         if ("FESTIVAL".equalsIgnoreCase(place.getCategory())) {
-            // 축제: festival_image 테이블 다중 이미지 (origin_img_url)
             images = placeMapper.selectFestivalImages(id);
             if (images == null || images.isEmpty()) {
-                // fallback → place.image_url
                 images = place.getImageUrl() != null && !place.getImageUrl().isBlank()
                         ? List.of(place.getImageUrl()) : List.of();
             }
         } else {
-            // 그 외: place.image_url 단일 (없으면 빈 목록 → 캐러셀 숨김)
             images = place.getImageUrl() != null && !place.getImageUrl().isBlank()
                     ? List.of(place.getImageUrl()) : List.of();
         }
         place.setImages(images);
+        // 조회수 +1 반영 (화면에는 업데이트된 값 보여주기)
+        place.setViewCount(place.getViewCount() != null ? place.getViewCount() + 1 : 1L);
 
-        model.addAttribute("place", place);
+        // 좋아요 상태 (place.likeCount는 selectPlaceDetailById에서 이미 계산됨)
+        Long memberId = getLoginMemberId(session);
+        boolean liked = false;
+        if (memberId != null) {
+            liked = placeWriteMapper.countLike(memberId, id) > 0;
+        }
+        long likeCount = place.getLikeCount() != null ? place.getLikeCount() : 0L;
+
+        model.addAttribute("place",      place);
         model.addAttribute("kakaoAppKey", kakaoMapsAppkey);
+        model.addAttribute("liked",      liked);
+        model.addAttribute("likeCount",  likeCount);
+        model.addAttribute("isLoggedIn", memberId != null);
 
-        // ── 카테고리별 추가 데이터 ──
         if ("FESTIVAL".equalsIgnoreCase(place.getCategory())) {
             FestivalDto festival = placeMapper.selectFestivalDetailByPlaceId(id);
             model.addAttribute("festival", festival);
@@ -67,9 +85,34 @@ public class PlaceController {
         return "curation/detail";
     }
 
-    /* ─────────────────────────────
+    /* ────────────────────────────────────
+       좋아요 토글  POST /curation/like/{placeId}
+    ──────────────────────────────────── */
+    @PostMapping("/like/{placeId}")
+    @ResponseBody
+    public ResponseEntity<Map<String, Object>> toggleLike(
+            @PathVariable("placeId") Long placeId,
+            HttpSession session) {
+
+        Long memberId = getLoginMemberId(session);
+        if (memberId == null)
+            return ResponseEntity.status(401)
+                    .body(Map.of("success", false, "message", "로그인이 필요합니다"));
+
+        boolean alreadyLiked = placeWriteMapper.countLike(memberId, placeId) > 0;
+        if (alreadyLiked) placeWriteMapper.deleteLike(memberId, placeId);
+        else              placeWriteMapper.insertLike(memberId, placeId);
+
+        long likeCount = placeWriteMapper.countLikeTotal(placeId);
+        return ResponseEntity.ok(Map.of(
+                "success",   true,
+                "liked",     !alreadyLiked,
+                "likeCount", likeCount));
+    }
+
+    /* ────────────────────────────────────
        장소 목록
-    ───────────────────────────── */
+    ──────────────────────────────────── */
     @GetMapping("/place_list")
     public String place_list(
             @RequestParam(value = "keyword",  required = false, defaultValue = "") String keyword,
@@ -83,14 +126,20 @@ public class PlaceController {
         model.addAttribute("category",     category);
         model.addAttribute("region",       region);
 
-        // 큐레이션 목록: 이미지 있는 장소만
-        List<PlaceDto> placeList = placeMapper.selectCurationPlaces(category, region, keyword, 12, 0);
+        List<PlaceDto> placeList = placeMapper.selectCurationPlaces(category, region, keyword, 12, 0, "recent");
         long totalCount          = placeMapper.countCurationPlaces(category, region, keyword);
 
         model.addAttribute("placeList",  placeList);
         model.addAttribute("totalCount", totalCount);
 
         return "curation/place_list";
+    }
+
+    private Long getLoginMemberId(HttpSession session) {
+        Object user = session.getAttribute("loginUser");
+        if (user == null) return null;
+        try { return (Long) user.getClass().getMethod("getMemberId").invoke(user); }
+        catch (Exception e) { return null; }
     }
 
     private List<Map<String, String>> buildCategoryList() {

@@ -42,4 +42,8 @@ public class PlaceDto {
     // 시스템 정보
     private LocalDateTime modifiedTime; 
     private LocalDateTime createdTime;
+
+    // 통계 (조회수 / 좋아요)
+    private Long viewCount;
+    private Long likeCount;
 }

@@ -61,6 +61,36 @@ function _lbShow() {
   if (ctr) ctr.textContent = total > 1 ? `${lbIdx + 1} / ${total}` : '';
 }
 
+/* ════════════ 좋아요 토글 ════════════ */
+function toggleLike() {
+  const btn       = document.getElementById('likeBtn');
+  const countEl   = document.getElementById('likeCount');
+  if (!btn) return;
+
+  const placeId   = btn.dataset.placeId;
+  const contextPath = PLACE_DATA.contextPath;
+
+  fetch(`${contextPath}/curation/like/${placeId}`, { method: 'POST' })
+    .then(res => {
+      if (res.status === 401) {
+        alert('로그인이 필요합니다');
+        location.href = `${contextPath}/member/login`;
+        return null;
+      }
+      return res.json();
+    })
+    .then(data => {
+      if (!data?.success) return;
+      btn.classList.toggle('liked', data.liked);
+      btn.dataset.liked = data.liked;
+      if (countEl) countEl.textContent = data.likeCount;
+      // svg fill 업데이트
+      const svg = btn.querySelector('svg');
+      if (svg) svg.setAttribute('fill', data.liked ? 'currentColor' : 'none');
+    })
+    .catch(() => alert('잠시 후 다시 시도해주세요'));
+}
+
 /* ════════════ 설명 토글 ════════════ */
 let expanded = false;
 

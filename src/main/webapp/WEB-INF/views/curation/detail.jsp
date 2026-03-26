@@ -76,13 +76,34 @@
         </c:choose>
       </span>
       <h1 class="dt-title">${place.placeName}</h1>
-      <p class="dt-address">
-        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
-          <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
-          <circle cx="12" cy="10" r="3"/>
-        </svg>
-        ${place.address}
-      </p>
+      <div class="dt-header-meta">
+        <p class="dt-address">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+            <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
+            <circle cx="12" cy="10" r="3"/>
+          </svg>
+          ${place.address}
+        </p>
+        <div class="dt-stats">
+          <span class="dt-stat">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+            ${place.viewCount != null ? place.viewCount : 0}
+          </span>
+          <button class="dt-like-btn ${liked ? 'liked' : ''}"
+                  id="likeBtn"
+                  onclick="toggleLike()"
+                  data-place-id="${place.placeId}"
+                  data-liked="${liked}"
+                  data-count="${likeCount}">
+            <svg width="15" height="15" viewBox="0 0 24 24"
+                 fill="${liked ? 'currentColor' : 'none'}"
+                 stroke="currentColor" stroke-width="2" stroke-linecap="round">
+              <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
+            </svg>
+            <span id="likeCount">${likeCount}</span>
+          </button>
+        </div>
+      </div>
     </header>
 
     <%-- 축제 날짜 배너 --%>
@@ -163,9 +184,6 @@
         <div class="dt-info-grid">
           <c:if test="${not empty place.phoneNumber}">
             <div class="dt-card dt-ic"><span class="dt-ic-emoji">📞</span><div><div class="dt-ic-l">문의</div><div class="dt-ic-v"><a href="tel:${place.phoneNumber}">${place.phoneNumber}</a></div></div></div>
-          </c:if>
-          <c:if test="${not empty place.address}">
-            <div class="dt-card dt-ic"><span class="dt-ic-emoji">📍</span><div><div class="dt-ic-l">주소</div><div class="dt-ic-v">${place.address}</div></div></div>
           </c:if>
           <c:if test="${place.category == 'RESTAURANT' and not empty place.opentime}">
             <div class="dt-card dt-ic"><span class="dt-ic-emoji">🕐</span><div><div class="dt-ic-l">영업시간</div><div class="dt-ic-v">${place.opentime}</div></div></div>
