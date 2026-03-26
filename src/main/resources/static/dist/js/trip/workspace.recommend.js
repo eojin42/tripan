@@ -410,6 +410,7 @@ function openPlaceDetailModal(p) {
   var cat             = (p.category || '').toUpperCase();
   var isAccommodation = cat === 'ACCOMMODATION';
   var isRestaurant    = cat === 'RESTAURANT' || cat === 'CAFE';
+  var isAttraction    = cat === 'TOUR' || cat === 'CULTURE' || cat === 'LEISURE';
 
   var bi     = _categoryBadgeInfo(p.category);
   var ph     = _categoryPlaceholder(p.category);
@@ -426,6 +427,13 @@ function openPlaceDetailModal(p) {
   var restaurantSec = isRestaurant
     ? '<div id="rpRestaurantDetail" style="margin-bottom:16px;">' +
         _rpShimmerRow() + _rpShimmerRow() + _rpShimmerRow() +
+      '</div>'
+    : '';
+
+  /* ── 관광지/문화/레포츠 상세 섹션 스켈레톤 ── */
+  var attractionSec = isAttraction
+    ? '<div id="rpAttractionDetail" style="margin-bottom:16px;">' +
+        _rpShimmerRow() + _rpShimmerRow() +
       '</div>'
     : '';
 
@@ -451,6 +459,7 @@ function openPlaceDetailModal(p) {
             '</div>'
           : '') +
         restaurantSec +
+        attractionSec +
         _rpDetailBtnHtml(p) +
       '</div>' +
     '</div>';
@@ -525,6 +534,58 @@ function openPlaceDetailModal(p) {
       })
       .catch(function () {
         var box = document.getElementById('rpRestaurantDetail');
+        if (box) box.style.display = 'none';
+      });
+  }
+
+  /* ── 관광지/문화/레포츠일 때: attraction 테이블 비동기 로드 ── */
+  if (isAttraction && p.placeId && !String(p.placeId).startsWith('custom_')) {
+    var base = (typeof CTX_PATH !== 'undefined' ? CTX_PATH : '');
+    fetch(base + '/api/places/attraction/' + p.placeId)
+      .then(function(r) { return r.ok ? r.json() : {}; })
+      .then(function(d) {
+        var box = document.getElementById('rpAttractionDetail');
+        if (!box) return;
+
+        var rows = [
+          { icon: '🕐', label: '이용시간', key: 'usetime' },
+          { icon: '🚫', label: '휴무일',   key: 'closedDays' }
+        ];
+
+        var html =
+          '<div style="border:1px solid #E2E8F0;border-radius:12px;overflow:hidden;background:#FAFBFC;">' +
+            '<div style="padding:10px 16px 6px;font-size:10px;font-weight:800;' +
+              'color:#5BABC9;letter-spacing:.7px;text-transform:uppercase;' +
+              'border-bottom:1px solid #EDF2F7;">🗺 장소 정보</div>';
+
+        var shown = 0;
+        rows.forEach(function(r) {
+          var val = d[r.key];
+          if (!val || String(val).trim() === '' || val === '-') return;
+          val = String(val).replace(/<br\s*\/?>/gi, '\n').trim();
+          var isLong = val.length > 40;
+          html +=
+            '<div style="display:flex;' + (isLong ? 'flex-direction:column;' : 'align-items:baseline;') +
+              'gap:' + (isLong ? '3' : '8') + 'px;' +
+              'padding:9px 16px;border-bottom:1px solid #EDF2F7;font-size:12px;">' +
+              '<span style="display:flex;align-items:center;gap:5px;flex-shrink:0;' +
+                'font-weight:700;color:#4A5568;min-width:' + (isLong ? 'unset' : '72px') + ';">' +
+                r.icon + ' ' + r.label +
+              '</span>' +
+              '<span style="color:#1A202C;font-weight:' + (isLong ? '500' : '700') + ';' +
+                'white-space:pre-wrap;word-break:break-word;">' +
+                _esc(val) +
+              '</span>' +
+            '</div>';
+          shown++;
+        });
+
+        html += '</div>';
+        if (shown === 0) { box.style.display = 'none'; return; }
+        box.innerHTML = html;
+      })
+      .catch(function() {
+        var box = document.getElementById('rpAttractionDetail');
         if (box) box.style.display = 'none';
       });
   }
