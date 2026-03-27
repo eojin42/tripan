@@ -1120,6 +1120,14 @@ function deleteSettlement(btn, settlementId) {
         showToast('🗑 삭제됐어요');
         if (_settleView === 'done') _loadSettleDoneView();
         else _loadSettleStatusView();
+        _loadHomeTab();
+        /* ★ 상대방 화면도 갱신: tripId는 전역 TRIP_ID 사용 */
+        try {
+          if (typeof _stompClient !== 'undefined' && _stompClient && _wsConnected) {
+            _stompClient.send('/pub/trip/' + TRIP_ID + '/item/update',
+              {}, JSON.stringify({ type: 'REFRESH_SETTLEMENT' }));
+          }
+        } catch(e) {}
       } else { btn.disabled=false; showToast('⚠️ 삭제에 실패했어요'); }
     })
     .catch(function() { btn.disabled=false; showToast('⚠️ 서버 오류'); });

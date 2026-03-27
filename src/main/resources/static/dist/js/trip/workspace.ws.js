@@ -133,9 +133,11 @@ function wsHandle(msg) {
       break;
 
     case 'REFRESH_SETTLEMENT':
-      // 정산 완료/요청 변경사항 → 정산탭·홈탭 즉시 새로고침
+      /* 정산 완료/요청 변경사항 → 정산탭·홈탭·지출목록 즉시 갱신
+         (settle_status 표시도 달라지므로 지출 목록도 갱신) */
       if (typeof _loadSettleTab === 'function') _loadSettleTab();
       if (typeof _loadHomeTab === 'function') _loadHomeTab();
+      if (typeof loadExpenseList === 'function') loadExpenseList();
       break;
     // ══════════════════════════════════════
 
@@ -188,7 +190,10 @@ function wsHandle(msg) {
       if (typeof loadExpenseList === 'function') loadExpenseList();
       if (typeof _loadHomeTab === 'function') _loadHomeTab();
       if (typeof _loadSettleTab === 'function') _loadSettleTab();
-      wsToast((msg.senderNickname || '상대방') + '님이 가계부를 수정했어요 💰');
+      /* senderNickname이 빈 문자열이면 시스템 내부 broadcast → toast 생략 */
+      if (msg.senderNickname) {
+        wsToast(msg.senderNickname + '님이 가계부를 수정했어요 💰');
+      }
       break;
 
     case 'VOTE_CREATED':
