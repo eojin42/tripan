@@ -5,7 +5,7 @@
 <select id="findById" parameterType="Long" resultType="com.tripan.app.domain.dto.MemberDto">
 		SELECT m1.member_id, m1.login_id, m1.password, m1.username, m1.email,
 			   m1.status, m1.role, NVL(m1.failure_cnt, 0) failure_cnt,
-			   m1.provider AS sns_provider, m1.provider_id AS sns_id, m2.preferred_region,
+			   m1.provider AS provider, m1.provider_id AS providerId, m2.preferred_region,
 			   m2.nickname, m2.profile_image AS profile_photo, m2.phone_number AS phoneNumber, m2.bio, m1.birthday
 		FROM member1 m1
 		LEFT OUTER JOIN member2 m2 ON m1.member_id = m2.member_id
@@ -15,7 +15,7 @@
 	<select id="findByLoginId" parameterType="String" resultType="com.tripan.app.domain.dto.MemberDto">
 		SELECT m1.member_id, m1.login_id, m1.password, m1.username, m1.email,
 			   m1.status, m1.role, NVL(m1.failure_cnt, 0) failure_cnt,
-			   m1.provider AS sns_provider, m1.provider_id AS sns_id,
+			   m1.provider AS provider, m1.provider_id AS providerId,
 			   m2.nickname, m2.profile_image AS profile_photo, m2.phone_number AS phoneNumber, m2.bio
 		FROM member1 m1
 		LEFT OUTER JOIN member2 m2 ON m1.member_id = m2.member_id
@@ -103,4 +103,11 @@
 	     FROM member2 WHERE nickname = #{nickname}
 	</select>
     
+    <select id="findByProviderId" resultType="com.tripan.app.domain.dto.MemberDto">
+	    SELECT m1.member_id AS memberId, m1.login_id AS loginId, m1.email, m1.password, m1.role,
+	           m1.provider AS provider, m1.provider_id AS providerId,
+	           m2.nickname, m2.profile_image AS profilePhoto FROM member1 m1
+	    LEFT OUTER JOIN member2 m2 ON m1.member_id = m2.member_id WHERE TRIM(m1.provider) = #{provider} 
+	      AND TRIM(m1.provider_id) = #{providerId}
+	</select>
 </mapper>

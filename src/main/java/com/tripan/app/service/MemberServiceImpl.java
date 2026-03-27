@@ -96,14 +96,15 @@ public class MemberServiceImpl implements MemberService {
     public void insertSnsMember(MemberDto dto) throws Exception {
         try {
             Member1 member1 = new Member1();
-            member1.setLoginId(dto.getLoginId() != null ? dto.getLoginId() : dto.getEmail());
+            member1.setLoginId(dto.getLoginId());
             member1.setEmail(dto.getEmail());
-            member1.setPassword("");
+            member1.setPassword(dto.getPassword());
             member1.setUsername(dto.getName());
             member1.setStatus(1);
             member1.setRole("ROLE_USER");
-            member1.setProvider(dto.getSnsProvider());
-            member1.setProviderId(dto.getSnsId());
+            member1.setProvider(dto.getProvider());
+            member1.setProviderId(dto.getProviderId());
+            member1.setBirthday(dto.getBirthday());
             member1.setFailureCnt(0);
             memberRepository.save(member1);
 
@@ -420,6 +421,17 @@ public class MemberServiceImpl implements MemberService {
 	public MemberDto findByNickname(String nickname) {
 		return mapper.findByNickname(nickname);
 	}
+	
+	@Override
+    public MemberDto findByProviderId(String provider, String providerId) {
+        MemberDto dto = null;
+        try {
+            dto = mapper.findByProviderId(provider, providerId);
+        } catch (Exception e) {
+            log.info("findByProviderId : ", e);
+        }
+        return dto;
+    }
 
 	
 }

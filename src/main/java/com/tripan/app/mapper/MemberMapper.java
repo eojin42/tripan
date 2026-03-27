@@ -7,7 +7,6 @@ import java.util.Map;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 
-import com.tripan.app.domain.dto.MemberCouponDto;
 import com.tripan.app.domain.dto.MemberDto;
 
 @Mapper
@@ -50,4 +49,5 @@ public interface MemberMapper {
 	
 	public MemberDto findByNickname(String nickname);
 	
+	MemberDto findByProviderId(@Param("provider") String provider, @Param("providerId") String providerId);
 }
