@@ -22,6 +22,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import org.springframework.scheduling.annotation.Async;
+
 @Slf4j
 @Service
 @RequiredArgsConstructor
@@ -38,93 +40,31 @@ public class TourApiSyncServiceImpl implements TourApiSyncService {
     private String baseUrl;
 
     // ─────────────────────────────────────────────────────────────────
-    // [★] 이미지 동기화: image_url NULL인 장소에 firstimage 채우기
-    //     호출: GET /api/admin/sync/images
-    // ─────────────────────────────────────────────────────────────────
-    @Override
-    public String forceSyncPlaceImages() {
-        List<Long> targets = placeMapper.findPlacesWithNullImage();
-        if (targets.isEmpty()) return "이미지 채울 대상이 없습니다!";
-
-        log.info("🖼️ [이미지 동기화] {}개 작업을 시작합니다.", targets.size());
-        AtomicInteger successCount  = new AtomicInteger(0);
-        AtomicInteger quotaExceeded = new AtomicInteger(0);
-        AtomicInteger processed     = new AtomicInteger(0);
-
-        targets.parallelStream().forEach(placeId -> {
-            if (quotaExceeded.get() > 0) return;
-            try {
-                URI uri = UriComponentsBuilder.fromUriString(baseUrl + "/detailCommon2")
-                        .queryParam("ServiceKey",   serviceKey)
-                        .queryParam("MobileOS",     "ETC")
-                        .queryParam("MobileApp",    "Tripan")
-                        .queryParam("_type",        "json")
-                        .queryParam("contentId",    placeId)
-                        .queryParam("defaultYN",    "Y")
-                        .queryParam("firstImageYN", "Y")
-                        .queryParam("numOfRows",    "1")
-                        .queryParam("pageNo",       "1")
-                        .build(true).toUri();
-
-                HttpHeaders headers = new HttpHeaders();
-                headers.set("User-Agent", "Mozilla/5.0");
-                ResponseEntity<String> response = restTemplate.exchange(
-                        uri, HttpMethod.GET, new HttpEntity<>(headers), String.class);
-
-                JsonNode item = objectMapper.readTree(response.getBody())
-                        .path("response").path("body").path("items").path("item");
-
-                if (item.isArray() && item.size() > 0) {
-                    String firstimage = item.get(0).path("firstimage").asText("").trim();
-                    if (!firstimage.isBlank()) {
-                        placeMapper.updatePlaceImage(placeId, firstimage);
-                        successCount.incrementAndGet();
-                    }
-                }
-            } catch (HttpStatusCodeException e) {
-                if (e.getStatusCode().value() == 429) quotaExceeded.incrementAndGet();
-            } catch (Exception e) {
-                log.error("🚨 이미지 동기화 ID {} 실패: {}", placeId, e.getMessage());
-            } finally {
-                int cur = processed.incrementAndGet();
-                if (cur % 50 == 0) log.info("🖼️ 진행: {}/{}", cur, targets.size());
-            }
-        });
-
-        return (quotaExceeded.get() > 0 ? "할당량 초과 중단! " : "")
-                + successCount.get() + "개 이미지 저장 완료!";
-    }
-
-    // ─────────────────────────────────────────────────────────────────
     // [1] place 테이블 description / phone_number 동기화
+    //     이미지 동기화 제외 — API 호출 최소화
+    //     호출: GET /api/admin/sync/places
     // ─────────────────────────────────────────────────────────────────
     @Override
     public String forceSyncPlaceDetails() {
         List<PlaceDto> emptyPlaces = placeMapper.findPlacesWithNullDescription();
         if (emptyPlaces.isEmpty()) return "동기화할 대상이 없습니다!";
 
-        log.info("🚀 [터보 동기화] {}개 작업을 시작합니다.", emptyPlaces.size());
-        AtomicInteger successCount  = new AtomicInteger(0);
-        AtomicInteger quotaExceeded = new AtomicInteger(0);
+        log.info("🚀 [place 동기화] {}개 → detailCommon2 (description + tel)", emptyPlaces.size());
+        AtomicInteger successCount   = new AtomicInteger(0);
+        AtomicInteger quotaExceeded  = new AtomicInteger(0);
         AtomicInteger processedCount = new AtomicInteger(0);
 
         emptyPlaces.parallelStream().forEach(place -> {
             if (quotaExceeded.get() > 0) return;
-
-            log.info("🔍 작업 시작 -> ID: {}", place.getPlaceId());
-
-            String finalTel  = "";
-            String finalDesc = " ";
-
             try {
                 URI uri = UriComponentsBuilder.fromUriString(baseUrl + "/detailCommon2")
                         .queryParam("ServiceKey", serviceKey)
-                        .queryParam("MobileOS", "ETC")
-                        .queryParam("MobileApp", "Tripan")
-                        .queryParam("_type", "json")
-                        .queryParam("contentId", place.getPlaceId())
-                        .queryParam("numOfRows", "1")
-                        .queryParam("pageNo", "1")
+                        .queryParam("MobileOS",   "ETC")
+                        .queryParam("MobileApp",  "Tripan")
+                        .queryParam("_type",      "json")
+                        .queryParam("contentId",  place.getPlaceId())
+                        .queryParam("numOfRows",  "1")
+                        .queryParam("pageNo",     "1")
                         .build(true).toUri();
 
                 HttpHeaders headers = new HttpHeaders();
@@ -135,35 +75,34 @@ public class TourApiSyncServiceImpl implements TourApiSyncService {
                 JsonNode item = objectMapper.readTree(response.getBody())
                         .path("response").path("body").path("items").path("item");
 
+                String tel  = "";
+                String desc = " ";
                 if (item.isArray() && item.size() > 0) {
-                    JsonNode node = item.get(0);
-                    finalTel  = node.path("tel").asText("").replace("<br>", " ").trim();
-                    String ov = node.path("overview").asText("");
-                    if (!ov.isBlank()) {
-                        finalDesc = ov.replace("<br>", "\n").replace("<br />", "\n").trim();
-                    }
+                    JsonNode n = item.get(0);
+                    tel  = n.path("tel").asText("").replace("<br>", " ").trim();
+                    String ov = n.path("overview").asText("");
+                    if (!ov.isBlank()) desc = ov.replace("<br>", "\n").replace("<br />", "\n").trim();
                     successCount.incrementAndGet();
                 }
-
-                placeMapper.updatePlaceDetails(place.getPlaceId(), finalTel, finalDesc);
+                placeMapper.updatePlaceDetails(place.getPlaceId(), tel, desc);
 
             } catch (HttpStatusCodeException e) {
-                if (e.getStatusCode().value() == 429) {
-                    quotaExceeded.incrementAndGet();
-                } else {
-                    placeMapper.updatePlaceDetails(place.getPlaceId(), "", " ");
-                }
+                if (e.getStatusCode().value() == 429) quotaExceeded.incrementAndGet();
+                else placeMapper.updatePlaceDetails(place.getPlaceId(), "", " ");
             } catch (Exception e) {
                 log.error("🚨 ID {} 동기화 실패: {}", place.getPlaceId(), e.getMessage());
             } finally {
-                int current = processedCount.incrementAndGet();
-                if (current % 10 == 0) {
-                    log.info("📊 진행: {}/{}", current, emptyPlaces.size());
-                }
+                int cur = processedCount.incrementAndGet();
+                if (cur % 20 == 0) log.info("📊 진행: {}/{}", cur, emptyPlaces.size());
             }
         });
 
-        return (quotaExceeded.get() > 0 ? "할당량 초과로 중단됨! " : "") + successCount.get() + "개 성공!";
+        return (quotaExceeded.get() > 0 ? "할당량 초과 중단! " : "") + successCount.get() + "개 성공!";
+    }
+
+    @Override
+    public String forceSyncPlaceImages() {
+        return "이미지 동기화는 사용하지 않습니다.";
     }
 
     // ─────────────────────────────────────────────────────────────────
@@ -404,6 +343,143 @@ public class TourApiSyncServiceImpl implements TourApiSyncService {
     }
 
     // ── 유틸 ──────────────────────────────────────────────────────────
+
+    /**
+     * [온디맨드] 디테일 페이지 진입 시 DB에 없으면 API 호출 → 즉시 저장
+     * PlaceController.detail() 에서 호출
+     */
+    @Async
+    @Override
+    public void syncOnDemand(Long placeId, String category) {
+        if (placeId == null || category == null) return;
+        try {
+            HttpHeaders headers = new HttpHeaders();
+            headers.set("User-Agent", "Mozilla/5.0");
+
+            // ── 1. description/phone 없으면 채우기 ──────────────────
+            if (placeMapper.hasNullDescription(placeId) != 0) {
+                URI uri = UriComponentsBuilder.fromUriString(baseUrl + "/detailCommon2")
+                        .queryParam("ServiceKey", serviceKey)
+                        .queryParam("MobileOS", "ETC")
+                        .queryParam("MobileApp", "Tripan")
+                        .queryParam("_type", "json")
+                        .queryParam("contentId", placeId)
+                        .queryParam("numOfRows", "1")
+                        .queryParam("pageNo", "1")
+                        .build(true).toUri();
+
+                ResponseEntity<String> res = restTemplate.exchange(
+                        uri, HttpMethod.GET, new HttpEntity<>(headers), String.class);
+                JsonNode item = objectMapper.readTree(res.getBody())
+                        .path("response").path("body").path("items").path("item");
+
+                if (item.isArray() && item.size() > 0) {
+                    JsonNode n = item.get(0);
+                    String tel  = n.path("tel").asText("").replace("<br>", " ").trim();
+                    String desc = n.path("overview").asText("").replace("<br>", "\n").trim();
+                    placeMapper.updatePlaceDetails(placeId, tel, desc.isBlank() ? " " : desc);
+                } else {
+                    placeMapper.updatePlaceDetails(placeId, "", " ");
+                }
+            }
+
+            // ── 2. 카테고리별 상세 없으면 채우기 ───────────────────
+            switch (category) {
+                case "RESTAURANT" -> {
+                    if (placeMapper.hasRestaurantDetail(placeId) == 0) {
+                        URI uri = UriComponentsBuilder.fromUriString(baseUrl + "/detailIntro2")
+                                .queryParam("ServiceKey", serviceKey)
+                                .queryParam("MobileOS", "ETC").queryParam("MobileApp", "Tripan")
+                                .queryParam("_type", "json").queryParam("contentId", placeId)
+                                .queryParam("contentTypeId", "39").queryParam("numOfRows", "1")
+                                .queryParam("pageNo", "1").build(true).toUri();
+
+                        ResponseEntity<String> res = restTemplate.exchange(
+                                uri, HttpMethod.GET, new HttpEntity<>(headers), String.class);
+                        JsonNode item = objectMapper.readTree(res.getBody())
+                                .path("response").path("body").path("items").path("item");
+
+                        if (item.isArray() && item.size() > 0) {
+                            JsonNode n = item.get(0);
+                            placeMapper.upsertRestaurant(placeId,
+                                    n.path("opentimefood").asText("").replace("<br>", "\n").trim(),
+                                    n.path("restdatefood").asText("").replace("<br>", "\n").trim(),
+                                    n.path("parkingfood").asText("").trim(),
+                                    n.path("infocenterfood").asText("").replace("<br>", "\n").trim(),
+                                    n.path("reservationfood").asText("").replace("<br>", "\n").trim());
+                            placeMapper.upsertRestaurantFacility(placeId,
+                                    parseFacilityText(n.path("chkcreditcardfood").asText("")),
+                                    parseFacilityText(n.path("kidsfacility").asText("")),
+                                    parseFacilityText(n.path("packing").asText("")));
+                            placeMapper.upsertRestaurantMenu(placeId,
+                                    n.path("firstmenu").asText("").trim(),
+                                    n.path("treatmenu").asText("").trim(), "");
+                        } else {
+                            placeMapper.upsertRestaurant(placeId, "-", "-", "-", "-", "-");
+                            placeMapper.upsertRestaurantFacility(placeId, 0, 0, 0);
+                            placeMapper.upsertRestaurantMenu(placeId, "-", "-", "");
+                        }
+                    }
+                }
+                case "TOUR", "CULTURE", "LEISURE" -> {
+                    if (placeMapper.hasAttractionDetail(placeId) == 0) {
+                        int typeId = switch (category) {
+                            case "CULTURE"  -> 14;
+                            case "LEISURE"  -> 28;
+                            default         -> 12;
+                        };
+                        URI uri = UriComponentsBuilder.fromUriString(baseUrl + "/detailIntro2")
+                                .queryParam("ServiceKey", serviceKey)
+                                .queryParam("MobileOS", "ETC").queryParam("MobileApp", "Tripan")
+                                .queryParam("_type", "json").queryParam("contentId", placeId)
+                                .queryParam("contentTypeId", typeId).queryParam("numOfRows", "1")
+                                .queryParam("pageNo", "1").build(true).toUri();
+
+                        ResponseEntity<String> res = restTemplate.exchange(
+                                uri, HttpMethod.GET, new HttpEntity<>(headers), String.class);
+                        JsonNode item = objectMapper.readTree(res.getBody())
+                                .path("response").path("body").path("items").path("item");
+
+                        String closed = "-", usetime = "-";
+                        if (item.isArray() && item.size() > 0) {
+                            JsonNode n = item.get(0);
+                            closed  = switch (typeId) {
+                                case 14 -> n.path("restdateculture").asText("-");
+                                case 28 -> n.path("restdateleports").asText("-");
+                                default -> n.path("restdate").asText("-");
+                            };
+                            usetime = switch (typeId) {
+                                case 14 -> n.path("usetimeculture").asText("-");
+                                case 28 -> n.path("usetimeleports").asText("-");
+                                default -> n.path("usetime").asText("-");
+                            };
+                            closed  = closed.replace("<br>", "\n").trim();
+                            usetime = usetime.replace("<br>", "\n").trim();
+                        }
+                        placeMapper.upsertAttraction(placeId,
+                                closed.isBlank()  ? "-" : closed,
+                                usetime.isBlank() ? "-" : usetime);
+                    }
+                }
+            }
+        } catch (Exception e) {
+            log.warn("⚡ [온디맨드] placeId={} 동기화 실패 (무시): {}", placeId, e.getMessage());
+        }
+    }
+
+    /**
+     * [통합 배치] place(설명+전화+이미지) + 식당 + 관광지 한번에
+     * detailCommon2 1회로 description+tel+image 모두 처리 → API 호출 최소화
+     * GET /api/admin/sync/all
+     */
+    @Override
+    public String forceSyncAll() {
+        StringBuilder sb = new StringBuilder();
+        sb.append("▶ place (설명+전화+이미지): ").append(forceSyncPlaceDetails()).append("\n");
+        sb.append("▶ 식당 상세:               ").append(forceSyncRestaurantDetails()).append("\n");
+        sb.append("▶ 관광지 상세:             ").append(forceSyncAttractionDetails());
+        return sb.toString();
+    }
 
     private void putIfNotEmpty(Map<String, Object> map, String key, JsonNode node, String field) {
         String val = node.path(field).asText("").trim();

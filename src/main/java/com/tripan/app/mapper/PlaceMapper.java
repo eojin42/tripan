@@ -53,6 +53,9 @@ public interface PlaceMapper {
     /** 설명이 없는 장소 50개 조회 */
     List<PlaceDto> findPlacesWithNullDescription();
 
+    /** description OR image_url 없는 장소 한번에 조회 (통합 sync용) */
+    List<PlaceDto> findPlacesNeedingSync();
+
     /** 장소 전화번호, 설명 업데이트 */
     int updatePlaceDetails(@Param("placeId") Long placeId, 
                            @Param("phoneNumber") String phoneNumber, 
@@ -104,6 +107,15 @@ public interface PlaceMapper {
     java.util.Map<String, Object> getRestaurantDetailByPlaceId(@Param("placeId") Long placeId);
 
     java.util.Map<String, Object> getAttractionDetailByPlaceId(@Param("placeId") Long placeId);
+
+    /** description이 NULL이거나 공백인지 (1=비어있음, 0=있음) */
+    int hasNullDescription(@Param("placeId") Long placeId);
+
+    /** restaurant 테이블에 해당 place가 있는지 (1=있음, 0=없음) */
+    int hasRestaurantDetail(@Param("placeId") Long placeId);
+
+    /** attraction 테이블에 해당 place가 있는지 (1=있음, 0=없음) */
+    int hasAttractionDetail(@Param("placeId") Long placeId);
     
     int upsertPlace(PlaceDto place);
     

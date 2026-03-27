@@ -14,15 +14,12 @@ import lombok.RequiredArgsConstructor;
 /**
  * TourAPI → DB 배치 동기화 트리거 (관리자/테스트용)
  *
- * 사용 흐름:
- *  1. GET /api/admin/sync/places       → place 테이블 description, phone_number 업데이트
- *  2. GET /api/admin/sync/restaurants  → restaurant 테이블 영업시간/휴무일 등 업데이트
- *  3. GET /api/admin/sync/attractions  → attraction 테이블 휴무일/이용시간 업데이트  ← NEW
- *
- * 동작 방식:
- *  - TourAPI(한국관광공사 detailIntro2) 를 호출하여 결과를 각 테이블에 MERGE(UPSERT)
- *  - 이미 데이터가 있는 장소는 건너뜀(attraction 테이블에 없는 것만 조회 대상)
- *  - 저장 후에는 /curation/detail 조회 시 DB JOIN으로 빠르게 사용
+ * 엔드포인트 목록:
+ *  GET /api/admin/sync/places       → place.description, place.phone_number
+ *  GET /api/admin/sync/images       → place.image_url
+ *  GET /api/admin/sync/restaurants  → restaurant + restaurant_facility + menu
+ *  GET /api/admin/sync/attractions  → attraction (휴무일/이용시간)
+ *  GET /api/admin/sync/all          → 위 4개 한번에 (통합 배치)
  */
 @RestController
 @RequestMapping("/api/admin/sync")
@@ -33,33 +30,29 @@ public class TourApiSyncController {
 
     /** place 테이블 description / phone_number 동기화 */
     @GetMapping("/places")
-    public ResponseEntity<Map<String, String>> triggerSync() {
+    public ResponseEntity<Map<String, String>> syncPlaces() {
         String result = syncService.forceSyncPlaceDetails();
         return ResponseEntity.ok(Map.of("result", result));
     }
 
-    /**
-     * 식당 상세 동기화 (contentTypeId=39)
-     * → restaurant / restaurant_facility / restaurant_menu 테이블 MERGE
-     */
+    /** 식당 상세 동기화 → restaurant / restaurant_facility / menu */
     @GetMapping("/restaurants")
     public ResponseEntity<String> syncRestaurants() {
         return ResponseEntity.ok(syncService.forceSyncRestaurantDetails());
     }
 
-    /**
-     * 이미지 없는 장소 image_url 채우기
-     * 호출: GET http://localhost:9090/api/admin/sync/images
-     * (할당량 제한 있으므로 여러 번 호출해서 점진적으로 채우기)
-     */
-    @GetMapping("/images")
-    public ResponseEntity<String> syncImages() {
-        return ResponseEntity.ok(syncService.forceSyncPlaceImages());
-    }
-
-    //호출: GET http://localhost:9090/api/admin/sync/attractions
+    /** 관광지/문화/레포츠 상세 동기화 → attraction */
     @GetMapping("/attractions")
     public ResponseEntity<String> syncAttractions() {
         return ResponseEntity.ok(syncService.forceSyncAttractionDetails());
+    }
+
+    /**
+     * 통합 배치 — places + images + restaurants + attractions 한번에
+     * 호출: GET http://localhost:9090/api/admin/sync/all
+     */
+    @GetMapping("/all")
+    public ResponseEntity<String> syncAll() {
+        return ResponseEntity.ok(syncService.forceSyncAll());
     }
 }

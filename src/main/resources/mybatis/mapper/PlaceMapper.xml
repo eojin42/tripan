@@ -183,7 +183,34 @@
           AND place_id > 100000
           AND category NOT IN ('STAY', 'FESTIVAL', '15', '32') 
         ORDER BY place_id DESC
-        FETCH FIRST 10000 ROWS ONLY  </select>
+        FETCH FIRST 10000 ROWS ONLY
+    </select>
+
+    <!-- description 없거나 image 없는 장소 — 한 번의 API 호출로 둘 다 채움 -->
+    <select id="findPlacesNeedingSync" resultType="com.tripan.app.domain.dto.PlaceDto">
+        SELECT
+            place_id      AS placeId,
+            place_name    AS placeName,
+            address       AS address,
+            latitude      AS latitude,
+            longitude     AS longitude,
+            category      AS category,
+            image_url     AS imageUrl,
+            phone_number  AS phoneNumber,
+            description   AS description
+        FROM place
+        WHERE place_id > 100000
+          AND category NOT IN ('STAY', 'FESTIVAL', '15', '32')
+          AND (
+              description IS NULL
+              OR image_url IS NULL
+          )
+        ORDER BY
+            -- description 없는 게 우선순위
+            CASE WHEN description IS NULL THEN 0 ELSE 1 END,
+            place_id DESC
+        FETCH FIRST 10000 ROWS ONLY
+    </select>
 
     <update id="updatePlaceDetails">
         UPDATE place
@@ -325,6 +352,29 @@
             a.closed_days AS "closedDays"
         FROM attraction a
         WHERE a.place_id = #{placeId}
+    </select>
+
+    <!-- ─── 온디맨드 sync용 존재 여부 확인 ─── -->
+    <!-- Oracle에서 boolean 직접 리턴 불가 → int(0/1) 로 받아서 Java에서 != 0 비교 -->
+    <select id="hasNullDescription" resultType="int">
+        SELECT CASE WHEN COUNT(*) > 0 THEN 0 ELSE 1 END
+        FROM place
+        WHERE place_id = #{placeId}
+          AND (description IS NULL
+               OR DBMS_LOB.GETLENGTH(description) = 0
+               OR DBMS_LOB.SUBSTR(description, 1, 1) = ' ')
+    </select>
+
+    <select id="hasRestaurantDetail" resultType="int">
+        SELECT CASE WHEN COUNT(*) > 0 THEN 1 ELSE 0 END
+        FROM restaurant
+        WHERE place_id = #{placeId}
+    </select>
+
+    <select id="hasAttractionDetail" resultType="int">
+        SELECT CASE WHEN COUNT(*) > 0 THEN 1 ELSE 0 END
+        FROM attraction
+        WHERE place_id = #{placeId}
     </select>
     
     <update id="upsertPlace" parameterType="com.tripan.app.domain.dto.PlaceDto">
