@@ -157,7 +157,11 @@ public class ExpenseController {
             Map<String, Object> wsMsg = new HashMap<>();
             wsMsg.put("type", "NEW_NOTIFICATION");
             messagingTemplate.convertAndSend("/sub/trip/" + tripId, wsMsg);
-            
+            /* ★ 상대방 정산탭 즉시 갱신 */
+            Map<String, Object> refreshMsg = new HashMap<>();
+            refreshMsg.put("type", "REFRESH_SETTLEMENT");
+            messagingTemplate.convertAndSend("/sub/trip/" + tripId, refreshMsg);
+
             result.put("success", true);
             result.put("message", "정산을 요청했어요!");
         } catch (Exception e) {
@@ -305,6 +309,20 @@ public class ExpenseController {
             @RequestBody SettlementDto.CompleteRequest req) {
 
         expenseService.completeSettlements(req);
+        /* ★ 정산 완료 후 전체 멤버 화면 즉시 갱신 */
+        try {
+            Long tripId = req.getTripId();
+            if (tripId != null) {
+                Map<String, Object> refreshMsg = new HashMap<>();
+                refreshMsg.put("type", "REFRESH_SETTLEMENT");
+                messagingTemplate.convertAndSend("/sub/trip/" + tripId, refreshMsg);
+                /* 지출 목록 settle_status도 갱신 */
+                Map<String, Object> expMsg = new HashMap<>();
+                expMsg.put("type", "EXPENSE_ADDED");
+                expMsg.put("senderNickname", "");
+                messagingTemplate.convertAndSend("/sub/trip/" + tripId, expMsg);
+            }
+        } catch (Exception ignored) {}
         return ResponseEntity.ok().build();
     }
 
