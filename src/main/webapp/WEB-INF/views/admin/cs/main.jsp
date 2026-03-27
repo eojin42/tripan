@@ -41,89 +41,6 @@
     .tab-panel { display: none; }
     .tab-panel.active { display: block; }
 
-    /* ── 필터/검색 툴바 ── */
-    .board-toolbar {
-      display: flex; justify-content: space-between; align-items: center;
-      margin-bottom: 16px; gap: 12px; flex-wrap: wrap;
-    }
-    .filter-group { display: flex; gap: 6px; }
-    .filter-btn {
-      height: 34px; padding: 0 16px; border-radius: 9px; font-size: 13px; font-weight: 700;
-      border: 1.5px solid var(--border); background: #fff; cursor: pointer;
-      color: var(--muted); transition: all .2s; font-family: 'Pretendard', sans-serif;
-    }
-    .filter-btn.active, .filter-btn:hover {
-      border-color: var(--primary); color: var(--primary); background: var(--primary-10);
-    }
-
-    /* ── 상태 pill ── */
-    .status-pill {
-      display: inline-flex; align-items: center; gap: 4px;
-      padding: 3px 10px; border-radius: 20px; font-size: 12px; font-weight: 800;
-    }
-    .status-pill.waiting  { background: #FFF3CD; color: #856404; }
-    .status-pill.answered { background: #D1FAE5; color: #065F46; }
-    .status-pill.closed   { background: #F3F4F6; color: #6B7280; }
-
-    .category-pill {
-      display: inline-block; padding: 3px 10px; border-radius: 8px;
-      font-size: 11px; font-weight: 700; background: #EFF6FF; color: #1D4ED8;
-    }
-
-    /* ── 문의 상세 모달 ── */
-    .modal-overlay {
-      position: fixed; inset: 0; background: rgba(15,23,42,0.5);
-      backdrop-filter: blur(6px); display: none;
-      justify-content: center; align-items: center;
-      z-index: 3000; padding: 24px;
-    }
-    .modal-overlay.open { display: flex; }
-    .inquiry-modal {
-      background: #fff; width: 100%; max-width: 560px;
-      border-radius: 22px; overflow: hidden;
-      box-shadow: 0 24px 64px rgba(0,0,0,.16);
-      animation: modalUp 0.3s cubic-bezier(0.16,1,0.3,1);
-      display: flex; flex-direction: column;
-      max-height: 85vh;
-    }
-    @keyframes modalUp {
-      from { opacity:0; transform:translateY(20px); }
-      to   { opacity:1; transform:translateY(0); }
-    }
-    .im-head {
-      padding: 24px 28px 18px; border-bottom: 1px solid var(--border);
-      display: flex; justify-content: space-between; align-items: flex-start;
-    }
-    .im-head h3 { font-size: 16px; font-weight: 900; margin: 0 0 8px; }
-    .im-meta { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
-    .im-body { padding: 22px 28px; overflow-y: auto; flex: 1; display: flex; flex-direction: column; gap: 16px; }
-    .im-content-box {
-      background: var(--bg); border-radius: 12px; padding: 16px;
-      font-size: 14px; line-height: 1.7; color: var(--text); font-weight: 500;
-    }
-    .im-foot { padding: 16px 28px; border-top: 1px solid var(--border); display: flex; gap: 10px; }
-    .fg { display: flex; flex-direction: column; gap: 7px; }
-    .fg label { font-size: 11px; font-weight: 800; color: var(--muted); text-transform: uppercase; letter-spacing: 0.6px; }
-    .fg textarea {
-      width: 100%; border: 1.5px solid var(--border); border-radius: 10px;
-      padding: 10px 14px; font-size: 14px; font-weight: 500;
-      background: #fff; outline: none; resize: vertical; min-height: 100px;
-      font-family: 'Pretendard', sans-serif; line-height: 1.6;
-      transition: border-color .2s; box-sizing: border-box;
-    }
-    .fg textarea:focus { border-color: var(--primary); box-shadow: 0 0 0 3px var(--primary-10); }
-    .btn-m        { flex:1; height: 44px; border-radius: 10px; font-weight: 800; font-size: 14px; border: none; cursor: pointer; transition: opacity .15s; font-family: 'Pretendard', sans-serif; }
-    .btn-m-ghost  { background: var(--bg); color: var(--text); }
-    .btn-m-primary{ background: #111; color: #fff; }
-    .btn-m:hover  { opacity: .84; }
-    .btn-close-x  {
-      width: 30px; height: 30px; border-radius: 50%; border: none;
-      background: var(--bg); cursor: pointer; font-size: 15px;
-      display: flex; align-items: center; justify-content: center;
-      color: var(--muted); transition: all .2s; flex-shrink: 0;
-    }
-    .btn-close-x:hover { background: var(--border); }
-
     /* ── 채팅 레이아웃 ── */
     .chat-manage-layout {
       display: grid; grid-template-columns: 320px 1fr;
@@ -287,69 +204,21 @@
       <div class="page-header fade-up">
         <div>
           <h1>고객센터 관리</h1>
-          <p>문의 게시판 및 1:1 채팅 상담을 관리합니다.</p>
+          <p>1:1 채팅 상담을 관리합니다.</p>
         </div>
       </div>
 
       <!-- 탭 바 -->
       <div class="card fade-up" style="padding: 0;">
         <div class="cs-tab-bar">
-          <button class="cs-tab active" onclick="switchTab('board', this)">
-            <i class="bi bi-card-list"></i> 문의 게시판
-            <span class="tab-badge" id="boardBadge">0</span>
-          </button>
-          <button class="cs-tab" onclick="switchTab('chat', this)">
+          <button class="cs-tab active" onclick="switchTab('chat', this)">
             <i class="bi bi-chat-dots"></i> 1:1 채팅 상담
             <span class="tab-badge" id="chatBadge">0</span>
           </button>
         </div>
 
-        <!-- ── 문의 게시판 패널 ── -->
-        <div class="tab-panel active" id="panel-board" style="padding: 24px;">
-
-          <div class="board-toolbar">
-            <div class="filter-group">
-              <button class="filter-btn active" onclick="filterInquiry('all', this)">전체</button>
-              <button class="filter-btn" onclick="filterInquiry('waiting', this)">대기 중</button>
-              <button class="filter-btn" onclick="filterInquiry('answered', this)">답변 완료</button>
-              <button class="filter-btn" onclick="filterInquiry('closed', this)">종료</button>
-            </div>
-            <div class="filter-row" style="margin:0;">
-              <input type="text" class="keyword-input" style="width:220px;"
-                     placeholder="제목 또는 작성자 검색..."
-                     id="inquirySearch" oninput="searchInquiry(this.value)">
-            </div>
-          </div>
-
-          <div class="table-responsive">
-            <table>
-              <thead>
-                <tr>
-                  <th>번호</th>
-                  <th>분류</th>
-                  <th>제목</th>
-                  <th>작성자</th>
-                  <th>작성일</th>
-                  <th>상태</th>
-                  <th class="right">관리</th>
-                </tr>
-              </thead>
-              <tbody id="inquiryTbody">
-                <tr>
-                  <td colspan="7" style="text-align:center; padding:50px 0; color:var(--muted);">
-                    <i class="bi bi-inbox" style="font-size:24px; opacity:.3; display:block; margin-bottom:8px;"></i>
-                    문의 내역을 불러오는 중...
-                  </td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-
-          <div style="display:flex; justify-content:center; gap:6px; padding-top:16px;" id="boardPagination"></div>
-        </div>
-
         <!-- ── 1:1 채팅 패널 ── -->
-        <div class="tab-panel" id="panel-chat">
+        <div class="tab-panel active" id="panel-chat">
           <div class="chat-manage-layout">
 
             <!-- 채팅 목록 -->
@@ -404,34 +273,6 @@
       </div>
 
     </main>
-  </div>
-</div>
-
-<!-- 문의 상세 모달 -->
-<div class="modal-overlay" id="inquiryModal" onclick="handleBackdropClick(event)">
-  <div class="inquiry-modal">
-    <div class="im-head">
-      <div>
-        <h3 id="modalTitle">문의 제목</h3>
-        <div class="im-meta">
-          <span class="category-pill" id="modalCategory">결제</span>
-          <span id="modalStatus" class="status-pill waiting">대기 중</span>
-          <span style="font-size:12px; color:var(--muted);" id="modalDate"></span>
-        </div>
-      </div>
-      <button class="btn-close-x" onclick="closeModal()">✕</button>
-    </div>
-    <div class="im-body">
-      <div class="im-content-box" id="modalContent"></div>
-      <div class="fg">
-        <label>📝 답변 작성</label>
-        <textarea id="modalReplyInput" placeholder="답변 내용을 입력하세요..."></textarea>
-      </div>
-    </div>
-    <div class="im-foot">
-      <button class="btn-m btn-m-ghost" onclick="closeModal()">취소</button>
-      <button class="btn-m btn-m-primary" onclick="submitReply()">답변 등록</button>
-    </div>
   </div>
 </div>
 

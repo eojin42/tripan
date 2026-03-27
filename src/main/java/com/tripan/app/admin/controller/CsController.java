@@ -36,12 +36,6 @@ public class CsController {
         return "admin/cs/main";
     }
 
-    @GetMapping("/admin/inquiry")
-    @ResponseBody
-    public ResponseEntity<?> getInquiryList() {
-        return ResponseEntity.ok(List.of());
-    }
-
     /** 유저용: 본인의 상담 방 목록 */
     @GetMapping("/api/chat/rooms/support")
     @ResponseBody
@@ -131,12 +125,4 @@ public class CsController {
     	csService.resetNotification(roomId, loginUser.getMemberId());
     	return ResponseEntity.ok().build();
     }
-    
-    @PostMapping("/admin/inquiry/{id}/reply")
-    @ResponseBody
-    public ResponseEntity<?> replyInquiry(@PathVariable("id") Long id, @RequestBody Map<String, String> body) {
-        return ResponseEntity.ok().build();
-    }
-    
-   
 }
