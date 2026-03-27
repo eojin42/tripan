@@ -27,6 +27,7 @@ import com.tripan.app.partner.service.PartnerCouponService;
 import com.tripan.app.partner.service.PartnerInfoService;
 import com.tripan.app.partner.service.PartnerReviewService;
 import com.tripan.app.partner.service.PartnerRoomService;
+import com.tripan.app.partner.service.PartnerSettlementServiceforPartner;
 import com.tripan.app.security.CustomUserDetails;
 
 import lombok.RequiredArgsConstructor;
@@ -40,19 +41,14 @@ public class PartnerMainController {
     private final PartnerRoomService partnerRoomService;
     private final PartnerReviewService partnerReviewService;
     private final PartnerCouponService partnerCouponService;
+    private final PartnerSettlementServiceforPartner partnerSettlementServiceforPartner;
 
     @GetMapping("/main")
     public String main(
             @RequestParam(value = "tab", defaultValue = "dashboard") String tab,
             @RequestParam(value = "partnerId", required = false) Long requestedPartnerId,
-            @RequestParam Map<String, Object> searchParams,
             
-            @RequestParam(value = "startDate", required = false) String startDate,
-            @RequestParam(value = "endDate", required = false) String endDate,
-            @RequestParam(value = "roomId", required = false) String searchRoomId,
-            @RequestParam(value = "status", required = false) String searchStatus,
-            @RequestParam(value = "keyword", required = false) String keyword,
-            @RequestParam(value = "rating", required = false) String rating,
+            @RequestParam Map<String, Object> searchParams,
             
             @AuthenticationPrincipal CustomUserDetails userDetails,
             jakarta.servlet.http.HttpSession session,
@@ -83,24 +79,18 @@ public class PartnerMainController {
                 .filter(p -> p.getPartnerId().equals(safeTargetId))
                 .findFirst().orElse(partnerList.get(0));
         
-        String status = currentPartner.getStatus(); 
+        String partnerStatus = currentPartner.getStatus(); 
         
-        if ("0".equals(status) || "PENDING".equals(status) || "REJECTED".equals(status)) {
+        if ("0".equals(partnerStatus) || "PENDING".equals(partnerStatus) || "REJECTED".equals(partnerStatus)) {
             return "redirect:/partner/apply?partnerId=" + currentPartner.getPartnerId();
         }
 
-        if ("SUSPENDED".equals(status) || "BLOCKED".equals(status)) {
+        if ("SUSPENDED".equals(partnerStatus) || "BLOCKED".equals(partnerStatus)) {
             model.addAttribute("title", "접근 제한");
             model.addAttribute("message", "해당 파트너사가 정지 또는 차단 상태입니다.<br>문의: support@tripan.com");
             return "error/error2";
         }
-        
-        session.setAttribute("currentPartnerId", currentPartnerId);
-        
-        model.addAttribute("currentPartner", currentPartner);
-        model.addAttribute("partnerInfo", currentPartner);
-        model.addAttribute("activeTab", tab);
-
+ 
         Long placeId = partnerInfoService.getPlaceIdByPartnerId(currentPartnerId);
         
         if (placeId != null) {
@@ -110,7 +100,7 @@ public class PartnerMainController {
             List<PartnerRoomDto> roomList = partnerRoomService.getRoomsByPlaceId(placeId);
             model.addAttribute("roomList", roomList);
         }
-        
+         
         if ("booking".equals(tab)) {
             searchParams.put("placeId", placeId); 
             List<Map<String, Object>> bookingList = partnerRoomService.getBookingListForPartner(searchParams);
@@ -118,6 +108,12 @@ public class PartnerMainController {
         }
         
         if ("review".equals(tab)) {
+            String startDate = (String) searchParams.get("startDate");
+            String endDate = (String) searchParams.get("endDate");
+            String searchRoomId = (String) searchParams.get("roomId");
+            String rating = (String) searchParams.get("rating");
+            String keyword = (String) searchParams.get("keyword");
+            
             List<PartnerReviewDto> reviewList = partnerReviewService.getReviewList(
                     placeId, startDate, endDate, searchRoomId, rating, keyword);
             model.addAttribute("reviewList", reviewList);
@@ -136,6 +132,23 @@ public class PartnerMainController {
                 model.addAttribute("partnerPlaceList", List.of(model.getAttribute("accommodation")));
             }
         }
+        
+        if ("settle".equals(tab)) {
+            String settleMonth = (String) searchParams.get("settleMonth");
+            String status = (String) searchParams.get("status");
+            
+            Map<String, Object> expectedSettlement = partnerSettlementServiceforPartner.getExpectedSettlement(currentPartnerId);
+            model.addAttribute("expectedSettlement", expectedSettlement);
+
+            List<Map<String, Object>> settlementList = partnerSettlementServiceforPartner.getSettlementList(currentPartnerId, settleMonth, status);
+            model.addAttribute("settlementList", settlementList);
+        }
+        
+        session.setAttribute("currentPartnerId", currentPartnerId);
+        
+        model.addAttribute("currentPartner", currentPartner);
+        model.addAttribute("partnerInfo", currentPartner);
+        model.addAttribute("activeTab", tab);
         
         return "partner/main";
     }
