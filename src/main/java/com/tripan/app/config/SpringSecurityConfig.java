@@ -19,6 +19,8 @@ import com.tripan.app.security.AjaxSessionTimeoutFilter;
 import com.tripan.app.security.LoginFailureHandler;
 import com.tripan.app.security.LoginSuccessHandler;
 
+import jakarta.servlet.http.HttpServletResponse;
+
 @Configuration
 @EnableWebSecurity
 public class SpringSecurityConfig {
@@ -41,7 +43,7 @@ public class SpringSecurityConfig {
 				"/community/feed", "/community/fragment/feed", 
 				"/api/festivals/**", "/api/chat/rooms/region",
 				"/ws-tripan/**", "/feed/feed_list", "/feed/public-trips",
-				"/partner/api/check-session",
+				"/partner/api/check-session", "/error/403", 
 			    };
 		
 		http.cors(Customizer.withDefaults())
@@ -115,10 +117,11 @@ public class SpringSecurityConfig {
 					}
 				})
 				.accessDeniedHandler((request, response, accessDeniedException) -> {
-			        request.setAttribute("title", "접근 권한이 없습니다.");
-			        request.setAttribute("message", "죄송합니다.<br><strong>403 - 관리자만 접근할 수 있는 페이지입니다.</strong>");
-			        request.getRequestDispatcher("/error/403").forward(request, response);
-			    })
+				    response.setStatus(HttpServletResponse.SC_FORBIDDEN);
+				    request.setAttribute("title", "접근 권한이 없습니다.");
+				    request.setAttribute("message", "죄송합니다.<br><strong>403 - 관리자만 접근할 수 있는 페이지입니다.</strong>");
+				    request.getRequestDispatcher("/WEB-INF/views/error/error2.jsp").forward(request, response);
+				})
 		);
 		
 		return http.build();
