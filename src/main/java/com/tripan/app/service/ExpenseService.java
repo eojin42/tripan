@@ -26,4 +26,7 @@ public interface ExpenseService {
 
     /** 정산 완료 batch 상세 조회 */
     SettlementDto.BatchDetailResponse getBatchDetail(Long tripId, Long batchId);
+    
+    
+    
 }
