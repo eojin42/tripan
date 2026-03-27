@@ -21,6 +21,8 @@ public class AccommodationDto {
     private int reviewCount;
     private int bookmarkCount;
     
+    private long avgRating;
+    
     private Integer isActive;
     
     private String tagsStr;

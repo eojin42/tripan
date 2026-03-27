@@ -242,7 +242,9 @@
 	                    <div class="sc-loc">${stay.region}</div>
 	                    <div class="sc-name">${stay.name}</div>
 	                    <div class="sc-price">
-	                        <span style="color:#FFD700; margin-right:4px;">★ 4.8</span> 
+	                        <span style="color:#FFD700; margin-right:4px;">
+							    ★ ${stay.avgRating != null && stay.avgRating > 0 ? stay.avgRating : '0.0'}
+							</span>
 	                        ₩<fmt:formatNumber value="${stay.minPrice}" pattern="#,###"/><span> /박</span>
 	                    </div>
 	                  </div>
@@ -325,6 +327,9 @@
 <jsp:include page="../accommodation/searchModal.jsp" />
 
 <script>
+document.addEventListener('DOMContentLoaded', function() {
+    loadRecentViews();
+});
 function loadRecentViews() {
     const key = '${sessionScope.loginUser.memberId}' ? 'tripan_recent_stays_${sessionScope.loginUser.memberId}' : 'tripan_recent_stays_guest';
     const list = JSON.parse(localStorage.getItem(key) || '[]');
@@ -348,6 +353,10 @@ function loadRecentViews() {
             <div class="sc-info">
                 <div class="sc-loc">\${item.address}</div>
                 <div class="sc-name">\${item.accommodationName}</div>
+                
+                <div class="sc-price">
+                    <span style="color:#FFD700; margin-right:4px;">★ \${item.avgRating}</span>
+                </div>
             </div>
         </div>`;
     });
