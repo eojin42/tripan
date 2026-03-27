@@ -1,17 +1,28 @@
 <%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
 <%@ taglib prefix="c" uri="jakarta.tags.core" %>
+<%@ taglib prefix="fn" uri="jakarta.tags.functions"%> 
 
 <aside class="sidebar">
   <div class="glass-card profile-widget">
     <div class="profile-avatar">
       <c:choose>
-        <c:when test="${not empty sessionScope.loginUser.profilePhoto}">
-          <img src="${pageContext.request.contextPath}/uploads/member/${sessionScope.loginUser.profilePhoto}" alt="프로필">
-        </c:when>
-        <c:otherwise>
-          <div class="profile-avatar-default" id="avatar-initial">T</div>
-        </c:otherwise>
-      </c:choose>
+            <c:when test="${not empty sessionScope.loginUser.profilePhoto}">
+		        <c:choose>
+		            <c:when test="${fn:startsWith(sessionScope.loginUser.profilePhoto, 'http')}">
+		                <img src="${sessionScope.loginUser.profilePhoto}" 
+		                     alt="profile">
+		            </c:when>
+		            <c:otherwise>
+		                <img src="${pageContext.request.contextPath}/uploads/member/${sessionScope.loginUser.profilePhoto}" >
+		            </c:otherwise>
+		        </c:choose>
+		    </c:when>
+            <c:otherwise>
+                <div>
+                    profile
+                </div>
+            </c:otherwise>
+        </c:choose>
     </div>
     <div class="profile-name">${sessionScope.loginUser.nickname} 님</div>
     <div class="profile-bio">${not empty sessionScope.loginUser.bio ? sessionScope.loginUser.bio : '등록된 소개글이 없습니다.'}</div>
