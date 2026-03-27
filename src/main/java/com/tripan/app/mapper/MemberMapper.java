@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.apache.ibatis.annotations.Mapper;
+import org.apache.ibatis.annotations.Param;
 
 import com.tripan.app.domain.dto.MemberDto;
 
@@ -49,4 +50,5 @@ public interface MemberMapper {
 	public MemberDto findByNickname(String nickname);
 	List<MemberDto> searchByKeyword(String keyword);
 	
+	MemberDto findByProviderId(@Param("provider") String provider, @Param("providerId") String providerId);
 }

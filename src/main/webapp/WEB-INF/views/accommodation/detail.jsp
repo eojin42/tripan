@@ -834,7 +834,7 @@ document.addEventListener("DOMContentLoaded", () => {
 function saveRecentAccom() {
     try {
         const key = '${sessionScope.loginUser.memberId}' ? 'tripan_recent_stays_${sessionScope.loginUser.memberId}' : 'tripan_recent_stays_guest';
-        const recent = { accommodationId: '${detail.placeId}', accommodationName: '${detail.name}', address: '${detail.region}', thumbnailUrl: '${detail.imageUrl}', viewedAt: new Date().toISOString() };
+        const recent = { accommodationId: '${detail.placeId}', accommodationName: '${detail.name}', address: '${detail.region}', thumbnailUrl: '${detail.imageUrl}', avgRating: '${reviewStats.avgRating != null ? reviewStats.avgRating : "0.0"}', viewedAt: new Date().toISOString() };
         let list = JSON.parse(localStorage.getItem(key) || '[]').filter(x => x.accommodationId != recent.accommodationId);
         list.unshift(recent); if (list.length > 10) list = list.slice(0, 10);
         localStorage.setItem(key, JSON.stringify(list));

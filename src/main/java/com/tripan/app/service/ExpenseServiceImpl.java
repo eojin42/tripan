@@ -216,11 +216,22 @@ public class ExpenseServiceImpl implements ExpenseService {
 
         // ⑤ 이번 정산에 포함된 expense 목록 → settlement_expense_link INSERT
         List<Long> settledExpenseIds = expenseMapper.selectSettledExpenseIdsByTripId(tripId);
-        // 전체 expense 중 이미 완료된 것 제외 → 이번 batch 대상
-        List<Long> allExpenseIds = expenseMapper.selectExpenseSummaryListByTripId(tripId, 0, 9999)
-                .stream()
-                .map(ExpenseDto.SummaryResponse::getExpenseId)
-                .filter(id -> !settledExpenseIds.contains(id))
+        // ★ 혼자 쓴 지출 제외: participants 중 서로 다른 member_id가 2명 이상인 expense만 포함
+        //   XML 쿼리 없이 Java 코드로 직접 판별 (participants fetch join 활용)
+        List<Expense> allExpenses = expenseRepository.findAllWithParticipantsByTripId(tripId);
+        List<Long> allExpenseIds = allExpenses.stream()
+                .filter(e -> {
+                    // 이미 정산 완료된 지출 제외
+                    if (settledExpenseIds.contains(e.getExpenseId())) return false;
+                    // 혼자 쓴 지출 제외: distinct member_id 2개 이상이어야 정산 대상
+                    long distinctMembers = e.getParticipants().stream()
+                            .filter(ep -> ep.getMemberId() != null)
+                            .map(ep -> ep.getMemberId())
+                            .distinct()
+                            .count();
+                    return distinctMembers >= 2;
+                })
+                .map(Expense::getExpenseId)
                 .collect(Collectors.toList());
 
         if (!allExpenseIds.isEmpty()) {

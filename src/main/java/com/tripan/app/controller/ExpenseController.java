@@ -58,42 +58,32 @@ public class ExpenseController {
         req.setTripId(tripId);
         ExpenseDto.DetailResponse result = expenseService.createExpense(req);
 
-        // ★ 알림 발송 — notificationService는 JPA @Transactional 내에서 실행되어
-        //   시퀀스 PK 충돌 시 트랜잭션이 rollback-only로 마킹됨 → 지출도 롤백되는 버그
-        //   해결: JPA 트랜잭션 완전히 끝난 후 MyBatis expenseMapper로 직접 알림 INSERT
+        // ★ 알림 발송 (결제자를 제외한 모든 멤버에게)
         try {
             Long senderId    = req.getPayerId();
             String payerNick = result.getPayerNickname() != null ? result.getPayerNickname() : "누군가";
-            String message   = payerNick + "님이 새 지출을 추가했어요! 가계부를 확인해보세요.";
+            String desc      = result.getDescription()  != null ? result.getDescription()  : "";
+            long   amount    = result.getAmount() != null ? result.getAmount().longValue() : 0L;
 
-            // trip_member에서 결제자 제외 멤버에게 각각 알림 INSERT (MyBatis → 별도 트랜잭션)
-            java.util.List<java.util.Map<String, Object>> members = expenseMapper.selectTripMemberIds(tripId);
-            for (java.util.Map<String, Object> m : members) {
-                // Oracle MyBatis Map은 대문자 키로 반환 ("MEMBER_ID")
-                Object midObj = m.get("MEMBER_ID");
-                if (midObj == null) midObj = m.get("memberId"); // 소문자 fallback
-                if (midObj == null) midObj = m.get("member_id");
-                if (midObj == null) continue;
-                long receiverId = Long.parseLong(String.valueOf(midObj));
-                if (receiverId == senderId) continue;
-                try {
-                    expenseMapper.insertTripNotification(tripId, receiverId, senderId, message, "EXPENSE");
-                } catch (Exception notifEx) {
-                    // 개별 알림 PK 충돌 무시 — 지출 등록에는 영향 없음
-                }
-            }
+            String message = payerNick + "님이 새 지출을 추가했어요: "
+                    + desc + " ₩" + String.format("%,d", amount);
 
-            // WebSocket 브로드캐스트
-            java.util.Map<String, Object> notifMsg = new HashMap<>();
+            // DB 알림 저장 (결제자 제외 전체)
+            notificationService.notifyAll(tripId, senderId, message, "EXPENSE");
+
+            // WebSocket: 알림 벨 갱신
+            Map<String, Object> notifMsg = new HashMap<>();
             notifMsg.put("type", "NEW_NOTIFICATION");
             messagingTemplate.convertAndSend("/sub/trip/" + tripId, notifMsg);
 
-            java.util.Map<String, Object> expMsg = new HashMap<>();
+            // WebSocket: 지출 목록 실시간 갱신 (EXPENSE_ADDED는 workspace_ws.js에서 이미 처리됨)
+            Map<String, Object> expMsg = new HashMap<>();
             expMsg.put("type", "EXPENSE_ADDED");
             expMsg.put("senderNickname", payerNick);
             messagingTemplate.convertAndSend("/sub/trip/" + tripId, expMsg);
 
         } catch (Exception e) {
+            // 알림 실패가 지출 등록을 막으면 안 됨
             e.printStackTrace();
         }
 
@@ -103,14 +93,7 @@ public class ExpenseController {
     /**
      * 단건 정산 요청 생성
      * POST /api/trips/{tripId}/settlements/request
-     * body: { fromMemberId, amount, existingSettlementId? }
-     *
-     * ★ 핵심 수정:
-     *   - existingSettlementId가 있으면 그 settlement_id 1건만 UPDATE
-     *   - 없으면 신규 INSERT (단건)
-     *   - 기존의 countActiveSettlement → updateSingleSettlementAmount 방식은
-     *     (tripId, toMemberId, fromMemberId) 조합으로 전체를 덮어써서
-     *     "정산 요청 1건 눌렀는데 전부 처리" 버그 발생 → 폐기
+     * body: { fromMemberId, amount }
      */
     @PostMapping("/trips/{tripId}/settlements/request")
     public ResponseEntity<Map<String, Object>> requestSingleSettlement(
@@ -130,42 +113,59 @@ public class ExpenseController {
             Long fromMemberId = Long.valueOf(String.valueOf(body.get("fromMemberId")));
             java.math.BigDecimal amount = new java.math.BigDecimal(String.valueOf(body.get("amount")));
 
-            // ★ 프론트에서 넘긴 existingSettlementId 확인
-            Object existingIdObj = body.get("existingSettlementId");
-            Long existingId = null;
-            if (existingIdObj != null && !"null".equals(String.valueOf(existingIdObj))) {
-                try { existingId = Long.valueOf(String.valueOf(existingIdObj)); } catch (Exception ignored) {}
-            }
+            int existing = expenseMapper.countActiveSettlement(tripId, myId, fromMemberId);
 
-            if (existingId != null && existingId > 0) {
-                // ★ 그 settlement_id 1건만 금액 업데이트 (전체 trip/pair 대상 아님)
-                expenseMapper.updateSettlementById(existingId, amount);
+            // ★ 단건 정산에도 batch_id 부여 → settlement_expense_link 연결 가능
+            Long batchId = expenseMapper.selectNextBatchId();
+
+            SettlementDto.SingleRequest req = SettlementDto.SingleRequest.builder()
+                    .tripId(tripId)
+                    .toMemberId(myId)
+                    .fromMemberId(fromMemberId)
+                    .amount(amount)
+                    .batchId(batchId)
+                    .build();
+
+            if (existing > 0) {
+                // 기존 정산 업데이트: 금액만 갱신 (batch_id는 이미 있으므로 유지)
+                expenseMapper.updateSingleSettlementAmount(req);
             } else {
-                // ★ 신규 단건 INSERT
-                SettlementDto.SingleRequest req = SettlementDto.SingleRequest.builder()
-                        .tripId(tripId)
-                        .toMemberId(myId)
-                        .fromMemberId(fromMemberId)
-                        .amount(amount)
-                        .build();
+                // 신규 INSERT (batch_id 포함)
                 expenseMapper.insertSingleSettlement(req);
+
+                // ★ 이 pair(결제자=myId, 분담자=fromMemberId)의 미정산 expense 연결
+                java.util.List<Long> pairExpIds =
+                    expenseMapper.selectPairExpenseIds(tripId, myId, fromMemberId);
+                if (!pairExpIds.isEmpty()) {
+                    java.util.List<java.util.Map<String, Object>> linkRows = new java.util.ArrayList<>();
+                    for (Long eid : pairExpIds) {
+                        java.util.Map<String, Object> row = new java.util.HashMap<>();
+                        row.put("batchId",   batchId);
+                        row.put("expenseId", eid);
+                        row.put("tripId",    tripId);
+                        linkRows.add(row);
+                    }
+                    expenseMapper.insertSettlementExpenseLinks(linkRows);
+                }
             }
 
-            // 알림 발송 — 실패해도 정산 처리에는 영향 없음
-            try {
-                String message = "정산 요청이 도착했어요! 가계부를 확인해주세요.";
-                expenseMapper.insertTripNotification(tripId, fromMemberId, myId, message, "EXPENSE");
-                Map<String, Object> wsMsg = new HashMap<>();
-                wsMsg.put("type", "NEW_NOTIFICATION");
-                messagingTemplate.convertAndSend("/sub/trip/" + tripId, wsMsg);
-            } catch (Exception notifEx) {
-                notifEx.printStackTrace();
-            }
+            // 알림 발송
+            String message = "정산 요청이 도착했어요! ₩"
+                    + String.format("%,d", amount.longValue()) + " 을 확인해주세요.";
+            expenseMapper.insertTripNotification(tripId, fromMemberId, myId, message, "EXPENSE");
+            
+            Map<String, Object> wsMsg = new HashMap<>();
+            wsMsg.put("type", "NEW_NOTIFICATION");
+            messagingTemplate.convertAndSend("/sub/trip/" + tripId, wsMsg);
+            /* ★ 상대방 정산탭 즉시 갱신 */
+            Map<String, Object> refreshMsg = new HashMap<>();
+            refreshMsg.put("type", "REFRESH_SETTLEMENT");
+            messagingTemplate.convertAndSend("/sub/trip/" + tripId, refreshMsg);
 
             result.put("success", true);
             result.put("message", "정산을 요청했어요!");
         } catch (Exception e) {
-            e.printStackTrace();
+        	e.printStackTrace();
             result.put("success", false);
             result.put("message", e.getMessage());
         }
@@ -309,6 +309,20 @@ public class ExpenseController {
             @RequestBody SettlementDto.CompleteRequest req) {
 
         expenseService.completeSettlements(req);
+        /* ★ 정산 완료 후 전체 멤버 화면 즉시 갱신 */
+        try {
+            Long tripId = req.getTripId();
+            if (tripId != null) {
+                Map<String, Object> refreshMsg = new HashMap<>();
+                refreshMsg.put("type", "REFRESH_SETTLEMENT");
+                messagingTemplate.convertAndSend("/sub/trip/" + tripId, refreshMsg);
+                /* 지출 목록 settle_status도 갱신 */
+                Map<String, Object> expMsg = new HashMap<>();
+                expMsg.put("type", "EXPENSE_ADDED");
+                expMsg.put("senderNickname", "");
+                messagingTemplate.convertAndSend("/sub/trip/" + tripId, expMsg);
+            }
+        } catch (Exception ignored) {}
         return ResponseEntity.ok().build();
     }
 

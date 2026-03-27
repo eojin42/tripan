@@ -16,14 +16,19 @@ import org.springframework.security.web.savedrequest.HttpSessionRequestCache;
 import org.springframework.security.web.session.HttpSessionEventPublisher;
 
 import com.tripan.app.security.AjaxSessionTimeoutFilter;
+import com.tripan.app.security.CustomOAuth2UserService;
 import com.tripan.app.security.LoginFailureHandler;
 import com.tripan.app.security.LoginSuccessHandler;
 
 import jakarta.servlet.http.HttpServletResponse;
+import lombok.RequiredArgsConstructor;
 
 @Configuration
 @EnableWebSecurity
+@RequiredArgsConstructor
 public class SpringSecurityConfig {
+	private final CustomOAuth2UserService customOAuth2UserService;
+	
 	@Bean
 	SecurityFilterChain filterChain(HttpSecurity http) throws Exception{
 		HttpSessionRequestCache requestCache = new HttpSessionRequestCache();
@@ -56,7 +61,18 @@ public class SpringSecurityConfig {
 				.requestMatchers("/admin/**").hasRole("ADMIN")
 				.requestMatchers("/**").hasAnyRole("USER","ADMIN","PARTNER")
 				.anyRequest().authenticated()
-				)
+				);
+		
+		http.oauth2Login(oauth2 -> oauth2
+		    .loginPage("/member/login") 
+		    .successHandler(loginSuccessHandler()) 
+		    .redirectionEndpoint(endpoint -> endpoint
+		        .baseUri("/oauth/*/callback") 
+		    )
+		    .userInfoEndpoint(userInfo -> userInfo
+		        .userService(customOAuth2UserService)
+		    )
+		)
 		.formLogin(login -> login
 				.loginPage("/member/login")
 				.loginProcessingUrl("/member/login")
@@ -127,10 +143,6 @@ public class SpringSecurityConfig {
 		return http.build();
 	}
 	
-	@Bean
-	PasswordEncoder passwordEncoder() {
-		return new BCryptPasswordEncoder();
-	}
 	
 	@Bean
 	LoginSuccessHandler loginSuccessHandler() {

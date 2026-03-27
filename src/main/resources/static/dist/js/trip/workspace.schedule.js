@@ -15,22 +15,152 @@ window.getTripanCategory = function(cat) {
   return { icon: '⭐', label: '나만의', value: 'NONE' }; 
 };
 
+/* ══════════════════════════════════════════════════════════
+   카카오맵 길찾기 유틸
+   ─ openKakaoNav       : 단일 목적지 길찾기 (새 탭)
+   ─ openKakaoRouteForDay : 특정 DAY 전체 경유지 포함 경로 (새 탭)
+══════════════════════════════════════════════════════════ */
+
+/**
+ * 단일 장소 목적지 길찾기
+ * URL: https://map.kakao.com/link/to/{이름},{위도},{경도}
+ */
+window.openKakaoNav = function(name, lat, lng) {
+  if (!lat || !lng || isNaN(parseFloat(lat)) || isNaN(parseFloat(lng))) {
+    if (typeof showToast === 'function') showToast('⚠️ 좌표 정보가 없어 길찾기를 열 수 없어요');
+    return;
+  }
+  var url = 'https://map.kakao.com/link/to/'
+    + encodeURIComponent(name || '장소') + ','
+    + parseFloat(lat) + ',' + parseFloat(lng);
+  window.open(url, '_blank');
+};
+
+/**
+ * DAY 전체 경유지 포함 카카오 길찾기
+ * - 장소가 1개 : /link/to/{목적지}
+ * - 장소가 2개 : /link/from/{출발}/to/{목적지}
+ * - 장소가 3~7개 : /link/by/car/{출발}/{경유1..5}/{목적지}  (경유지 최대 5개 제한)
+ * ※ 장소가 8개 이상일 때는 첫 번째를 출발, 마지막을 목적지,
+ *   중간 5개(등간격)를 자동 선택하여 URL을 생성합니다.
+ * @param {number} dayNum   DAY 번호
+ * @param {string} [mode]   이동수단: 'car'(기본)|'walk'|'traffic'|'bicycle'
+ */
+window.openKakaoRouteForDay = function(dayNum, mode) {
+  var list = document.getElementById('places-' + dayNum);
+  if (!list) {
+    if (typeof showToast === 'function') showToast('⚠️ DAY ' + dayNum + ' 일정을 찾을 수 없어요');
+    return;
+  }
+
+  /* ── 카드에서 좌표 추출 (markerMap 폴백 포함) ── */
+  var cards = Array.from(list.querySelectorAll('.place-card'));
+  var stops = [];
+  cards.forEach(function(card) {
+    var name = card.getAttribute('data-name') || '장소';
+    var lat  = parseFloat(card.getAttribute('data-lat'));
+    var lng  = parseFloat(card.getAttribute('data-lng'));
+
+    // 좌표가 없으면 _markerMap에서 강제 추출
+    if ((!lat || !lng || isNaN(lat)) && typeof _markerMap !== 'undefined') {
+      var itemId = card.getAttribute('data-id');
+      var mEntry = _markerMap[String(itemId)];
+      if (mEntry && mEntry.marker) {
+        lat = mEntry.marker.getPosition().getLat();
+        lng = mEntry.marker.getPosition().getLng();
+      }
+    }
+
+    if (lat && lng && !isNaN(lat) && !isNaN(lng)) {
+      stops.push({ name: name, lat: lat, lng: lng });
+    }
+  });
+
+  if (stops.length === 0) {
+    if (typeof showToast === 'function') showToast('⚠️ 좌표가 있는 장소가 없어요');
+    return;
+  }
+
+  var travelMode = mode || 'car';
+  // 대중교통은 카카오 스펙상 경유지 미지원 → 목적지만
+  if (travelMode === 'traffic' && stops.length > 1) {
+    if (typeof showToast === 'function') showToast('ℹ️ 대중교통은 최종 목적지로만 연결돼요');
+    var dest = stops[stops.length - 1];
+    window.openKakaoNav(dest.name, dest.lat, dest.lng);
+    return;
+  }
+
+  /* ── 경유지 최대 5개 제한 처리 ──
+     stops[0] = 출발, stops[last] = 도착, 나머지가 경유지 (최대 5개)
+     8개 이상이면 중간에서 5개를 등간격으로 샘플링 */
+  var origin  = stops[0];
+  var dest    = stops[stops.length - 1];
+  var middles = stops.slice(1, stops.length - 1); // 경유 후보
+
+  if (middles.length > 5) {
+    var sampled = [];
+    var step = (middles.length - 1) / 4; // 5개 등간격
+    for (var i = 0; i < 5; i++) {
+      sampled.push(middles[Math.round(i * step)]);
+    }
+    middles = sampled;
+    if (typeof showToast === 'function') showToast('ℹ️ 경유지가 많아 5곳만 자동 선택됐어요');
+  }
+
+  /* ── URL 조립 ── */
+  var encodedStop = function(s) {
+    return encodeURIComponent(s.name) + ',' + s.lat + ',' + s.lng;
+  };
+
+  var url;
+  if (stops.length === 1) {
+    // 장소 1개: 목적지만
+    url = 'https://map.kakao.com/link/to/' + encodedStop(origin);
+
+  } else if (stops.length === 2) {
+    // 장소 2개: 출발 → 도착
+    url = 'https://map.kakao.com/link/from/'
+      + encodedStop(origin) + '/to/' + encodedStop(dest);
+
+  } else {
+    // 장소 3개 이상: 이동수단 포함 경유지 경로
+    var parts = [encodedStop(origin)];
+    middles.forEach(function(s) { parts.push(encodedStop(s)); });
+    parts.push(encodedStop(dest));
+    url = 'https://map.kakao.com/link/by/' + travelMode + '/' + parts.join('/');
+  }
+
+  window.open(url, '_blank');
+};
+
 /* ══════════════════════════════
    페이지 로딩 시
 ══════════════════════════════ */
 document.addEventListener('DOMContentLoaded', function () {
   document.querySelectorAll('.place-card').forEach(function (card) {
-    
+
     var badge = card.querySelector('.place-type-badge');
     if (badge) {
-        var rawText = badge.textContent.trim();
-        var catInfo = window.getTripanCategory(rawText);
-        badge.innerHTML = catInfo.icon + ' ' + catInfo.label;
+      var rawText = badge.textContent.trim();
+      var catInfo = window.getTripanCategory(rawText);
+      badge.innerHTML = catInfo.icon + ' ' + catInfo.label;
     }
-    
-    _bindCardClickToMap(card); 
+
+    _bindCardClickToMap(card);
     _bindChipClick(card);
     initDrag(card);
+
+    /* ── JSP 초기 렌더 카드: 길찾기 버튼 이벤트 바인딩 ── */
+    var navBtn = card.querySelector('.place-nav-btn');
+    if (navBtn) {
+      navBtn.addEventListener('click', function (e) {
+        e.stopPropagation();
+        var name = card.getAttribute('data-name') || '장소';
+        var lat  = parseFloat(card.getAttribute('data-lat'));
+        var lng  = parseFloat(card.getAttribute('data-lng'));
+        window.openKakaoNav(name, lat, lng);
+      });
+    }
   });
 });
 
@@ -168,20 +298,31 @@ function _appendPlaceCard(dayNum, itemId, name, addr, lat, lng, categoryName) {
   
   card.innerHTML =
     '<div class="place-num">' + count + '</div>' +
-    '<div class="place-info" style="cursor:pointer;" title="클릭하면 지도로 이동합니다!">' + 
+    '<div class="place-info" style="cursor:pointer;" title="클릭하면 지도로 이동합니다!">' +
       '<div class="place-name">' + name + '</div>' +
       (addr ? '<div class="place-addr">' + addr + '</div>' : '') +
-      '<span class="place-type-badge">' + catInfo.icon + ' ' + catInfo.label + '</span>' + 
+      '<span class="place-type-badge">' + catInfo.icon + ' ' + catInfo.label + '</span>' +
       '<div class="place-chips"></div>' +
     '</div>' +
     '<div class="place-actions">' +
+      '<button class="place-action-btn place-nav-btn" title="카카오맵 길찾기"><svg width="15" height="15" viewBox="0 0 20 20" fill="#3C1E1E" xmlns="http://www.w3.org/2000/svg"><path d="M10 2C5.58 2 2 5.13 2 9c0 2.4 1.37 4.52 3.5 5.87L4.5 18l3.7-2c.58.1 1.18.15 1.8.15 4.42 0 8-3.13 8-7S14.42 2 10 2z"/></svg></button>' +
       '<button class="place-action-btn" onclick="openMemo(this)" title="메모/사진">📝</button>' +
       '<button class="place-action-btn" onclick="removePlace(this)" title="삭제">🗑</button>' +
     '</div>';
     
-  _bindCardClickToMap(card); 
+  _bindCardClickToMap(card);
   _bindChipClick(card);
   initDrag(card);
+
+  /* ── 동적 카드: 길찾기 버튼 이벤트 바인딩 ── */
+  var navBtn = card.querySelector('.place-nav-btn');
+  if (navBtn) {
+    navBtn.addEventListener('click', function (e) {
+      e.stopPropagation();
+      window.openKakaoNav(name, lat, lng);
+    });
+  }
+
   list.appendChild(card);
   refreshPlaceNums(list);
 }

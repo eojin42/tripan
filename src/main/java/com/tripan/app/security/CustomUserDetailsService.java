@@ -47,8 +47,8 @@ public class CustomUserDetailsService implements UserDetailsService{
 				.nickname(member.getNickname())
 				.avatar(member.getProfilePhoto())
 				.equippedBadgeId(member.getEquippedBadgeId())
-				.provider(member.getSnsProvider())
-				.providerId(member.getSnsId())
+				.provider(member.getProvider())
+				.providerId(member.getProviderId())
 				.bio(member.getBio())
 				.build();
 		

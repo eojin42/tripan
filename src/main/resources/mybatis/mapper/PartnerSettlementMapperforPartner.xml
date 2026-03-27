@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.tripan.app.partner.mapper.PartnerSettlementMapperforPartner">
+	<select id="selectExpectedSettlement" resultType="map">
+        SELECT 
+            NVL(SUM(r.amount), 0) as "totalSales",
+            NVL(SUM(r.amount * (r.commission_rate / 100)), 0) as "commissionAmount",
+            NVL(SUM(cu.partner_discount_amount), 0) as "partnerCouponAmount",
+            NVL(SUM(r.amount) - SUM(r.amount * (r.commission_rate / 100)) - NVL(SUM(cu.partner_discount_amount), 0), 0) as "netAmount"
+        FROM reservation r
+        LEFT JOIN order_detail od ON r.reservation_id = od.reservation_id
+        LEFT JOIN coupon_usage cu ON od.order_id = cu.order_id AND cu.status = 'USED'
+        WHERE r.partner_id = #{partnerId}
+          AND r.status = 'SUCCESS'
+          AND TO_CHAR(r.check_out_date, 'YYYY-MM') = #{month}
+    </select>
+
+    <select id="selectSettlementList" resultType="map">
+        SELECT 
+            partner_settlement_id as "settlementId",
+            settlement_month as "settlementMonth",
+            total_sales as "totalSales",
+            commission_amount as "commissionAmount",
+            (total_sales - commission_amount - net_amount) as "partnerCouponAmount",
+            net_amount as "netAmount",
+            status as "status"
+        FROM partner_settlement
+        WHERE partner_id = #{partnerId}
+        
+        <if test="settleMonth != null and settleMonth != ''">
+            AND settlement_month = #{settleMonth}
+        </if>
+        <if test="status != null and status != ''">
+            AND status = #{status}
+        </if>
+        
+        ORDER BY settlement_month DESC
+    </select>
+</mapper>

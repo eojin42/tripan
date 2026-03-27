@@ -15,8 +15,8 @@ public class MemberDto {
 	private String nickname;
 	private String username;
 	private String password;
-	private String snsProvider;
-	private String snsId;
+	private String provider;
+	private String providerId;
 	private String phoneNumber;
 	private String email;
 	private String preferredRegion;

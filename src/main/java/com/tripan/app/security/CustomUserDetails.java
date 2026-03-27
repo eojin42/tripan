@@ -2,31 +2,36 @@ package com.tripan.app.security;
 
 import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.oauth2.core.user.OAuth2User;
 
 import com.tripan.app.domain.dto.SessionInfo;
 
-public class CustomUserDetails implements UserDetails{
+public class CustomUserDetails implements UserDetails, OAuth2User{
 	private static final long serialVersionUID = 1L;
 	
 	private final SessionInfo member;
 	private final List<String> roles;
 	private final boolean disabled;
+	private final Map<String, Object> attributes;
 	
 	private CustomUserDetails(Builder builder) {
 		this.member = builder.member;
 		this.roles = builder.roles;
 		this.disabled = builder.disabled;
+		this.attributes = builder.attributes;
 	}
 	
 	public static class Builder {
 		private SessionInfo member;
 		private List<String> roles;
 		private boolean disabled;
+		private Map<String, Object> attributes;
 		
 		public Builder sessionInfo(SessionInfo member) {
 			this.member = member;
@@ -40,6 +45,11 @@ public class CustomUserDetails implements UserDetails{
 		
 		public Builder disabled(boolean disabled) {
 			this.disabled = disabled;
+			return this;
+		}
+		
+		public Builder attributes(Map<String, Object> attributes) {
+			this.attributes = attributes;
 			return this;
 		}
 		
@@ -110,6 +120,16 @@ public class CustomUserDetails implements UserDetails{
 	@Override
 	public int hashCode() {
 		return member != null && member.getLoginId() != null ? member.getLoginId().hashCode() : 0;
+	}
+
+	@Override
+	public Map<String, Object> getAttributes() {
+		return attributes;
+	}
+
+	@Override
+	public String getName() {
+		return String.valueOf(member.getMemberId());
 	}
 	
 }
