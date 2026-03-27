@@ -46,13 +46,39 @@ public class CouponServiceImpl implements CouponService{
         return couponMapper.selectDownloadableCoupons(placeId, mId);
     }
 
-    @Override
+	@Override
     @Transactional(rollbackFor = Exception.class)
     public void downloadCoupon(Long memberId, Long couponId) {
-        int count = couponMapper.checkCouponDownloaded(memberId, couponId);
-        if (count > 0) {
-            throw new RuntimeException("이미 발급받으신 쿠폰입니다.");
+        
+        int check = couponMapper.checkCouponDownloaded(memberId, couponId);
+        if (check > 0) {
+            throw new RuntimeException("이미 발급받은 쿠폰입니다.");
         }
+
+        Map<String, Object> issueStatus = couponMapper.getCouponIssueStatus(couponId);
+        if (issueStatus == null) {
+            throw new RuntimeException("존재하지 않는 쿠폰입니다.");
+        }
+        
+        String status = (String) issueStatus.get("status");
+        if (!"ACTIVE".equals(status)) {
+            throw new RuntimeException("현재 발급이 중지되었거나 만료된 쿠폰입니다.");
+        }
+
+        Object maxQuantityObj = issueStatus.get("maxQuantity");
+        if (maxQuantityObj != null) { 
+            int maxQuantity = ((Number) maxQuantityObj).intValue();
+            int currentIssued = ((Number) issueStatus.get("currentIssued")).intValue();
+            
+            if (currentIssued >= maxQuantity) {
+                throw new RuntimeException("아쉽게도 선착순 발급이 마감되었습니다.");
+            }
+            
+            if ((currentIssued + 1) == maxQuantity) {
+                couponMapper.updateCouponStatusToExpired(couponId); 
+            }
+        }
+
         couponMapper.insertMemberCoupon(memberId, couponId);
     }
 }
