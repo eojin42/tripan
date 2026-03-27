@@ -76,7 +76,7 @@
 
       <div class="auth-signup-text">아직 Tripan 회원이 아니신가요?</div>
       <a href="${pageContext.request.contextPath}/member/account" class="auth-btn-signup">
-        이메일로 3초 만에 가입하기
+        Tirpan 가입하기
       </a>
 
     </div>
