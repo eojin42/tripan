@@ -6,6 +6,7 @@ import java.util.List;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
+import lombok.Data;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -20,16 +21,16 @@ public class SettlementDto {
      * 정산 일괄 생성 요청
      * 여행이 끝난 후, expense + expense_participant 기반으로 정산 계산 후 저장
      */
-    @Getter
+	@Getter
     @Setter
     @NoArgsConstructor
     @AllArgsConstructor
     @Builder
     public static class CreateBatchRequest {
-
-        /** 정산 대상 여행 ID */
+ 
+        /** ★ 추가: 어떤 여행의 정산인지 */
         private Long tripId;
-
+ 
         /**
          * 정산 묶음 ID (batch_id)
          * 총대 정산 / 일괄 정산 등을 그룹으로 묶을 때 사용
@@ -37,20 +38,23 @@ public class SettlementDto {
          */
         private Long batchId;
     }
+ 
 
     /**
      * 개별 정산 송금 완료 처리 요청
      * 실제 계좌이체/카카오페이 등 송금 후 완료 처리 시 사용
      */
-    @Getter
-    @Setter
+    @Data
+    @Builder
     @NoArgsConstructor
     @AllArgsConstructor
-    @Builder
     public static class CompleteRequest {
 
         /** 완료 처리할 settlement ID 목록 (여러 건 한 번에 가능) */
         private List<Long> settlementIds;
+        
+        /** 정산 대상 여행 ID */
+        private Long tripId;
     }
 
     // ────────────────────────────────────────────────
@@ -159,6 +163,7 @@ public class SettlementDto {
         private Long toMemberId;    // creditor = 나 (요청 보내는 사람)
         private Long fromMemberId;  // debtor  = 상대방 (요청 받는 사람)
         private BigDecimal amount;
+        private Long batchId;
     }
     /**
      * 정산 완료 상세보기 응답
