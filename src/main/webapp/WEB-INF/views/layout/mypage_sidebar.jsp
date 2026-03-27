@@ -18,10 +18,8 @@
 		        </c:choose>
 		    </c:when>
             <c:otherwise>
-                <div>
-                    profile
-                </div>
-            </c:otherwise>
+	          <div class="profile-avatar-default" id="avatar-initial">T</div>
+	        </c:otherwise>
         </c:choose>
     </div>
     <div class="profile-name">${sessionScope.loginUser.nickname} 님</div>
