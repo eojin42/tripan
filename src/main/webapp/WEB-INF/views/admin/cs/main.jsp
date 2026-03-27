@@ -43,15 +43,18 @@
 
     /* ── 채팅 레이아웃 ── */
     .chat-manage-layout {
-      display: grid; grid-template-columns: 320px 1fr;
-      height: calc(100vh - 220px);
-      border-radius: 16px; overflow: hidden;
-      border: 1px solid var(--border);
-    }
+	  display: grid; grid-template-columns: 320px 1fr;
+	  height: calc(100vh - 220px);
+	  border-radius: 16px; overflow: hidden;
+	  border: 1px solid var(--border);
+	}
     .chat-list-panel {
-      border-right: 1px solid var(--border);
-      background: #fff; display: flex; flex-direction: column;
-    }
+	  border-right: 1px solid var(--border);
+	  background: #fff; display: flex; flex-direction: column;
+	  height: 100%;   
+	  min-height: 0;  
+	  overflow: hidden;
+	}
     .chat-list-header {
       padding: 18px 20px; border-bottom: 1px solid var(--border);
     }

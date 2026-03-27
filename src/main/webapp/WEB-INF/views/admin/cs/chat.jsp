@@ -17,10 +17,17 @@
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body { font-family: 'Pretendard', sans-serif; background: var(--bg-page); color: var(--text-black); }
 
+    /* main-content 스크롤 비활성화 (chat 페이지 전용 override) */
+    .main-content {
+      overflow: hidden !important;
+      padding: 0 !important;
+      height: calc(100vh - 72px) !important;
+    }
+
     .admin-chat-layout {
       display: grid;
       grid-template-columns: 320px 1fr;
-      height: 100vh;
+      height: 100%;
     }
 
     /* ── 왼쪽: 상담 목록 ── */
@@ -29,6 +36,9 @@
       border-right: 1px solid var(--border-light);
       display: flex;
       flex-direction: column;
+      height: 100%;
+      min-height: 0;
+      overflow: hidden;
     }
     .panel-header {
       padding: 20px 20px 16px;
@@ -46,7 +56,11 @@
       padding: 2px 8px; border-radius: 20px;
     }
     .inquiry-items {
-      flex: 1; overflow-y: auto; padding: 12px;
+      flex: 1;
+      min-height: 0;
+      overflow-y: auto;
+      overflow-x: hidden;
+      padding: 12px;
       display: flex; flex-direction: column; gap: 6px;
     }
     .inquiry-item {
@@ -82,7 +96,8 @@
 
     /* ── 오른쪽: 채팅 영역 ── */
     .chat-panel {
-      display: flex; flex-direction: column; height: 100vh;
+      display: flex; flex-direction: column; height: 100%;
+      min-height: 0; overflow: hidden;
     }
     .chat-panel-header {
       padding: 16px 24px;

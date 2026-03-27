@@ -42,16 +42,33 @@
         <span class="notif-badge" style="display:none;">0</span>
       </button>
 
-      <div id="notifDropdown" style="display:none; position:absolute; top:calc(100% + 15px); right:-10px; width:300px; background:#fff; border-radius:14px; box-shadow:0 10px 30px rgba(0,0,0,0.1); border:1px solid #E2E8F0; z-index:9999; overflow:hidden;">
+      <div id="notifDropdown" style="display:none; position:absolute; top:calc(100% + 15px); right:-10px; width:320px; background:#fff; border-radius:14px; box-shadow:0 10px 30px rgba(0,0,0,0.1); border:1px solid #E2E8F0; z-index:9999; overflow:hidden;">
         <div style="padding:14px 18px; border-bottom:1px solid #E2E8F0; display:flex; justify-content:space-between; align-items:center;">
           <span style="font-weight:800; font-size:14px; color:#2D3748;">🔔 알림</span>
           <button onclick="clearNotifs(event)" style="background:none; border:none; font-size:11px; color:#718096; cursor:pointer; font-weight:600;">모두 읽음</button>
         </div>
-        <div id="notifList" style="max-height:340px; overflow-y:auto; display:flex; flex-direction:column;">
-          <div id="emptyNotif" style="padding:30px 20px; text-align:center; color:#A0AEC0;">
-            <i class="bi bi-bell-slash" style="font-size:24px; opacity:0.5; display:block; margin-bottom:8px;"></i>
-            <span style="font-size:12px; font-weight:600;">새로운 알림이 없습니다.</span>
+
+        <%-- 파트너 승인요청 섹션 --%>
+        <div id="partnerNotifSection" style="display:none; border-bottom:1px solid #E2E8F0;">
+          <div style="padding:8px 18px 4px; font-size:10px; font-weight:900; color:#A0AEC0; letter-spacing:0.5px; text-transform:uppercase;">파트너 승인 요청</div>
+          <div id="partnerNotifList" style="display:flex; flex-direction:column;"></div>
+          <div id="partnerNotifMore" style="display:none; padding:6px 18px 10px;">
+            <a href="${pageContext.request.contextPath}/admin/partner/apply"
+               style="font-size:11px; font-weight:700; color:#3B82F6; text-decoration:none;">
+              + 더보기 — 입점 심사 페이지로 이동 →
+            </a>
           </div>
+        </div>
+
+        <%-- 기존 채팅 알림 섹션 --%>
+        <div id="chatNotifSection" style="display:none;">
+          <div style="padding:8px 18px 4px; font-size:10px; font-weight:900; color:#A0AEC0; letter-spacing:0.5px; text-transform:uppercase;">1:1 채팅 상담</div>
+          <div id="notifList" style="max-height:220px; overflow-y:auto; display:flex; flex-direction:column;"></div>
+        </div>
+
+        <div id="emptyNotif" style="padding:30px 20px; text-align:center; color:#A0AEC0;">
+          <i class="bi bi-bell-slash" style="font-size:24px; opacity:0.5; display:block; margin-bottom:8px;"></i>
+          <span style="font-size:12px; font-weight:600;">새로운 알림이 없습니다.</span>
         </div>
       </div>
     </div>
@@ -85,38 +102,125 @@
 </header>
 
 <script>
-      // 종 모양 클릭 시 열고 닫기
-      function toggleNotifDropdown(e) {
-        e.stopPropagation();
-        var dropdown = document.getElementById('notifDropdown');
-        dropdown.style.display = (dropdown.style.display === 'none' || dropdown.style.display === '') ? 'block' : 'none';
-      }
+  /* ── 알림 상태 ── */
+  var _partnerNotifs    = [];   // [{id, name, createdAt}, ...]
+  var _chatNotifCount   = 0;
+  var _partnerDismissed = false; // 모두읽음 눌렀을 때 파트너 알림 숨김 여부
 
-      // 모두 읽음 처리
-      function clearNotifs(e) {
-        e.stopPropagation();
-        var notifList = document.getElementById('notifList');
-        notifList.innerHTML = `
-          <div id="emptyNotif" style="padding:30px 20px; text-align:center; color:#A0AEC0;">
-            <i class="bi bi-bell-slash" style="font-size:24px; opacity:0.5; display:block; margin-bottom:8px;"></i>
-            <span style="font-size:12px; font-weight:600;">새로운 알림이 없습니다.</span>
-          </div>
-        `;
-        var badge = document.querySelector('.notif-badge');
-        if(badge) {
-            badge.textContent = '0';
-            badge.style.display = 'none';
-        }
-      }
+  /* ── 뱃지 숫자 갱신 ── */
+  function _refreshBadge() {
+    var chatCount    = _chatNotifCount;
+    var partnerCount = _partnerDismissed ? 0 : _partnerNotifs.length;
+    var total        = chatCount + partnerCount;
+    var badge = document.querySelector('.notif-badge');
+    if (badge) {
+      badge.textContent = total > 99 ? '99+' : String(total);
+      badge.style.display = total > 0 ? 'inline-flex' : 'none';
+    }
+  }
 
-      // 알림창 바깥을 클릭하면 자동으로 닫히게 설정
-      document.addEventListener('click', function(e) {
-        var dropdown = document.getElementById('notifDropdown');
-        if (dropdown && dropdown.style.display === 'block') {
-          var wrapper = document.querySelector('.notif-wrapper');
-          if (wrapper && !wrapper.contains(e.target)) {
-            dropdown.style.display = 'none';
-          }
+  /* ── 드롭다운 전체 렌더 ── */
+  function _renderDropdown() {
+    var partnerSection  = document.getElementById('partnerNotifSection');
+    var partnerList     = document.getElementById('partnerNotifList');
+    var partnerMore     = document.getElementById('partnerNotifMore');
+    var chatSection     = document.getElementById('chatNotifSection');
+    var emptyNotif      = document.getElementById('emptyNotif');
+
+    var hasPartner = !_partnerDismissed && _partnerNotifs.length > 0;
+    var hasChat    = _chatNotifCount > 0;
+
+    /* 파트너 섹션 */
+    partnerSection.style.display = hasPartner ? 'block' : 'none';
+    if (hasPartner) {
+      var MAX_SHOW = 3;
+      var shown    = _partnerNotifs.slice(0, MAX_SHOW);
+      partnerList.innerHTML = shown.map(function(p) {
+        var dateStr = p.createdAt ? String(p.createdAt).substring(0, 10) : '';
+        return '<a href="${pageContext.request.contextPath}/admin/partner/apply"'
+          + ' style="display:flex;align-items:center;gap:10px;padding:10px 18px;text-decoration:none;'
+          +         'transition:background 0.15s;border:none;cursor:pointer;"'
+          + ' onmouseover="this.style.background=\'#F7F8FF\'" onmouseout="this.style.background=\'\'">'
+          + '  <div style="width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,#FED7AA,#FCA5A5);'
+          +               'display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:15px;">🏢</div>'
+          + '  <div style="flex:1;min-width:0;">'
+          + '    <div style="font-size:12px;font-weight:800;color:#2D3748;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">'
+          +       (p.partnerName || '파트너사') + '</div>'
+          + '    <div style="font-size:11px;color:#C2410C;font-weight:700;margin-top:1px;">입점 심사 대기 중</div>'
+          + '  </div>'
+          + '  <span style="font-size:10px;color:#A0AEC0;flex-shrink:0;">' + dateStr + '</span>'
+          + '</a>';
+      }).join('');
+      partnerMore.style.display = _partnerNotifs.length > MAX_SHOW ? 'block' : 'none';
+    }
+
+    /* 채팅 섹션 — 기존 cs.js가 notifList에 직접 DOM 추가하는 방식 유지 */
+    chatSection.style.display = hasChat ? 'block' : 'none';
+
+    /* 빈 상태 */
+    emptyNotif.style.display = (!hasPartner && !hasChat) ? 'block' : 'none';
+  }
+
+  /* ── 파트너 승인요청 폴링 ── */
+  function _fetchPartnerPending() {
+    fetch('${pageContext.request.contextPath}/api/admin/partner/list')
+      .then(function(r) { return r.ok ? r.json() : null; })
+      .then(function(data) {
+        if (!data) return;
+        var list = Array.isArray(data.list) ? data.list : [];
+        _partnerNotifs = list.filter(function(p) {
+          return String(p.statusCode || '').toUpperCase() === 'PENDING';
+        });
+        if (!_partnerDismissed) {
+          _refreshBadge();
+          _renderDropdown();
         }
-      });
-    </script>
+      })
+      .catch(function() {});
+  }
+
+  /* ── cs.js에서 호출: 채팅 알림 수 업데이트 ── */
+  window.updateChatNotifCount = function(count) {
+    _chatNotifCount = count || 0;
+    _refreshBadge();
+    _renderDropdown();
+  };
+
+  /* ── 종 모양 클릭 시 열고 닫기 ── */
+  function toggleNotifDropdown(e) {
+    e.stopPropagation();
+    var dropdown = document.getElementById('notifDropdown');
+    var isOpen   = dropdown.style.display === 'block';
+    dropdown.style.display = isOpen ? 'none' : 'block';
+    if (!isOpen) _renderDropdown(); // 열 때 최신 렌더
+  }
+
+  /* ── 모두 읽음 처리 ── */
+  function clearNotifs(e) {
+    e.stopPropagation();
+    _partnerDismissed = true;
+    _chatNotifCount   = 0;
+
+    // 채팅 notifList 비우기 (cs.js 쪽 연동)
+    var notifList = document.getElementById('notifList');
+    if (notifList) notifList.innerHTML = '';
+
+    _refreshBadge();
+    _renderDropdown();
+  }
+
+  /* ── 외부 클릭 시 닫기 ── */
+  document.addEventListener('click', function(e) {
+    var dropdown = document.getElementById('notifDropdown');
+    if (dropdown && dropdown.style.display === 'block') {
+      var wrapper = document.querySelector('.notif-wrapper');
+      if (wrapper && !wrapper.contains(e.target)) {
+        dropdown.style.display = 'none';
+      }
+    }
+  });
+
+  /* ── 초기 로드 + 30초 폴링 ── */
+  _fetchPartnerPending();
+  setInterval(_fetchPartnerPending, 30000);
+</script>
