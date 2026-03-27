@@ -605,17 +605,6 @@ function openPlaceDetailModal(p) {
     openDayPicker();
   });
 
-  /* ── 길찾기 버튼 이벤트 ── */
-  var navBtn = document.getElementById('rpDetailNavBtn');
-  if (navBtn) {
-    navBtn.addEventListener('click', function (e) {
-      e.stopPropagation();
-      if (typeof window.openKakaoNav === 'function') {
-        window.openKakaoNav(p.placeName, p.latitude, p.longitude);
-      }
-    });
-  }
-
   /* ── 숙소 예약하기 버튼 (ACCOMMODATION 카테고리일 때만) ── */
   var bookBtn = document.getElementById('rpDetailBookBtn');
   if (bookBtn) {
@@ -1397,20 +1386,24 @@ function _initPlaceResultsScroll() {
 
 /* ══════════════════════════════════════════════════════
    장소 상세 모달 — 하단 버튼 HTML 생성 헬퍼
-   - ACCOMMODATION : 일정추가 + 숙소예약 + 길찾기 (3버튼)
-   - 그 외          : 일정추가 + 길찾기 (2버튼)
+   - ACCOMMODATION 카테고리: 버튼 2개 (일정 추가 + 숙소 예약)
+   - 그 외 카테고리:         버튼 1개 (일정 추가만)
 ══════════════════════════════════════════════════════ */
 function _rpDetailBtnHtml(p) {
   var isAccommodation = (p.category || '').toUpperCase() === 'ACCOMMODATION';
 
   /* ── 공통: 일정에 추가하기 버튼 ── */
+  var addBtnStyle =
+    'flex:1;padding:14px 10px;border:none;border-radius:14px;' +
+    'background:linear-gradient(135deg,#89CFF0,#B8A9D9);' +
+    'color:#fff;font-size:13px;font-weight:800;cursor:pointer;' +
+    'display:flex;align-items:center;justify-content:center;gap:5px;' +
+    'transition:opacity .15s;white-space:nowrap;' +
+    (isAccommodation ? '' : 'width:100%;');
+
   var addBtn =
     '<button id="rpDetailAddBtn" ' +
-      'style="flex:1;padding:14px 10px;border:none;border-radius:14px;' +
-      'background:linear-gradient(135deg,#89CFF0,#B8A9D9);' +
-      'color:#fff;font-size:13px;font-weight:800;cursor:pointer;' +
-      'display:flex;align-items:center;justify-content:center;gap:5px;' +
-      'transition:opacity .15s;white-space:nowrap;" ' +
+      'style="' + addBtnStyle + '" ' +
       'onmouseover="this.style.opacity=\'.85\'" ' +
       'onmouseout="this.style.opacity=\'1\'">' +
       '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" ' +
@@ -1420,23 +1413,8 @@ function _rpDetailBtnHtml(p) {
       '일정에 추가' +
     '</button>';
 
-  /* ── 공통: 길찾기 버튼 ── */
-  var navBtn =
-    '<button id="rpDetailNavBtn" ' +
-      'style="flex:1;padding:14px 10px;border:none;border-radius:14px;' +
-      'background:linear-gradient(135deg,#68D391,#38B2AC);' +
-      'color:#fff;font-size:13px;font-weight:800;cursor:pointer;' +
-      'display:flex;align-items:center;justify-content:center;gap:5px;' +
-      'transition:opacity .15s;white-space:nowrap;" ' +
-      'onmouseover="this.style.opacity=\'.85\'" ' +
-      'onmouseout="this.style.opacity=\'1\'">' +
-      '<svg width="15" height="15" viewBox="0 0 20 20" fill="#3C1E1E" xmlns="http://www.w3.org/2000/svg" style="flex-shrink:0;"><path d="M10 2C5.58 2 2 5.13 2 9c0 2.4 1.37 4.52 3.5 5.87L4.5 18l3.7-2c.58.1 1.18.15 1.8.15 4.42 0 8-3.13 8-7S14.42 2 10 2z"/></svg>' +
-      '길찾기' +
-    '</button>';
-
   if (!isAccommodation) {
-    /* 일반: 추가 + 길찾기 2버튼 */
-    return '<div style="display:flex;gap:9px;width:100%;">' + addBtn + navBtn + '</div>';
+    return addBtn;
   }
 
   /* ── 숙소 전용: 숙소 예약하기 버튼 ── */
@@ -1457,8 +1435,8 @@ function _rpDetailBtnHtml(p) {
       '숙소 예약하기' +
     '</button>';
 
-  /* 숙소: 추가 + 예약 + 길찾기 3버튼 */
-  return '<div style="display:flex;gap:9px;width:100%;">' + addBtn + bookBtn + navBtn + '</div>';
+  /* ── 2버튼 래퍼 ── */
+  return '<div style="display:flex;gap:9px;width:100%;">' + addBtn + bookBtn + '</div>';
 }
 
 /* ══════════════════════════

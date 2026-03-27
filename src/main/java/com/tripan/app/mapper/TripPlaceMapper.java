@@ -42,6 +42,9 @@ public interface TripPlaceMapper {
     // 나만의 장소 삭제 
     int deleteMyPlace(@Param("placeId") Long placeId, 
     		@Param("memberId") Long memberId);
+    
+    void deleteItineraryImagesByPlaceId(Long placeId);
+    void deleteItineraryItemsByPlaceId(Long placeId);
 
     // 단건 조회 (권한 검증 포함)
     TripPlaceDto selectPlaceById(@Param("placeId")          Long placeId,

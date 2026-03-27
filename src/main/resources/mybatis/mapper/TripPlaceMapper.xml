@@ -328,7 +328,29 @@
           AND (member_id IS NULL OR member_id = #{currentMemberId})
     </select>
     
-    <!-- 나만의 장소 삭제  -->
+    <!--
+        나만의 장소 삭제 — 3단계 cascade
+        FK_ITEM_PLACE (itinerary_item → trip_place) 제약으로 인해
+        자식 레코드를 먼저 삭제해야 함
+
+        Step 1: 해당 장소를 참조하는 itinerary_item 의 이미지 삭제
+    -->
+    <delete id="deleteItineraryImagesByPlaceId">
+        DELETE FROM itinerary_image
+        WHERE item_id IN (
+            SELECT item_id
+            FROM itinerary_item
+            WHERE trip_place_id = #{placeId}
+        )
+    </delete>
+
+    <!-- Step 2: 해당 장소를 참조하는 itinerary_item 삭제 -->
+    <delete id="deleteItineraryItemsByPlaceId">
+        DELETE FROM itinerary_item
+        WHERE trip_place_id = #{placeId}
+    </delete>
+
+    <!-- Step 3: trip_place 본체 삭제 (본인 소유 검증 포함) -->
     <delete id="deleteMyPlace">
         DELETE FROM trip_place
         WHERE trip_place_id = #{placeId}
