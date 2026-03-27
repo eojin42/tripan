@@ -5,8 +5,10 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.server.ResponseStatusException;
 
 import com.tripan.app.admin.domain.dto.CouponDto;
 import com.tripan.app.admin.domain.dto.CouponTargetDto;
@@ -183,6 +185,20 @@ public class CouponServiceImpl implements CouponService {
         info.setPrevBlockPage(blockStart - 1);
         info.setNextBlockPage(blockEnd + 1);
         return info;
+    }
+    
+    @Override
+    @Transactional
+    public void revokeCoupon(Long memberCouponId) {
+        couponMapper.revokeMemberCoupon(memberCouponId);
+    }
+    
+    @Override
+    @Transactional
+    public void grantCoupon(CouponDto.GrantRequest req) {
+        Long memberId = couponMapper.selectMemberIdByLoginId(req.getLoginId());
+        if (memberId == null) throw new ResponseStatusException(HttpStatus.NOT_FOUND, "존재하지 않는 회원입니다.");
+        couponMapper.insertMemberCoupon(memberId, req.getCouponId());
     }
 
 }

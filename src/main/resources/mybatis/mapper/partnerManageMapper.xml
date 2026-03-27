@@ -10,40 +10,65 @@
              partner_intro, reject_reason, updated_at 컬럼 제거
     -->
     <select id="selectAllPartners" resultType="com.tripan.app.admin.domain.dto.PartnerManageDto">
-        SELECT
-            p.partner_id       AS partnerId,
-            p.partner_name     AS partnerName,
-            p.business_number  AS businessNumber,
-            p.contact_name     AS contactName,
-            p.contact_phone    AS contactPhone,
-            p.contact_email    AS contactEmail,
-            p.has_exp          AS hasExp,
-            p.status           AS status,
-            p.commission_rate  AS commissionRate,
-            p.contractfile_url AS contractFileUrl,
-            p.created_at       AS createdAt,
-            ps.status_code     AS statusCode,
-            ps.memo            AS statusMemo
-        FROM (
-            SELECT p.*,
-                   ROW_NUMBER() OVER (
-                       PARTITION BY p.business_number
-                       ORDER BY p.created_at DESC
-                   ) AS rn
-            FROM partner p
-        )  p
-        LEFT JOIN (
-            SELECT partner_id, status_code, memo
-            FROM (
-                SELECT ps.*,
-                       ROW_NUMBER() OVER (PARTITION BY ps.partner_id ORDER BY ps.partner_status_id DESC) AS rn
-                FROM partner_status ps
-            )
-            WHERE rn = 1
-        ) ps ON ps.partner_id = p.partner_id
-        WHERE p.rn = 1
-        ORDER BY p.created_at DESC
-    </select>
+	    SELECT
+	        p.partner_id       AS partnerId,
+	        p.partner_name     AS partnerName,
+	        p.business_number  AS businessNumber,
+	        p.contact_name     AS contactName,
+	        p.contact_phone    AS contactPhone,
+	        p.contact_email    AS contactEmail,
+	        p.has_exp          AS hasExp,
+	        p.status           AS status,
+	        p.commission_rate  AS commissionRate,
+	        p.contractfile_url AS contractFileUrl,
+	        p.created_at       AS createdAt,
+	        ps.status_code     AS statusCode,
+	        ps.memo            AS statusMemo,
+	        NVL(sales.monthlySales, 0) AS monthlySales,
+	        NVL(rv.avgRating, 0)    AS rating,
+	        NVL(rv.reviewCount, 0)  AS reviewCount
+	    FROM (
+	        SELECT p.*,
+	               ROW_NUMBER() OVER (
+	                   PARTITION BY p.business_number
+	                   ORDER BY p.created_at DESC
+	               ) AS rn
+	        FROM partner p
+	    ) p
+	    LEFT JOIN (
+	        SELECT partner_id, status_code, memo
+	        FROM (
+	            SELECT ps.*,
+	                   ROW_NUMBER() OVER (PARTITION BY ps.partner_id ORDER BY ps.partner_status_id DESC) AS rn
+	            FROM partner_status ps
+	        )
+	        WHERE rn = 1
+	    ) ps ON ps.partner_id = p.partner_id
+	    LEFT JOIN (
+	        SELECT pl.partner_id,
+	               ROUND(AVG(pr.rating), 1) AS avgRating,
+	               COUNT(pr.review_id)      AS reviewCount
+	        FROM place pl
+	        JOIN place_review pr ON pr.place_id = pl.place_id
+	        GROUP BY pl.partner_id
+	    ) rv ON rv.partner_id = p.partner_id
+	    LEFT JOIN (
+		    SELECT
+		        p2.partner_id,
+		        NVL(SUM(o.real_total_amount), 0) AS monthlySales
+		    FROM partner p2
+		    JOIN place pl          ON pl.partner_id     = p2.partner_id
+		    JOIN room r            ON r.place_id        = pl.place_id
+		    JOIN reservation rv    ON rv.room_id        = r.room_id
+		    JOIN order_detail od   ON od.reservation_id = rv.reservation_id
+		    JOIN orders o          ON o.order_id        = od.order_id
+		    WHERE o.status != 'CANCELED'
+		      AND TO_CHAR(rv.check_out_date, 'YYYY-MM') = TO_CHAR(SYSDATE, 'YYYY-MM')
+		    GROUP BY p2.partner_id
+		) sales ON sales.partner_id = p.partner_id
+	    WHERE p.rn = 1
+	    ORDER BY p.created_at DESC
+	</select>
 
     <!-- 활성 파트너 목록 (쿠폰 등록 select용) -->
     <select id="selectActivePartners" resultType="com.tripan.app.admin.domain.dto.PartnerManageDto">
@@ -245,8 +270,96 @@
             TO_CHAR(created_at, 'YYYY-MM-DD') AS "uploadDate", 
             file_url            AS "url" 
         FROM partner_file 
-        WHERE partner_id = #{applyId}
+        WHERE partner_id = #{partnerId}
         ORDER BY file_id ASC
     </select>
+    
+    <select id="selectTotalMonthlySales" resultType="long">
+	    SELECT NVL(SUM(o.real_total_amount), 0)
+	    FROM partner p
+	    JOIN place pl          ON pl.partner_id     = p.partner_id
+	    JOIN room r            ON r.place_id        = pl.place_id
+	    JOIN reservation rv    ON rv.room_id        = r.room_id
+	    JOIN order_detail od   ON od.reservation_id = rv.reservation_id
+	    JOIN orders o          ON o.order_id        = od.order_id
+	    WHERE o.status != 'CANCELED'
+	      AND TO_CHAR(rv.check_out_date, 'YYYY-MM') = TO_CHAR(SYSDATE, 'YYYY-MM')
+	</select>
 
+
+	<select id="selectPartnerPlaces" resultType="map" parameterType="long">
+	    SELECT
+	        pl.place_id        AS "placeId",
+	        pl.place_name      AS "placeName",
+	        pl.address         AS "address",
+	        pl.place_type      AS "placeType",
+	        pl.status          AS "status",
+	        NVL(rv.avgRating, 0)   AS "rating",
+	        NVL(rv.reviewCount, 0) AS "reviewCount"
+	    FROM place pl
+	    LEFT JOIN (
+	        SELECT place_id,
+	               ROUND(AVG(rating), 1) AS avgRating,
+	               COUNT(review_id)      AS reviewCount
+	        FROM place_review
+	        GROUP BY place_id
+	    ) rv ON rv.place_id = pl.place_id
+	    WHERE pl.partner_id = #{partnerId}
+	    ORDER BY pl.place_id DESC
+	</select>
+	
+	<!-- 파트너 예약 내역 목록 -->
+	<select id="selectPartnerReservations" resultType="map" parameterType="long">
+	    SELECT
+	        r.reservation_id   AS "reservationId",
+	        pl.place_name      AS "placeName",
+	        m.nickname         AS "memberNickname",
+	        r.check_in_date    AS "checkInDate",
+	        r.check_out_date   AS "checkOutDate",
+	        r.total_price      AS "totalPrice",
+	        r.status           AS "status"
+	    FROM reservation r
+	    JOIN place pl ON pl.place_id = r.place_id
+	    JOIN member1 m ON m.member_id = r.member_id
+	    WHERE pl.partner_id = #{partnerId}
+	    ORDER BY r.reservation_id DESC
+	</select>
+	
+	<select id="selectPlacesByPartnerId" resultType="map">
+	    SELECT
+	        pl.place_id     AS "placeId",
+	        pl.place_name   AS "placeName",
+	        pl.address      AS "address",
+	        pl.category     AS "placeType",
+	        pl.is_active    AS "status",
+	        NVL(ROUND(AVG(pr.rating), 1), 0) AS "rating",
+	        COUNT(pr.review_id)              AS "reviewCount"
+	    FROM place pl
+	    LEFT JOIN place_review pr ON pr.place_id = pl.place_id
+	    WHERE pl.partner_id = #{partnerId}
+	    GROUP BY pl.place_id, pl.place_name, pl.address, pl.category, pl.is_active
+	    ORDER BY pl.place_id ASC
+	</select>
+	
+	<select id="selectReservationsByPartnerId" resultType="map">
+	    SELECT
+	        rv.reservation_id   AS "reservationId",
+	        pl.place_name       AS "placeName",
+	        m2.nickname         AS "memberNickname",
+	        rv.check_in_date    AS "checkInDate",
+	        rv.check_out_date   AS "checkOutDate",
+	        o.real_total_amount AS "totalPrice",
+	        rv.status           AS "status"
+	    FROM reservation rv
+	    JOIN room r          ON r.room_id         = rv.room_id
+	    JOIN place pl        ON pl.place_id       = r.place_id
+	    JOIN partner p       ON p.partner_id      = pl.partner_id
+	    JOIN order_detail od ON od.reservation_id = rv.reservation_id
+	    JOIN orders o        ON o.order_id        = od.order_id
+	    JOIN member1 m       ON m.member_id       = rv.member_id
+	    JOIN member2 m2      ON m2.member_id      = m.member_id
+	    WHERE p.partner_id = #{partnerId}
+	      AND o.status != 'CANCELED'
+	    ORDER BY rv.reservation_id DESC
+	</select>
 </mapper>

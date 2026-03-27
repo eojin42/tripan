@@ -34,7 +34,7 @@ public interface MyPageMapper {
 
     // 찜 목록 (bookmark 테이블)
     List<BookmarkDto> selectMyBookmarks(@Param("memberId") Long memberId, @Param("type") String type);
-
+    
     // 배지 전체 (badge LEFT JOIN member_badge)
     List<BadgeInfoDto> selectAllBadgesWithStatus(Long memberId);
 
@@ -74,4 +74,10 @@ public interface MyPageMapper {
 
     // 사진 목록 조회 (resultMap collection에서 호출)
     List<ConquestMapDto> selectPhotosByConquestMapId(Long conquestMapId);
+    
+    List<Map<String, Object>> selectPendingReviews(Long memberId);
+    List<Map<String, Object>> selectMyLikes(@Param("memberId") Long memberId, @Param("type") String type);
+    int updateMyReview(@Param("memberId") Long memberId, @Param("reviewId") Long reviewId,
+                       @Param("rating") int rating, @Param("content") String content);
+    int deleteLike(@Param("memberId") Long memberId, @Param("likeId") Long likeId);
 }

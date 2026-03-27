@@ -60,4 +60,11 @@ public interface MyPageService {
     
     void savePhoto(Long memberId, Long conquestMapId, String photoUrl);
     void deletePhoto(Long memberId, Long photoId);
+    
+    
+    List<Map<String, Object>> getPendingReviews(Long memberId);
+    List<Map<String, Object>> getMyLikes(Long memberId, String type);
+    void updateReview(Long memberId, Long reviewId, int rating, String content);
+    void deleteLike(Long memberId, Long likeId);
+    
 }

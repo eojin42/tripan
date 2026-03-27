@@ -16,7 +16,6 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class PartnerManageDto {
 
-    // ── partner 테이블 ───────────────────────────────────────
     private Long       partnerId;
     private Long       memberId;
     private String     partnerName;
@@ -32,18 +31,23 @@ public class PartnerManageDto {
     private BigDecimal commissionRate;
     private Integer    status;            // partner.status 숫자 (1=활성, 0=비활성)
     private Date       createdAt;
+    
+    private Double rating;
+    private Integer reviewCount;
 
-    // ── partner_status 테이블 (최신 1건 JOIN) ────────────────
     private String statusCode;       // PENDING / ACTIVE / REJECTED / SUSPENDED / BLOCKED
     private String statusMemo;       // 반려사유 등 메모
     private Date   statusUpdatedAt;  // partner_status.reg_date
 
-    // ── partner_contract 테이블 (최신 1건 JOIN) ──────────────
     private Date   contractStartDate;
     private Date   contractEndDate;
     private String contractMemo;
+    
+    private Long monthlySales;
+    private String salesLabel;
+    private Integer salesRatio;
 
-    // ── 요청 파라미터 (DB 컬럼 아님) ────────────────────────
+
     private Long    applyId;   // apply 화면에서 partnerId 대신 사용
     private String  message;   // 반려사유 / 승인메시지 (심사 처리 요청 시)
     private List<Map<String, Object>> docs; // 제출 서류 목록

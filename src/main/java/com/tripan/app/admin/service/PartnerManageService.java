@@ -19,4 +19,6 @@ public interface PartnerManageService {
     void registerPartner(PartnerManageDto req);
     void expireContracts();
     List<Map<String, Object>> getPartnerDocs(Long partnerId);
+    List<Map<String, Object>> getPlacesByPartnerId(Long partnerId);
+    List<Map<String, Object>> getReservationsByPartnerId(Long partnerId);
 }

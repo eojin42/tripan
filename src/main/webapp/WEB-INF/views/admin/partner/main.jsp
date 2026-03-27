@@ -118,6 +118,9 @@
     .info-item .i-value a { color: var(--primary); text-decoration: none; }
     .info-item .i-value a:hover { text-decoration: underline; }
     .detail-empty { text-align:center; padding: 20px 0; color: var(--muted); font-size: 13px; }
+
+    /* 일괄처리 로딩 */
+    .btn-m:disabled { opacity: 0.5; cursor: not-allowed; }
   </style>
 </head>
 <body>
@@ -266,15 +269,15 @@
             </thead>
             <tbody>
               <tr v-if="!searched">
-			  <td colspan="10" style="text-align:center; padding:50px 0; color:var(--muted);">
-			    검색 조건을 선택하면 목록이 표시됩니다.
-			  </td>
-			</tr>
-			<tr v-else-if="partnerList.length === 0">
-			  <td colspan="10" style="text-align:center; padding:50px 0; color:var(--muted);">
-			    검색 결과가 없습니다.
-			  </td>
-			</tr>
+                <td colspan="10" style="text-align:center; padding:50px 0; color:var(--muted);">
+                  검색 조건을 선택하면 목록이 표시됩니다.
+                </td>
+              </tr>
+              <tr v-else-if="partnerList.length === 0">
+                <td colspan="10" style="text-align:center; padding:50px 0; color:var(--muted);">
+                  검색 결과가 없습니다.
+                </td>
+              </tr>
               <tr v-for="p in partnerList" :key="p.partnerId"
                   :style="(p.statusCode === 'SUSPENDED' || p.statusCode === 'BLOCKED') ? 'opacity:0.6;' : ''">
                 <td class="col-check">
@@ -284,14 +287,12 @@
                   <strong>{{ p.partnerName }}</strong>
                 </td>
                 <td>
-                  <!-- statusCode: partner_status 테이블 최신 status_code 기준 -->
                   <span v-if="p.statusCode === 'ACTIVE'"      class="badge badge-active">활성</span>
                   <span v-else-if="p.statusCode === 'PENDING'"    class="badge badge-pending">승인 대기</span>
                   <span v-else-if="p.statusCode === 'REJECTED'"   class="badge badge-rejected">반려</span>
                   <span v-else-if="p.statusCode === 'SUSPENDED'"  class="badge badge-suspended">이용정지</span>
                   <span v-else-if="p.statusCode === 'BLOCKED'"    class="badge badge-suspended">영구차단</span>
                   <span v-else-if="p.statusCode"                  class="badge">{{ p.statusCode }}</span>
-                  <!-- statusCode 없으면 partner.status 숫자로 폴백 -->
                   <span v-else-if="String(p.status) === '1'"  class="badge badge-active">활성</span>
                   <span v-else-if="String(p.status) === '0'"  class="badge badge-suspended">비활성</span>
                   <span v-else class="badge">-</span>
@@ -356,8 +357,6 @@
       </div>
 
     </main>
-
-   
 
     <!-- ══════════════ 파트너사 등록 모달 ══════════════ -->
     <div class="modal-overlay" :class="{ open: showRegisterModal }" @click.self="closeRegisterModal">
@@ -430,7 +429,9 @@
         </div>
         <div class="ms-foot">
           <button class="btn-m btn-m-ghost"   @click="closeBulkStatusModal">취소</button>
-          <button class="btn-m btn-m-primary" @click="submitBulkStatus">일괄 적용</button>
+          <button class="btn-m btn-m-primary" :disabled="bulkLoading" @click="submitBulkStatus">
+            {{ bulkLoading ? '처리 중...' : '일괄 적용' }}
+          </button>
         </div>
       </div>
     </div>
@@ -526,7 +527,9 @@
         </div>
         <div class="ms-foot">
           <button class="btn-m btn-m-ghost"  @click="closeBulkDeactivateModal">취소</button>
-          <button class="btn-m btn-m-danger" @click="submitBulkDeactivate">일괄 차단</button>
+          <button class="btn-m btn-m-danger" :disabled="bulkLoading" @click="submitBulkDeactivate">
+            {{ bulkLoading ? '처리 중...' : '일괄 차단' }}
+          </button>
         </div>
       </div>
     </div>
@@ -571,9 +574,10 @@
       const totalCount  = ref(0);
       const pageNo      = ref(1);
       const pagination  = ref(null);
-      const searched    = ref(false);  // 페이지 진입 시 바로 목록 미표시
+      const searched    = ref(false);
       const sortAsc     = ref(false);
       const selectedIds = ref([]);
+      const bulkLoading = ref(false); // ✅ 일괄처리 로딩 상태
 
       const isAllChecked = computed(() =>
         partnerList.value.length > 0 &&
@@ -613,7 +617,6 @@
       };
 
       /* ── 목록 조회 ── */
-      // 전체 목록 캐시 (프론트 페이징용)
       const allPartners = ref([]);
       const PAGE_SIZE   = 10;
 
@@ -640,13 +643,15 @@
         pageNo.value = page;
         let list = [...allPartners.value];
 
-        // 상태 필터
+        // 상태 필터 (statusCode 우선, 없으면 status 숫자 폴백)
         if (filter.status && filter.status !== 'ALL') {
           list = list.filter(p => {
-            const s = (p.status || '').toUpperCase();
+            const sc = (p.statusCode || '').toUpperCase();
+            const s  = sc || (p.status != null ? (String(p.status) === '1' ? 'ACTIVE' : 'SUSPENDED') : '');
             return s === filter.status.toUpperCase();
           });
         }
+
         // 키워드 필터
         if (filter.keyword.trim()) {
           const keywords = filter.keyword.split(',').map(k => k.trim()).filter(k => k);
@@ -655,10 +660,16 @@
           );
         }
 
-        totalCount.value  = list.length;
-        pagination.value  = buildPagination(list.length, page);
+        // ✅ 등록일 정렬 (toggleSort 클릭 시 sortAsc 반영)
+        list.sort((a, b) => {
+          const dateA = new Date(a.createdAt || 0).getTime();
+          const dateB = new Date(b.createdAt || 0).getTime();
+          return sortAsc.value ? dateA - dateB : dateB - dateA;
+        });
 
-        // 페이징 슬라이싱
+        totalCount.value = list.length;
+        pagination.value = buildPagination(list.length, page);
+
         const start = (page - 1) * PAGE_SIZE;
         partnerList.value = list.slice(start, start + PAGE_SIZE);
         selectedIds.value = [];
@@ -666,8 +677,6 @@
 
       const fetchList = async (page = 1) => {
         try {
-          // page=1 이면 항상 전체 목록 재조회 (필터 변경 포함)
-          // page>1 이면 이미 캐시된 allPartners 재사용 (페이지 이동)
           if (page === 1 || allPartners.value.length === 0) {
             const res = await axios.get(contextPath + '/api/admin/partner/list', {
               params: { page: 1, status: 'ALL', keyword: '' }
@@ -682,9 +691,10 @@
         }
       };
 
+      // ✅ 등록일 정렬 토글 - applyFilter에서 sortAsc 반영하므로 재조회 불필요
       const toggleSort = () => {
         sortAsc.value = !sortAsc.value;
-        if (searched.value) fetchList(pageNo.value);
+        if (searched.value) applyFilter(pageNo.value);
       };
 
       const toggleCheckAll = (e) => {
@@ -703,14 +713,13 @@
       };
 
       const downloadExcel = () => {
-        // 선택된 항목이 있으면 선택분만, 없으면 현재 필터 전체
         let rows = [];
         if (selectedIds.value.length > 0) {
           rows = allPartners.value.filter(p => selectedIds.value.includes(p.partnerId));
         } else {
           rows = allPartners.value.filter(p => {
             const statusOk = !filter.status || filter.status === 'ALL'
-              || (p.status || '').toUpperCase() === filter.status.toUpperCase();
+              || (p.statusCode || p.status || '').toUpperCase() === filter.status.toUpperCase();
             const kwOk = !filter.keyword.trim()
               || (p.partnerName || '').includes(filter.keyword.trim());
             return statusOk && kwOk;
@@ -718,12 +727,22 @@
         }
         if (rows.length === 0) { alert('다운로드할 데이터가 없습니다.'); return; }
 
-        const statusLabel = s => ({
-          PENDING:'승인대기', SUPPLEMENT:'보완요청', ACTIVE:'정상',
-          APPROVED:'승인완료', REJECTED:'반려', SUSPENDED:'이용정지', BLOCKED:'영구차단'
-        }[(s||'').toUpperCase()] || s || '-');
+        // ✅ statusCode(문자열) + status(숫자) 둘 다 처리
+        const statusLabel = s => {
+          if (s == null) return '-';
+          const code = String(s).toUpperCase();
+          return {
+            '1': '정상', '0': '비활성',
+            'PENDING':   '승인대기',
+            'ACTIVE':    '정상',
+            'APPROVED':  '승인완료',
+            'REJECTED':  '반려',
+            'SUSPENDED': '이용정지',
+            'BLOCKED':   '영구차단'
+          }[code] || code || '-';
+        };
 
-        let csv = '\uFEFF' + '파트너ID,파트너사명,사업자번호,담당자명,담당자연락처,수수료율,상태,등록일\n';
+        let csv = '\uFEFF' + '파트너ID,파트너사명,사업자번호,담당자명,담당자연락처,수수료율,상태,이번달매출,평점,등록일\n';
         rows.forEach(p => {
           const cols = [
             p.partnerId      ?? '-',
@@ -732,7 +751,9 @@
             p.contactName    ?? '-',
             p.contactPhone   ?? '-',
             p.commissionRate != null ? Number(p.commissionRate).toFixed(1) + '%' : '-',
-            statusLabel(p.status),
+            statusLabel(p.statusCode || p.status),  // ✅ statusCode 우선
+            p.salesLabel     ?? '-',                 // ✅ 매출 레이블 추가
+            p.rating != null ? Number(p.rating).toFixed(1) : '-', // ✅ 평점 추가
             p.createdAt ? String(p.createdAt).substring(0,10) : '-'
           ];
           csv += cols.map(v => '"' + String(v).replace(/"/g, '""') + '"').join(',') + '\n';
@@ -748,10 +769,7 @@
       /* ── 상세 페이지 이동 ── */
       const openDetailModal = (p) => {
         const partnerId = normalizePartnerId(p?.partnerId);
-        if (!partnerId) {
-          alert('partnerId가 없습니다.');
-          return;
-        }
+        if (!partnerId) { alert('partnerId가 없습니다.'); return; }
         location.href = contextPath + '/admin/partner/detail?partnerId=' + partnerId;
       };
       const closeDetailModal = () => {};
@@ -780,10 +798,8 @@
       const openBulkStatusModal  = () => { showBulkStatusModal.value = true; };
       const closeBulkStatusModal = () => { showBulkStatusModal.value = false; bulkStatus.reason = ''; };
       const submitBulkStatus = async () => {
-        if (selectedIds.value.length === 0) {
-          alert('선택된 파트너사가 없습니다.');
-          return;
-        }
+        if (selectedIds.value.length === 0) { alert('선택된 파트너사가 없습니다.'); return; }
+        bulkLoading.value = true; // ✅ 로딩 시작
         try {
           if (bulkStatus.status === 'ACTIVE') {
             await Promise.all(selectedIds.value.map(id =>
@@ -801,12 +817,17 @@
           closeBulkStatusModal();
           fetchList(pageNo.value);
           fetchKpi();
-        } catch(e) { console.error('일괄 변경 오류', e); alert('처리 중 오류가 발생했습니다.'); }
+        } catch(e) {
+          console.error('일괄 변경 오류', e);
+          alert('처리 중 오류가 발생했습니다.');
+        } finally {
+          bulkLoading.value = false; // ✅ 로딩 종료
+        }
       };
 
       /* ── 단건 차단 모달 ── */
       const openDeactivateModal  = (p) => {
-    	  console.log('partnerId:', p.partnerId, '/ 전체키:', Object.keys(p));
+        console.log('partnerId:', p.partnerId, '/ 전체키:', Object.keys(p));
         Object.assign(deactivateTarget, p);
         Object.assign(deactivate, { reason:'', detail:'' });
         showDeactivateModal.value = true;
@@ -815,13 +836,8 @@
       const submitDeactivate = async () => {
         if (!deactivate.reason)        { alert('차단 사유를 선택해주세요.'); return; }
         if (!deactivate.detail.trim()) { alert('상세 내용을 입력해주세요.'); return; }
-
         const partnerId = normalizePartnerId(deactivateTarget.partnerId);
-        if (!partnerId) {
-          alert('partnerId가 없습니다.');
-          return;
-        }
-
+        if (!partnerId) { alert('partnerId가 없습니다.'); return; }
         try {
           await axios.post(contextPath + '/api/admin/partner/suspend/' + partnerId);
           alert(deactivateTarget.partnerName + ' 파트너사가 차단되었습니다.');
@@ -830,8 +846,7 @@
           fetchKpi();
         } catch(e) {
           console.error('차단 오류', e?.response || e);
-          const msg = e?.response?.data || '처리 중 오류가 발생했습니다.';
-          alert(msg);
+          alert(e?.response?.data || '처리 중 오류가 발생했습니다.');
         }
       };
 
@@ -862,9 +877,9 @@
       };
       const closeBulkDeactivateModal = () => { showBulkDeactivateModal.value = false; };
       const submitBulkDeactivate = async () => {
-        if (!bulkDeactivate.reason) { alert('차단 사유를 선택해주세요.'); return; }
+        if (!bulkDeactivate.reason)        { alert('차단 사유를 선택해주세요.'); return; }
         if (selectedIds.value.length === 0) { alert('선택된 파트너사가 없습니다.'); return; }
-
+        bulkLoading.value = true; // ✅ 로딩 시작
         try {
           await Promise.all(selectedIds.value.map(id =>
             axios.post(contextPath + '/api/admin/partner/suspend/' + id)
@@ -875,8 +890,9 @@
           fetchKpi();
         } catch(e) {
           console.error('일괄 차단 오류', e?.response || e);
-          const msg = e?.response?.data || '처리 중 오류가 발생했습니다.';
-          alert(msg);
+          alert(e?.response?.data || '처리 중 오류가 발생했습니다.');
+        } finally {
+          bulkLoading.value = false; // ✅ 로딩 종료
         }
       };
 
@@ -887,7 +903,7 @@
 
       return {
         kpi, filter, partnerList, allPartners, totalCount, pageNo, pagination, searched, sortAsc,
-        selectedIds, isAllChecked,
+        selectedIds, isAllChecked, bulkLoading,
         showDetailModal, detailData, detailLoading,
         showRegisterModal, register,
         showBulkStatusModal, bulkStatus,
@@ -901,7 +917,12 @@
         openDeactivateModal,     closeDeactivateModal,     submitDeactivate,
         openActivateModal,       closeActivateModal,       submitActivate,
         openBulkDeactivateModal, closeBulkDeactivateModal, submitBulkDeactivate,
-        resetFilter: () => { filter.status = 'ALL'; filter.sort = 'SALES_DESC'; filter.keyword = ''; allPartners.value = []; fetchList(1); }
+        resetFilter: () => {
+          filter.status = 'ALL'; filter.sort = 'SALES_DESC'; filter.keyword = '';
+          allPartners.value = [];
+          fetchList(1);
+          fetchKpi();
+        }
       };
     }
   }).mount('#app');

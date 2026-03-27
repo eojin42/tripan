@@ -84,6 +84,7 @@ public class CouponDto {
         private String status;
         private String issueConditionType;
         private String issueConditionValue;
+        private int issuedCount;
 
         private List<CouponTargetDto> targetList;
     }
@@ -107,6 +108,7 @@ public class CouponDto {
         private int waiting;
         private int issuedThisMonth;
         private int usedThisMonth;
+        private int active;
     }
 
     @Data
@@ -123,6 +125,7 @@ public class CouponDto {
         private Long partnerId;
         private String partnerName;
         private Long memberId;
+        private String loginId;
         private String discountType;
         private BigDecimal discountAmount;
 
@@ -136,6 +139,12 @@ public class CouponDto {
         private LocalDateTime expiredAt;
 
         private String status;
+    }
+
+    @Data
+    public static class GrantRequest {
+        private String loginId;
+        private Long couponId;
     }
 
     @Data

@@ -43,10 +43,23 @@
           <i class="bi bi-suitcase-lg"></i> 내 일정 / 예약
         </a>
       </li>
-      <li class="${activeMenu == 'bookmark' ? 'active' : ''}">
-        <a href="${pageContext.request.contextPath}/mypage/bookmark">
-          <i class="bi bi-bookmark-heart"></i> 관심 및 저장(찜)
+      <li class="has-sub ${activeMenu == 'bookmark' || activeMenu == 'likes' ? 'sub-open' : ''}">
+        <a href="javascript:void(0)" onclick="toggleSubMenu(this)">
+          <i class="bi bi-bookmark-heart"></i> 관심 및 저장
+          <i class="bi bi-chevron-down sub-arrow"></i>
         </a>
+        <ul class="sub-nav">
+          <li class="${activeMenu == 'bookmark' ? 'sub-active' : ''}">
+            <a href="${pageContext.request.contextPath}/mypage/bookmark">
+              <i class="bi bi-bookmark-fill"></i> 나의 찜 목록
+            </a>
+          </li>
+          <li class="${activeMenu == 'likes' ? 'sub-active' : ''}">
+            <a href="${pageContext.request.contextPath}/mypage/likes">
+              <i class="bi bi-heart"></i> 나의 좋아요 목록
+            </a>
+          </li>
+        </ul>
       </li>
       <li class="${activeMenu == 'review' ? 'active' : ''}">
         <a href="${pageContext.request.contextPath}/mypage/review">
@@ -84,6 +97,39 @@
   </div>
 </div>
 <style>
+  /* 하위메뉴 토글 */
+  .side-nav li.has-sub > a { justify-content:space-between; }
+  .side-nav li.has-sub.sub-open > a,
+  .side-nav li.has-sub.sub-open > a:hover {
+    background:var(--grad-main) !important; color:white !important;
+    box-shadow:0 4px 12px rgba(137,207,240,.4);
+    border-radius:16px;
+    padding-left:20px;
+  }
+  .side-nav li.has-sub.sub-open > a i { color:white !important; }
+  .sub-arrow { transition:transform .25s; margin-left:auto; font-size:12px !important; width:auto !important; }
+  .side-nav li.has-sub.sub-open .sub-arrow { transform:rotate(180deg); }
+
+  /* 하위메뉴 목록 */
+  .sub-nav { list-style:none; padding:4px 0 4px 12px; margin:0; display:none; }
+  .side-nav li.has-sub.sub-open .sub-nav { display:block; }
+  .sub-nav li { border-radius:12px; overflow:hidden; }
+  .sub-nav li a {
+    display:flex; align-items:center; gap:10px;
+    padding:9px 14px; font-size:13px; font-weight:600;
+    color:var(--text-gray); text-decoration:none;
+    border-radius:12px; transition:all .2s;
+  }
+  .sub-nav li a i { font-size:13px; color:var(--text-gray); width:16px; text-align:center; }
+  .sub-nav li a:hover { background:rgba(137,207,240,.12); color:var(--sky-blue); }
+  .sub-nav li a:hover i { color:var(--sky-blue); }
+  .sub-nav li.sub-active a {
+    background:rgba(137,207,240,.18);
+    color:var(--sky-blue);
+    font-weight:700;
+  }
+  .sub-nav li.sub-active a i { color:var(--sky-blue); }
+
   .modal-overlay {
     display: none;
     position: fixed;
@@ -146,7 +192,20 @@
   }
 </style>
 <script>
-document.addEventListener('DOMContentLoaded', function () {
+window.toggleSubMenu = function(el) {
+    var li = el.closest('li.has-sub');
+    li.classList.toggle('sub-open');
+  };
+
+  document.addEventListener('DOMContentLoaded', function () {
+
+  // 하위메뉴 링크 클릭 시 부모 sub-open 강제 유지
+  document.querySelectorAll('.sub-nav a').forEach(function(a) {
+    a.addEventListener('click', function(e) {
+      var li = a.closest('li.has-sub');
+      if (li) li.classList.add('sub-open');
+    });
+  });
 
   // ── 사이드바 통계 로드 ──
   const ctxPath = document.querySelector('meta[name="ctx-path"]')?.content

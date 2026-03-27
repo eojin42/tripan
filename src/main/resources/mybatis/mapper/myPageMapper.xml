@@ -76,24 +76,23 @@
           )
     </delete>
 
-    <!-- 북마크 -->
     <select id="selectMyBookmarks" resultType="com.tripan.app.domain.dto.BookmarkDto">
-        SELECT
-            b.BOOKMARK_ID  AS bookmarkId,
-            b.PLACE_ID     AS placeId,
-            p.PLACE_NAME   AS placeName,
-            p.ADDRESS      AS address,
-            p.IMAGE_URL    AS imageUrl,
-            p.CATEGORY     AS category,
-            b.CREATED_AT   AS createdAt
-        FROM BOOKMARK b
-        JOIN PLACE p ON b.PLACE_ID = p.PLACE_ID
-        WHERE b.MEMBER_ID = #{memberId} AND p.IS_ACTIVE = 1
-        <if test="type != null and type != '' and type != 'ALL'">
-            AND p.CATEGORY = #{type}
-        </if>
-        ORDER BY b.CREATED_AT DESC
-    </select>
+	    SELECT
+	        b.BOOKMARK_ID  AS bookmarkId,
+	        b.PLACE_ID     AS placeId,
+	        p.PLACE_NAME   AS placeName,
+	        p.ADDRESS      AS address,
+	        p.IMAGE_URL    AS imageUrl,
+	        p.CATEGORY     AS category,
+	        b.CREATED_AT   AS createdAt
+	    FROM BOOKMARK b
+	    JOIN PLACE p ON b.PLACE_ID = p.PLACE_ID
+	    WHERE b.MEMBER_ID = #{memberId} AND p.IS_ACTIVE = 1
+	    <if test="type != null and type != '' and type != 'ALL'">
+	        AND p.CATEGORY = #{type}
+	    </if>
+	    ORDER BY b.CREATED_AT DESC
+	</select>
 
     <!-- 예약 -->
     <select id="getMyBookings" parameterType="Long" resultType="map">
@@ -224,30 +223,125 @@
     
     <!-- 팔로우 -->
     <select id="selectFollowingList" resultType="com.tripan.app.domain.dto.FollowDto">
-    SELECT
-        f.following_id AS memberId,
-        m1.login_id AS loginId,
-        NVL(m2.nickname, m1.username) AS nickname,
-        m2.profile_image AS profileImage
-    FROM follow f
-    JOIN member1 m1 ON f.following_id = m1.member_id
-    LEFT JOIN member2 m2 ON f.following_id = m2.member_id
-    WHERE f.follower_id = #{memberId}
-    ORDER BY f.follow_id DESC
-</select>
-
-<select id="selectFollowerList" resultType="com.tripan.app.domain.dto.FollowDto">
-    SELECT
-        f.follower_id AS memberId,
-        m1.login_id AS loginId,
-        NVL(m2.nickname, m1.username) AS nickname,
-        m2.profile_image AS profileImage
-    FROM follow f
-    JOIN member1 m1 ON f.follower_id = m1.member_id
-    LEFT JOIN member2 m2 ON f.follower_id = m2.member_id
-    WHERE f.following_id = #{memberId}
-    ORDER BY f.follow_id DESC
-</select>
+	    SELECT
+	        f.following_id AS memberId,
+	        m1.login_id AS loginId,
+	        NVL(m2.nickname, m1.username) AS nickname,
+	        m2.profile_image AS profileImage
+	    FROM follow f
+	    JOIN member1 m1 ON f.following_id = m1.member_id
+	    LEFT JOIN member2 m2 ON f.following_id = m2.member_id
+	    WHERE f.follower_id = #{memberId}
+	    ORDER BY f.follow_id DESC
+	</select>
+	
+	<select id="selectFollowerList" resultType="com.tripan.app.domain.dto.FollowDto">
+	    SELECT
+	        f.follower_id AS memberId,
+	        m1.login_id AS loginId,
+	        NVL(m2.nickname, m1.username) AS nickname,
+	        m2.profile_image AS profileImage
+	    FROM follow f
+	    JOIN member1 m1 ON f.follower_id = m1.member_id
+	    LEFT JOIN member2 m2 ON f.follower_id = m2.member_id
+	    WHERE f.following_id = #{memberId}
+	    ORDER BY f.follow_id DESC
+	</select>
     
+	<select id="selectMyReviews" resultType="com.tripan.app.domain.dto.MyReviewDto">
+	    SELECT
+	        r.REVIEW_ID      AS reviewId,
+	        r.PLACE_ID       AS placeId,
+	        p.PLACE_NAME     AS placeName,
+	        p.CATEGORY       AS placeCategory,
+	        r.RATING         AS rating,
+	        r.CONTENT        AS content,
+	        r.CREATED_AT     AS createdAt,
+	        r.UPDATED_AT     AS updatedAt,
+	        r.HELPFUL_COUNT  AS helpfulCount,
+	        r.START_DATE     AS visitDate,
+	        (SELECT LISTAGG(ri.IMAGE_URL, ',') WITHIN GROUP (ORDER BY ri.REVIEW_IMG_ID)
+	         FROM REVIEW_IMG ri
+	         WHERE ri.REVIEW_ID = r.REVIEW_ID) AS images
+	    FROM PLACE_REVIEW r
+	    JOIN PLACE p ON r.PLACE_ID = p.PLACE_ID
+	    WHERE r.MEMBER_ID = #{memberId}
+	    ORDER BY r.CREATED_AT DESC
+	</select>
+	
+	<select id="selectPendingReviews" resultType="map">
+	    SELECT
+	        res.RESERVATION_ID                          AS "reservationId",
+	        res.PLACE_ID                                AS "placeId",
+	        p.PLACE_NAME                                AS "placeName",
+	        p.CATEGORY                                  AS "placeCategory",
+	        TO_CHAR(res.CHECK_IN_DATE,  'YYYY-MM-DD')   AS "checkInDate",
+	        TO_CHAR(res.CHECK_OUT_DATE, 'YYYY-MM-DD')   AS "checkOutDate"
+	    FROM RESERVATION res
+	    JOIN ROOM rm  ON res.ROOM_ID   = rm.ROOM_ID
+	    JOIN PLACE p  ON rm.PLACE_ID   = p.PLACE_ID
+	    WHERE res.MEMBER_ID   = #{memberId}
+	      AND res.STATUS       = 'SUCCESS'
+	      AND res.CHECK_OUT_DATE &lt; SYSDATE
+	      AND NOT EXISTS (
+	          SELECT 1 FROM PLACE_REVIEW pr
+	          WHERE pr.RESERVATION_ID = res.RESERVATION_ID
+	      )
+	    ORDER BY res.CHECK_OUT_DATE DESC
+	    FETCH FIRST 5 ROWS ONLY
+	</select>
+	 
+	<select id="selectMyLikes" resultType="map">
+	    SELECT
+	        l.LIKE_ID      AS "likeId",
+	        l.TARGET_ID    AS "targetId",
+	        l.TARGET_TYPE  AS "targetType",
+	        l.CREATED_AT   AS "createdAt",
+	        <choose>
+	            <when test="type == 'PLACE'">
+	                p.PLACE_NAME                    AS "targetName",
+	                p.ADDRESS                       AS "address",
+	                p.IMAGE_URL                     AS "imageUrl"
+	            </when>
+	            <when test="type == 'FEED'">
+				    TO_CHAR(SUBSTR(f.CONTENT, 1, 50))  AS "targetName",
+				    NULL                               AS "address",
+				    f.IMAGE_URL                        AS "imageUrl"
+				</when>
+	            <when test="type == 'FREEBOARD'">
+	                fb.TITLE                        AS "targetName",
+	                NULL                            AS "address",
+	                fb.THUMBNAIL_URL                AS "imageUrl"
+	            </when>
+	        </choose>
+	    FROM LIKES l
+	    <if test="type == 'PLACE'">
+	        LEFT JOIN PLACE p ON l.TARGET_ID = p.PLACE_ID AND p.IS_ACTIVE = 1
+	    </if>
+	    <if test="type == 'FEED'">
+	        LEFT JOIN FEED_POST f ON l.TARGET_ID = f.POST_ID
+	    </if>
+	    <if test="type == 'FREEBOARD'">
+	        LEFT JOIN FREEBOARD fb ON l.TARGET_ID = fb.BOARD_ID
+	    </if>
+	    WHERE l.MEMBER_ID  = #{memberId}
+	      AND l.TARGET_TYPE = #{type}
+	    ORDER BY l.CREATED_AT DESC
+	</select>
+	 
+	<update id="updateMyReview">
+	    UPDATE PLACE_REVIEW
+	    SET RATING     = #{rating},
+	        CONTENT    = #{content},
+	        UPDATED_AT = SYSDATE
+	    WHERE REVIEW_ID  = #{reviewId}
+	      AND MEMBER_ID  = #{memberId}
+	</update>
+	
+	<delete id="deleteLike">
+	    DELETE FROM LIKES
+	    WHERE LIKE_ID   = #{likeId}
+	      AND MEMBER_ID = #{memberId}
+	</delete>
 
 </mapper>

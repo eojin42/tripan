@@ -5,9 +5,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.apache.ibatis.annotations.Mapper;
-import org.apache.ibatis.annotations.Param;
 
-import com.tripan.app.domain.dto.MemberCouponDto;
 import com.tripan.app.domain.dto.MemberDto;
 
 @Mapper
@@ -49,5 +47,6 @@ public interface MemberMapper {
 	public String findByAuthority(String login_id);
 	
 	public MemberDto findByNickname(String nickname);
+	List<MemberDto> searchByKeyword(String keyword);
 	
 }

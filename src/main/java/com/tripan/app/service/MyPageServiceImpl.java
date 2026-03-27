@@ -309,4 +309,54 @@ public class MyPageServiceImpl implements MyPageService {
 	    }
 	}
 	
+	// 미작성 리뷰 목록
+	@Override
+	public List<Map<String, Object>> getPendingReviews(Long memberId) {
+	    try {
+	        return mapper.selectPendingReviews(memberId);
+	    } catch (Exception e) {
+	        log.info("getPendingReviews : ", e);
+	        return List.of();
+	    }
+	}
+	 
+	// 좋아요한 것들
+	@Override
+	public List<Map<String, Object>> getMyLikes(Long memberId, String type) {
+	    try {
+	        return mapper.selectMyLikes(memberId, type);
+	    } catch (Exception e) {
+	        log.info("getMyLikes : ", e);
+	        return List.of();
+	    }
+	}
+	 
+	// 좋아요 취소
+		@Transactional
+		@Override
+		public void deleteLike(Long memberId, Long likeId) {
+		    try {
+		        int result = mapper.deleteLike(memberId, likeId);
+		        if (result == 0) throw new IllegalArgumentException("취소 권한이 없거나 존재하지 않는 좋아요입니다.");
+		    } catch (Exception e) {
+		        log.info("deleteLike : ", e);
+		        throw e;
+		    }
+		}
+	
+	// 리뷰 수정
+	@Transactional
+	@Override
+	public void updateReview(Long memberId, Long reviewId, int rating, String content) {
+	    try {
+	        int result = mapper.updateMyReview(memberId, reviewId, rating, content);
+	        if (result == 0) throw new IllegalArgumentException("수정 권한이 없거나 존재하지 않는 리뷰입니다.");
+	    } catch (Exception e) {
+	        log.info("updateReview : ", e);
+	        throw e;
+	    }
+	}
+	 
+	
+	
 }

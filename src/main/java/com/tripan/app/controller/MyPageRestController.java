@@ -14,6 +14,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -38,7 +39,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 @RestController
-@RequestMapping("/mypage/api/**")
+@RequestMapping("/mypage/api")
 @RequiredArgsConstructor
 @Slf4j
 public class MyPageRestController {
@@ -291,6 +292,57 @@ public class MyPageRestController {
         } catch (Exception e) {
             log.error("포인트 내역 조회 오류 - memberId: {}", info.getMemberId(), e);
             return ResponseEntity.status(500).body("데이터 조회 중 오류가 발생했습니다.");
+        }
+    }
+    
+ // 미작성 리뷰 목록
+    @GetMapping("pending-reviews")
+    public ResponseEntity<?> getPendingReviews(HttpSession session) {
+        MemberDto loginUser = getLoginUser(session);
+        if (loginUser == null) return unauthorized();
+        return ResponseEntity.ok(myPageService.getPendingReviews(loginUser.getMemberId()));
+    }
+     
+    // 리뷰 수정
+    @PutMapping("reviews/{reviewId}")
+    public ResponseEntity<?> updateReview(
+            @PathVariable("reviewId") Long reviewId,
+            @RequestBody Map<String, Object> body,
+            HttpSession session) {
+        MemberDto loginUser = getLoginUser(session);
+        if (loginUser == null) return unauthorized();
+        try {
+            int rating   = Integer.parseInt(body.get("rating").toString());
+            String content = body.get("content").toString();
+            myPageService.updateReview(loginUser.getMemberId(), reviewId, rating, content);
+            return ResponseEntity.ok(Map.of("message", "수정되었습니다."));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.status(403).body(Map.of("message", e.getMessage()));
+        }
+    }
+     
+    // 좋아요한 것들 목록
+    @GetMapping("likes")
+    public ResponseEntity<?> getMyLikes(
+            @RequestParam(name = "type", required = false) String type,
+            HttpSession session) {
+        MemberDto loginUser = getLoginUser(session);
+        if (loginUser == null) return unauthorized();
+        return ResponseEntity.ok(myPageService.getMyLikes(loginUser.getMemberId(), type));
+    }
+     
+    // 좋아요 취소
+    @DeleteMapping("likes/{likeId}")
+    public ResponseEntity<?> deleteLike(
+            @PathVariable("likeId") Long likeId,
+            HttpSession session) {
+        MemberDto loginUser = getLoginUser(session);
+        if (loginUser == null) return unauthorized();
+        try {
+            myPageService.deleteLike(loginUser.getMemberId(), likeId);
+            return ResponseEntity.ok(Map.of("message", "좋아요가 취소되었습니다."));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.status(403).body(Map.of("message", e.getMessage()));
         }
     }
     
