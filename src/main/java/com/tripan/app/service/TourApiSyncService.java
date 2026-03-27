@@ -4,34 +4,30 @@ import java.util.Map;
 
 public interface TourApiSyncService {
 
-    /**
-     * 설명이 없는(NULL) 장소를 찾아 TourAPI detailCommon2로 동기화합니다.
-     * → place 테이블의 description, phone_number 업데이트
-     */
+    /** place 테이블의 description, phone_number 배치 업데이트 */
     String forceSyncPlaceDetails();
 
-    /**
-     * 식당(contentTypeId=39) 상세 정보를 TourAPI detailIntro2로 실시간 조회합니다.
-     * → 워크스페이스 모달 등 즉시 조회용 (DB 저장 X)
-     */
-    Map<String, Object> getRestaurantDetail(String contentId);
-
-    /**
-     * 식당(contentTypeId=39) 상세를 배치로 DB에 저장합니다.
-     * → restaurant / restaurant_facility / restaurant_menu 테이블 MERGE
-     */
-    String forceSyncRestaurantDetails();
-
-    /**
-     * 이미지가 없는 장소의 firstimage를 TourAPI detailCommon2로 채웁니다.
-     * → place 테이블의 image_url 업데이트
-     */
+    /** place 테이블의 image_url 배치 업데이트 */
     String forceSyncPlaceImages();
 
-    /**
-     * 관광지/문화시설/레포츠 상세를 배치로 DB에 저장합니다.
-     * → attraction 테이블 MERGE
-     * contentTypeId: TOUR=12, CULTURE=14, LEISURE=28
-     */
+    /** 식당 실시간 단건 조회 (DB 저장 X, 워크스페이스 모달용) */
+    Map<String, Object> getRestaurantDetail(String contentId);
+
+    /** 식당 배치 동기화 → restaurant / restaurant_facility / menu */
+    String forceSyncRestaurantDetails();
+
+    /** 관광지/문화/레포츠 배치 동기화 → attraction */
     String forceSyncAttractionDetails();
+
+    /**
+     * [온디맨드] 디테일 진입 시 해당 장소 DB에 없으면 즉시 API 호출 → 저장
+     * PlaceController.detail()에서 호출
+     */
+    void syncOnDemand(Long placeId, String category);
+
+    /**
+     * [통합 배치] place + 이미지 + 식당 + 관광지 한번에 전부 동기화
+     * GET /api/admin/sync/all
+     */
+    String forceSyncAll();
 }

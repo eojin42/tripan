@@ -22,6 +22,8 @@ import com.tripan.app.mapper.PlaceRecommendMapper;
 import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
 
+import com.tripan.app.service.TourApiSyncService;
+
 @Controller
 @RequestMapping("/curation")
 @RequiredArgsConstructor
@@ -29,6 +31,7 @@ public class PlaceController {
 
     private final PlaceRecommendMapper placeMapper;
     private final PlaceMapper          placeWriteMapper; // 조회수/좋아요 쓰기
+    private final TourApiSyncService   tourApiSyncService; // 온디맨드 sync
 
     @Value("${tripan.api.kakao-map-api-key}")
     private String kakaoMapsAppkey;
@@ -44,7 +47,11 @@ public class PlaceController {
         PlaceDto place = placeMapper.selectPlaceDetailById(id);
         if (place == null) return "redirect:/curation/place_list";
 
-        // 조회수 +1 (DB 업데이트는 별도, place 객체의 viewCount는 업데이트 전 값이므로 +1)
+        // ★ 온디맨드 sync (@Async) — 백그라운드에서 채움, 사용자 대기 없음
+        // 다음 방문부터 데이터 표시됨
+        tourApiSyncService.syncOnDemand(id, place.getCategory());
+
+        // 조회수 +1
         placeWriteMapper.incrementViewCount(id);
 
         // 이미지 결정

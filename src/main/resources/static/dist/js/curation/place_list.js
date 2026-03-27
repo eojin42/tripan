@@ -3,42 +3,85 @@
 /* ═══════════════════════════════════════════
    place_list.js
    장소 목록 페이지 – 검색 / 필터 / 무한스크롤
+   상태 관리: URL 파라미터 기준
+   뒤로가기 시 브라우저가 URL 자동 복원 → 필터 유지
 ═══════════════════════════════════════════ */
 
-let currentCat    = PLACE_CONFIG.initialCategory || '전체';
-let currentRegion = PLACE_CONFIG.initialRegion   || '전체';
+/* ── URL에서 현재 상태 읽기 (기본값: 최신순) ── */
+function getStateFromUrl() {
+  const p = new URLSearchParams(location.search);
+  return {
+    cat:     p.get('category') || '전체',
+    region:  p.get('region')   || '전체',
+    sort:    p.get('sort')     || 'recent',   // ← 기본값 최신순
+    keyword: p.get('keyword')  || ''
+  };
+}
+
+let state         = getStateFromUrl();
+let currentCat    = state.cat;
+let currentRegion = state.region;
 let currentOffset = 0;
 const PAGE_SIZE   = 12;
 let isFetching    = false;
 let hasMore       = true;
 
-/* URL 파라미터에 sort 있으면 selectbox 동기화 */
-(function syncSortFromUrl() {
-  const urlSort = new URLSearchParams(location.search).get('sort');
-  if (urlSort) {
-    const sel = document.getElementById('sortSelect');
-    if (sel) sel.value = urlSort;
-  }
-})();
+/* ── URL 파라미터 업데이트 (history에 push → 뒤로가기 지원) ── */
+function pushState(cat, region, sort, keyword) {
+  const p = new URLSearchParams();
+  if (cat     && cat     !== '전체') p.set('category', cat);
+  if (region  && region  !== '전체') p.set('region',   region);
+  if (sort    && sort    !== 'recent') p.set('sort',    sort);
+  if (keyword && keyword.trim())      p.set('keyword', keyword.trim());
+  const qs = p.toString();
+  history.pushState({ cat, region, sort, keyword },
+    '', location.pathname + (qs ? '?' + qs : ''));
+}
 
 /* ── 초기화 ── */
 document.addEventListener('DOMContentLoaded', () => {
+  // UI 상태 복원 (URL 파라미터 기준)
   restoreActiveStates();
 
-  // ★ currentOffset / hasMore를 먼저 세팅 후 observer 등록
-  //   (순서가 반대면 observer가 offset=0으로 중복 fetch)
+  // sort selectbox 복원
+  const sortEl = document.getElementById('sortSelect');
+  if (sortEl) sortEl.value = state.sort;
+
+  // keyword 복원
+  const keywordEl = document.getElementById('mainSearchInput');
+  if (keywordEl && state.keyword) keywordEl.value = state.keyword;
+
+  // 무한스크롤 초기화
   const initialCards = document.querySelectorAll('.pl-card').length;
   currentOffset = initialCards > 0 ? initialCards : 0;
   if (initialCards < PAGE_SIZE) hasMore = false;
 
+  // SSR로 이미 렌더된 카드가 없으면 초기 fetch
+  if (initialCards === 0) fetchPlaces(true);
+
   initInfiniteScroll();
+});
+
+/* ── 브라우저 뒤로/앞으로 버튼 ── */
+window.addEventListener('popstate', (e) => {
+  const s = e.state || getStateFromUrl();
+  currentCat    = s.cat     || '전체';
+  currentRegion = s.region  || '전체';
+
+  const sortEl = document.getElementById('sortSelect');
+  if (sortEl) sortEl.value = s.sort || 'recent';
+
+  const keywordEl = document.getElementById('mainSearchInput');
+  if (keywordEl) keywordEl.value = s.keyword || '';
+
+  restoreActiveStates();
+  fetchPlaces(true);
 });
 
 function restoreActiveStates() {
   document.querySelectorAll('.pl-cat-tab').forEach(btn => {
-    const onclickVal = btn.getAttribute('onclick') || '';
-    const match = onclickVal.match(/selectCat\(this,\s*'([^']+)'\)/);
-    if (match) btn.classList.toggle('active', match[1] === currentCat);
+    const m = (btn.getAttribute('onclick') || '').match(/selectCat\(this,\s*'([^']+)'\)/);
+    if (m) btn.classList.toggle('active', m[1] === currentCat);
   });
   document.querySelectorAll('.pl-region-btn').forEach(btn => {
     btn.classList.toggle('active', btn.textContent.trim() === currentRegion);
@@ -52,6 +95,9 @@ function selectCat(el, cat) {
   hasMore       = true;
   document.querySelectorAll('.pl-cat-tab').forEach(b => b.classList.remove('active'));
   el.classList.add('active');
+  const sort    = document.getElementById('sortSelect')?.value || 'recent';
+  const keyword = document.getElementById('mainSearchInput')?.value || '';
+  pushState(cat, currentRegion, sort, keyword);
   fetchPlaces(true);
 }
 
@@ -62,6 +108,9 @@ function selectRegion(el, region) {
   hasMore       = true;
   document.querySelectorAll('.pl-region-btn').forEach(b => b.classList.remove('active'));
   el.classList.add('active');
+  const sort    = document.getElementById('sortSelect')?.value || 'recent';
+  const keyword = document.getElementById('mainSearchInput')?.value || '';
+  pushState(currentCat, region, sort, keyword);
   fetchPlaces(true);
 }
 
@@ -75,6 +124,10 @@ function resetFilters() {
   document.querySelectorAll('.pl-region-btn').forEach((b, i) => b.classList.toggle('active', i === 0));
   const searchInput = document.getElementById('mainSearchInput');
   if (searchInput) searchInput.value = '';
+  const sortEl = document.getElementById('sortSelect');
+  if (sortEl) sortEl.value = 'recent';
+  history.pushState({ cat: '전체', region: '전체', sort: 'recent', keyword: '' },
+    '', location.pathname);
   fetchPlaces(true);
 }
 
@@ -93,6 +146,12 @@ function fetchPlaces(reset = false) {
   const keyword = (document.getElementById('mainSearchInput')?.value || '').trim();
   const sortEl  = document.getElementById('sortSelect');
   const sort    = sortEl ? sortEl.value : 'recent';
+
+  // reset(필터/정렬 변경) 시 URL 업데이트 — selectCat/selectRegion에서 이미 pushState 했어도 덮어씀
+  // sortSelect onchange 로 직접 호출된 경우에도 URL 반영됨
+  if (reset) {
+    pushState(currentCat, currentRegion, sort, keyword);
+  }
 
   const url = `${PLACE_CONFIG.contextPath}/api/places/curation`
     + `?category=${encodeURIComponent(currentCat)}`
