@@ -12,6 +12,7 @@
             MIN(r.AMOUNT + (GREATEST(0, (#{adult} + #{child}) - r.ROOMBASECOUNT) * 20000)) as minPrice,
             
             (SELECT COUNT(*) FROM PLACE_REVIEW pr WHERE pr.PLACE_ID = p.PLACE_ID) as reviewCount,
+            (SELECT ROUND(NVL(AVG(RATING), 0), 1) FROM PLACE_REVIEW pr WHERE pr.PLACE_ID = p.PLACE_ID) as avgRating,
             (SELECT COUNT(*) FROM BOOKMARK bk2 WHERE bk2.PLACE_ID = p.PLACE_ID) as bookmarkCount,
             (SELECT LISTAGG(REPLACE(t.TAG_NAME, '#', ''), ',') WITHIN GROUP (ORDER BY t.TAG_ID) 
              FROM PLACE_TAG pt 
