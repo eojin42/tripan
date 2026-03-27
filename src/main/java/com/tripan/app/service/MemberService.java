@@ -38,5 +38,6 @@ public interface MemberService {
 	public String findByAuthority(String login_id);
 	
 	public boolean isPasswordCheck(Long memberId, String password);
+	List<MemberDto> searchByKeyword(String keyword);
 	
 }

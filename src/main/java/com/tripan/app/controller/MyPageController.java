@@ -54,4 +54,10 @@ public class MyPageController {
 		return "mypage/point";
 	}
 	
+	@GetMapping("/likes")
+	public String likes(Model model) {
+		model.addAttribute("activeMenu", "likes");
+	    return "mypage/likes";
+	}
+	
 }

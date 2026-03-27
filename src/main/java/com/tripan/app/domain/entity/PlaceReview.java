@@ -34,6 +34,7 @@ public class PlaceReview {
     @Column(name = "images")
     private String images;
 
+    @Transient
     @Column(name = "visit_date")
     private LocalDate visitDate;
 

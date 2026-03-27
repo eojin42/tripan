@@ -421,5 +421,15 @@ public class MemberServiceImpl implements MemberService {
 		return mapper.findByNickname(nickname);
 	}
 
-	
+    // 회원 검색 (login_id 또는 username으로)
+    @Override
+    public List<MemberDto> searchByKeyword(String keyword) {
+        try {
+            return mapper.searchByKeyword(keyword);
+        } catch (Exception e) {
+            log.info("searchByKeyword : ", e);
+            return List.of();
+        }
+    }
+
 }

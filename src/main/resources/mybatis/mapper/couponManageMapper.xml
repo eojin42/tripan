@@ -18,6 +18,7 @@
     <select id="selectKpi" resultType="com.tripan.app.admin.domain.dto.CouponDto$KpiResponse">
         SELECT
             c.total,
+            c.active,
             c.platform,
             c.partner,
             c.waiting,
@@ -26,6 +27,12 @@
         FROM (
             SELECT
                 COUNT(*) AS total,
+                SUM(CASE
+                    WHEN cp.status != 'INACTIVE'
+                         AND SYSDATE >= cp.valid_from
+                         AND SYSDATE &lt;= cp.valid_until
+                    THEN 1 ELSE 0
+                END) AS active,
                 SUM(CASE WHEN EXISTS (
                         SELECT 1 FROM coupon_target ct
                         WHERE ct.coupon_id = cp.coupon_id
@@ -55,22 +62,21 @@
             <if test="discountType != null and discountType != 'ALL'">
                 AND c.discount_type = #{discountType}
             </if>
-            <if test="status != null and status != 'ALL'">
-                AND c.status = #{status}
+            <if test="status != null and status == 'INACTIVE'">
+                AND c.status = 'INACTIVE'
             </if>
-            <if test="issuer != null and issuer == 'PLATFORM'">
-                AND NOT EXISTS (
-                    SELECT 1 FROM coupon_target ct
-                    WHERE ct.coupon_id = c.coupon_id
-                      AND ct.partner_id IS NOT NULL
-                )
+            <if test="status != null and status == 'ACTIVE'">
+                AND c.status != 'INACTIVE'
+                AND SYSDATE &gt;= c.valid_from
+                AND SYSDATE &lt;= c.valid_until
             </if>
-            <if test="issuer != null and issuer == 'PARTNER'">
-                AND EXISTS (
-                    SELECT 1 FROM coupon_target ct
-                    WHERE ct.coupon_id = c.coupon_id
-                      AND ct.partner_id IS NOT NULL
-                )
+            <if test="status != null and status == 'EXPIRED'">
+                AND c.status != 'INACTIVE'
+                AND c.valid_until &lt; SYSDATE
+            </if>
+            <if test="status != null and status == 'SCHEDULED'">
+                AND c.status != 'INACTIVE'
+                AND c.valid_from &gt; SYSDATE
             </if>
             <if test="keyword != null and keyword != ''">
                 AND c.coupon_name LIKE '%' || #{keyword} || '%'
@@ -96,7 +102,12 @@
                     c.partner_share       AS partnerShare,
                     c.valid_from          AS validFrom,
                     c.valid_until         AS validUntil,
-                    c.status              AS status,
+                    CASE
+                        WHEN c.status = 'INACTIVE' THEN 'INACTIVE'
+                        WHEN SYSDATE &lt; c.valid_from  THEN 'SCHEDULED'
+                        WHEN SYSDATE &gt; c.valid_until THEN 'EXPIRED'
+                        ELSE 'ACTIVE'
+                    END                   AS status,
                     c.created_at          AS createdAt,
                     c.issue_condition_type  AS issueConditionType,
                     c.issue_condition_value AS issueConditionValue,
@@ -160,9 +171,15 @@
             c.partner_share       AS partnerShare,
             c.valid_from          AS validFrom,
             c.valid_until         AS validUntil,
-            c.status              AS status,
+            CASE
+                WHEN c.status = 'INACTIVE' THEN 'INACTIVE'
+                WHEN SYSDATE &lt; c.valid_from  THEN 'SCHEDULED'
+                WHEN SYSDATE &gt; c.valid_until THEN 'EXPIRED'
+                ELSE 'ACTIVE'
+            END                   AS status,
             c.issue_condition_type  AS issueConditionType,
-            c.issue_condition_value AS issueConditionValue
+            c.issue_condition_value AS issueConditionValue,
+            (SELECT COUNT(*) FROM member_coupon mc WHERE mc.coupon_id = c.coupon_id) AS issuedCount
         FROM coupon c
         LEFT JOIN (
             <include refid="partnerTargetSummary"/>
@@ -244,6 +261,7 @@
                     pts.partner_id      AS partnerId,
                     pts.partner_name    AS partnerName,
                     mc.member_id        AS memberId,
+                    m.login_id          AS loginId,
                     c.discount_type     AS discountType,
                     c.discount_amount   AS discountAmount,
                     mc.issued_at        AS issuedAt,
@@ -252,6 +270,7 @@
                     mc.status           AS status
                 FROM member_coupon mc
                 JOIN coupon c ON mc.coupon_id = c.coupon_id
+                JOIN member1 m ON mc.member_id = m.member_id
                 LEFT JOIN (
                     <include refid="partnerTargetSummary"/>
                 ) pts ON pts.coupon_id = c.coupon_id
@@ -263,7 +282,7 @@
                         AND c.coupon_name LIKE '%' || #{couponKeyword} || '%'
                     </if>
                     <if test="memberKeyword != null and memberKeyword != ''">
-                        AND TO_CHAR(mc.member_id) LIKE '%' || #{memberKeyword} || '%'
+                        AND m.login_id LIKE '%' || #{memberKeyword} || '%'
                     </if>
                 </where>
                 ORDER BY mc.issued_at DESC
@@ -277,6 +296,7 @@
         SELECT COUNT(*)
         FROM member_coupon mc
         JOIN coupon c ON mc.coupon_id = c.coupon_id
+        JOIN member1 m ON mc.member_id = m.member_id
         <where>
             <if test="status != null and status != 'ALL'">
                 AND mc.status = #{status}
@@ -285,7 +305,7 @@
                 AND c.coupon_name LIKE '%' || #{couponKeyword} || '%'
             </if>
             <if test="memberKeyword != null and memberKeyword != ''">
-                AND TO_CHAR(mc.member_id) LIKE '%' || #{memberKeyword} || '%'
+                AND m.login_id LIKE '%' || #{memberKeyword} || '%'
             </if>
         </where>
     </select>
@@ -322,13 +342,14 @@
             <include refid="partnerTargetSummary"/>
         ) pts ON pts.coupon_id = c.coupon_id
         WHERE c.issue_condition_type = #{conditionType}
-          AND c.status = 'ACTIVE'
+          AND c.status != 'INACTIVE'
+          AND SYSDATE BETWEEN c.valid_from AND c.valid_until
     </select>
 
     <select id="countMembersByCondition" parameterType="map" resultType="int">
         SELECT COUNT(*)
-        FROM member
-        WHERE status = 'ACTIVE'
+        FROM member1
+        WHERE status = 1
         <choose>
             <when test="conditionType == 'NEW_MEMBER'">
                 <if test="conditionValue != null and conditionValue != '0' and conditionValue != ''">
@@ -339,7 +360,7 @@
                 AND (
                     SELECT COUNT(*)
                     FROM reservation r
-                    WHERE r.member_id = member.member_id
+                    WHERE r.member_id = member1.member_id
                       AND r.status = 'COMPLETED'
                 ) >= #{conditionValue}
             </when>
@@ -347,14 +368,14 @@
                 AND (
                     SELECT COUNT(*)
                     FROM review rv
-                    WHERE rv.member_id = member.member_id
+                    WHERE rv.member_id = member1.member_id
                 ) >= #{conditionValue}
             </when>
             <when test="conditionType == 'AMOUNT_SPENT'">
                 AND (
                     SELECT NVL(SUM(r.total_price), 0)
                     FROM reservation r
-                    WHERE r.member_id = member.member_id
+                    WHERE r.member_id = member1.member_id
                       AND r.status = 'COMPLETED'
                 ) >= #{conditionValue}
             </when>
@@ -363,8 +384,8 @@
 
     <select id="findMemberIdsByCondition" parameterType="map" resultType="Long">
         SELECT member_id
-        FROM member
-        WHERE status = 'ACTIVE'
+        FROM member1
+        WHERE status = 1
         <choose>
             <when test="conditionType == 'NONE'">
             </when>
@@ -377,7 +398,7 @@
                 AND (
                     SELECT COUNT(*)
                     FROM reservation r
-                    WHERE r.member_id = member.member_id
+                    WHERE r.member_id = member1.member_id
                       AND r.status = 'COMPLETED'
                 ) >= #{conditionValue}
             </when>
@@ -385,19 +406,52 @@
                 AND (
                     SELECT COUNT(*)
                     FROM review rv
-                    WHERE rv.member_id = member.member_id
+                    WHERE rv.member_id = member1.member_id
                 ) >= #{conditionValue}
             </when>
             <when test="conditionType == 'AMOUNT_SPENT'">
                 AND (
                     SELECT NVL(SUM(r.total_price), 0)
                     FROM reservation r
-                    WHERE r.member_id = member.member_id
+                    WHERE r.member_id = member1.member_id
                       AND r.status = 'COMPLETED'
                 ) >= #{conditionValue}
             </when>
         </choose>
     </select>
+
+    <update id="revokeMemberCoupon">
+        UPDATE member_coupon
+        SET status = 'CANCELED'
+        WHERE member_coupon_id = #{memberCouponId}
+    </update>
+
+    <select id="selectMemberIdByLoginId" resultType="Long">
+        SELECT member_id
+        FROM member1
+        WHERE login_id = #{loginId}
+          AND status = 1
+    </select>
+
+    <insert id="insertMemberCoupon">
+        INSERT INTO member_coupon (
+            member_coupon_id,
+            member_id,
+            coupon_id,
+            status,
+            issued_at,
+            expired_at
+        )
+        SELECT
+            member_coupon_seq.NEXTVAL,
+            #{memberId},
+            #{couponId},
+            'AVAILABLE',
+            SYSDATE,
+            valid_until
+        FROM coupon
+        WHERE coupon_id = #{couponId}
+    </insert>
 
     <select id="selectCurrentCouponId" resultType="long">
         SELECT coupon_seq.CURRVAL FROM dual

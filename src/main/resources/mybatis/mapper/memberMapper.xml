@@ -102,5 +102,16 @@
 	    SELECT member_id,nickname,profile_image,bio,phone_number,preferred_region, updated_at, last_login_at, equipped_badge_id
 	     FROM member2 WHERE nickname = #{nickname}
 	</select>
+	
+	<select id="searchByKeyword" resultType="com.tripan.app.domain.dto.MemberDto">
+    	SELECT member_id AS memberId, login_id AS loginId,
+	           username, email
+	    FROM member1
+	    WHERE status = 1
+	      AND (login_id LIKE '%' || #{keyword} || '%'
+	           OR username LIKE '%' || #{keyword} || '%')
+	      AND ROWNUM &lt;= 10
+	    ORDER BY login_id
+	</select>
     
 </mapper>

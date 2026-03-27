@@ -18,4 +18,6 @@ public interface CouponService {
 	            int page, String status, String couponKeyword, String memberKeyword);
 	 public List<CouponDto.PartnerOption> getPartnerOptions();
 	 public CouponDto.DetailResponse getCouponById(Long couponId);
+	 public void revokeCoupon(Long memberCouponId);
+	 public void grantCoupon(CouponDto.GrantRequest req);
 }

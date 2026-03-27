@@ -17,7 +17,9 @@ import com.tripan.app.admin.domain.dto.CouponDto;
 import com.tripan.app.admin.mapper.CouponTargetMapper;
 import com.tripan.app.admin.service.CouponService;
 import com.tripan.app.domain.dto.AccommodationDto;
+import com.tripan.app.domain.dto.MemberDto;
 import com.tripan.app.domain.dto.RoomDto;
+import com.tripan.app.service.MemberService;
 
 import lombok.RequiredArgsConstructor;
 
@@ -28,6 +30,7 @@ public class CouponManageRestController {
 
     private final CouponService couponService;
     private final CouponTargetMapper couponTargetMapper;
+    private final MemberService memberService;
 
     @GetMapping("/kpi")
     public ResponseEntity<CouponDto.KpiResponse> getKpi() {
@@ -93,6 +96,12 @@ public class CouponManageRestController {
         return ResponseEntity.ok(couponService.getIssuedList(page, status, couponKeyword, memberKeyword));
     }
 
+    @PostMapping("/issued/{memberCouponId}/revoke")
+    public ResponseEntity<Void> revokeIssuedCoupon(@PathVariable("memberCouponId") Long memberCouponId) {
+        couponService.revokeCoupon(memberCouponId);
+        return ResponseEntity.ok().build();
+    }
+
     @GetMapping("/accommodation/types")
     public ResponseEntity<List<String>> getAccommodationTypes() {
         return ResponseEntity.ok(couponTargetMapper.selectAccTypeOptions());
@@ -114,5 +123,17 @@ public class CouponManageRestController {
             @PathVariable("placeId") Long placeId,
             @RequestParam(value = "keyword", required = false) String keyword) {
         return ResponseEntity.ok(couponTargetMapper.selectRoomsByAccommodation(placeId, keyword));
+    }
+    
+    @GetMapping("/member/search")
+    public ResponseEntity<List<MemberDto>> searchMembers(
+            @RequestParam(value = "keyword") String keyword) {
+        return ResponseEntity.ok(memberService.searchByKeyword(keyword));
+    }
+
+    @PostMapping("/grant")
+    public ResponseEntity<Void> grant(@RequestBody CouponDto.GrantRequest req) {
+        couponService.grantCoupon(req);
+        return ResponseEntity.ok().build();
     }
 }

@@ -7,6 +7,8 @@
 <head>
   <meta charset="UTF-8">
   <title>TripanSuper — 쿠폰 관리</title>
+  <meta name="_csrf" content="${_csrf.token}"/>
+  <meta name="_csrf_header" content="${_csrf.headerName}"/>
   <link rel="stylesheet" href="${pageContext.request.contextPath}/dist/css/admin.css">
   <style>
     html, body { overflow-y: auto !important; height: auto !important; }
@@ -95,7 +97,7 @@
     .badge-waiting  { background:#FFF7ED; color:#C2410C; }
     .badge-expired  { background:#F1F5F9; color:#94A3B8; }
     .badge-inactive { background:#FEF2F2; color:#DC2626; }
-    .badge-rejected { background:#FEF2F2; color:#DC2626; }
+    .badge-scheduled { background:#EEF2FF; color:#4338CA; }
 
     .discount-chip {
       display:inline-flex; align-items:center; gap:4px;
@@ -104,15 +106,14 @@
     .chip-fixed   { background:#EEF2FF; color:#4338CA; }
     .chip-percent { background:#FFF7ED; color:#C2410C; }
 
-    .badge-platform { background:#EFF6FF; color:#1D4ED8; }
-    .badge-partner  { background:#F0FDF4; color:#15803D; }
-
     /* 발급 현황 */
     .badge-used     { background:#F0FDF4; color:#15803D; }
     .badge-unused   { background:#EFF6FF; color:#1D4ED8; }
     .badge-canceled { background:#F1F5F9; color:#94A3B8; }
+    .badge-platform { background:#EFF6FF; color:#1D4ED8; }
+    .badge-partner  { background:#F0FDF4; color:#15803D; }
 
-    /* 승인 처리 버튼 */
+    /* 버튼 행 */
     .btn-row { display:flex; gap:6px; justify-content:flex-end; }
 
     /* 위험 배너 */
@@ -120,6 +121,33 @@
       padding:14px 16px; background:#FEF2F2; border:1.5px solid #FECACA;
       border-radius:12px; font-size:13px; font-weight:700; color:#DC2626;
     }
+
+    /* 회원 검색 자동완성 */
+    .member-search-wrap { position:relative; }
+    .member-dropdown {
+      position:absolute; top:calc(100% + 4px); left:0; right:0;
+      background:#fff; border:1.5px solid var(--border); border-radius:10px;
+      box-shadow:0 8px 24px rgba(0,0,0,0.10); z-index:100;
+      max-height:200px; overflow-y:auto;
+    }
+    .member-dropdown-item {
+      padding:10px 14px; cursor:pointer; font-size:13px;
+      display:flex; align-items:center; gap:10px;
+      border-bottom:1px solid var(--border); transition:background 0.1s;
+    }
+    .member-dropdown-item:last-child { border-bottom:none; }
+    .member-dropdown-item:hover { background:var(--bg); }
+    .member-dropdown-item .mid { font-weight:800; color:var(--text); }
+    .member-dropdown-item .mname { font-size:12px; color:var(--muted); }
+    .member-selected {
+      display:flex; align-items:center; gap:10px;
+      padding:10px 14px; background:#F0FDF4; border:1.5px solid #BBF7D0;
+      border-radius:10px; font-size:13px;
+    }
+    .member-selected .mid { font-weight:800; color:#15803D; }
+    .member-selected .mname { font-size:12px; color:#15803D; }
+    .member-clear { margin-left:auto; background:none; border:none; cursor:pointer; color:#94A3B8; font-size:16px; line-height:1; }
+    .member-clear:hover { color:#DC2626; }
   </style>
 </head>
 <body>
@@ -136,9 +164,16 @@
       <div class="page-header fade-up">
         <div>
           <h1>쿠폰 관리</h1>
-          <p>플랫폼 쿠폰을 직접 등록하고, 파트너사가 신청한 쿠폰을 승인·관리합니다.</p>
+          <p>플랫폼 쿠폰을 직접 등록하고 관리합니다.</p>
         </div>
-        <div style="margin-left:auto;">
+        <div style="margin-left:auto;display:flex;gap:10px;">
+          <button class="btn" style="background:#F0FDF4;color:#15803D;border:1px solid #BBF7D0;display:inline-flex;align-items:center;gap:6px;"
+                  @click="openGrantModal">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M20 12v10H4V12"/><rect x="2" y="7" width="20" height="5"/><path d="M12 22V7"/><path d="M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7z"/><path d="M12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z"/>
+            </svg>
+            회원 쿠폰 지급
+          </button>
           <a href="${pageContext.request.contextPath}/admin/coupon/form"
              class="btn btn-primary" style="display:inline-flex;align-items:center;gap:6px;text-decoration:none;">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
@@ -154,12 +189,12 @@
         <div class="card kpi-card fade-up fade-up-1">
           <div class="kpi-label">전체 쿠폰</div>
           <div class="kpi-value">{{ kpi.total }}</div>
-          <div class="kpi-sub">플랫폼 {{ kpi.platform }} / 파트너 {{ kpi.partner }}</div>
+          <div class="kpi-sub">총 등록 쿠폰</div>
         </div>
         <div class="card kpi-card fade-up fade-up-2">
-          <div class="kpi-label">승인 대기</div>
-          <div class="kpi-value" style="color:#C2410C;">{{ kpi.waiting }}</div>
-          <div class="kpi-sub">파트너 쿠폰 검토 필요</div>
+          <div class="kpi-label">현재 사용 가능</div>
+          <div class="kpi-value" style="color:#15803D;">{{ kpi.active }}</div>
+          <div class="kpi-sub">유효기간 내 활성 쿠폰</div>
         </div>
         <div class="card kpi-card fade-up fade-up-3">
           <div class="kpi-label">이번 달 발급</div>
@@ -178,10 +213,7 @@
         <button class="tab-btn" :class="{ active: activeTab === 'all' }" @click="switchTab('all')">
           전체 쿠폰
         </button>
-        <button class="tab-btn" :class="{ active: activeTab === 'pending' }" @click="switchTab('pending')">
-          승인 대기
-          <span class="tab-badge" v-if="kpi.waiting > 0">{{ kpi.waiting }}</span>
-        </button>
+  
         <button class="tab-btn" :class="{ active: activeTab === 'issued' }" @click="switchTab('issued')">
           회원 발급 현황
         </button>
@@ -200,15 +232,9 @@
             <select class="filter-select" v-model="couponFilter.status" style="width:130px;">
               <option value="ALL">전체 상태</option>
               <option value="ACTIVE">활성</option>
-              <option value="WAITING">승인 대기</option>
+              <option value="SCHEDULED">예정</option>
               <option value="EXPIRED">만료</option>
               <option value="INACTIVE">비활성</option>
-              <option value="REJECTED">반려</option>
-            </select>
-            <select class="filter-select" v-model="couponFilter.issuer" style="width:140px;">
-              <option value="ALL">전체 발급 주체</option>
-              <option value="PLATFORM">플랫폼</option>
-              <option value="PARTNER">파트너사</option>
             </select>
             <input type="text" class="keyword-input" v-model="couponFilter.keyword"
                    placeholder="쿠폰명 검색" @keyup.enter="fetchCoupons(1)" style="flex:1;">
@@ -244,11 +270,11 @@
               <thead>
                 <tr>
                   <th class="col-check"><input type="checkbox" @change="toggleCheckAll" :checked="isAllChecked"></th>
+                  <th style="width:60px;">ID</th>
                   <th>쿠폰명</th>
                   <th>발급 주체</th>
                   <th>할인 유형</th>
                   <th>할인 금액/율</th>
-                  <th>부담 비율 (플랫폼/파트너)</th>
                   <th>유효기간</th>
                   <th>발급 수</th>
                   <th>상태</th>
@@ -266,6 +292,7 @@
                 </tr>
                 <tr v-for="c in couponList" :key="c.couponId">
                   <td class="col-check"><input type="checkbox" :value="c.couponId" v-model="selectedIds" @click.stop></td>
+                  <td class="num" style="color:var(--muted);font-size:12px;">{{ c.couponId }}</td>
                   <td><strong>{{ c.couponName }}</strong></td>
                   <td>
                     <span class="badge" :class="c.partnerId ? 'badge-partner' : 'badge-platform'">
@@ -284,25 +311,32 @@
                       <span v-if="c.maxDiscountAmount" style="color:var(--muted);font-size:11px;">(최대 {{ c.maxDiscountAmount.toLocaleString() }}원)</span>
                     </span>
                   </td>
-                  <td class="num" style="font-size:12px;">{{ c.platformShare }}% / {{ c.partnerShare }}%</td>
                   <td
 					  style="font-size:12px;color:var(--muted);"
 					  v-html="String(c.validFrom || '').replace('T', ' ') + ' ~<br>' + String(c.validUntil || '').replace('T', ' ')">
 					</td>
                   <td class="num">{{ c.issuedCount }}</td>
                   <td>
-                    <span v-if="c.status === 'ACTIVE'"    class="badge badge-active">활성</span>
-                    <span v-else-if="c.status === 'WAITING'"  class="badge badge-waiting">승인 대기</span>
-                    <span v-else-if="c.status === 'EXPIRED'"  class="badge badge-expired">만료</span>
-                    <span v-else-if="c.status === 'REJECTED'" class="badge badge-rejected">반려</span>
-                    <span v-else class="badge badge-inactive">비활성</span>
+                    <template v-if="c.status === 'INACTIVE'">
+                      <span class="badge badge-inactive">비활성</span>
+                    </template>
+                    <template v-else>
+                      <template v-if="c.validFrom && new Date(c.validFrom.replace('T',' ')) > new Date()">
+                        <span class="badge badge-scheduled">예정</span>
+                      </template>
+                      <template v-else-if="c.validUntil && new Date(c.validUntil.replace('T',' ')) < new Date()">
+                        <span class="badge badge-expired">만료</span>
+                      </template>
+                      <template v-else>
+                        <span class="badge badge-active">활성</span>
+                      </template>
+                    </template>
                   </td>
                   <td class="right">
                     <div class="btn-row">
-                      <button v-if="c.status === 'WAITING'"
-                              class="btn btn-sm"
+                      <button class="btn btn-sm"
                               style="background:#EFF6FF;color:#1D4ED8;border:1px solid #BFDBFE;"
-                              @click="openApproveModal(c)">심사</button>
+                              @click="openDetailModal(c.couponId)">상세</button>
                       <button class="btn btn-outline btn-sm"
                               @click="goToEdit(c)">수정</button>
                       <button class="btn btn-sm"
@@ -328,72 +362,6 @@
       </template>
 
       <!-- ══════════════════════════════
-           승인 대기 탭
-      ══════════════════════════════ -->
-      <template v-if="activeTab === 'pending'">
-        <div class="card table-card fade-up">
-          <div class="w-header" style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
-            <h2 style="display:inline-flex;align-items:center;gap:8px;">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
-              </svg>
-              파트너 쿠폰 승인 대기
-            </h2>
-            <span style="font-size:13px;color:var(--muted);">{{ kpi.waiting }}건 대기 중</span>
-          </div>
-
-          <div class="table-responsive">
-            <table>
-              <thead>
-                <tr>
-                  <th>파트너사</th>
-                  <th>쿠폰명</th>
-                  <th>할인 유형</th>
-                  <th>할인 금액/율</th>
-                  <th>부담 비율 (플랫폼/파트너)</th>
-                  <th>유효기간</th>
-                  <th>신청일</th>
-                  <th class="right">처리</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr v-if="pendingList.length === 0">
-                  <td colspan="8" style="text-align:center;padding:50px 0;color:var(--muted);">
-                    승인 대기 중인 쿠폰이 없습니다.
-                  </td>
-                </tr>
-                <tr v-for="c in pendingList" :key="c.couponId">
-                  <td><span class="badge badge-partner">{{ c.partnerName }}</span></td>
-                  <td><strong>{{ c.couponName }}</strong></td>
-                  <td>
-                    <span class="discount-chip" :class="c.discountType === 'FIXED' ? 'chip-fixed' : 'chip-percent'">
-                      {{ c.discountType === 'FIXED' ? '정액' : '정률' }}
-                    </span>
-                  </td>
-                  <td class="num">
-                    <span v-if="c.discountType === 'FIXED'">{{ c.discountAmount.toLocaleString() }}원</span>
-                    <span v-else>{{ c.discountAmount }}%
-                      <span v-if="c.maxDiscountAmount" style="color:var(--muted);font-size:11px;">(최대 {{ c.maxDiscountAmount.toLocaleString() }}원)</span>
-                    </span>
-                  </td>
-                  <td class="num" style="font-size:12px;">{{ c.platformShare }}% / {{ c.partnerShare }}%</td>
-                  <td style="font-size:12px;color:var(--muted);">{{ c.validFrom }} ~ {{ c.validUntil }}</td>
-                  <td style="font-size:12px;color:var(--muted);">{{ c.createdAt }}</td>
-                  <td class="right">
-                    <div class="btn-row">
-                      <button class="btn btn-sm"
-                              style="background:#F0FDF4;color:#15803D;border:1px solid #BBF7D0;"
-                              @click="openApproveModal(c)">승인/반려</button>
-                    </div>
-                  </td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-        </div>
-      </template>
-
-      <!-- ══════════════════════════════
            회원 발급 현황 탭
       ══════════════════════════════ -->
       <template v-if="activeTab === 'issued'">
@@ -402,6 +370,7 @@
             <div class="filter-label">발급 검색</div>
             <select class="filter-select" v-model="issuedFilter.status" style="width:130px;">
               <option value="ALL">전체 상태</option>
+              <option value="AVAILABLE">사용 가능</option>
               <option value="UNUSED">미사용</option>
               <option value="USED">사용 완료</option>
               <option value="CANCELED">취소</option>
@@ -439,16 +408,17 @@
                   <th>발급일</th>
                   <th>유효기간 만료일</th>
                   <th>상태</th>
+                  <th class="right">관리</th>
                 </tr>
               </thead>
               <tbody>
                 <tr v-if="!issuedSearched">
-                  <td colspan="9" style="text-align:center;padding:50px 0;color:var(--muted);">
+                  <td colspan="10" style="text-align:center;padding:50px 0;color:var(--muted);">
                     검색 조건을 설정한 후 <strong>[검색]</strong> 버튼을 눌러주세요.
                   </td>
                 </tr>
                 <tr v-else-if="issuedList.length === 0">
-                  <td colspan="9" style="text-align:center;padding:50px 0;color:var(--muted);">검색 결과가 없습니다.</td>
+                  <td colspan="10" style="text-align:center;padding:50px 0;color:var(--muted);">검색 결과가 없습니다.</td>
                 </tr>
                 <tr v-for="i in issuedList" :key="i.memberCouponId">
                   <td class="num" style="color:var(--muted);font-size:12px;">{{ i.memberCouponId }}</td>
@@ -471,9 +441,18 @@
                   <td style="font-size:12px;color:var(--muted);">{{ i.issuedAt }}</td>
                   <td style="font-size:12px;color:var(--muted);">{{ i.expiredAt }}</td>
                   <td>
-                    <span v-if="i.status === 'UNUSED'"   class="badge badge-unused">미사용</span>
+                    <span v-if="i.status === 'AVAILABLE'" class="badge badge-unused">사용 가능</span>
+                    <span v-else-if="i.status === 'UNUSED'"  class="badge badge-unused">미사용</span>
                     <span v-else-if="i.status === 'USED'"    class="badge badge-used">사용 완료</span>
-                    <span v-else class="badge badge-canceled">취소</span>
+                    <span v-else-if="i.status === 'CANCELED'" class="badge badge-canceled">취소</span>
+                    <span v-else class="badge badge-canceled">{{ i.status }}</span>
+                  </td>
+                  <td class="right">
+                    <button v-if="i.status === 'AVAILABLE' || i.status === 'UNUSED'"
+                            class="btn btn-sm"
+                            style="background:#FFF7ED;color:#C2410C;border:1px solid #FED7AA;"
+                            @click="openRevokeModal(i)">회수</button>
+                    <span v-else style="font-size:12px;color:var(--muted);">—</span>
                   </td>
                 </tr>
               </tbody>
@@ -493,58 +472,6 @@
 
     </main>
 
-    <!-- ══════════ 파트너 쿠폰 승인/반려 모달 ══════════ -->
-    <div class="modal-overlay" :class="{ open: showApproveModal }" @click.self="closeApproveModal">
-      <div class="modal-sheet" style="max-width:480px;">
-        <div class="ms-head">
-          <h3>파트너 쿠폰 심사</h3>
-          <p>{{ approveTarget ? approveTarget.partnerName : '' }} — {{ approveTarget ? approveTarget.couponName : '' }}</p>
-        </div>
-        <div class="ms-body" v-if="approveTarget">
-          <!-- 쿠폰 요약 정보 -->
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;padding:16px;background:var(--bg);border-radius:12px;font-size:13px;">
-            <div>
-              <div style="color:var(--muted);font-size:11px;font-weight:800;margin-bottom:4px;">할인 유형</div>
-              <div style="font-weight:700;">{{ approveTarget.discountType === 'FIXED' ? '정액' : '정률' }} — {{ approveTarget.discountType === 'FIXED' ? approveTarget.discountAmount.toLocaleString() + '원' : approveTarget.discountAmount + '%' }}</div>
-            </div>
-            <div>
-              <div style="color:var(--muted);font-size:11px;font-weight:800;margin-bottom:4px;">부담 비율</div>
-              <div style="font-weight:700;">플랫폼 {{ approveTarget.platformShare }}% / 파트너 {{ approveTarget.partnerShare }}%</div>
-            </div>
-            <div>
-              <div style="color:var(--muted);font-size:11px;font-weight:800;margin-bottom:4px;">유효기간</div>
-              <div style="font-weight:700;">{{ approveTarget.validFrom.replace('T', ' ') }}
-   						 <br>~ {{ approveTarget.validUntil.replace('T', ' ') }}</div>
-            </div>
-          </div>
-
-          <div class="fg">
-            <label>심사 결과 <span style="color:var(--danger);">*</span></label>
-            <select v-model="approveForm.result">
-              <option value="">결과를 선택하세요</option>
-              <option value="ACTIVE">✅ 승인</option>
-              <option value="REJECTED">❌ 반려</option>
-            </select>
-          </div>
-          <div class="fg">
-            <label>
-              <span v-if="approveForm.result === 'REJECTED'">반려 사유 <span style="color:var(--danger);">*</span></span>
-              <span v-else>메모 (선택)</span>
-            </label>
-            <textarea v-model="approveForm.memo"
-                      :placeholder="approveForm.result === 'REJECTED' ? '반려 사유를 입력하세요.' : '승인 메모 (선택)'">
-            </textarea>
-          </div>
-        </div>
-        <div class="ms-foot">
-          <button class="btn-m btn-m-ghost" @click="closeApproveModal">취소</button>
-          <button class="btn-m btn-m-success" v-if="approveForm.result === 'ACTIVE'"   @click="submitApprove">승인</button>
-          <button class="btn-m btn-m-danger"  v-else-if="approveForm.result === 'REJECTED'" @click="submitApprove">반려</button>
-          <button class="btn-m btn-m-primary" v-else disabled style="opacity:0.4;">결과 선택 후 처리</button>
-        </div>
-      </div>
-    </div>
-
     <!-- ══════════ 삭제 확인 모달 ══════════ -->
     <div class="modal-overlay" :class="{ open: showDeleteModal }" @click.self="closeDeleteModal">
       <div class="modal-sheet" style="max-width:420px;">
@@ -561,6 +488,203 @@
         <div class="ms-foot">
           <button class="btn-m btn-m-ghost"  @click="closeDeleteModal">취소</button>
           <button class="btn-m btn-m-danger" @click="submitDelete">삭제 확인</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══════════ 쿠폰 상세 모달 ══════════ -->
+    <div class="modal-overlay" :class="{ open: showDetailModal }" @click.self="closeDetailModal">
+      <div class="modal-sheet" style="max-width:540px;">
+        <div class="ms-head">
+          <h3>{{ detailCoupon ? detailCoupon.couponName : '' }}</h3>
+          <p style="display:flex;align-items:center;gap:8px;">
+            <span class="badge" :class="detailCoupon && detailCoupon.partnerId ? 'badge-partner' : 'badge-platform'">
+              {{ detailCoupon && detailCoupon.partnerId ? detailCoupon.partnerName : '플랫폼' }}
+            </span>
+            <span v-if="detailCoupon" class="badge"
+                  :class="{
+                    'badge-active': detailCoupon.status === 'ACTIVE',
+                    'badge-expired': detailCoupon.status === 'EXPIRED',
+                    'badge-scheduled': detailCoupon.status === 'SCHEDULED',
+                    'badge-inactive': detailCoupon.status === 'INACTIVE'
+                  }">
+              {{ {ACTIVE:'활성', EXPIRED:'만료', SCHEDULED:'예정', INACTIVE:'비활성'}[detailCoupon.status] || detailCoupon.status }}
+            </span>
+          </p>
+        </div>
+        <div class="ms-body" v-if="detailCoupon">
+
+          <!-- 파트너사 + 부담 비율 (파트너 쿠폰일 때만) -->
+          <div v-if="detailCoupon.partnerId" style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+            <div style="padding:14px 16px;background:#F0FDF4;border:1px solid #BBF7D0;border-radius:12px;">
+              <div style="font-size:11px;font-weight:800;color:#15803D;margin-bottom:6px;">파트너사</div>
+              <div style="font-weight:800;font-size:15px;color:#15803D;">{{ detailCoupon.partnerName }}</div>
+            </div>
+            <div style="padding:14px 16px;background:var(--bg);border-radius:12px;">
+              <div style="font-size:11px;font-weight:800;color:var(--muted);margin-bottom:6px;">부담 비율</div>
+              <div style="font-weight:700;font-size:13px;">
+                플랫폼 <strong>{{ detailCoupon.platformShare }}%</strong>
+                &nbsp;/&nbsp;
+                파트너 <strong>{{ detailCoupon.partnerShare }}%</strong>
+              </div>
+            </div>
+          </div>
+
+          <!-- 할인 정보 -->
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+            <div style="padding:14px 16px;background:var(--bg);border-radius:12px;">
+              <div style="font-size:11px;font-weight:800;color:var(--muted);margin-bottom:6px;">할인 유형</div>
+              <div style="font-weight:800;font-size:15px;">
+                <span class="discount-chip" :class="detailCoupon.discountType === 'FIXED' ? 'chip-fixed' : 'chip-percent'">
+                  {{ detailCoupon.discountType === 'FIXED' ? '정액' : '정률' }}
+                </span>
+              </div>
+            </div>
+            <div style="padding:14px 16px;background:var(--bg);border-radius:12px;">
+              <div style="font-size:11px;font-weight:800;color:var(--muted);margin-bottom:6px;">할인 금액/율</div>
+              <div style="font-weight:800;font-size:15px;">
+                <span v-if="detailCoupon.discountType === 'FIXED'">{{ Number(detailCoupon.discountAmount).toLocaleString() }}원</span>
+                <span v-else>{{ detailCoupon.discountAmount }}%</span>
+              </div>
+            </div>
+            <div style="padding:14px 16px;background:var(--bg);border-radius:12px;" v-if="detailCoupon.maxDiscountAmount">
+              <div style="font-size:11px;font-weight:800;color:var(--muted);margin-bottom:6px;">최대 할인 금액</div>
+              <div style="font-weight:800;font-size:15px;">{{ Number(detailCoupon.maxDiscountAmount).toLocaleString() }}원</div>
+            </div>
+            <div style="padding:14px 16px;background:var(--bg);border-radius:12px;" v-if="detailCoupon.minOrderAmount">
+              <div style="font-size:11px;font-weight:800;color:var(--muted);margin-bottom:6px;">최소 결제 금액</div>
+              <div style="font-weight:800;font-size:15px;">{{ Number(detailCoupon.minOrderAmount).toLocaleString() }}원 이상</div>
+            </div>
+          </div>
+
+          <!-- 유효기간 -->
+          <div style="padding:14px 16px;background:var(--bg);border-radius:12px;">
+            <div style="font-size:11px;font-weight:800;color:var(--muted);margin-bottom:6px;">유효기간</div>
+            <div style="font-weight:700;font-size:14px;">
+              {{ String(detailCoupon.validFrom || '').replace('T', ' ') }}
+              &nbsp;~&nbsp;
+              {{ String(detailCoupon.validUntil || '').replace('T', ' ') }}
+            </div>
+          </div>
+
+          <!-- 발급 조건 -->
+          <div style="padding:14px 16px;background:var(--bg);border-radius:12px;" v-if="detailCoupon.issueConditionType && detailCoupon.issueConditionType !== 'NONE'">
+            <div style="font-size:11px;font-weight:800;color:var(--muted);margin-bottom:6px;">발급 조건</div>
+            <div style="font-weight:700;font-size:14px;">
+              <span v-if="detailCoupon.issueConditionType === 'NEW_MEMBER'">신규 가입 후 {{ detailCoupon.issueConditionValue }}일 이내</span>
+              <span v-else-if="detailCoupon.issueConditionType === 'BOOKING_COUNT'">예약 {{ detailCoupon.issueConditionValue }}회 이상</span>
+              <span v-else-if="detailCoupon.issueConditionType === 'REVIEW_COUNT'">리뷰 {{ detailCoupon.issueConditionValue }}개 이상</span>
+              <span v-else-if="detailCoupon.issueConditionType === 'AMOUNT_SPENT'">누적 결제 {{ Number(detailCoupon.issueConditionValue).toLocaleString() }}원 이상</span>
+              <span v-else>{{ detailCoupon.issueConditionType }} / {{ detailCoupon.issueConditionValue }}</span>
+            </div>
+          </div>
+          <div style="padding:14px 16px;background:var(--bg);border-radius:12px;" v-else>
+            <div style="font-size:11px;font-weight:800;color:var(--muted);margin-bottom:6px;">발급 조건</div>
+            <div style="font-weight:700;font-size:14px;color:var(--muted);">조건 없음 (누구나 발급 가능)</div>
+          </div>
+
+          <!-- 발급 수 -->
+          <div style="padding:14px 16px;background:var(--bg);border-radius:12px;">
+            <div style="font-size:11px;font-weight:800;color:var(--muted);margin-bottom:6px;">총 발급 수</div>
+            <div style="font-weight:800;font-size:15px;">{{ detailCoupon.issuedCount }}건</div>
+          </div>
+
+        </div>
+        <div class="ms-foot">
+          <button class="btn-m btn-m-ghost" @click="closeDetailModal">닫기</button>
+          <button class="btn-m btn-m-primary" @click="() => { closeDetailModal(); goToEdit(detailCoupon); }">수정하기</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══════════ 회원 쿠폰 지급 모달 ══════════ -->
+    <div class="modal-overlay" :class="{ open: showGrantModal }" @click.self="closeGrantModal">
+      <div class="modal-sheet" style="max-width:480px;">
+        <div class="ms-head">
+          <h3>회원 쿠폰 지급</h3>
+          <p>특정 회원에게 쿠폰을 직접 지급합니다.</p>
+        </div>
+        <div class="ms-body">
+
+          <!-- 회원 검색 -->
+          <div class="fg">
+            <label>회원 검색 <span style="color:var(--danger);">*</span></label>
+            <!-- 선택된 회원 표시 -->
+            <div v-if="grantForm.selectedMember" class="member-selected">
+              <div>
+                <div class="mid">{{ grantForm.selectedMember.loginId }}</div>
+                <div class="mname">{{ grantForm.selectedMember.username }} · {{ grantForm.selectedMember.email }}</div>
+              </div>
+              <button class="member-clear" @click="clearMember" title="다시 선택">✕</button>
+            </div>
+            <!-- 검색 입력 -->
+            <div v-else class="member-search-wrap">
+              <input type="text" v-model="grantForm.memberKeyword"
+                     placeholder="회원 ID 또는 이름으로 검색"
+                     @input="searchMembers"
+                     @keydown.escape="memberSearchResults = []"
+                     autocomplete="off" />
+              <!-- 검색 결과 드롭다운 -->
+              <div class="member-dropdown" v-if="memberSearchResults.length > 0">
+                <div class="member-dropdown-item"
+                     v-for="m in memberSearchResults" :key="m.memberId"
+                     @click="selectMember(m)">
+                  <div>
+                    <div class="mid">{{ m.loginId }}</div>
+                    <div class="mname">{{ m.username }} · {{ m.email }}</div>
+                  </div>
+                </div>
+              </div>
+              <div class="member-dropdown" v-if="memberSearched && memberSearchResults.length === 0">
+                <div class="member-dropdown-item" style="color:var(--muted);cursor:default;">검색 결과가 없습니다.</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 쿠폰 선택 -->
+          <div class="fg">
+            <label>지급할 쿠폰 <span style="color:var(--danger);">*</span></label>
+            <select v-model="grantForm.couponId">
+              <option value="">쿠폰을 선택하세요</option>
+              <option v-for="c in activeCouponOptions" :key="c.couponId" :value="c.couponId">
+                {{ c.couponName }} ({{ c.discountType === 'FIXED' ? Number(c.discountAmount).toLocaleString() + '원' : c.discountAmount + '%' }})
+              </option>
+            </select>
+          </div>
+
+          <div v-if="grantForm.selectedMember && grantForm.couponId"
+               style="padding:12px 16px;background:#F0FDF4;border:1.5px solid #BBF7D0;border-radius:10px;font-size:13px;color:#15803D;font-weight:700;">
+            ✅ <strong>{{ grantForm.selectedMember.loginId }}</strong> 회원에게 즉시 지급됩니다.
+          </div>
+        </div>
+        <div class="ms-foot">
+          <button class="btn-m btn-m-ghost" @click="closeGrantModal">취소</button>
+          <button class="btn-m btn-m-success" @click="submitGrant"
+                  :disabled="!grantForm.selectedMember || !grantForm.couponId"
+                  :style="(!grantForm.selectedMember || !grantForm.couponId) ? 'opacity:0.4;cursor:not-allowed;' : ''">
+            지급 확인
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══════════ 쿠폰 회수 확인 모달 ══════════ -->
+    <div class="modal-overlay" :class="{ open: showRevokeModal }" @click.self="closeRevokeModal">
+      <div class="modal-sheet" style="max-width:420px;">
+        <div class="ms-head">
+          <h3>쿠폰 회수</h3>
+          <p>회원의 미사용 쿠폰을 회수합니다.</p>
+        </div>
+        <div class="ms-body">
+          <div class="danger-banner" style="background:#FFF7ED;border-color:#FED7AA;color:#C2410C;">
+            <strong>{{ revokeTarget ? revokeTarget.loginId : '' }}</strong> 회원의
+            <strong>{{ revokeTarget ? revokeTarget.couponName : '' }}</strong> 쿠폰을 회수합니다.
+            회수 후 해당 회원은 이 쿠폰을 사용할 수 없습니다.
+          </div>
+        </div>
+        <div class="ms-foot">
+          <button class="btn-m btn-m-ghost"  @click="closeRevokeModal">취소</button>
+          <button class="btn-m btn-m-warn" @click="submitRevoke">회수 확인</button>
         </div>
       </div>
     </div>
@@ -583,21 +707,27 @@
   import { createApp, ref, reactive, computed, onMounted } from 'vue';
   import axios from 'axios';
 
+  /* CSRF 토큰 설정 */
+  const csrfToken = document.querySelector('meta[name="_csrf"]')?.getAttribute('content');
+  const csrfHeader = document.querySelector('meta[name="_csrf_header"]')?.getAttribute('content');
+  if (csrfToken && csrfHeader) {
+    axios.defaults.headers.common[csrfHeader] = csrfToken;
+  }
+
   createApp({
     setup() {
 
       /* ── KPI ── */
-      const kpi = reactive({ total:0, platform:0, partner:0, waiting:0, issuedThisMonth:0, usedThisMonth:0 });
+      const kpi = reactive({ total:0, active:0, issuedThisMonth:0, usedThisMonth:0 });
 
       /* ── 탭 ── */
       const activeTab = ref('all');
       const switchTab = (tab) => {
         activeTab.value = tab;
-        if (tab === 'pending') fetchPending();
       };
 
       /* ── 쿠폰 목록 ── */
-      const couponFilter    = reactive({ discountType:'ALL', status:'ALL', issuer:'ALL', keyword:'' });
+      const couponFilter    = reactive({ discountType:'ALL', status:'ALL', keyword:'' });
       const couponList      = ref([]);
       const couponTotal     = ref(0);
       const couponPageNo    = ref(1);
@@ -610,9 +740,6 @@
         selectedIds.value.length === couponList.value.length
       );
 
-      /* ── 승인 대기 ── */
-      const pendingList = ref([]);
-
       /* ── 발급 현황 ── */
       const issuedFilter    = reactive({ status:'ALL', couponKeyword:'', memberKeyword:'' });
       const issuedList      = ref([]);
@@ -621,17 +748,69 @@
       const issuedPagination = ref(null);
       const issuedSearched  = ref(false);
 
-      /* ── 파트너 옵션 ── */
-      const partnerOptions = ref([]);
-
-      /* ── 승인 모달 ── */
-      const showApproveModal = ref(false);
-      const approveTarget    = ref(null);
-      const approveForm      = reactive({ result:'', memo:'' });
-
       /* ── 삭제 모달 ── */
       const showDeleteModal = ref(false);
       const deleteTarget    = ref(null);
+
+      /* ── 상세 모달 ── */
+      const showDetailModal = ref(false);
+      const detailCoupon    = ref(null);
+
+      const openDetailModal = async (couponId) => {
+        try {
+          const url = (contextPath + '/api/admin/coupon/' + couponId).replace(/([^:])\/\//g, '$1/');
+          const res = await axios.get(url);
+          detailCoupon.value = res.data;
+          showDetailModal.value = true;
+        } catch(e) { console.error('상세 조회 오류', e); alert('상세 정보를 불러오는 중 오류가 발생했습니다.'); }
+      };
+      const closeDetailModal = () => {
+        showDetailModal.value = false;
+        setTimeout(() => { detailCoupon.value = null; }, 300);
+      };
+
+      /* ── 회수 모달 ── */
+      const showRevokeModal = ref(false);
+      const revokeTarget    = ref(null);
+
+      /* ── 지급 모달 ── */
+      const showGrantModal      = ref(false);
+      const grantForm           = reactive({ memberKeyword:'', selectedMember:null, couponId:'' });
+      const memberSearchResults = ref([]);
+      const memberSearched      = ref(false);
+      let   memberSearchTimer   = null;
+
+      const activeCouponOptions = computed(() =>
+        couponList.value.filter(c => c.status === 'ACTIVE')
+      );
+
+      const searchMembers = () => {
+        memberSearched.value = false;
+        clearTimeout(memberSearchTimer);
+        if (!grantForm.memberKeyword.trim()) { memberSearchResults.value = []; return; }
+        memberSearchTimer = setTimeout(async () => {
+          try {
+            const res = await axios.get(`${contextPath}/api/admin/coupon/member/search`, {
+              params: { keyword: grantForm.memberKeyword.trim() }
+            });
+            memberSearchResults.value = res.data;
+            memberSearched.value = true;
+          } catch(e) { console.error('회원 검색 오류', e); }
+        }, 300);
+      };
+
+      const selectMember = (m) => {
+        grantForm.selectedMember = m;
+        memberSearchResults.value = [];
+        memberSearched.value = false;
+      };
+
+      const clearMember = () => {
+        grantForm.selectedMember = null;
+        grantForm.memberKeyword  = '';
+        memberSearchResults.value = [];
+        memberSearched.value = false;
+      };
 
       /* ── API ── */
       const fetchKpi = async () => {
@@ -641,32 +820,31 @@
         } catch(e) { console.error('KPI 오류', e); }
       };
 
-      const fetchPartnerOptions = async () => {
-        try {
-          const res = await axios.get(`${contextPath}/api/admin/partner/options`);
-          partnerOptions.value = res.data;
-        } catch(e) { console.error('파트너 옵션 오류', e); }
+      /* 유효기간 기준으로 활성 쿠폰 수 재계산 (백엔드 active 필드 보완) */
+      const recomputeActiveKpi = (list) => {
+        const now = new Date();
+        const activeCount = list.filter(c => {
+          if (c.status === 'INACTIVE') return false;
+          const from  = c.validFrom  ? new Date(c.validFrom.replace('T',' '))  : null;
+          const until = c.validUntil ? new Date(c.validUntil.replace('T',' ')) : null;
+          return (!from || from <= now) && (!until || until >= now);
+        }).length;
+        if (activeCount > 0 || kpi.active === 0) kpi.active = activeCount;
       };
 
       const fetchCoupons = async (page = 1) => {
         couponPageNo.value = page;
         try {
           const res = await axios.get(`${contextPath}/api/admin/coupon/list`, {
-            params: { page, discountType: couponFilter.discountType, status: couponFilter.status, issuer: couponFilter.issuer, keyword: couponFilter.keyword }
+            params: { page, discountType: couponFilter.discountType, status: couponFilter.status, keyword: couponFilter.keyword }
           });
           couponList.value       = res.data.list;
           couponTotal.value      = res.data.totalCount;
           couponPagination.value = res.data.pagination;
           couponSearched.value   = true;
           selectedIds.value      = [];
+          recomputeActiveKpi(res.data.list);
         } catch(e) { console.error('목록 오류', e); alert('목록을 불러오는 중 오류가 발생했습니다.'); }
-      };
-
-      const fetchPending = async () => {
-        try {
-          const res = await axios.get(`${contextPath}/api/admin/coupon/pending`);
-          pendingList.value = res.data;
-        } catch(e) { console.error('승인 대기 오류', e); }
       };
 
       const fetchIssued = async (page = 1) => {
@@ -696,20 +874,17 @@
           return;
         }
 
-        const statusMap = { ACTIVE:'활성', WAITING:'승인대기', EXPIRED:'만료', INACTIVE:'비활성', REJECTED:'반려' };
+        const statusMap = { ACTIVE:'활성', EXPIRED:'만료', INACTIVE:'비활성' };
         const typeMap   = { FIXED:'정액', PERCENT:'정률' };
 
-        let csv = '\uFEFF' + '쿠폰ID,쿠폰명,발급주체,할인유형,할인금액/율,최대할인,플랫폼부담%,파트너부담%,유효기간시작,유효기간만료,발급수,상태\n';
+        let csv = '\uFEFF' + '쿠폰ID,쿠폰명,할인유형,할인금액/율,최대할인,유효기간시작,유효기간만료,발급수,상태\n';
         target.forEach(c => {
           csv += [
             c.couponId,
             '"' + (c.couponName || '') + '"',
-            '"' + (c.partnerId ? (c.partnerName || '') : '플랫폼') + '"',
             typeMap[c.discountType] || c.discountType,
             c.discountAmount || '',
             c.maxDiscountAmount || '',
-            c.platformShare || '',
-            c.partnerShare  || '',
             c.validFrom     || '',
             c.validUntil    || '',
             c.issuedCount   || 0,
@@ -726,33 +901,6 @@
         document.body.removeChild(link);
       };
 
-      /* ── 승인/반려 ── */
-      const openApproveModal = (c) => {
-        approveTarget.value = c;
-        Object.assign(approveForm, { result:'', memo:'' });
-        showApproveModal.value = true;
-      };
-      const closeApproveModal = () => { showApproveModal.value = false; };
-      const submitApprove = async () => {
-        if (!approveForm.result) return;
-        if (approveForm.result === 'REJECTED' && !approveForm.memo.trim()) {
-          alert('반려 사유를 입력해주세요.');
-          return;
-        }
-        try {
-          await axios.post(`${contextPath}/api/admin/coupon/${approveTarget.value.couponId}/review`, {
-            result: approveForm.result,
-            memo:   approveForm.memo
-          });
-          const label = approveForm.result === 'ACTIVE' ? '승인' : '반려';
-          alert(approveTarget.value.couponName + ' 쿠폰이 ' + label + ' 처리되었습니다.');
-          closeApproveModal();
-          fetchPending();
-          fetchKpi();
-          if (couponSearched.value) fetchCoupons(couponPageNo.value);
-        } catch(e) { console.error('심사 오류', e); alert('처리 중 오류가 발생했습니다.'); }
-      };
-
       /* ── 삭제 ── */
       const openDeleteConfirm  = (c)  => { deleteTarget.value = c;    showDeleteModal.value = true; };
       const openBulkDeleteModal = ()  => { deleteTarget.value = null; showDeleteModal.value = true; };
@@ -760,7 +908,7 @@
       const submitDelete = async () => {
         const ids = deleteTarget.value ? [deleteTarget.value.couponId] : selectedIds.value;
         try {
-          await axios.delete(`${contextPath}/api/admin/coupon`, { data: { couponIds: ids } });
+          await axios.post(`${contextPath}/api/admin/coupon/delete`, { couponIds: ids });
           alert(ids.length + '개 쿠폰이 삭제되었습니다.');
           closeDeleteModal();
           fetchCoupons(couponPageNo.value);
@@ -768,25 +916,76 @@
         } catch(e) { console.error('삭제 오류', e); alert('처리 중 오류가 발생했습니다.'); }
       };
 
-      onMounted(() => { fetchKpi(); fetchPartnerOptions(); fetchCoupons(1); });
+      /* ── 회수 ── */
+      const openRevokeModal  = (i) => {
+        revokeTarget.value = i;
+        showRevokeModal.value = true;
+      };
+      const closeRevokeModal = ()  => { showRevokeModal.value = false; };
+      const submitRevoke = async () => {
+        const id = revokeTarget.value.memberCouponId ?? revokeTarget.value.member_coupon_id;
+        if (!id) {
+          alert('회수할 쿠폰 ID를 찾을 수 없습니다.');
+          return;
+        }
+        try {
+          const revokeUrl = (contextPath + '/api/admin/coupon/issued/' + id + '/revoke').replace(/([^:])\/\//g, '$1/');
+          await axios.post(revokeUrl);
+          alert(revokeTarget.value.loginId + ' 회원의 [' + revokeTarget.value.couponName + '] 쿠폰이 회수되었습니다.');
+          closeRevokeModal();
+          fetchIssued(issuedPageNo.value);
+          fetchKpi();
+        } catch(e) { console.error('회수 오류', e); alert('처리 중 오류가 발생했습니다.'); }
+      };
+
+      /* ── 지급 ── */
+      const openGrantModal  = () => {
+        Object.assign(grantForm, { memberKeyword:'', selectedMember:null, couponId:'' });
+        memberSearchResults.value = [];
+        memberSearched.value = false;
+        showGrantModal.value = true;
+        if (couponList.value.length === 0) fetchCoupons(1);
+      };
+      const closeGrantModal = () => { showGrantModal.value = false; };
+      const submitGrant = async () => {
+        if (!grantForm.selectedMember || !grantForm.couponId) return;
+        try {
+          await axios.post(`${contextPath}/api/admin/coupon/grant`, {
+            loginId:  grantForm.selectedMember.loginId,
+            couponId: grantForm.couponId
+          });
+          alert('[' + grantForm.selectedMember.loginId + '] 회원에게 쿠폰이 지급되었습니다.');
+          closeGrantModal();
+          if (activeTab.value === 'issued') fetchIssued(1);
+          fetchKpi();
+        } catch(e) {
+          if (e.response?.status === 404) alert('존재하지 않는 회원입니다.');
+          else { console.error('지급 오류', e); alert('처리 중 오류가 발생했습니다.'); }
+        }
+      };
+
+      onMounted(() => { fetchKpi(); fetchCoupons(1); });
 
       return {
         kpi, activeTab, switchTab,
         couponFilter, couponList, couponTotal, couponPageNo, couponPagination, couponSearched,
-        selectedIds, isAllChecked, pendingList,
+        selectedIds, isAllChecked,
         issuedFilter, issuedList, issuedTotal, issuedPageNo, issuedPagination, issuedSearched,
-        partnerOptions,
-        showApproveModal, approveTarget, approveForm,
         showDeleteModal, deleteTarget,
+        showDetailModal, detailCoupon, openDetailModal, closeDetailModal,
+        showRevokeModal, revokeTarget,
+        showGrantModal, grantForm, activeCouponOptions, memberSearchResults, memberSearched,
         fetchCoupons, fetchIssued, toggleCheckAll, downloadExcel,
-        openApproveModal, closeApproveModal, submitApprove,
         openDeleteConfirm, openBulkDeleteModal, closeDeleteModal, submitDelete,
+        openRevokeModal, closeRevokeModal, submitRevoke,
+        openGrantModal, closeGrantModal, submitGrant,
+        searchMembers, selectMember, clearMember,
         goToEdit: (c) => {
           const id = c.couponId ?? c.coupon_id ?? c.id;
           if (!id) { console.error('[goToEdit] 쿠폰 객체:', c); alert('쿠폰 ID를 찾을 수 없습니다. 콘솔(F12)을 확인해주세요.'); return; }
           location.href = contextPath + '/admin/coupon/form?id=' + id;
         },
-        resetCouponFilter: () => { couponFilter.discountType = 'ALL'; couponFilter.status = 'ALL'; couponFilter.issuer = 'ALL'; couponFilter.keyword = ''; fetchCoupons(1); },
+        resetCouponFilter: () => { couponFilter.discountType = 'ALL'; couponFilter.status = 'ALL'; couponFilter.keyword = ''; fetchCoupons(1); },
         resetIssuedFilter: () => { issuedFilter.status = 'ALL'; issuedFilter.couponKeyword = ''; issuedFilter.memberKeyword = ''; fetchIssued(1); }
       };
     }

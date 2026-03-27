@@ -890,10 +890,10 @@ console.log('room url:', url);
             issueConditionValue: c.issueConditionValue || '',
             // 적용 대상
             // targets가 없거나 빈 배열이면 빈값으로 초기화
-            targetAccType:         (c.targets||[]).filter(t=>t.targetType==='ACC_TYPE'      && t.isExclude==='N').map(t=>t.targetValue),
-            includeAccommodations: (c.targets||[]).filter(t=>t.targetType==='ACCOMMODATION' && t.isExclude==='N').map(t=>({placeId:t.targetValue, name:t.displayName||('숙소'+t.targetValue)})),
-            excludeAccommodations: (c.targets||[]).filter(t=>t.targetType==='ACCOMMODATION' && t.isExclude==='Y').map(t=>({placeId:t.targetValue, name:t.displayName||('숙소'+t.targetValue)})),
-            excludeRooms:          (c.targets||[]).filter(t=>t.targetType==='ROOM'          && t.isExclude==='Y').map(t=>({roomId:t.targetValue, roomName:t.displayName||('객실'+t.targetValue), placeId:t.accId||'', accName:t.accName||''}))
+            targetAccType:         (c.targetList||[]).filter(t=>t.targetType==='ACC_TYPE'      && t.isExclude==='N').map(t=>t.targetValue),
+            includeAccommodations: (c.targetList||[]).filter(t=>t.targetType==='ACCOMMODATION' && t.isExclude==='N').map(t=>({placeId:t.targetValue, name:t.displayName||('숙소'+t.targetValue)})),
+            excludeAccommodations: (c.targetList||[]).filter(t=>t.targetType==='ACCOMMODATION' && t.isExclude==='Y').map(t=>({placeId:t.targetValue, name:t.displayName||('숙소'+t.targetValue)})),
+            excludeRooms:          (c.targetList||[]).filter(t=>t.targetType==='ROOM'          && t.isExclude==='Y').map(t=>({roomId:t.targetValue, roomName:t.displayName||('객실'+t.targetValue), placeId:t.accId||'', accName:t.accName||''}))
           });
           partnerSearch.value = c.partnerName || '';
         } catch(e) {
@@ -957,7 +957,7 @@ console.log('room url:', url);
         }
       };
 
-      const goBack = () => { location.href = contextPath + '/admin/coupon'; };
+      const goBack = () => { location.href = contextPath + '/admin/coupon/main'; };
 
       onMounted(() => {
         fetchPartnerOptions();

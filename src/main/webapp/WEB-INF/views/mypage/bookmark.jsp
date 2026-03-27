@@ -91,8 +91,9 @@
 <jsp:include page="/WEB-INF/views/layout/header.jsp"/>
 
 <main class="mypage-container">
-	<jsp:include page="/WEB-INF/views/layout/mypage_sidebar.jsp">
-    <jsp:param name="activeMenu" value="schedule"/> </jsp:include>
+  <jsp:include page="/WEB-INF/views/layout/mypage_sidebar.jsp">
+    <jsp:param name="activeMenu" value="bookmark"/>
+  </jsp:include>
 
   <div class="content-area">
     <div>
@@ -126,7 +127,7 @@
 </main>
 
 <jsp:include page="/WEB-INF/views/layout/footer.jsp"/>
-<script src="${pageContext.request.contextPath}/js/mypage/main.js"></script>
+<script src="${pageContext.request.contextPath}/dist/js/mypage/main.js"></script>
 <script>
   async function loadStats() {
     try {
@@ -144,30 +145,69 @@
   }
 
   async function loadPlaces() {
-    var area = document.getElementById('place-grid-area');
-    try {
-      var res = await fetch('/mypage/api/bookmarks?type=PLACE');
-      if (!res.ok) throw new Error();
-      var list = await res.json();
-      if (!list.length) { area.innerHTML = renderEmpty('bi-bookmark-heart', '찜한 장소가 없어요', '/guest/list'); return; }
-      area.innerHTML = '<div class="wish-grid">' +
-        list.map(function(p) {
-          return '<div class="wish-card" onclick="location.href=\'/place/detail/' + p.placeId + '\'">' +
-            (p.thumbnailUrl
-              ? '<img class="wish-thumb" src="' + escHtml(p.thumbnailUrl) + '" alt="" loading="lazy">'
-              : '<div class="wish-thumb-placeholder"><i class="bi bi-geo-alt"></i></div>') +
-            '<div class="wish-body">' +
-              '<div class="wish-name">' + escHtml(p.placeName) + '</div>' +
-              '<div class="wish-meta"><i class="bi bi-geo-alt"></i>' + escHtml(p.address || '') + '</div>' +
-            '</div>' +
-            '<button class="btn-unwish" onclick="removeBookmark(event,' + p.bookmarkId + ', this)" title="찜 해제"><i class="bi bi-heart-fill"></i></button>' +
-          '</div>';
-        }).join('') +
-      '</div>';
-    } catch(e) {
-      area.innerHTML = renderEmpty('bi-bookmark-heart', '불러오기에 실패했어요', '/guest/list');
-    }
-  }
+	  var area = document.getElementById('place-grid-area');
+	  try {
+	    var res = await fetch('${pageContext.request.contextPath}/mypage/api/likes?type=PLACE');
+	    if (!res.ok) throw new Error();
+
+	    var list = await res.json();
+
+	    if (!list.length) {
+	      area.innerHTML = renderEmpty('bi-bookmark-heart', '좋아요한 장소가 없어요', '${pageContext.request.contextPath}/guest/list');
+	      return;
+	    }
+
+	    area.innerHTML = '<div class="wish-grid">' +
+	      list.map(function(p) {
+	        var img = '';
+	        if (p.imageUrl) {
+	          img = p.imageUrl.startsWith('http') ? p.imageUrl : '${pageContext.request.contextPath}' + p.imageUrl;
+	        }
+
+	        return '<div class="wish-card" onclick="location.href=\'${pageContext.request.contextPath}/place/detail/' + p.targetId + '\'">' +
+	          (img
+	            ? '<img class="wish-thumb" src="' + escHtml(img) + '" alt="" loading="lazy">'
+	            : '<div class="wish-thumb-placeholder"><i class="bi bi-geo-alt"></i></div>') +
+	          '<div class="wish-body">' +
+	            '<div class="wish-name">' + escHtml(p.targetName || '') + '</div>' +
+	            '<div class="wish-meta"><i class="bi bi-geo-alt"></i>' + escHtml(p.address || '') + '</div>' +
+	          '</div>' +
+	          '<button class="btn-unwish" onclick="removeLike(event,' + p.likeId + ', this)" title="좋아요 취소">' +
+	            '<i class="bi bi-heart-fill"></i>' +
+	          '</button>' +
+	        '</div>';
+	      }).join('') +
+	    '</div>';
+	  } catch (e) {
+	    area.innerHTML = renderEmpty('bi-bookmark-heart', '불러오기에 실패했어요', '${pageContext.request.contextPath}/guest/list');
+	  }
+	}
+
+	async function removeLike(e, likeId, btn) {
+	  e.stopPropagation();
+	  try {
+	    var res = await fetch('${pageContext.request.contextPath}/mypage/api/likes/' + likeId, {
+	      method: 'DELETE'
+	    });
+	    if (!res.ok) throw new Error();
+
+	    var card = btn.closest('.wish-card');
+	    card.style.transition = 'all .3s';
+	    card.style.opacity = '0';
+	    card.style.transform = 'scale(0.9)';
+	    setTimeout(function() {
+	      card.remove();
+
+	      var remain = document.querySelectorAll('#place-grid-area .wish-card').length;
+	      if (remain === 0) {
+	        document.getElementById('place-grid-area').innerHTML =
+	          renderEmpty('bi-bookmark-heart', '좋아요한 장소가 없어요', '${pageContext.request.contextPath}/guest/list');
+	      }
+	    }, 300);
+	  } catch (e) {
+	    alert('좋아요 취소에 실패했어요');
+	  }
+	}
 
   async function loadStays() {
     var area = document.getElementById('stay-grid-area');
@@ -210,7 +250,7 @@
   async function removeBookmark(e, id, btn) {
     e.stopPropagation();
     try {
-      var res = await fetch('/mypage/api/bookmarks/' + id, { method: 'DELETE' });
+      var res = await fetch('${pageContext.request.contextPath}/mypage/api/bookmarks/' + id, { method: 'DELETE' });
       if (!res.ok) throw new Error();
       var card = btn.closest('.wish-card');
       card.style.transition = 'all .3s';
@@ -308,7 +348,7 @@
 
   function renderEmpty(icon, msg, href) {
     return '<div class="empty-state"><i class="bi ' + icon + '"></i><p>' + msg + '</p>' +
-      '<button class="btn-primary" onclick="location.href=\'' + href + '\'">둘러보기</button></div>';
+    '<button class="btn-primary" onclick="location.href=\'/curation/place_list\'">둘러보기</button></div>'
   }
   function escHtml(s) { if (!s) return ''; return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
 

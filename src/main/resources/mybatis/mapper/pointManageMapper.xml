@@ -48,7 +48,7 @@
             AND (m1.login_id LIKE '%' || #{keyword} || '%'
               OR m2.nickname LIKE '%' || #{keyword} || '%')
         </if>
-        ORDER BY remPoint DESC
+        ORDER BY (SELECT MAX(reg_date) FROM point WHERE member_id = m1.member_id) DESC NULLS LAST
     </select>
 
     <!-- ======================================================

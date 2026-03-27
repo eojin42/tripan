@@ -441,7 +441,11 @@
     fetch(url)
       .then(function (r) { return r.json(); })
       .then(function (data) {
-        allMembers = data || [];
+        allMembers = (data || []).slice().sort(function (a, b) {
+          var da = a.lastChangeDate ? new Date(a.lastChangeDate) : new Date(0);
+          var db = b.lastChangeDate ? new Date(b.lastChangeDate) : new Date(0);
+          return db - da;
+        });
         filtered   = allMembers;
         page       = 1;
         renderTable();
@@ -694,6 +698,21 @@
       : (selectedId ? [selectedId] : []);
 
     if (ids.length === 0) { alert('대상 회원을 선택해주세요.'); return; }
+
+    /* ── 차감 초과 검증 ── */
+    if (modalType === 'deduct') {
+      var insufficient = [];
+      ids.forEach(function (id) {
+        var m = allMembers.find(function (x) { return x.memberId === id; });
+        if (m && (m.remPoint || 0) < amount) {
+          insufficient.push((m.nickname || m.loginId || id) + ' (잔여 ' + (m.remPoint || 0).toLocaleString() + 'P)');
+        }
+      });
+      if (insufficient.length > 0) {
+        alert('아래 회원은 잔여 포인트가 부족하여 차감할 수 없습니다.\n\n' + insufficient.join('\n'));
+        return;
+      }
+    }
 
     var finalAmount = modalType === 'give' ? amount : -amount;
 
