@@ -54,17 +54,14 @@
 
 <div class="action-buttons">
   <button type="button" class="btn-outline" onclick="location.href='${pageContext.request.contextPath}/';">홈으로 이동</button>
-  <%-- 로그인 버튼: 로그인 필요한 경우(회원가입 완료, 실패 등)에만 표시 --%>
-  <c:if test="${showLogin != false}">
-    <c:choose>
-      <c:when test="${isError}">
-        <button type="button" class="btn-primary" onclick="history.back();">다시 시도</button>
-      </c:when>
-      <c:otherwise>
-        <button type="button" class="btn-primary" onclick="location.href='${pageContext.request.contextPath}/member/login';">로그인하기</button>
-      </c:otherwise>
-    </c:choose>
-  </c:if>
+  <c:choose>
+    <c:when test="${isError}">
+      <button type="button" class="btn-primary" onclick="history.back();">다시 시도</button>
+    </c:when>
+    <c:otherwise>
+      <button type="button" class="btn-primary" onclick="location.href='${pageContext.request.contextPath}/member/login';">로그인하기</button>
+    </c:otherwise>
+  </c:choose>
 </div>
 </div>
 </main>
