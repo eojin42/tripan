@@ -114,6 +114,11 @@ public class SpringSecurityConfig {
 						}
 					}
 				})
+				.accessDeniedHandler((request, response, accessDeniedException) -> {
+			        request.setAttribute("title", "접근 권한이 없습니다.");
+			        request.setAttribute("message", "죄송합니다.<br><strong>403 - 관리자만 접근할 수 있는 페이지입니다.</strong>");
+			        request.getRequestDispatcher("/error/403").forward(request, response);
+			    })
 		);
 		
 		return http.build();

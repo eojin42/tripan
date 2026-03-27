@@ -84,7 +84,7 @@ function filterTable() {
   const categoryFilter = document.getElementById('searchCategory').value;
   const rawKeyword     = document.getElementById('searchInput').value.trim();
   const keywords = rawKeyword
-    ? rawKeyword.split(/[,\n]+/).map(k => k.trim().toLowerCase()).filter(Boolean)
+    ? rawKeyword.split(/[,\n\s]+/).map(k => k.trim().toLowerCase()).filter(Boolean)
     : [];
 
   hasSearched = true;

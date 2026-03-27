@@ -3,6 +3,7 @@ package com.tripan.app.exception;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -88,6 +89,19 @@ public class GlobalExceptionHandler {
         mav.addObject("title", "시스템 오류.");
         mav.addObject("message", "죄송합니다.<br><strong>요청을 처리할 수 없습니다.</strong>");
         mav.setStatus(HttpStatus.INTERNAL_SERVER_ERROR);
+        return mav;
+    }
+    
+    @ExceptionHandler(AccessDeniedException.class)
+    public Object handleAccessDenied(AccessDeniedException ex, HttpServletRequest request) {
+        log.info("FORBIDDEN - ", ex);
+        if (isApiRequest(request))
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body(Map.of("success", false, "message", "접근 권한이 없습니다."));
+        ModelAndView mav = new ModelAndView("error/error2");
+        mav.addObject("title", "접근 권한이 없습니다.");
+        mav.addObject("message", "죄송합니다.<br><strong>403 - 관리자만 접근할 수 있는 페이지입니다.</strong>");
+        mav.setStatus(HttpStatus.FORBIDDEN);
         return mav;
     }
 }

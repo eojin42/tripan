@@ -2,10 +2,12 @@ package com.tripan.app.admin.service;
 
 import java.util.List;
 
+import com.tripan.app.admin.domain.dto.CouponDto;
 import com.tripan.app.admin.domain.dto.DormantKpiDto;
 import com.tripan.app.admin.domain.dto.DormantMemberDto;
 import com.tripan.app.admin.domain.dto.MemberDto;
 import com.tripan.app.admin.domain.dto.MemberKpiDto;
+import com.tripan.app.admin.domain.dto.PointManageDto;
 
 public interface MemberManageService {
 
@@ -28,4 +30,9 @@ public interface MemberManageService {
     void sendReactivationMail(String email);
 
     void bulkSendReactivationMail(List<String> emails);
+    
+    List<PointManageDto.HistoryDto> getPointHistory(Long memberId);
+    
+    // 보유 쿠폰 내역
+    List<CouponDto.IssuedItem> getMemberCoupons(Long memberId);
 }

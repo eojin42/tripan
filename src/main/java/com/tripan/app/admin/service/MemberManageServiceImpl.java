@@ -11,6 +11,8 @@ import com.tripan.app.admin.domain.dto.DormantKpiDto;
 import com.tripan.app.admin.domain.dto.DormantMemberDto;
 import com.tripan.app.admin.domain.dto.MemberDto;
 import com.tripan.app.admin.domain.dto.MemberKpiDto;
+import com.tripan.app.admin.domain.dto.CouponDto;
+import com.tripan.app.admin.domain.dto.PointManageDto;
 import com.tripan.app.admin.domain.entity.Member1;
 import com.tripan.app.admin.domain.entity.Member3;
 import com.tripan.app.admin.mapper.ReservationManageMapper;
@@ -52,6 +54,16 @@ public class MemberManageServiceImpl implements MemberManageService {
     // ─────────────────────────────────────────
     //  상태 + 역할 변경
     // ─────────────────────────────────────────
+    @Override
+    public List<PointManageDto.HistoryDto> getPointHistory(Long memberId) {
+        return memberMapper.selectPointHistory(memberId);
+    }
+
+    @Override
+    public List<CouponDto.IssuedItem> getMemberCoupons(Long memberId) {
+        return memberMapper.selectMemberCoupons(memberId);
+    }
+
     @Transactional
     @Override
     public void updateMemberStatus(Long targetId, Integer newStatus, String role, String memo, Long adminId) {

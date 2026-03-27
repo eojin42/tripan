@@ -1,28 +1,49 @@
 <?xml version="1.0" encoding="UTF-8"?>
-
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.tripan.app.admin.mapper.MemberManageMapper">
 
     <select id="selectAllMembers" resultType="com.tripan.app.admin.domain.dto.MemberDto">
-	    SELECT 
-	        m1.member_id as memberId, m1.login_id AS loginId, m1.email, m1.username, m1.status, m1.role, 
-	        m1.register_date as regDate, m2.nickname, m2.phone_number as phoneNumber, NVL(ms_cur.status_code, 1) AS statusCode, ms_cur.memo
-	    FROM member1 m1
-	    LEFT JOIN member2 m2 ON m1.member_id = m2.member_id
-	    LEFT JOIN (
+        SELECT
+            m1.member_id AS memberId, m1.login_id AS loginId, m1.email, m1.username,
+            m1.status, m1.role,
+            m1.register_date AS regDate,
+            m2.nickname, m2.phone_number AS phoneNumber,
+            NVL(ms_cur.status_code, m1.status) AS statusCode,
+            ms_cur.memo
+        FROM member1 m1
+        LEFT JOIN member2 m2 ON m1.member_id = m2.member_id
+        LEFT JOIN (
             SELECT member_id, status_code, memo,
                    ROW_NUMBER() OVER (PARTITION BY member_id ORDER BY reg_date DESC) AS rn
             FROM   memberStatus
         ) ms_cur ON ms_cur.member_id = m1.member_id AND ms_cur.rn = 1
-        WHERE NVL(ms_cur.status_code, 1) != 4
         ORDER BY m1.member_id DESC
-	</select>
+    </select>
 
     <select id="selectMemberDetail" parameterType="Long" resultType="com.tripan.app.admin.domain.dto.MemberDto">
-        SELECT 
-            m1.member_id AS memberId, m1.login_id AS loginId, m1.email, m1.username, m1.status, m1.role, m1.gender, m1.birthday,
-            m2.nickname, m2.profile_image AS profilePhoto, m2.bio, m2.phone_number AS phoneNumber, m2.last_login_at AS lastLoginAt, m2.equipped_badge_id AS equippedBadgeId,
-            NVL(ms_cur.status_code, 1) AS statusCode,(SELECT COUNT(*) FROM report r WHERE r.target_id = m1.member_id) as reportCount
+        SELECT
+            m1.member_id AS memberId, m1.login_id AS loginId, m1.email, m1.username,
+            m1.status, m1.role, m1.gender, m1.birthday,
+            m2.nickname, m2.profile_image AS profilePhoto, m2.bio,
+            m2.phone_number AS phoneNumber, m2.last_login_at AS lastLoginAt,
+            m2.equipped_badge_id AS equippedBadgeId,
+            NVL(ms_cur.status_code, m1.status) AS statusCode,
+            (SELECT COUNT(*) FROM report r WHERE r.target_id = m1.member_id) AS reportCount,
+            /* 포인트 잔액 — point 테이블 최신 rem_point */
+            NVL((
+                SELECT p.rem_point
+                FROM   point p
+                WHERE  p.member_id = m1.member_id
+                ORDER BY p.reg_date DESC
+                FETCH FIRST 1 ROWS ONLY
+            ), 0) AS pointBalance,
+            /* 보유 쿠폰 수 — member_coupon 중 unused 상태 */
+            NVL((
+                SELECT COUNT(*)
+                FROM   member_coupon mc
+                WHERE  mc.member_id = m1.member_id
+                  AND  mc.status    = 'AVAILABLE'
+            ), 0) AS couponCount
         FROM member1 m1
         LEFT JOIN member2 m2 ON m1.member_id = m2.member_id
         LEFT JOIN (
@@ -32,82 +53,103 @@
         ) ms_cur ON ms_cur.member_id = m1.member_id AND ms_cur.rn = 1
         WHERE m1.member_id = #{memberId}
     </select>
-    
+
+    <!-- 포인트 내역 -->
+    <select id="selectPointHistory" parameterType="Long"
+            resultType="com.tripan.app.admin.domain.dto.PointManageDto$HistoryDto">
+        SELECT
+            p.point_id      AS pointId,
+            p.member_id     AS memberId,
+            p.order_id      AS orderId,
+            p.change_reason AS changeReason,
+            p.point_amount  AS pointAmount,
+            p.rem_point     AS remPoint,
+            TO_CHAR(p.reg_date, 'YYYY-MM-DD') AS regDate
+        FROM point p
+        WHERE p.member_id = #{memberId}
+        ORDER BY p.reg_date DESC
+        FETCH FIRST 20 ROWS ONLY
+    </select>
+
+    <!-- 보유 쿠폰 내역 -->
+    <select id="selectMemberCoupons" parameterType="Long"
+            resultType="com.tripan.app.admin.domain.dto.CouponDto$IssuedItem">
+        SELECT
+            mc.member_coupon_id AS memberCouponId,
+            mc.coupon_id        AS couponId,
+            c.coupon_name       AS couponName,
+            c.discount_type     AS discountType,
+            c.discount_amount   AS discountAmount,
+            mc.issued_at        AS issuedAt,
+            mc.expired_at       AS expiredAt,
+            mc.status           AS status
+        FROM member_coupon mc
+        JOIN coupon c ON c.coupon_id = mc.coupon_id
+        WHERE mc.member_id = #{memberId}
+        ORDER BY mc.issued_at DESC
+        FETCH FIRST 20 ROWS ONLY
+    </select>
+
     <select id="selectMemberKpi" resultType="com.tripan.app.admin.domain.dto.MemberKpiDto">
-	    SELECT 
-	        COUNT(*) AS totalCount,
-	        COUNT(CASE WHEN m1.role = 'ROLE_USER' THEN 1 END) AS userCount,
-	        COUNT(CASE WHEN m1.role = 'ROLE_PARTNER' THEN 1 END) AS partnerCount,
-	        COUNT(CASE WHEN m1.role = 'ROLE_ADMIN' THEN 1 END) AS adminCount,
-	        COUNT(CASE WHEN ms_cur.statusCode = 1 THEN 1 END) AS activeCount,
-	        COUNT(CASE WHEN ms_cur.statusCode = 2 THEN 1 END) AS banCount,
-	        COUNT(CASE WHEN ms_cur.statusCode = 3 THEN 1 END) AS dormantCount,
-	        COUNT(CASE WHEN ms_cur.statusCode = 4 THEN 1 END) AS withdrawCount,
-	        
-	        COUNT(CASE WHEN TRUNC(m1.register_date) = TRUNC(SYSDATE) THEN 1 END) AS todayNewCount,
-	        COUNT(CASE WHEN TRUNC(m1.register_date) = TRUNC(SYSDATE - 1) THEN 1 END) AS yesterdayNewCount
-	    FROM member1 m1
-	    LEFT JOIN (
+        SELECT
+            COUNT(*) AS totalCount,
+            COUNT(CASE WHEN m1.role = 'ROLE_USER'    THEN 1 END) AS userCount,
+            COUNT(CASE WHEN m1.role = 'ROLE_PARTNER' THEN 1 END) AS partnerCount,
+            COUNT(CASE WHEN m1.role = 'ROLE_ADMIN'   THEN 1 END) AS adminCount,
+            COUNT(CASE WHEN m1.status = 1 THEN 1 END) AS activeCount,
+            COUNT(CASE WHEN m1.status = 2 THEN 1 END) AS banCount,
+            COUNT(CASE WHEN m1.status = 3 THEN 1 END) AS dormantCount,
+            COUNT(CASE WHEN m1.status = 4 THEN 1 END) AS withdrawCount,
+            COUNT(CASE WHEN TRUNC(m1.register_date) = TRUNC(SYSDATE)     THEN 1 END) AS todayNewCount,
+            COUNT(CASE WHEN TRUNC(m1.register_date) = TRUNC(SYSDATE - 1) THEN 1 END) AS yesterdayNewCount
+        FROM member1 m1
+        LEFT JOIN (
             SELECT member_id, status_code,
                    ROW_NUMBER() OVER (PARTITION BY member_id ORDER BY reg_date DESC) AS rn
             FROM   memberStatus
         ) ms_cur ON ms_cur.member_id = m1.member_id AND ms_cur.rn = 1
-</select>
+    </select>
 
-<select id="selectDormantKpi" resultType="com.tripan.app.admin.domain.dto.DormantKpiDto">
+    <select id="selectDormantKpi" resultType="com.tripan.app.admin.domain.dto.DormantKpiDto">
         SELECT
-            /* 전체 휴면 회원 수 */
-            (
-                SELECT COUNT(*)
-                FROM (
-                    SELECT member_id, status_code,
-                           ROW_NUMBER() OVER (PARTITION BY member_id ORDER BY reg_date DESC) AS rn
-                    FROM   memberStatus
-                ) t
-                WHERE t.rn = 1 AND t.status_code = 3
-            ) AS totalDormant,
-
-            /* 최근 7일 내 복귀 */
-            (
-                SELECT COUNT(DISTINCT ms.member_id)
-                FROM   memberStatus ms
-                WHERE  ms.status_code   = 1
-                  AND  ms.reg_date >= SYSDATE - 7
-                  AND  EXISTS (
-                           SELECT 1 FROM memberStatus ms2
-                           WHERE  ms2.member_id = ms.member_id
-                             AND  ms2.status_code = 3
-                             AND  ms2.reg_date  &lt; ms.reg_date
-                       )
-            ) AS reactivatedCount
+            (SELECT COUNT(*) FROM (
+                SELECT member_id, status_code,
+                       ROW_NUMBER() OVER (PARTITION BY member_id ORDER BY reg_date DESC) AS rn
+                FROM   memberStatus
+            ) t WHERE t.rn = 1 AND t.status_code = 3) AS totalDormant,
+            (SELECT COUNT(DISTINCT ms.member_id) FROM memberStatus ms
+             WHERE ms.status_code = 1 AND ms.reg_date >= SYSDATE - 7
+               AND EXISTS (
+                   SELECT 1 FROM memberStatus ms2
+                   WHERE ms2.member_id = ms.member_id AND ms2.status_code = 3
+                     AND ms2.reg_date &lt; ms.reg_date
+               )) AS reactivatedCount
         FROM dual
     </select>
-    
+
     <select id="selectDormantMembers" resultType="com.tripan.app.admin.domain.dto.DormantMemberDto">
         SELECT
-            m1.member_id AS memberId, m1.email, m2.nickname, m2.last_login_at AS lastLoginDate,
-            ms_d.reg_date AS dormantDate, ADD_MONTHS(ms_d.reg_date, 12) AS deleteScheduledDate
+            m1.member_id AS memberId, m1.email, m2.nickname,
+            m2.last_login_at AS lastLoginDate,
+            ms_d.reg_date AS dormantDate,
+            ADD_MONTHS(ms_d.reg_date, 12) AS deleteScheduledDate
         FROM member1 m1
         LEFT JOIN member2 m2 ON m2.member_id = m1.member_id
         JOIN (
             SELECT member_id, reg_date, status_code,
                    ROW_NUMBER() OVER (PARTITION BY member_id ORDER BY reg_date DESC) AS rn
             FROM   memberStatus
-        ) ms_d ON ms_d.member_id = m1.member_id
-               AND ms_d.rn = 1
-               AND ms_d.status_code = 3
+        ) ms_d ON ms_d.member_id = m1.member_id AND ms_d.rn = 1 AND ms_d.status_code = 3
         ORDER BY deleteScheduledDate ASC
     </select>
-    
+
     <update id="updateMember1Status">
-        UPDATE member1
-        SET status = #{status}
-        WHERE member_id = #{memberId}
+        UPDATE member1 SET status = #{status} WHERE member_id = #{memberId}
     </update>
 
     <insert id="insertMemberStatusHistory">
         INSERT INTO memberStatus (member_id, status_code, memo, reg_date)
         VALUES (#{memberId}, #{status}, #{memo}, SYSDATE)
     </insert>
-    
+
 </mapper>
