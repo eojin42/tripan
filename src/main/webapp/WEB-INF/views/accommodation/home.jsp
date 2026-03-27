@@ -94,6 +94,22 @@
       .search-segment { padding: 14px 16px; }
       .search-segment span { display: none; } /* 모바일에서는 글자 숨김 */
   }
+  
+  /* --- 스크롤 영역 래퍼 및 버튼 --- */
+  .scroll-wrapper { position: relative; }
+  .scroll-btn {
+      position: absolute; top: 50%; transform: translateY(-50%);
+      width: 44px; height: 44px; background: white; border: 1px solid #E2E8F0;
+      border-radius: 50%; box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 18px; color: #111; cursor: pointer; z-index: 10;
+      transition: all 0.2s;
+  }
+  .scroll-btn:hover { background: #F8F9FA; box-shadow: 0 6px 16px rgba(0,0,0,0.15); scale: 1.05; }
+  .scroll-btn.left { left: -22px; }
+  .scroll-btn.right { right: -22px; }
+  /* 모바일에서는 터치 스와이프가 편하므로 버튼 숨김 */
+  @media (max-width: 768px) { .scroll-btn { display: none; } }
 </style>
 
 <div class="home-wrapper">
@@ -169,19 +185,37 @@
     </section>
 
     <section id="recentViewsSection" style="display:none;">
-      <h2 class="section-title">최근 살펴본 숙소 👀</h2>
-      <p class="section-desc">방금 전 눈여겨보던 그곳, 다시 확인해보세요.</p>
-      <div class="horizontal-scroll" id="recentViewsContainer">
-        </div>
-    </section>
+	    <h2 class="section-title">최근 살펴본 숙소 👀</h2>
+	    <p class="section-desc">방금 전 눈여겨보던 그곳, 다시 확인해보세요.</p>
+	    
+	    <div class="scroll-wrapper">
+	        <button class="scroll-btn left" onclick="scrollCarousel(this, -1)">&#10094;</button>
+	        <div class="horizontal-scroll" id="recentViewsContainer">
+	            </div>
+	        <button class="scroll-btn right" onclick="scrollCarousel(this, 1)">&#10095;</button>
+	    </div>
+	</section>
 
-    <div class="promo-banner" onclick="try { showLoginModal(); } catch(e) { location.href='${pageContext.request.contextPath}/member/login'; }">
-        <div class="promo-text">
-            <h3>Tripan이 처음이신가요?</h3>
-            <p>신규 가입하고 웰컴 할인 쿠폰팩과 첫 결제 1% 마일리지 적립 혜택을 누려보세요!</p>
-        </div>
-        <div class="promo-btn">로그인 및 혜택 받기</div>
-    </div>
+    <c:choose>
+        <c:when test="${empty sessionScope.loginUser}">
+            <div class="promo-banner" onclick="try { showLoginModal(); } catch(e) { location.href='${pageContext.request.contextPath}/member/login'; }">
+                <div class="promo-text">
+                    <h3>Tripan이 처음이신가요?</h3>
+                    <p>신규 가입하고 웰컴 할인 쿠폰팩과 첫 결제 1% 마일리지 적립 혜택을 누려보세요!</p>
+                </div>
+                <div class="promo-btn">로그인 및 혜택 받기</div>
+            </div>
+        </c:when>
+        
+        <c:otherwise>
+            <div class="promo-banner" style="cursor: default; transform: none;">
+                <div class="promo-text">
+                    <h3>${sessionScope.loginUser.nickname}님, 환영합니다!</h3>
+                    <p>다양한 혜택과 함께 회원님만의 특별한 숙소를 찾아보세요.</p>
+                </div>
+            </div>
+        </c:otherwise>
+    </c:choose>
 
     <section class="popular-section">
       <div style="display:flex; justify-content:space-between; align-items:flex-end; margin-bottom:8px;">
@@ -190,34 +224,38 @@
       </div>
       <p class="section-desc">Tripan 유저들이 실시간으로 가장 많이 찜한 인기 숙소들을 모았습니다.</p>
       
-      <div class="horizontal-scroll">
-        <c:if test="${not empty popularList}">
-            <c:forEach var="stay" items="${popularList}">
-                <div class="stay-card" onclick="location.href='${pageContext.request.contextPath}/accommodation/detail/${stay.placeId}'">
-                  <div class="sc-img-box">
-                    <img src="${fn:startsWith(stay.imageUrl, 'http') ? stay.imageUrl : pageContext.request.contextPath += stay.imageUrl}" onerror="this.src='https://images.unsplash.com/photo-1611892440504-42a792e24d32?w=600'">
-                    <div class="sc-bookmark" onclick="event.stopPropagation();">
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="${stay.isBookmarked > 0 ? '#4A44F2' : 'none'}" stroke="${stay.isBookmarked > 0 ? '#4A44F2' : '#111'}" stroke-width="2">
-                            <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"></path>
-                        </svg>
-                    </div>
-                  </div>
-                  <div class="sc-info">
-                    <div class="sc-loc">${stay.region}</div>
-                    <div class="sc-name">${stay.name}</div>
-                    <div class="sc-price">
-                        <span style="color:#FFD700; margin-right:4px;">★ 4.8</span> 
-                        ₩<fmt:formatNumber value="${stay.minPrice}" pattern="#,###"/><span> /박</span>
-                    </div>
-                  </div>
-                </div>
-            </c:forEach>
-        </c:if>
-        <c:if test="${empty popularList}">
-            <div style="width:100%; text-align:center; padding:60px 0; background:white; border-radius:16px; border:1px solid #eee;">
-                <p style="color:var(--text-gray); font-weight:600;">현재 서버에 등록된 추천 숙소가 없습니다.</p>
-            </div>
-        </c:if>
+      <div class="scroll-wrapper">
+      	  <button class="scroll-btn left" onclick="scrollCarousel(this, -1)">&#10094;</button>
+	      <div class="horizontal-scroll">
+	        <c:if test="${not empty popularList}">
+	            <c:forEach var="stay" items="${popularList}">
+	                <div class="stay-card" onclick="location.href='${pageContext.request.contextPath}/accommodation/detail/${stay.placeId}'">
+	                  <div class="sc-img-box">
+	                    <img src="${fn:startsWith(stay.imageUrl, 'http') ? stay.imageUrl : pageContext.request.contextPath += stay.imageUrl}" onerror="this.src='https://images.unsplash.com/photo-1611892440504-42a792e24d32?w=600'">
+	                    <div class="sc-bookmark" onclick="event.stopPropagation();">
+	                        <svg width="18" height="18" viewBox="0 0 24 24" fill="${stay.isBookmarked > 0 ? '#4A44F2' : 'none'}" stroke="${stay.isBookmarked > 0 ? '#4A44F2' : '#111'}" stroke-width="2">
+	                            <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"></path>
+	                        </svg>
+	                    </div>
+	                  </div>
+	                  <div class="sc-info">
+	                    <div class="sc-loc">${stay.region}</div>
+	                    <div class="sc-name">${stay.name}</div>
+	                    <div class="sc-price">
+	                        <span style="color:#FFD700; margin-right:4px;">★ 4.8</span> 
+	                        ₩<fmt:formatNumber value="${stay.minPrice}" pattern="#,###"/><span> /박</span>
+	                    </div>
+	                  </div>
+	                </div>
+	            </c:forEach>
+	        </c:if>
+	        <c:if test="${empty popularList}">
+	            <div style="width:100%; text-align:center; padding:60px 0; background:white; border-radius:16px; border:1px solid #eee;">
+	                <p style="color:var(--text-gray); font-weight:600;">현재 서버에 등록된 추천 숙소가 없습니다.</p>
+	            </div>
+	        </c:if>
+	      </div>
+	      <button class="scroll-btn right" onclick="scrollCarousel(this, 1)">&#10095;</button>
       </div>
     </section>
 
@@ -316,7 +354,13 @@ function loadRecentViews() {
     container.innerHTML = html;
 }
 
-document.addEventListener("DOMContentLoaded", loadRecentViews);
+function scrollCarousel(btn, direction) {
+    const container = btn.parentElement.querySelector('.horizontal-scroll, .dest-grid');
+    
+    const scrollAmount = 350; 
+    
+    container.scrollBy({ left: direction * scrollAmount, behavior: 'smooth' });
+}
 </script>
 
 <jsp:include page="../layout/footer.jsp" />
