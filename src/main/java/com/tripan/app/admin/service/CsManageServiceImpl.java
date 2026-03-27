@@ -25,6 +25,17 @@ public class CsManageServiceImpl implements CsManageService {
 
     @Override
     public CommunityChatRoomDto createSupportRoom(Long memberId) {
+    	List<CommunityChatRoomDto> existingRooms = csMapper.findSupportRooms(memberId);
+        
+        if (existingRooms != null && !existingRooms.isEmpty()) {
+            CommunityChatRoomDto existingRoom = existingRooms.get(0);
+            
+            if ("CLOSED".equals(existingRoom.getStatus())) {
+                csMapper.updateRoomStatus(Map.of("roomId", existingRoom.getChatRoomId(), "status", "ACTIVE"));
+            }
+            return existingRoom;
+        }
+    	
         Long adminId = csMapper.selectAdminMemberId();
 
         if (adminId == null) {

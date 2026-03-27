@@ -7,8 +7,6 @@ let stompClient      = null;      // 현재 채팅방 전용 연결
 let notifClient      = null;      // 관리자 알림 전용 연결
 let roomSubscription = null;      // 현재 방 구독 핸들
 let allChatRooms     = [];
-let currentFilter    = 'all';
-let selectedInquiry  = null;
 let readDebounceTimer = null;     // 읽음 처리 디바운스 타이머
 
 // ── 탭 전환 ──
@@ -28,112 +26,8 @@ function switchTab(tab, el) {
      document.getElementById('chatViewMain').style.display  = 'none';
      loadChatRooms();
    }
-  if (tab === 'board') loadInquiries();
 }
 
-// ── 문의 게시판 ──
-let allInquiries = [];
-
-async function loadInquiries() {
-  try {
-    const res  = await fetch(`${ctxPath}/admin/inquiry`);
-    const data = await res.json();
-    allInquiries = data || [];
-    renderInquiries(allInquiries);
-    const waiting = allInquiries.filter(i => i.status === 'WAITING').length;
-    document.getElementById('boardBadge').textContent = waiting;
-  } catch (e) {
-    document.getElementById('inquiryTbody').innerHTML = `
-      <tr><td colspan="7" style="text-align:center;padding:40px;color:#FC8181;font-size:13px;">
-        데이터를 불러오지 못했습니다
-      </td></tr>`;
-  }
-}
-
-function renderInquiries(list) {
-  const tbody = document.getElementById('inquiryTbody');
-  if (!list || list.length === 0) {
-    tbody.innerHTML = `
-      <tr><td colspan="7" style="text-align:center;padding:40px;color:var(--text-gray);font-size:13px;">
-        <i class="bi bi-inbox" style="font-size:24px;opacity:.3;display:block;margin-bottom:8px;"></i>
-        문의 내역이 없습니다
-      </td></tr>`;
-    return;
-  }
-  tbody.innerHTML = list.map((item, idx) => `
-    <tr>
-      <td style="color:var(--text-gray);font-size:12px;">${item.inquiryId || idx+1}</td>
-      <td><span class="category-pill">${escHtml(item.category || '기타')}</span></td>
-      <td style="font-weight:700; max-width:240px;">
-        ${item.status == 'WAITING' ? '<span style="color:#FC8181;font-size:11px;font-weight:800;margin-right:6px;">NEW</span>' : ''}
-        ${escHtml(item.title)}
-      </td>
-      <td>${escHtml(item.userName || '사용자')}</td>
-      <td style="font-size:12px;color:var(--text-gray);">${formatDate(item.createdAt)}</td>
-      <td>${statusPill(item.status)}</td>
-      <td><button class="btn-view" onclick='openInquiry(${JSON.stringify(item)})'>상세보기</button></td>
-    </tr>`).join('');
-}
-
-function filterInquiry(type, el) {
-  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
-  el.classList.add('active');
-  currentFilter = type;
-  applyFilter();
-}
-
-function searchInquiry(q) { applyFilter(q); }
-
-function applyFilter(q) {
-  q = q || document.getElementById('inquirySearch').value;
-  let list = allInquiries;
-  if (currentFilter !== 'all') list = list.filter(i => i.status && i.status.toLowerCase() === currentFilter);
-  if (q) list = list.filter(i => (i.title||'').includes(q) || (i.userName||'').includes(q));
-  renderInquiries(list);
-}
-
-function statusPill(s) {
-  const map = {
-    WAITING:  ['waiting',  '대기 중'],
-    ANSWERED: ['answered', '답변 완료'],
-    CLOSED:   ['closed',   '종료'],
-  };
-  const [cls, label] = map[s] || ['closed','알 수 없음'];
-  return `<span class="status-pill ${cls}">${label}</span>`;
-}
-
-function openInquiry(item) {
-  selectedInquiry = item;
-  document.getElementById('modalTitle').textContent    = item.title || '';
-  document.getElementById('modalCategory').textContent = item.category || '기타';
-  document.getElementById('modalDate').textContent     = formatDate(item.createdAt);
-  document.getElementById('modalContent').textContent  = item.content || '';
-  document.getElementById('modalReplyInput').value     = item.reply || '';
-  document.getElementById('modalStatus').outerHTML     = statusPill(item.status).replace('class="status-pill', 'id="modalStatus" class="status-pill');
-  document.getElementById('inquiryModal').classList.add('open');
-}
-
-function closeModal() {
-  document.getElementById('inquiryModal').classList.remove('open');
-  selectedInquiry = null;
-}
-
-async function submitReply() {
-  if (!selectedInquiry) return;
-  const reply = document.getElementById('modalReplyInput').value.trim();
-  if (!reply) { alert('답변 내용을 입력해주세요.'); return; }
-  try {
-    await fetch(`${ctxPath}/admin/inquiry/${selectedInquiry.inquiryId}/reply`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ reply })
-    });
-    closeModal();
-    loadInquiries();
-  } catch (e) {
-    alert('답변 등록에 실패했습니다.');
-  }
-}
 
 // ── 1:1 채팅 목록 ──
 async function loadChatRooms() {
@@ -303,47 +197,57 @@ function subscribeRoom(roomId) {
   roomSubscription = stompClient.subscribe(`/sub/chat/room/${roomId}`, frame => {
     const msg = JSON.parse(frame.body);
 
-    // 종료 메시지 처리
+    // 1. 종료 메시지 처리 (상대방 혹은 내가 종료했을 때)
     if (msg.messageType === 'CLOSED' || msg.messageType === 'END' || msg.messageType === 'SYSTEM') {
       renderMsg(msg);
       const badge = document.getElementById('chatStatusBadge');
       if (badge) { badge.className = 'chat-status-closed'; badge.textContent = '상담 종료'; }
       
-	  const endBtn = document.querySelector('.btn-end-chat');
-	        if (endBtn) { endBtn.disabled = true; endBtn.style.opacity = '0.5'; endBtn.style.cursor = 'not-allowed'; }
-	        return;
+      const endBtn = document.querySelector('.btn-end-chat');
+      if (endBtn) { 
+        endBtn.disabled = true; 
+        endBtn.style.opacity = '0.5'; 
+        endBtn.style.cursor = 'not-allowed'; 
+      }
+      return;
     }
 
-	const badge = document.getElementById('chatStatusBadge');
-	    if (badge && badge.className === 'chat-status-closed') {
-	      badge.className = 'chat-status-open';
-	      badge.textContent = '상담 중';
-	      const input = document.getElementById('adminMsgInput');
-	      input.disabled = false;
-	      input.placeholder = '답변을 입력하세요... (Enter: 전송, Shift+Enter: 줄바꿈)';
-	      
-	      // 방 목록 갱신 (상태 업데이트 반영)
-	      loadChatRooms();
-	    }
-	
+    // 2. 메시지 수신 (일반 TALK 메시지 등)
     renderMsg(msg);
 
-    // 유저 메시지 && 내가 보낸 게 아닐 때 → 알림음 + 읽음 처리 갱신
-	if (String(msg.memberId) !== String(adminId)) { 
-	      const badge = document.getElementById('chatStatusBadge');
-	      if (badge && badge.className === 'chat-status-closed') {
-	        // 현재 채팅방 상단 뱃지와 버튼만 즉시 활성화
-	        badge.className = 'chat-status-open';
-	        badge.textContent = '상담 중';
-	        
-	        const endBtn = document.querySelector('.btn-end-chat');
-	        if (endBtn) { endBtn.disabled = false; endBtn.style.opacity = '1'; endBtn.style.cursor = 'pointer'; }
-	      }
-	      // DB 상태가 바뀌었을 테니 방 목록을 즉시 새로고침
-	      loadChatRooms(); 
-	    }
-		});
-		}
+    // 3. 실시간 상태 업데이트 (종료 상태에서 새 메시지가 오면 UI 복구)
+    const badge = document.getElementById('chatStatusBadge');
+    const endBtn = document.querySelector('.btn-end-chat');
+
+    // 현재 UI가 '종료' 상태일 때만 실행하여 리소스를 아낍니다.
+    if (badge && badge.className === 'chat-status-closed') {
+        // 뱃지 상태 변경
+        badge.className = 'chat-status-open';
+        badge.textContent = '상담 중';
+        
+        // 입력창 활성화
+        const input = document.getElementById('adminMsgInput');
+        if (input) {
+            input.disabled = false;
+            input.placeholder = '답변을 입력하세요... (Enter: 전송, Shift+Enter: 줄바꿈)';
+        }
+
+        // 종료 버튼 활성화 
+        if (endBtn) {
+            endBtn.disabled = false;
+            endBtn.style.opacity = '1';
+            endBtn.style.cursor = 'pointer';
+        }
+        
+        loadChatRooms(); // 왼쪽 방 목록 갱신
+    }
+    
+    // 내가 보낸 게 아닌 유저 메시지라면 목록을 갱신합니다
+    if (String(msg.memberId) !== String(adminId)) { 
+        loadChatRooms(); 
+    }
+  });
+}
 
 // ── 채팅 히스토리 로드 ──
 async function loadChatHistory(roomId) {
@@ -411,7 +315,9 @@ function renderMsg(data) {
        </div>
        <span class="msg-time">${data.createdAt || ''}</span>`;
   area.appendChild(row);
-  area.scrollTop = area.scrollHeight;
+  setTimeout(() => {
+      area.scrollTop = area.scrollHeight;
+    }, 50);
 }
 
 // ── 메시지 전송 ──
@@ -611,12 +517,8 @@ adminMsgInput.addEventListener('keydown', function (e) {
   }
 });
 
-function handleBackdropClick(event) {
-  if (event.target === event.currentTarget) closeModal();
-}
 
 // ── 초기화 ──
-loadInquiries();
 loadChatRooms();
 connectNotification();             // 관리자 알림 WebSocket 상시 연결
 setInterval(loadChatRooms, 30000); // 30초마다 채팅 목록 새로고침
