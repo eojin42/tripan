@@ -76,7 +76,7 @@
     border: 1px solid #E2E8F0;
 }
 
-/* 🌟 추가된 발행 주체 뱃지 스타일 */
+/* 추가된 발행 주체 뱃지 스타일 */
 .issuer-badge {
     font-size: 11px;
     font-weight: 800;

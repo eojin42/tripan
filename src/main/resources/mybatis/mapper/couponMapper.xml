@@ -113,7 +113,13 @@
 	         WHERE mc.coupon_id = c.coupon_id AND mc.member_id = #{memberId}) as "isDownloaded"
 	    FROM coupon c
 	    WHERE c.issue_condition_type = 'NONE'  
-	    	AND c.valid_until >= SYSDATE  AND (
+	    	AND c.valid_until >= SYSDATE  
+            AND c.status = 'ACTIVE' AND (
+            c.max_quantity IS NULL 
+            OR 
+            c.max_quantity > (SELECT COUNT(*) FROM member_coupon mc WHERE mc.coupon_id = c.coupon_id)
+        )
+            AND (
 	        -- 1. 조건이 없는 공용 쿠폰이거나
 	        (SELECT COUNT(*) FROM coupon_target ct WHERE ct.coupon_id = c.coupon_id) = 0
 	        
@@ -157,5 +163,24 @@
 	        SYSDATE, 
 	        valid_until  FROM coupon
 	    WHERE coupon_id = #{couponId}
-</insert>
+	</insert>
+
+	<select id="getCouponIssueStatus" resultType="map">
+        SELECT 
+            c.MAX_QUANTITY as "maxQuantity",
+            (SELECT COUNT(*) FROM member_coupon mc WHERE mc.coupon_id = c.coupon_id) as "currentIssued",
+            c.STATUS as "status"
+        FROM coupon c
+        WHERE c.coupon_id = #{couponId}
+        FOR UPDATE
+    </select>
+    
+    <update id="updateCouponStatusToExpired">
+        UPDATE coupon 
+        SET status = 'EXPIRED' 
+        WHERE coupon_id = #{couponId}
+    </update>
+
+
+
 </mapper>

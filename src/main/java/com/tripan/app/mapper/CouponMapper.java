@@ -51,4 +51,8 @@ public interface CouponMapper {
     
 	void updateMemberCouponToAvailable(@Param("memberCouponId") Long memberCouponId);
     void cancelCouponUsage(@Param("memberCouponId") Long memberCouponId, @Param("orderId") String orderId);
+    
+    Map<String, Object> getCouponIssueStatus(Long couponId); // 쿠폰상태조회 (발급가능여부확인용)
+    void updateCouponStatusToExpired(Long couponId);
+    
 }

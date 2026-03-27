@@ -50,4 +50,5 @@ public class PartnerCouponServiceImpl implements PartnerCouponService {
     public void stopCoupon(Long couponId) {
         partnerCouponMapper.updateCouponStatus(couponId, "EXPIRED");
     }
+
 }
