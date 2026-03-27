@@ -126,6 +126,20 @@ public class MemberController {
 
     @GetMapping("pwd")
     public String pwdForm(@RequestParam(name = "dropout", required = false) String dropout, Model model) {
+    	SessionInfo info = LoginMemberUtil.getsessionInfo();
+
+        if (info != null && "KAKAO".equals(info.getProvider())) {
+            try {
+                MemberDto dto = Objects.requireNonNull(service.findById(info.getMemberId()));
+                model.addAttribute("dto", dto);
+                model.addAttribute("mode", dropout == null ? "update" : "dropout");
+                return "member/member"; 
+            } catch (Exception e) {
+                log.error("소셜 유저 정보 조회 실패", e);
+                return "redirect:/";
+            }
+        }
+
         model.addAttribute("mode", dropout == null ? "update" : "dropout");
         return "member/pwd";
     }

@@ -174,7 +174,6 @@
           <div class="info-label" style="margin-bottom: 16px;">결제 수단</div>
           <div class="pay-method-wrap">
             <label class="pay-method-label"><input type="radio" name="payMethod" value="card" checked> 일반 신용카드</label>
-            <label class="pay-method-label"><input type="radio" name="payMethod" value="tosspay"> <span style="color:#0050FF; font-weight:900;">toss</span> 머니/계좌 결제</label>
             <label class="pay-method-label"><input type="radio" name="payMethod" value="kakaopay"> <span style="color:#FEE500; background:#111; padding:2px 6px; border-radius:4px; font-size:12px;">pay</span> 카카오페이</label>
           </div>
         </div>
@@ -280,7 +279,7 @@
     document.querySelectorAll('.term-arrow').forEach(arrow => {
       arrow.innerText = '∨';
     });
-
+    
     if (!isCurrentlyOpen) {
       targetEl.style.display = (id === 'termRefund') ? 'table' : 'block';
       document.getElementById('arr-' + id).innerText = '∧';
@@ -289,24 +288,24 @@
 
   const chkAll = document.getElementById('chkAllTerms');
   const chkItems = document.querySelectorAll('.chk-term');
-
   chkAll.addEventListener('change', function() {
     chkItems.forEach(chk => chk.checked = chkAll.checked);
   });
-
+  
   chkItems.forEach(chk => {
     chk.addEventListener('change', function() {
       const allChecked = Array.from(chkItems).every(c => c.checked);
       chkAll.checked = allChecked;
     });
   });
-
+  
   window.addEventListener("beforeunload", function (e) {
       const payload = JSON.stringify({ roomId: '${roomId}', checkin: '${checkin}' });
       const url = '${pageContext.request.contextPath}/accommodation/release-lock'; 
       navigator.sendBeacon(url, new Blob([payload], {type: 'application/json'}));
   });
 
+  // 결제 요청 및 DB 저장 로직 
   function requestPayment() {
     if(!document.getElementById('chkAllTerms').checked) {
       alert("필수 약관에 모두 동의해주세요.");
@@ -314,14 +313,23 @@
     }
     
     const payMethod = document.querySelector('input[name="payMethod"]:checked').value;
-    let pgType = payMethod === 'kakaopay' ? "kakaopay.TC0ONETIME" : (payMethod === 'tosspay' ? "tosspay" : "html5_inicis");
+
+    if (finalAmount === 0) {
+        const dummyUid = "FREE_" + new Date().getTime();
+        processReservationComplete(dummyUid, "ORDER_" + new Date().getTime(), payMethod);
+        return;
+    }
+
+    let pgType = payMethod === 'kakaopay' ? "kakaopay.TC0ONETIME" : "html5_inicis";
+    
+    let methodType = payMethod === 'card' ? "card" : payMethod;
 
     var IMP = window.IMP;
-    IMP.init("${impCode}"); 
-
+    IMP.init("${impCode}");
+    
     IMP.request_pay({
         pg: pgType,
-        pay_method: "card",
+        pay_method: methodType, 
         merchant_uid: "ORDER_" + new Date().getTime(), 
         name: "${room.placeName} - ${room.roomName}",                           
         amount: finalAmount,             
@@ -330,119 +338,149 @@
         buyer_email: "${sessionScope.loginUser.email}" 
     }, function (rsp) { 
         if (rsp.success) {
-        	const requestData = {
-                    impUid: rsp.imp_uid,
-                    merchantUid: rsp.merchant_uid,
-                    roomId: '${roomId}',
-                    checkin: '${checkin}',
-                    checkout: '${checkout}',
-                    adult: ${adult},
-                    child: ${child},
-                    amount: finalAmount,
-                    originalAmount: originalAmount,
-                    usedPoint: usedMileage,
-                    usedCoupon: currentCouponDiscount,     
-                    memberCouponId: selectedMemberCouponId,
-                    payMethod: payMethod,
-                    request: document.getElementById('guestRequest').value
-                };
-
-            fetch('${pageContext.request.contextPath}/accommodation/complete', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(requestData)
-            })
-            .then(res => res.json())
-            .then(data => {
-                if(data.success) {
-                    alert("예약 및 결제가 완벽하게 처리되었습니다!");
-                    location.href = '${pageContext.request.contextPath}/mypage/schedule'; 
-                } else {
-                    alert("DB 저장 중 문제가 발생했습니다.\n에러: " + data.message);
-                }
-            })
-            .catch(err => {
-                alert("서버와 통신 중 에러가 발생했습니다.");
-            });
+            processReservationComplete(rsp.imp_uid, rsp.merchant_uid, payMethod);
         } else {
-            alert("결제에 실패하였습니다.\n에러 내용: " + rsp.error_msg);
+            // 결제창을 닫거나 에러가 났을 때 처리
+            let errorMsg = rsp.error_msg || rsp.error_message || "결제창이 닫혔거나 취소되었습니다.";
+            alert("결제에 실패하였습니다.\n이유: " + errorMsg);
         }
     });
   }
   
+  function processReservationComplete(impUid, merchantUid, payMethod) {
+      const requestData = {
+          impUid: impUid,
+          merchantUid: merchantUid,
+          roomId: '${roomId}',
+          checkin: '${checkin}',
+          checkout: '${checkout}',
+          adult: ${adult},
+          child: ${child},
+          amount: finalAmount,
+          originalAmount: originalAmount,
+          usedPoint: usedMileage,
+          usedCoupon: currentCouponDiscount,     
+          memberCouponId: selectedMemberCouponId,
+          payMethod: payMethod,
+          request: document.getElementById('guestRequest').value
+      };
+
+      fetch('${pageContext.request.contextPath}/accommodation/complete', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(requestData)
+      })
+      .then(res => res.json())
+      .then(data => {
+          if(data.success) {
+              alert("예약 및 결제가 완벽하게 처리되었습니다!");
+              location.href = '${pageContext.request.contextPath}/mypage/schedule'; 
+          } else {
+              alert("DB 저장 중 문제가 발생했습니다.\n에러: " + data.message);
+          }
+      })
+      .catch(err => {
+          alert("서버와 통신 중 에러가 발생했습니다.");
+      });
+  }
+
+  // 금액 계산 (쿠폰/마일리지) 로직
   const originalAmount = ${amount}; 
   let finalAmount = originalAmount;
   let usedMileage = 0;
   const maxUsablePoint = ${maxUsablePoint};
   let currentCouponDiscount = 0;
   let selectedMemberCouponId = null;
-  
-  function applyCoupon() {
-	    const select = document.getElementById('couponSelect');
-	    const selectedOption = select.options[select.selectedIndex];
-	    
-	    currentCouponDiscount = parseInt(selectedOption.getAttribute('data-discount') || 0);
-	    selectedMemberCouponId = select.value ? select.value : null;
 
-	    calculateTotal(); 
-	}
+  function applyCoupon() {
+      const select = document.getElementById('couponSelect');
+      const selectedOption = select.options[select.selectedIndex];
+      
+      currentCouponDiscount = parseInt(selectedOption.getAttribute('data-discount') || 0);
+      selectedMemberCouponId = select.value ? select.value : null;
+
+      const remainAmount = originalAmount - currentCouponDiscount;
+      
+      if (remainAmount <= 0) {
+          usedMileage = 0;
+          document.getElementById('usePointInput').value = '';
+      } else if (usedMileage > remainAmount) {
+          usedMileage = Math.floor(remainAmount / 100) * 100;
+          document.getElementById('usePointInput').value = usedMileage === 0 ? '' : usedMileage;
+      }
+
+      calculateTotal(); 
+  }
 
   function applyMileage() {
-	    let inputVal = parseInt(document.getElementById('usePointInput').value) || 0;
+      let inputVal = parseInt(document.getElementById('usePointInput').value) || 0;
+      
+      const remainAmount = originalAmount - currentCouponDiscount;
+      
+      const dynamicMaxPoint = Math.min(maxUsablePoint, Math.floor(remainAmount / 100) * 100);
 
-	    if (inputVal > maxUsablePoint) {
-	        inputVal = maxUsablePoint;
-	        document.getElementById('usePointInput').value = inputVal;
-	    } else if (inputVal < 0) {
-	        inputVal = 0;
-	        document.getElementById('usePointInput').value = '';
-	    }
+      if (inputVal > dynamicMaxPoint) {
+          inputVal = dynamicMaxPoint;
+          document.getElementById('usePointInput').value = inputVal;
+      } else if (inputVal < 0) {
+          inputVal = 0;
+          document.getElementById('usePointInput').value = '';
+      }
 
-	    usedMileage = inputVal;
-	    calculateTotal();
-	}
+      usedMileage = inputVal;
+      calculateTotal();
+  }
 
   function useAllMileage() {
       if (maxUsablePoint === 0) {
           alert("사용할 수 있는 마일리지가 없습니다.");
           return;
       }
-      document.getElementById('usePointInput').value = maxUsablePoint;
+      
+      const remainAmount = originalAmount - currentCouponDiscount;
+      const dynamicMaxPoint = Math.min(maxUsablePoint, Math.floor(remainAmount / 100) * 100);
+      
+      if (dynamicMaxPoint <= 0) {
+          alert("이미 쿠폰 적용으로 금액이 0원이 되어 마일리지를 추가 사용할 수 없습니다.");
+          return;
+      }
+
+      document.getElementById('usePointInput').value = dynamicMaxPoint;
       applyMileage();
   }
 
   function calculateTotal() {
-	    finalAmount = originalAmount - usedMileage - currentCouponDiscount; 
-	    if (finalAmount < 0) finalAmount = 0;
-	
-	    let displayPointObj = document.getElementById('displayMileageDiscount');
-	    if(displayPointObj) displayPointObj.innerText = '- ₩' + usedMileage.toLocaleString();
-	    
-	    let displayCouponObj = document.getElementById('displayCouponDiscount');
-	    if(displayCouponObj) displayCouponObj.innerText = '- ₩' + currentCouponDiscount.toLocaleString();
-	
-	    const totalDisplays = document.querySelectorAll('.displayTotalAmount');
-	    totalDisplays.forEach(el => {
-	        el.innerText = '₩' + finalAmount.toLocaleString();
-	    });
-	}
+      finalAmount = originalAmount - usedMileage - currentCouponDiscount;
+      if (finalAmount < 0) finalAmount = 0;
+  
+      let displayPointObj = document.getElementById('displayMileageDiscount');
+      if(displayPointObj) displayPointObj.innerText = '- ₩' + usedMileage.toLocaleString();
+      
+      let displayCouponObj = document.getElementById('displayCouponDiscount');
+      if(displayCouponObj) displayCouponObj.innerText = '- ₩' + currentCouponDiscount.toLocaleString();
+  
+      const totalDisplays = document.querySelectorAll('.displayTotalAmount');
+      totalDisplays.forEach(el => {
+          el.innerText = '₩' + finalAmount.toLocaleString();
+      });
+  }
   
   function checkPointUnit() {
-	    let inputVal = parseInt(document.getElementById('usePointInput').value) || 0;
+      let inputVal = parseInt(document.getElementById('usePointInput').value) || 0;
+      
+      if (inputVal > 0 && inputVal < 1000) {
+          alert("마일리지는 최소 1,000P부터 사용할 수 있습니다.");
+          inputVal = 0;
+      } 
+      else if (inputVal > 0 && inputVal % 100 !== 0) {
+          alert("마일리지는 100P 단위로만 사용할 수 있습니다.");
+          inputVal = Math.floor(inputVal / 100) * 100;
+      }
 
-	    if (inputVal > 0 && inputVal < 1000) {
-	        alert("마일리지는 최소 1,000P부터 사용할 수 있습니다.");
-	        inputVal = 0;
-	    } 
-	    else if (inputVal > 0 && inputVal % 100 !== 0) {
-	        alert("마일리지는 100P 단위로만 사용할 수 있습니다.");
-	        inputVal = Math.floor(inputVal / 100) * 100;
-	    }
-
-	    document.getElementById('usePointInput').value = inputVal === 0 ? '' : inputVal;
-	    usedMileage = inputVal;
-	    calculateTotal();
-	}
+      document.getElementById('usePointInput').value = inputVal === 0 ? '' : inputVal;
+      usedMileage = inputVal;
+      calculateTotal();
+  }
 </script>
 
 <jsp:include page="../layout/footer.jsp" />

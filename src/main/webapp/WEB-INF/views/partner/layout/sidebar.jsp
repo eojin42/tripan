@@ -19,6 +19,10 @@
       <svg class="menu-icon" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
       <span class="menu-text">운영 현황 요약</span>
     </a>
+    <a href="?tab=stats" class="menu-item ${activeTab == 'stats' ? 'active' : ''}" data-tooltip="매출 통계">
+      <svg class="menu-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M18 17V9"/><path d="M13 17V5"/><path d="M8 17v-3"/></svg>
+      <span class="menu-text">매출 통계 분석</span>
+    </a>
 
     <div class="menu-label">Property Management</div>
     <a href="?tab=info" class="menu-item ${activeTab == 'info' ? 'active' : ''}" data-tooltip="숙소 프로필 관리">

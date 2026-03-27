@@ -51,12 +51,14 @@
           </c:if>
         </div>
 
-        <div class="form-row">
-          <label class="form-label">비밀번호</label>
-          <input type="password" name="password" class="form-input" placeholder="영문/숫자/특수문자 조합 5~10자">
-          <input type="password" name="passwordConfirm" class="form-input" style="margin-top:8px;" placeholder="비밀번호 확인">
-          <div class="help-block" id="pwd-msg"></div>
-        </div>
+        <c:if test="${dto.provider != 'KAKAO'}">
+            <div class="form-row">
+              <label class="form-label">비밀번호</label>
+              <input type="password" name="password" class="form-input" placeholder="영문/숫자/특수문자 조합 5~10자">
+              <input type="password" name="passwordConfirm" class="form-input" style="margin-top:8px;" placeholder="비밀번호 확인">
+              <div class="help-block" id="pwd-msg"></div>
+            </div>
+        </c:if>
 
         <div class="form-row">
           <label class="form-label">닉네임</label>
@@ -98,7 +100,8 @@
         <div class="form-row">
           <label class="form-label">연락처 및 이메일</label>
           <input type="text" name="phoneNumber" value="${dto.phoneNumber}" class="form-input" style="margin-bottom:8px;" placeholder="010-0000-0000">
-          <input type="email" name="email" value="${dto.email}" class="form-input" placeholder="tripan@example.com">
+          <input type="email" name="email" value="${dto.email}" class="form-input" 
+               ${dto.provider == 'KAKAO' ? 'readonly style="background-color:#f5f5f5;"' : ''} placeholder="tripan@example.com">
           <div class="help-block" id="contact-msg"></div>
         </div>
 
@@ -309,14 +312,16 @@ const originalNick = '${dto.nickname}';
       f.loginId.focus(); return;
     }
 
-    const pwd = f.password.value;
-    const pwdRegex = /^(?=.*[a-zA-Z])(?=.*[!@#$%^*+=-]|.*[0-9]).{5,10}$/i;
-    // 수정 모드에서 비밀번호 안 입력하면 패스, 입력했으면 유효성 검사
-    if (!isUpdate || pwd) {
-      if (!pwdRegex.test(pwd) || pwd !== f.passwordConfirm.value) {
-        showMsg('pwd-msg', '사용 불가: 비밀번호를 다시 확인해주세요.', true);
-        f.password.focus(); return;
-      }
+    if(f.password) {
+    	const pwd = f.password.value;
+        const pwdRegex = /^(?=.*[a-zA-Z])(?=.*[!@#$%^*+=-]|.*[0-9]).{5,10}$/i;
+        // 수정 모드에서 비밀번호 안 입력하면 패스, 입력했으면 유효성 검사
+        if (!isUpdate || pwd) {
+          if (!pwdRegex.test(pwd) || pwd !== f.passwordConfirm.value) {
+            showMsg('pwd-msg', '사용 불가: 비밀번호를 다시 확인해주세요.', true);
+            f.password.focus(); return;
+          }
+        }
     }
     
     const currentNick = f.nickname.value;

@@ -151,7 +151,7 @@
     </button>
 
     <div class="modal-auth-signup-prompt">아직 Tripan 회원이 아니신가요?</div>
-    <a href="${pageContext.request.contextPath}/member/join" class="modal-auth-btn-signup">이메일로 3초 만에 가입하기</a>
+    <a href="${pageContext.request.contextPath}/member/join" class="modal-auth-btn-signup">Tripan 가입하기</a>
   </div>
 </div>
 

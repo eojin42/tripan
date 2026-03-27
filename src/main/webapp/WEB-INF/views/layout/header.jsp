@@ -2,6 +2,7 @@
 <%@ taglib prefix="c" uri="jakarta.tags.core"%>
 <%-- ✨ 스프링 시큐리티 태그 라이브러리 --%>
 <%@ taglib prefix="sec" uri="http://www.springframework.org/security/tags" %>
+<%@ taglib prefix="fn" uri="jakarta.tags.functions"%> 
 <!DOCTYPE html>
 <html lang="ko">
 <head>
@@ -107,10 +108,17 @@
              <a href="#" class="nav-link" style="display:flex; align-items:center; gap:8px; padding: 6px 16px;">
 		        <c:choose>
 		            <c:when test="${not empty sessionScope.loginUser.profilePhoto}">
-		                <img src="${pageContext.request.contextPath}/uploads/member/${sessionScope.loginUser.profilePhoto}" 
-		                     alt="profile" 
-		                     style="width: 32px; height: 32px; border-radius: 50%; object-fit: cover; border: 2px solid var(--border-light);">
-		            </c:when>
+				        <c:choose>
+				            <c:when test="${fn:startsWith(sessionScope.loginUser.profilePhoto, 'http')}">
+				                <img src="${sessionScope.loginUser.profilePhoto}" 
+				                     alt="profile" style="width: 32px; height: 32px; border-radius: 50%; object-fit: cover; border: 2px solid var(--border-light);">
+				            </c:when>
+				            <c:otherwise>
+				                <img src="${pageContext.request.contextPath}/uploads/member/${sessionScope.loginUser.profilePhoto}" 
+				                     alt="profile" style="width: 32px; height: 32px; border-radius: 50%; object-fit: cover; border: 2px solid var(--border-light);">
+				            </c:otherwise>
+				        </c:choose>
+				    </c:when>
 		            <c:otherwise>
 		                <div style="width: 32px; height: 32px; border-radius: 50%; background: var(--bg-light); 
 		                            display: flex; align-items: center; justify-content: center; 

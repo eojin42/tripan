@@ -444,6 +444,9 @@
   }
 
   function refreshGridHighlight() {
+    const grid = document.getElementById('majorRegionGrid');
+    if (!grid) return; 
+    
     const subBtns = document.querySelectorAll('#majorRegionGrid .region-btn');
     subBtns.forEach(btn => {
       if(selectedRegions.includes(btn.innerText)) btn.classList.add('selected');
@@ -456,10 +459,12 @@
     const container = document.getElementById('chipContainer');
     const input = document.getElementById('tsInput');
     
+    if (!container || !input) return; 
+    
     container.querySelectorAll('.search-chip').forEach(el => el.remove());
 
     if (selectedRegions.length > 0) {
-      input.placeholder = ""; 
+      input.placeholder = "";
       selectedRegions.forEach(region => {
         const chip = document.createElement('div');
         chip.className = 'search-chip';
@@ -637,35 +642,46 @@
 
   //--- 검색 제출 ---
   function submitSearch() {
-    let params = [];
-    let hasRegion = false; 
-    
-    if(selectedRegions.length > 0 && !selectedRegions.includes('전국') && !selectedRegions.includes('전체')) {
-      const optimizedRegions = selectedRegions.map(r => r.replace(' 전체', ''));
-      params.push('regions=' + encodeURIComponent(optimizedRegions.join(',')));
-      hasRegion = true;
-    }
-    
-    if(selectedDates.length === 2) {
-      params.push('checkin=' + selectedDates[0]);
-      params.push('checkout=' + selectedDates[1]);
-    }
-    
-    if (guests.adult > 0 || guests.child > 0) {
-        params.push(`adult=\${guests.adult}&child=\${guests.child}`);
-    }
-    
-    let url = '${pageContext.request.contextPath}/accommodation/list';
-    
-    if (window.location.pathname.includes('/detail/') && !hasRegion) {
-        url = window.location.pathname;
-    }
+      let checkin = '';
+      let checkout = '';
+      
+      if (selectedDates.length === 1) {
+          alert('체크인과 체크아웃 날짜를 모두 선택해주세요.');
+          return;
+      } else if (selectedDates.length === 2) {
+          checkin = selectedDates[0];
+          checkout = selectedDates[1];
+      }
 
-    if(params.length > 0) {
-        url += '?' + params.join('&');
-    }
-    location.href = url;
+      const adult = guests.adult > 0 ? guests.adult : 1;
+      const child = guests.child > 0 ? guests.child : 0;
+
+      const currentPath = window.location.pathname;
+
+      if (currentPath.includes('/accommodation/detail')) {
+          const pathParts = currentPath.split('/');
+          const placeId = pathParts[pathParts.length - 1];
+          
+          if (placeId && !isNaN(placeId)) {
+              let url = "${pageContext.request.contextPath}/accommodation/detail/" + placeId + "?adult=" + adult + "&child=" + child;
+              if (checkin && checkout) {
+                  url += "&checkin=" + checkin + "&checkout=" + checkout;
+              }
+              window.location.href = url;
+              return;
+          }
+      }
+
+      // 4. 상세 페이지가 아닐 경우 (목록 페이지로 이동)
+      const regions = selectedRegions.join(',');
+      let listUrl = "${pageContext.request.contextPath}/accommodation/list?adult=" + adult + "&child=" + child;
+      
+      if (regions) listUrl += "&regions=" + encodeURIComponent(regions);
+      if (checkin && checkout) listUrl += "&checkin=" + checkin + "&checkout=" + checkout;
+
+      window.location.href = listUrl;
   }
+  
   
   function resetAll() {
      clearRegions();

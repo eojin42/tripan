@@ -515,11 +515,9 @@
                   <span style="color:var(--text-black);">\${item.bookmarkCount || 0}</span>
               </span>
               <span style="display:flex; align-items:center; gap:4px;">
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                      <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
-                  </svg>
-                  \${item.reviewCount || 0}
-              </span>
+	              <span style="color:#FFD700; font-size:14px; margin-top:-2px;">★</span>
+	              <span style="color:var(--text-black);">\${item.avgRating ? item.avgRating : '0.0'}</span>
+	          </span>
               </div>
               <div class="accommodation-price">₩\${formattedPrice}~</div>
               
@@ -603,11 +601,9 @@
 	                  <span style="color:var(--text-black);">\${item.bookmarkCount || 0}</span>
 	              </span>
 	              <span style="display:flex; align-items:center; gap:4px;">
-	                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-	                      <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
-	                  </svg>
-	                  \${item.reviewCount || 0}
-	              </span>
+		              <span style="color:#FFD700; font-size:14px; margin-top:-2px;">★</span>
+		              <span style="color:var(--text-black);">\${item.avgRating ? item.avgRating : '0.0'}</span>
+		          </span>
 	              </div>
 	              <div class="accommodation-price">₩\${formattedPrice}~</div>
 	              

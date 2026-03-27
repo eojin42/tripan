@@ -113,6 +113,15 @@ public interface ExpenseMapper {
             @Param("memberId") Long memberId,
             @Param("limit")    int limit);
 
+    Long selectNextBatchId();
+
+	 // pair에 해당하는 미정산 expense ID 목록 조회
+	 List<Long> selectPairExpenseIds(
+	     @Param("tripId") Long tripId,
+	     @Param("toMemberId") Long toMemberId,
+	     @Param("fromMemberId") Long fromMemberId
+	 );
+    
     // ════════════════════════════════════════════════════════
     //  settlement_expense_link 관련 (★ 신규)
     // ════════════════════════════════════════════════════════
@@ -144,4 +153,6 @@ public interface ExpenseMapper {
     List<ExpenseDto.MemberShareSummary> selectBatchMemberSummary(
             @Param("tripId")  Long tripId,
             @Param("batchId") Long batchId);
+    
+    List<Long> selectMultiParticipantExpenseIds(@Param("tripId") Long tripId);
 }

@@ -158,6 +158,11 @@
             </div>
             <span class="day-date">${day.tripDate}</span>
             <button class="btn-add-place" onclick="openAddPlace(${day.dayNumber})">+ 장소</button>
+            <button class="btn-kakao-route"
+                    onclick="openKakaoRouteForDay(${day.dayNumber}, 'car')"
+                    title="이 날 전체 경로 카카오맵으로 보기">
+              전체 경로
+            </button>
           </div>
           <div class="place-list" id="places-${day.dayNumber}"
                data-day="${day.dayNumber}"
@@ -204,6 +209,7 @@
 				  </div>
 				</div>
               <div class="place-actions">
+                <button class="place-action-btn place-nav-btn" title="카카오맵 길찾기"><svg width="15" height="15" viewBox="0 0 20 20" fill="#3C1E1E" xmlns="http://www.w3.org/2000/svg"><path d="M10 2C5.58 2 2 5.13 2 9c0 2.4 1.37 4.52 3.5 5.87L4.5 18l3.7-2c.58.1 1.18.15 1.8.15 4.42 0 8-3.13 8-7S14.42 2 10 2z"/></svg></button>
                 <button class="place-action-btn" onclick="openMemo(this)" title="메모/사진">📝</button>
                 <button class="place-action-btn" onclick="removePlace(this)" title="삭제">🗑</button>
               </div>
@@ -308,7 +314,7 @@
         </div>
         <div class="exp-home-hero__stat-divider"></div>
         <div class="exp-home-hero__stat">
-          <div class="exp-home-hero__stat-label">내 부담</div>
+          <div class="exp-home-hero__stat-label">총 내 부담</div>
           <div class="exp-home-hero__stat-val" id="myShareAmt">₩ 0</div>
         </div>
       </div>
@@ -1337,7 +1343,7 @@
           <button class="exp-cat-chip"        data-val="TRANSPORT"    onclick="selectExpCat('TRANSPORT',this)">   🚗 교통</button>
           <button class="exp-cat-chip"        data-val="ACCOMMODATION" onclick="selectExpCat('ACCOMMODATION',this)">🏨 숙소</button>
           <button class="exp-cat-chip"        data-val="SHOPPING"     onclick="selectExpCat('SHOPPING',this)">    🛍️ 쇼핑</button>
-          <button class="exp-cat-chip"        data-val="TOUR"         onclick="selectExpCat('TOUR',this)">        🎯 관광</button>
+          <button class="exp-cat-chip"        data-val="TOUR"         onclick="selectExpCat('TOUR',this)">        🏔 관광</button>
           <button class="exp-cat-chip"        data-val="ETC"          onclick="selectExpCat('ETC',this)">         📦 기타</button>
         </div>
         <input type="hidden" id="exp-cat" value="FOOD">

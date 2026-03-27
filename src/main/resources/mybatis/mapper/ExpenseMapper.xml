@@ -207,13 +207,13 @@
                 e.expense_date,
                 e.payment_type,
                 e.created_at,
+                /* ★ 정산 상태 판단 (settlement_expense_link 연동) */
                 CASE
                   WHEN EXISTS (
                     SELECT 1 FROM settlement_expense_link sel
                     JOIN settlement s ON sel.batch_id = s.batch_id
                     WHERE sel.expense_id = e.expense_id
                       AND s.status = 'COMPLETED'
-                      AND sel.created_at &lt;= s.settled_at
                   ) THEN 'SETTLED'
                   WHEN EXISTS (
                     SELECT 1 FROM settlement_expense_link sel
@@ -223,12 +223,12 @@
                   ) THEN 'PENDING'
                   ELSE 'UNSETTLED'
                 END AS settle_status,
+                /* ★ 완료된 batch_id (SETTLED인 경우) */
                 (SELECT MIN(sel2.batch_id)
                  FROM settlement_expense_link sel2
                  JOIN settlement s2 ON sel2.batch_id = s2.batch_id
                  WHERE sel2.expense_id = e.expense_id
-                   AND s2.status = 'COMPLETED'
-                   AND sel2.created_at &lt;= s2.settled_at) AS settled_batch_id,
+                   AND s2.status = 'COMPLETED') AS settled_batch_id,
                 ROWNUM AS rn
             FROM expense e
             JOIN member2 m2 ON m2.member_id = e.payer_id
@@ -331,6 +331,30 @@
 	<!-- ════════════════════════════════════════
 	     단건 정산 요청 INSERT
 	════════════════════════════════════════ -->
+
+    <!-- 단건 정산 시 batch_id 생성용 -->
+    <select id="selectNextBatchId" resultType="java.lang.Long">
+        SELECT COALESCE(MAX(batch_id), 0) + 1 FROM settlement
+    </select>
+
+    <!-- 단건 정산: 특정 pair의 미정산 expense ID 조회
+         toMemberId(결제자) → fromMemberId(분담자) pair 기준 -->
+    <select id="selectPairExpenseIds" resultType="java.lang.Long">
+        SELECT DISTINCT e.expense_id
+        FROM expense e
+        JOIN expense_participant ep ON ep.expense_id = e.expense_id
+        WHERE e.trip_id     = #{tripId}
+          AND e.payer_id    = #{toMemberId}
+          AND ep.member_id  = #{fromMemberId}
+          AND e.expense_id NOT IN (
+              SELECT DISTINCT sel.expense_id
+              FROM settlement_expense_link sel
+              JOIN settlement s ON sel.batch_id = s.batch_id
+              WHERE sel.trip_id = #{tripId}
+                AND s.status = 'COMPLETED'
+          )
+    </select>
+
 	<insert id="insertSingleSettlement">
 	    INSERT INTO settlement (
 	        settlement_id,
@@ -339,6 +363,7 @@
 	        from_member_id,
 	        amount,
 	        status,
+	        batch_id,
 	        created_at
 	    ) VALUES (
 	        settlement_seq.NEXTVAL,
@@ -347,6 +372,7 @@
 	        #{fromMemberId},
 	        #{amount},
 	        'REQUESTED',
+	        #{batchId},
 	        CURRENT_TIMESTAMP
 	    )
 	</insert>
@@ -361,18 +387,6 @@
 	      AND  status        != 'COMPLETED'
 	</update>
 
-	<!--
-	    ★ 단건 settlement_id 기준 amount 업데이트
-	    updateSingleSettlementAmount는 trip/pair 조합 전체를 건드리는 버그가 있으므로
-	    정산 요청 시에는 이 쿼리를 사용 (settlement_id = 정확히 1행만 수정)
-	-->
-	<update id="updateSettlementById">
-	    UPDATE settlement
-	    SET    amount = #{amount}
-	    WHERE  settlement_id = #{settlementId}
-	      AND  status       != 'COMPLETED'
-	</update>
-
 	<!-- 중복 요청 방지 -->
 	<select id="countActiveSettlement" resultType="int">
 	    SELECT COUNT(*)
@@ -383,14 +397,6 @@
 	      AND  status        != 'COMPLETED'
 	</select>
 	
-	<!-- 여행 멤버 ID 목록 조회 (알림 발송용) -->
-	<select id="selectTripMemberIds" resultType="java.util.Map">
-	    SELECT tm.member_id AS MEMBER_ID
-	    FROM trip_member tm
-	    WHERE tm.trip_id = #{tripId}
-	      AND tm.invitation_status = 'ACCEPTED'
-	</select>
-
 	<!-- 알림 INSERT -->
 	<insert id="insertTripNotification">
 	    INSERT INTO trip_notification (
@@ -582,19 +588,32 @@
         )
     </insert>
 
-    <!-- 완료된 batch에 연결된 expense_id 목록 조회
-         created_at &lt;= settled_at: 정산 완료 이전에 링크된 expense만 settled로 인정 -->
+
+    <!-- ★ 혼자 쓴 지출 제외: participants가 2명 이상인 expense ID 조회
+         (정산 대상 = 다른 사람과 함께 쓴 지출만)
+         createSettlements의 settlement_expense_link INSERT에서 사용 -->
+    <select id="selectMultiParticipantExpenseIds" resultType="java.lang.Long">
+        SELECT e.expense_id
+        FROM expense e
+        WHERE e.trip_id = #{tripId}
+          AND (
+              SELECT COUNT(DISTINCT ep.member_id)
+              FROM expense_participant ep
+              WHERE ep.expense_id = e.expense_id
+                AND ep.member_id IS NOT NULL
+          ) >= 2
+    </select>
+
+    <!-- 완료된 batch에 연결된 expense_id 목록 조회 (재정산 제외용) -->
     <select id="selectSettledExpenseIdsByTripId" resultType="java.lang.Long">
         SELECT DISTINCT sel.expense_id
         FROM settlement_expense_link sel
         JOIN settlement s ON sel.batch_id = s.batch_id
         WHERE sel.trip_id = #{tripId}
           AND s.status = 'COMPLETED'
-          AND sel.created_at &lt;= s.settled_at
     </select>
 
-    <!-- 재정산용 balance 계산: COMPLETED batch 포함 expense 제외
-         created_at 조건으로 정산 완료 후 추가된 새 지출은 정산 대상에 포함 -->
+    <!-- ★ 재정산용 balance 계산: COMPLETED batch 포함 expense 제외 -->
     <select id="calculateBalancesForUnlinkedExpenses" resultMap="memberShareSummaryMap">
         WITH
         settled_expenses AS (
@@ -603,7 +622,6 @@
             JOIN settlement s ON sel.batch_id = s.batch_id
             WHERE sel.trip_id = #{tripId}
               AND s.status = 'COMPLETED'
-              AND sel.created_at &lt;= s.settled_at
         ),
         paid AS (
             SELECT e.payer_id AS member_id, SUM(e.amount) AS paid_amount
