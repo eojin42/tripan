@@ -5,10 +5,12 @@ import java.util.List;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 
+import com.tripan.app.admin.domain.dto.CouponDto;
 import com.tripan.app.admin.domain.dto.DormantKpiDto;
 import com.tripan.app.admin.domain.dto.DormantMemberDto;
 import com.tripan.app.admin.domain.dto.MemberDto;
 import com.tripan.app.admin.domain.dto.MemberKpiDto;
+import com.tripan.app.admin.domain.dto.PointManageDto;
 
 @Mapper
 public interface MemberManageMapper {
@@ -21,6 +23,8 @@ public interface MemberManageMapper {
     
     void updateMember1Status(@Param("memberId") Long memberId, @Param("status") int status);
     void insertMemberStatusHistory(@Param("memberId") Long memberId, @Param("status") int status, @Param("memo") String memo);
-
+    
+    List<PointManageDto.HistoryDto> selectPointHistory(Long memberId);
+    List<CouponDto.IssuedItem> selectMemberCoupons(Long memberId);
    
 }

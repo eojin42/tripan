@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.ResponseBody;
 
 import com.tripan.app.admin.domain.dto.ReservationResponseDto;
 import com.tripan.app.admin.domain.dto.DormantKpiDto;
@@ -108,6 +109,18 @@ public class MemberManageController {
 
         return ResponseEntity.ok(Map.of("result", "ok"));
     }
+    
+    @GetMapping("coupon/{memberId}")
+    @ResponseBody
+    public ResponseEntity<?> getMemberCoupons(@PathVariable("memberId") Long memberId) {
+        return ResponseEntity.ok(memberService.getMemberCoupons(memberId));
+    }
+    
+    @GetMapping("point/{memberId}")
+    @ResponseBody
+    public ResponseEntity<?> getPointHistory(@PathVariable("memberId") Long memberId) {
+        return ResponseEntity.ok(memberService.getPointHistory(memberId));
+    }
 
     @PostMapping("dormant/restore")
     public ResponseEntity<?> restoreDormant(
@@ -118,4 +131,6 @@ public class MemberManageController {
         memberService.restoreDormantMember(targetId, admin.getId());
         return ResponseEntity.ok(Map.of("result", "ok"));
     }
+    
+    
 }

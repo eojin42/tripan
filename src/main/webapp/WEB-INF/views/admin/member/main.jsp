@@ -128,6 +128,7 @@
             <option value="1">정상</option>
             <option value="2">정지(BAN)</option>
             <option value="3">휴면</option>
+            <option value="4">탈퇴</option>
           </select>
           <select class="filter-select" id="searchCategory" style="width:120px;">
             <option value="id">ID</option>
