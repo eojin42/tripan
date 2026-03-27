@@ -321,7 +321,7 @@
 	        NVL((SELECT p.partner_id FROM place p JOIN room r ON p.place_id = r.place_id WHERE r.room_id = #{roomId}), 0), 
 	        
 	        TO_DATE(#{checkin}, 'YYYY-MM-DD'), TO_DATE(#{checkout}, 'YYYY-MM-DD'), 
-	        (#{adult} + #{child}), 'SUCCESS', #{request}, #{amount}, 10
+	        (#{adult} + #{child}), 'SUCCESS', #{request}, #{originalAmount}, 10
 	    )
 	</insert>
 

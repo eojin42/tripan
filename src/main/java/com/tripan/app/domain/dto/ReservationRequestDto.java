@@ -16,6 +16,7 @@ public class ReservationRequestDto {
     private int adult;
     private int child;
     private Long amount;
+    private Long originalAmount;
     private String request;
     private String payMethod;
     private String status;
