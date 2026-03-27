@@ -96,10 +96,17 @@ public class TripPlaceServiceImpl implements TripPlaceService {
         return dto;
     }
 
-    // ── 나만의 장소 삭제 (본인 소유 검증) ─────────────────────────
+    // ── 나만의 장소 삭제 (본인 소유 검증 + 자식 레코드 cascade) ─────────────────────────
+    // ORA-02292(FK_ITEM_PLACE) 방지:
+    //   itinerary_image → itinerary_item → trip_place 순서로 삭제
     @Override
     @Transactional
     public boolean deleteMyPlace(Long placeId, Long memberId) {
+        // Step 1: 해당 장소를 참조하는 itinerary_item 의 이미지 삭제
+        tripPlaceMapper.deleteItineraryImagesByPlaceId(placeId);
+        // Step 2: 해당 장소를 참조하는 itinerary_item 삭제
+        tripPlaceMapper.deleteItineraryItemsByPlaceId(placeId);
+        // Step 3: trip_place 본체 삭제 (본인 소유 검증)
         int deleted = tripPlaceMapper.deleteMyPlace(placeId, memberId);
         return deleted > 0;
     }

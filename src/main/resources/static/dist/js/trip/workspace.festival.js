@@ -216,6 +216,11 @@ function _renderFestivalList(container, list) {
 ══════════════════════════════════════════════ */
 function openFestivalDayPicker(festivalIdx, e) {
   if (e) e.stopPropagation();
+  // VIEWER 권한 이중 방어
+  if (typeof MY_ROLE !== 'undefined' && MY_ROLE === 'VIEWER') {
+    alert('👀 읽기 전용 모드에서는 일정을 추가할 수 없습니다.');
+    return;
+  }
   _pendingFestival = _festivalList[festivalIdx];
   if (!_pendingFestival) return;
 
@@ -367,10 +372,12 @@ function openFestivalDetailModal(idx) {
               '<span class="fmodal-header__badge">🎉 축제</span>' +
               '<h2 class="fmodal-header__title">' + title + '</h2>' +
             '</div>' +
-            '<button class="fmodal-add-btn" onclick="openFestivalDayPicker(' + idx + ',event)">' +
-              '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>' +
-              '일정에 추가' +
-            '</button>' +
+            (typeof MY_ROLE === 'undefined' || MY_ROLE !== 'VIEWER'
+              ? '<button class="fmodal-add-btn" onclick="openFestivalDayPicker(' + idx + ',event)">' +
+                  '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>' +
+                  '일정에 추가' +
+                '</button>'
+              : '') +
           '</div>' +
 
           /* 정보 그리드 */

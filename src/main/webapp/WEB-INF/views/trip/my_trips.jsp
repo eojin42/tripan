@@ -266,6 +266,39 @@
       color: white;
     }
 
+    /* ─── 카드 삭제 버튼 (방장 전용) ─── */
+    .trip-card__delete-btn {
+      position: absolute;
+      bottom: 14px;
+      right: 14px;
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      background: rgba(255, 90, 90, 0.85);
+      backdrop-filter: blur(6px);
+      border: 1.5px solid rgba(255,255,255,0.5);
+      color: white;
+      font-size: 14px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 2px 10px rgba(255,90,90,0.4);
+      transition: all .2s ease;
+      z-index: 2;
+      opacity: 0;
+      transform: scale(0.8);
+    }
+    .trip-card:hover .trip-card__delete-btn {
+      opacity: 1;
+      transform: scale(1);
+    }
+    .trip-card__delete-btn:hover {
+      background: rgba(220, 38, 38, 0.95) !important;
+      box-shadow: 0 4px 15px rgba(220,38,38,0.5) !important;
+      transform: scale(1.12) !important;
+    }
+
     /* 카드 본문 */
     .trip-card__body {
       padding: 20px 24px 16px;
@@ -459,6 +492,15 @@
               </c:choose>
             </span>
           </c:if>
+
+          <%-- 삭제 버튼 — 방장 전용, 호버 시 노출 --%>
+          <c:if test="${trip.leaderNickname == 'OWNER'}">
+            <button class="trip-card__delete-btn"
+                    title="여행 삭제"
+                    onclick="deleteMyTrip(${trip.tripId}, '${fn:escapeXml(trip.tripName)}', event)">
+              🗑
+            </button>
+          </c:if>
         </div>
 
         <%-- 본문 --%>
@@ -507,6 +549,43 @@
   </div><%-- /mt-grid --%>
 
 </div><%-- /mt-page --%>
+
+<script>
+  /* ─── 여행 삭제 (방장 전용, my_trips 카드) ─── */
+  function deleteMyTrip(tripId, tripName, event) {
+    // 카드 링크 클릭 차단
+    event.preventDefault();
+    event.stopPropagation();
+
+    var confirmed = confirm(
+      '⚠️ 여행을 삭제하면 되돌릴 수 없습니다!\n\n' +
+      '삭제 대상: ' + tripName + '\n\n' +
+      '• 등록된 모든 일정 (장소·메모·사진)\n' +
+      '• 체크리스트, 투표, 예산 내역\n' +
+      '• 동행자 정보 및 초대 기록\n\n' +
+      '위 데이터가 모두 삭제됩니다. 계속하시겠습니까?'
+    );
+    if (!confirmed) return;
+
+    var ctx = '${pageContext.request.contextPath}';
+    fetch(ctx + '/trip/' + tripId, {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json' }
+    })
+    .then(function(r) { return r.json(); })
+    .then(function(d) {
+      if (d.success) {
+        alert('여행이 삭제되었습니다.');
+        location.reload();
+      } else {
+        alert('삭제 실패: ' + (d.message || '오류가 발생했습니다.'));
+      }
+    })
+    .catch(function() {
+      alert('네트워크 오류가 발생했습니다. 다시 시도해 주세요.');
+    });
+  }
+</script>
 
 <script>
   /* 기능 유지: SQL에서 status 이미 계산됨 → 단순 필터만 처리 */
