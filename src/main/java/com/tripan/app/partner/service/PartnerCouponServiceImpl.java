@@ -21,7 +21,7 @@ public class PartnerCouponServiceImpl implements PartnerCouponService {
     @Override
     public List<PartnerCouponDto> getCouponList(Map<String, Object> searchParams) {
         
-        return partnerCouponMapper.selectCouponList(searchParams);
+        return partnerCouponMapper.selectCouponListForPartner(searchParams);
     }
 
     @Override
