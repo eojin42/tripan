@@ -212,4 +212,46 @@ public class PartnerRoomServiceImpl implements PartnerRoomService {
     	return partnerRoomMapper.selectBookingListForPartner(params);
     }
     
+    @Override
+    public Map<String, Object> getPagedRoomList(Long placeId, int page) {
+        int limit = 5; // 한 페이지에 5개씩 (원하는 대로 조절하세요!)
+        int offset = (page - 1) * limit;
+
+        Map<String, Object> params = new HashMap<>();
+        params.put("placeId", placeId);
+        params.put("offset", offset);
+        params.put("limit", limit);
+
+        List<PartnerRoomDto> roomList = partnerRoomMapper.getPagedRoomsByPlaceId(params);
+        int totalCount = partnerRoomMapper.countRoomsByPlaceId(placeId);
+        int totalPages = (int) Math.ceil((double) totalCount / limit);
+
+        Map<String, Object> result = new HashMap<>();
+        result.put("roomList", roomList);
+        result.put("totalPages", totalPages);
+        
+        return result;
+    }
+    
+    @Override
+    public Map<String, Object> getPagedBookingList(Map<String, Object> searchParams) {
+        int page = (int) searchParams.get("page");
+        int limit = (int) searchParams.get("limit");
+        
+        int offset = (page - 1) * limit;
+        searchParams.put("offset", offset); 
+        
+        List<Map<String, Object>> bookingList = partnerRoomMapper.selectBookingListForPartner(searchParams);
+        int totalCount = partnerRoomMapper.countBookingListForPartner(searchParams);
+        
+        int totalPages = (int) Math.ceil((double) totalCount / limit);
+        if(totalPages == 0) totalPages = 1; 
+
+        Map<String, Object> resultMap = new HashMap<>();
+        resultMap.put("bookingList", bookingList);
+        resultMap.put("totalPages", totalPages);
+        
+        return resultMap;
+    }
+    
 }

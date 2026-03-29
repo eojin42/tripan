@@ -38,63 +38,65 @@
     <h3 style="font-size: 15px; font-weight: 800; margin: 24px 0 16px 0;">🛏️ 등록된 객실 목록</h3>
 
     <div style="display: flex; flex-direction: column; gap: 16px;">
-        <c:choose>
-            <c:when test="${not empty roomList}">
-                <c:forEach var="room" items="${roomList}">
-                    <div class="card" style="display: grid; grid-template-columns: 200px 1fr auto; gap: 24px; align-items: center;">
-                        
-                        <div style="width: 100%; height: 140px; border-radius: 8px; overflow: hidden; background: #eee;">
-                            <c:choose>
-                                <c:when test="${not empty room.imageUrl}">
-                                    <img src="${pageContext.request.contextPath}${room.imageUrl}" alt="객실 이미지" style="width: 100%; height: 100%; object-fit: cover;">
-                                </c:when>
-                                <c:otherwise>
-                                    <img src="${pageContext.request.contextPath}/dist/images/default.png" alt="이미지 없음" style="width: 100%; height: 100%; object-fit: cover;">
-                                </c:otherwise>
-                            </c:choose>
-                        </div>
+		<c:choose>
+            <c:when test="${not empty pagedRoomList}">
+                <c:forEach var="room" items="${pagedRoomList}">
+				    <div class="card" style="display: grid; grid-template-columns: 200px 1fr auto; gap: 24px; align-items: center;">
+				        
+				        <div style="width: 100%; height: 140px; border-radius: 8px; overflow: hidden; background: #eee;">
+				            <c:choose>
+				                <c:when test="${not empty room.imageUrl}">
+				                    <img src="${pageContext.request.contextPath}${room.imageUrl}" alt="객실 이미지" style="width: 100%; height: 100%; object-fit: cover;">
+				                </c:when>
+				                <c:otherwise>
+				                    <img src="${pageContext.request.contextPath}/dist/images/default.png" alt="이미지 없음" style="width: 100%; height: 100%; object-fit: cover;">
+				                </c:otherwise>
+				            </c:choose>
+				        </div>
 
-                        <div>
-                            <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
-                                <h3 style="font-size:18px; font-weight:700; margin:0;">${room.roomName}</h3>
-                                
-                                <c:choose>
-                                    <c:when test="${room.isActive == 1}">
-                                        <span class="badge" style="background-color: #E8F5E9; color: #16A34A; padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: bold;">판매중</span>
-                                    </c:when>
-                                    <c:otherwise>
-                                        <span class="badge" style="background-color: #F1F5F9; color: #64748B; padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: bold;">판매중지</span>
-                                    </c:otherwise>
-                                </c:choose>
-                            </div>
-                            <p style="color:#64748B; font-size:14px; margin:0 0 4px 0;">기준 ${room.roombasecount}인 / 최대 ${room.maxCapacity}인</p>
-                            <p style="color:#8B92A5; font-size:13px; margin:0; line-height: 1.4;">${room.roomintro}</p>
-                        </div>
-                        <div style="text-align: right;">
-                            <p style="font-family:'Sora', sans-serif; font-size:20px; font-weight:900; color:var(--text); margin-bottom: 12px;">
-                                <fmt:formatNumber value="${room.amount}" pattern="#,###"/> 원
-                            </p>
-                            <div style="display: flex; gap: 8px; justify-content: flex-end;">
-                                <button type="button" class="btn btn-ghost" style="padding: 6px 12px; font-size: 12px;"
-                                    data-id="${room.roomId}"
-                                    data-name="${room.roomName}"
-                                    data-base="${room.roombasecount}"
-                                    data-max="${room.maxCapacity}"
-                                    data-cnt="${room.roomCount}"
-                                    data-amt="${room.amount}"
-                                    data-intro="${room.roomintro}"
-                                    data-active="${room.isActive}"
-                                    onclick="openRoomModalForUpdate(this)">
-                                    수정
-                                </button>
-                                <button type="button" class="btn btn-ghost" style="padding: 6px 12px; font-size: 12px; color: var(--danger);" onclick="deleteRoom('${room.roomId}')">삭제</button>
-                            </div>
-                        </div>
-                    </div>
-                </c:forEach>
+				        <div>
+				            <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
+				                <h3 style="font-size:18px; font-weight:700; margin:0;"><c:out value="${room.roomName}"/></h3>
+				                
+				                <c:choose>
+				                    <c:when test="${room.isActive == 1}">
+				                        <span class="badge" style="background-color: #E8F5E9; color: #16A34A; padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: bold;">판매중</span>
+				                    </c:when>
+				                    <c:otherwise>
+				                        <span class="badge" style="background-color: #F1F5F9; color: #64748B; padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: bold;">판매중지</span>
+				                    </c:otherwise>
+				                </c:choose>
+				            </div>
+				            <p style="color:#64748B; font-size:14px; margin:0 0 4px 0;">기준 ${room.roombasecount}인 / 최대 ${room.maxCapacity}인</p>
+				            
+				            <p style="color:#8B92A5; font-size:13px; margin:0; line-height: 1.4; white-space: pre-wrap;"><c:out value="${room.roomintro}"/></p>
+				        </div>
+				        
+				        <div style="text-align: right;">
+				            <p style="font-family:'Sora', sans-serif; font-size:20px; font-weight:900; color:var(--text); margin-bottom: 12px;">
+				                <fmt:formatNumber value="${room.amount}" pattern="#,###"/> 원
+				            </p>
+				            <div style="display: flex; gap: 8px; justify-content: flex-end;">
+				                <button type="button" class="btn btn-ghost" style="padding: 6px 12px; font-size: 12px;"
+				                    data-id="${room.roomId}"
+				                    data-name="<c:out value='${room.roomName}'/>"
+				                    data-base="${room.roombasecount}"
+				                    data-max="${room.maxCapacity}"
+				                    data-cnt="${room.roomCount}"
+				                    data-amt="${room.amount}"
+				                    data-intro="<c:out value='${room.roomintro}'/>"
+				                    data-active="${room.isActive}"
+				                    onclick="openRoomModalForUpdate(this)">
+				                    수정
+				                </button>
+				                <button type="button" class="btn btn-ghost" style="padding: 6px 12px; font-size: 12px; color: var(--danger);" onclick="deleteRoom('${room.roomId}')">삭제</button>
+				            </div>
+				        </div>
+				    </div>
+				</c:forEach>
             </c:when>
 
-            <c:otherwise>
+			<c:otherwise>
                 <div class="card" style="text-align: center; padding: 40px;">
                     <div style="font-size: 40px; margin-bottom: 16px;">🛏️</div>
                     <p style="color: var(--muted); font-size: 14px; margin-bottom: 16px;">아직 등록된 객실이 없습니다.</p>
@@ -102,5 +104,20 @@
                 </div>
             </c:otherwise>
         </c:choose>
-    </div>
-</div>
+    </div> <div id="roomPaginationArea"></div>
+
+</div> 
+			
+<script>
+				
+document.addEventListener('DOMContentLoaded', function() {
+    const totalPages = parseInt('${empty roomTotalPages ? 0 : roomTotalPages}');
+    const currentPage = parseInt('${empty currentPage ? 1 : currentPage}');
+
+    if (typeof renderPagination === 'function') {
+        renderPagination(totalPages, currentPage, 'roomPaginationArea', function(pageNo) {
+            location.href = '${pageContext.request.contextPath}/partner/main?tab=room&page=' + pageNo;
+        });
+    } 
+});
+</script>

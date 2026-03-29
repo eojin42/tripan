@@ -22,10 +22,13 @@ public interface PartnerRoomService {
     void updateRoomInfo(PartnerRoomDto dto, List<MultipartFile> images) throws Exception;
     
     List<Map<String, Object>> getBookingListForPartner(Map<String, Object> params);
+    Map<String, Object> getPagedBookingList(Map<String, Object> searchParams);
     
     AccommodationDetailDto getAccommodationDetailForPartner(Long placeId, Long memberId);
 
     List<PartnerRoomDto> getRoomsByPlaceId(Long placeId);
+    
+    Map<String, Object> getPagedRoomList(Long placeId, int page);
     
     
 }

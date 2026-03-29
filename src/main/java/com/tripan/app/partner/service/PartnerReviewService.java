@@ -1,10 +1,10 @@
 package com.tripan.app.partner.service;
 
-import java.util.List;
-import com.tripan.app.partner.domain.dto.PartnerReviewDto;
+import java.util.Map;
 
 public interface PartnerReviewService {
-    List<PartnerReviewDto> getReviewList(Long placeId, String startDate, String endDate, String roomId, String rating, String keyword);
+    
+    Map<String, Object> getPagedReviewList(Map<String, Object> searchParams);
     
     void deleteReview(Long reviewId) throws Exception;
 }

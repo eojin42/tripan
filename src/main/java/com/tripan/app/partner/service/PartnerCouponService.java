@@ -13,4 +13,5 @@ public interface PartnerCouponService {
     void createPartnerCoupon(PartnerCouponDto dto, Long partnerId, String targetPlaceId);
     
     void stopCoupon(Long couponId);
+    Map<String, Object> getPagedCouponList(Map<String, Object> searchParams);
 }
