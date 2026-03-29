@@ -9,6 +9,8 @@
 <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
 <script src='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/index.global.min.js'></script>
 
+<script src="${pageContext.request.contextPath}/dist/js/partner/partner_pagination.js" defer></script>
+
 
 
 <script>

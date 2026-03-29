@@ -31,7 +31,15 @@ public interface PartnerRoomMapper {
     
     
     List<Map<String, Object>> selectBookingListForPartner(Map<String, Object> params);
+    int countBookingListForPartner(Map<String, Object> params);
+    
     
     void restoreMemberCouponForPartner(@Param("memberCouponId") Long memberCouponId);
     void cancelCouponUsageForPartner(@Param("orderId") String orderId, @Param("memberCouponId") Long memberCouponId);
+    
+    List<PartnerRoomDto> getPagedRoomsByPlaceId(Map<String, Object> params);
+
+    int countRoomsByPlaceId(@Param("placeId") Long placeId);
+    
+    
 }

@@ -3,124 +3,152 @@
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.tripan.app.partner.mapper.PartnerCouponMapper">
 
-    <select id="selectCouponList" resultType="com.tripan.app.partner.domain.dto.PartnerCouponDto">
-        SELECT 
-            c.COUPON_ID as couponId,
-            c.COUPON_NAME as couponName,
-            c.DISCOUNT_TYPE as discountType,
-            c.DISCOUNT_AMOUNT as discountAmount,
-            c.MIN_ORDER_AMOUNT as minOrderAmount,
-            TO_CHAR(c.VALID_FROM, 'YYYY.MM.DD') as validFrom,
-            TO_CHAR(c.VALID_UNTIL, 'YYYY.MM.DD') as validUntil,
-            c.STATUS as status,
-            c.PLATFORM_SHARE as platformShare,
-            ct.TARGET_TYPE as targetType,     
-            ct.PLACE_ID as placeId,           
-            NVL(dl.DL_CNT, 0) as downloadCount, 
-            NVL(us.USE_CNT, 0) as useCount      
-        FROM TRIPAN.COUPON c
-        
-        INNER JOIN TRIPAN.COUPON_TARGET ct 
-                ON c.COUPON_ID = ct.COUPON_ID
-                
-        LEFT JOIN (
-            SELECT COUPON_ID, COUNT(MEMBER_COUPON_ID) as DL_CNT
-            FROM TRIPAN.MEMBER_COUPON
-            GROUP BY COUPON_ID
-        ) dl ON c.COUPON_ID = dl.COUPON_ID
-        
-        LEFT JOIN (
-            SELECT mc.COUPON_ID, COUNT(cu.USAGE_ID) as USE_CNT
-            FROM TRIPAN.MEMBER_COUPON mc
-            INNER JOIN TRIPAN.COUPON_USAGE cu ON mc.MEMBER_COUPON_ID = cu.MEMBER_COUPON_ID
-            WHERE cu.STATUS = 'USED' GROUP BY mc.COUPON_ID
-        ) us ON c.COUPON_ID = us.COUPON_ID
-        
-        WHERE ct.PARTNER_ID = #{partnerId}
-        
-        <if test="searchPlaceId != null and searchPlaceId != ''">
-            <choose>
-                <when test="searchPlaceId == 'ALL'">
-                    AND ct.TARGET_TYPE = 'ALL'
-                </when>
-                <otherwise>
-                    AND ct.PLACE_ID = #{searchPlaceId}
-                </otherwise>
-            </choose>
-        </if>
-        
-        <if test="status != null and status != ''">
-            AND c.STATUS = #{status}
-        </if>
-        
-        <if test="startDate != null and startDate != ''">
-            AND c.VALID_FROM <![CDATA[>=]]> TO_DATE(#{startDate}, 'YYYY-MM-DD')
-        </if>
-        <if test="endDate != null and endDate != ''">
-            AND c.VALID_UNTIL <![CDATA[<=]]> TO_DATE(#{endDate} || ' 23:59:59', 'YYYY-MM-DD HH24:MI:SS')
-        </if>
-        
-        <if test="keyword != null and keyword != ''">
-            AND c.COUPON_NAME LIKE '%' || #{keyword} || '%'
-        </if>
-        
-        ORDER BY c.CREATED_AT DESC
-    </select>
-
-    <select id="selectCouponKpiStats" resultType="java.util.Map">
+    <select id="selectCouponListForPartner" resultType="com.tripan.app.partner.domain.dto.PartnerCouponDto">
+	    SELECT 
+	        c.COUPON_ID as couponId,
+	        c.COUPON_NAME as couponName,
+	        c.DISCOUNT_TYPE as discountType,
+	        c.DISCOUNT_AMOUNT as discountAmount,
+	        c.MIN_ORDER_AMOUNT as minOrderAmount,
+	        TO_CHAR(c.VALID_FROM, 'YYYY.MM.DD') as validFrom,
+	        TO_CHAR(c.VALID_UNTIL, 'YYYY.MM.DD') as validUntil,
+	        c.STATUS as status,
+	        c.PLATFORM_SHARE as platformShare,
+	        ct.TARGET_TYPE as targetType,     
+	        ct.PLACE_ID as placeId,           
+	        NVL(dl.DL_CNT, 0) as downloadCount, 
+	        NVL(us.USE_CNT, 0) as useCount      
+	    FROM TRIPAN.COUPON c
+	    
+	    INNER JOIN TRIPAN.COUPON_TARGET ct 
+	            ON c.COUPON_ID = ct.COUPON_ID
+	            
+	    LEFT JOIN (
+	        SELECT COUPON_ID, COUNT(MEMBER_COUPON_ID) as DL_CNT
+	        FROM TRIPAN.MEMBER_COUPON
+	        GROUP BY COUPON_ID
+	    ) dl ON c.COUPON_ID = dl.COUPON_ID
+	    
+	    LEFT JOIN (
+	        SELECT mc.COUPON_ID, COUNT(cu.USAGE_ID) as USE_CNT
+	        FROM TRIPAN.MEMBER_COUPON mc
+	        INNER JOIN TRIPAN.COUPON_USAGE cu ON mc.MEMBER_COUPON_ID = cu.MEMBER_COUPON_ID
+	        WHERE cu.STATUS = 'USED' GROUP BY mc.COUPON_ID
+	    ) us ON c.COUPON_ID = us.COUPON_ID
+	    
+	    WHERE ct.PARTNER_ID = #{partnerId}
+	    
+	    <if test="searchPlaceId != null and searchPlaceId != ''">
+	        <choose>
+	            <when test="searchPlaceId == 'ALL'">
+	                AND ct.TARGET_TYPE = 'ALL'
+	            </when>
+	            <otherwise>
+	                AND ct.PLACE_ID = #{searchPlaceId}
+	            </otherwise>
+	        </choose>
+	    </if>
+	    
+	    <if test="status != null and status != ''">
+	        AND c.STATUS = #{status}
+	    </if>
+	    
+	    <if test="startDate != null and startDate != ''">
+	        AND c.VALID_FROM <![CDATA[>=]]> TO_DATE(#{startDate}, 'YYYY-MM-DD')
+	    </if>
+	    <if test="endDate != null and endDate != ''">
+	        AND c.VALID_UNTIL <![CDATA[<=]]> TO_DATE(#{endDate} || ' 23:59:59', 'YYYY-MM-DD HH24:MI:SS')
+	    </if>
+	    
+	    <if test="keyword != null and keyword != ''">
+	        AND c.COUPON_NAME LIKE '%' || #{keyword} || '%'
+	    </if>
+	    
+	    ORDER BY c.CREATED_AT DESC
+	    
+	    OFFSET #{offset} ROWS FETCH NEXT #{limit} ROWS ONLY
+	</select>
+	
+	<select id="countCouponListForPartner" resultType="int">
+	    SELECT COUNT(c.COUPON_ID)
+	    FROM TRIPAN.COUPON c
+	    INNER JOIN TRIPAN.COUPON_TARGET ct ON c.COUPON_ID = ct.COUPON_ID
+	    WHERE ct.PARTNER_ID = #{partnerId}
+	    
+	    <if test="searchPlaceId != null and searchPlaceId != ''">
+	        <choose>
+	            <when test="searchPlaceId == 'ALL'">AND ct.TARGET_TYPE = 'ALL'</when>
+	            <otherwise>AND ct.PLACE_ID = #{searchPlaceId}</otherwise>
+	        </choose>
+	    </if>
+	    <if test="status != null and status != ''">
+	        AND c.STATUS = #{status}
+	    </if>
+	    <if test="startDate != null and startDate != ''">
+	        AND c.VALID_FROM <![CDATA[>=]]> TO_DATE(#{startDate}, 'YYYY-MM-DD')
+	    </if>
+	    <if test="endDate != null and endDate != ''">
+	        AND c.VALID_UNTIL <![CDATA[<=]]> TO_DATE(#{endDate} || ' 23:59:59', 'YYYY-MM-DD HH24:MI:SS')
+	    </if>
+	    <if test="keyword != null and keyword != ''">
+	        AND c.COUPON_NAME LIKE '%' || #{keyword} || '%'
+	    </if>
+	</select>
+	
+	<select id="selectCouponKpiStats" resultType="java.util.Map">
         SELECT 
             (SELECT COUNT(*) FROM TRIPAN.COUPON c 
              INNER JOIN TRIPAN.COUPON_TARGET ct ON c.COUPON_ID = ct.COUPON_ID 
-             WHERE ct.PARTNER_ID = #{partnerId} AND c.STATUS = 'ACTIVE') as activeCount,
+             WHERE ct.PARTNER_ID = #{partnerId} AND c.STATUS = 'ACTIVE') AS "activeCount",
              
             (SELECT COUNT(*) FROM TRIPAN.MEMBER_COUPON mc
              INNER JOIN TRIPAN.COUPON_TARGET ct ON mc.COUPON_ID = ct.COUPON_ID
              WHERE ct.PARTNER_ID = #{partnerId} 
              AND EXTRACT(MONTH FROM mc.ISSUED_AT) = EXTRACT(MONTH FROM SYSDATE)
-             AND EXTRACT(YEAR FROM mc.ISSUED_AT) = EXTRACT(YEAR FROM SYSDATE)) as monthDownloadCount,
+             AND EXTRACT(YEAR FROM mc.ISSUED_AT) = EXTRACT(YEAR FROM SYSDATE)) AS "monthDownloadCount",
              
             (SELECT COUNT(*) FROM TRIPAN.COUPON_USAGE cu
              WHERE cu.PARTNER_ID = #{partnerId} 
              AND cu.STATUS = 'USED'
              AND EXTRACT(MONTH FROM cu.USED_AT) = EXTRACT(MONTH FROM SYSDATE)
-             AND EXTRACT(YEAR FROM cu.USED_AT) = EXTRACT(YEAR FROM SYSDATE)) as monthUseCount
+             AND EXTRACT(YEAR FROM cu.USED_AT) = EXTRACT(YEAR FROM SYSDATE)) AS "monthUseCount"
         FROM DUAL
     </select>
-    
-    <insert id="insertCoupon" parameterType="com.tripan.app.partner.domain.dto.PartnerCouponDto">
-        <selectKey keyProperty="couponId" resultType="long" order="BEFORE">
-            SELECT NVL(MAX(COUPON_ID), 0) + 1 FROM TRIPAN.COUPON
-        </selectKey>
-        
-        INSERT INTO TRIPAN.COUPON (
-            COUPON_ID, COUPON_NAME, DISCOUNT_AMOUNT, VALID_FROM, VALID_UNTIL, 
-            PLATFORM_SHARE, PARTNER_SHARE, DISCOUNT_TYPE, STATUS, CREATED_AT,
-            MIN_ORDER_AMOUNT, MAX_QUANTITY, UPDATED_AT
-        ) VALUES (
-            #{couponId}, #{couponName}, #{discountAmount}, 
-            TO_DATE(#{validFrom}, 'YYYY-MM-DD'), TO_DATE(#{validUntil}, 'YYYY-MM-DD'),
-            0, 100, #{discountType}, 'ACTIVE', SYSDATE,
-            #{minOrderAmount}, #{maxQuantity}, SYSDATE
-        )
-    </insert>
-
-    <insert id="insertCouponTarget" parameterType="map">
-        <selectKey keyProperty="targetId" resultType="long" order="BEFORE">
-            SELECT NVL(MAX(TARGET_ID), 0) + 1 FROM TRIPAN.COUPON_TARGET
-        </selectKey>
-        
-        INSERT INTO TRIPAN.COUPON_TARGET (
-            TARGET_ID, COUPON_ID, TARGET_TYPE, TARGET_VALUE, IS_EXCLUDE, PARTNER_ID, PLACE_ID
-        ) VALUES (
-            #{targetId}, #{couponId}, #{targetType}, #{targetValue}, 'N', #{partnerId}, #{placeId, jdbcType=NUMERIC}
-        )
-    </insert>
-    
-    <update id="updateCouponStatus">
-        UPDATE TRIPAN.COUPON 
-        SET STATUS = #{status}, 
-            UPDATED_AT = SYSDATE 
-        WHERE COUPON_ID = #{couponId}
-    </update>
+	
+	<insert id="insertCoupon" parameterType="com.tripan.app.partner.domain.dto.PartnerCouponDto">
+	    <selectKey keyProperty="couponId" resultType="long" order="BEFORE">
+	        SELECT NVL(MAX(COUPON_ID), 0) + 1 FROM TRIPAN.COUPON
+	    </selectKey>
+	    
+	    INSERT INTO TRIPAN.COUPON (
+	        COUPON_ID, COUPON_NAME, DISCOUNT_AMOUNT, VALID_FROM, VALID_UNTIL, 
+	        PLATFORM_SHARE, PARTNER_SHARE, DISCOUNT_TYPE, STATUS, CREATED_AT,
+	        MIN_ORDER_AMOUNT, MAX_QUANTITY, UPDATED_AT
+	    ) VALUES (
+	        #{couponId}, #{couponName}, #{discountAmount}, 
+	        TO_DATE(#{validFrom}, 'YYYY-MM-DD'), TO_DATE(#{validUntil}, 'YYYY-MM-DD'),
+	        0, 100, #{discountType}, 'ACTIVE', SYSDATE,
+	        #{minOrderAmount}, #{maxQuantity}, SYSDATE
+	    )
+	</insert>
+	
+	<insert id="insertCouponTarget" parameterType="map">
+	    <selectKey keyProperty="targetId" resultType="long" order="BEFORE">
+	        SELECT NVL(MAX(TARGET_ID), 0) + 1 FROM TRIPAN.COUPON_TARGET
+	    </selectKey>
+	    
+	    INSERT INTO TRIPAN.COUPON_TARGET (
+	        TARGET_ID, COUPON_ID, TARGET_TYPE, TARGET_VALUE, IS_EXCLUDE, PARTNER_ID, PLACE_ID
+	    ) VALUES (
+	        #{targetId}, #{couponId}, #{targetType}, #{targetValue}, 'N', #{partnerId}, #{placeId, jdbcType=NUMERIC}
+	    )
+	</insert>
+	
+	<update id="updateCouponStatus">
+	    UPDATE TRIPAN.COUPON 
+	    SET STATUS = #{status}, 
+	        UPDATED_AT = SYSDATE 
+	    WHERE COUPON_ID = #{couponId}
+	</update>
 	
 </mapper>

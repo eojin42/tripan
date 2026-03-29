@@ -64,7 +64,6 @@
       <span class="menu-text">정산 대금 조회</span>
     </a>
     
-    <div class="menu-label">Customer Service</div>
     <div class="menu-label" style="margin-top: 16px;">Management</div>
     <a href="?tab=new_apply" class="menu-item ${activeTab == 'new_apply' ? 'active' : ''}" data-tooltip="새 숙소 추가">
       <svg class="menu-icon" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2" stroke-linecap="round"></path></svg>

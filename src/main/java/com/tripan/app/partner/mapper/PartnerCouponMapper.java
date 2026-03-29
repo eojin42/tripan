@@ -11,7 +11,9 @@ import com.tripan.app.partner.domain.dto.PartnerCouponDto;
 @Mapper
 public interface PartnerCouponMapper {
     
-    List<PartnerCouponDto> selectCouponList(Map<String, Object> params);
+    List<PartnerCouponDto> selectCouponListForPartner(Map<String, Object> params);
+    
+    int countCouponListForPartner(Map<String, Object> params);
     
     Map<String, Object> selectCouponKpiStats(Long partnerId);
     

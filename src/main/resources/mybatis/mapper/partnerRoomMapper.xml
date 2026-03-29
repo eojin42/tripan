@@ -143,45 +143,82 @@
 	        cancel_reason = '파트너 오버부킹 강제 취소'
 	    WHERE order_id = #{orderId} AND member_coupon_id = #{memberCouponId}
 	</update>
-	<select id="selectBookingListForPartner" resultType="map">
-	    SELECT 
-	        r.RESERVATION_ID as "reservationId",
-	        m1.USERNAME as "guestName",
-	        m2.PHONE_NUMBER as "guestPhone",
-	        rm.ROOM_NAME as "roomName",
-	        TO_CHAR(r.CHECK_IN_DATE, 'YYYY-MM-DD') as "checkIn",
-	        TO_CHAR(r.CHECK_OUT_DATE, 'YYYY-MM-DD') as "checkOut",
-	        r.AMOUNT as "amount",
-	        r.GUEST_COUNT as "guestCount",
-	        r.STATUS as "status",
-	        TO_CHAR(r.REQUEST) as "request"
-	    FROM RESERVATION r
-	    JOIN MEMBER1 m1 ON r.MEMBER_ID = m1.MEMBER_ID
-	    JOIN MEMBER2 m2 ON r.MEMBER_ID = m2.MEMBER_ID
-	    JOIN ROOM rm ON r.ROOM_ID = rm.ROOM_ID
-	 <where>
-	        rm.PLACE_ID = #{placeId}
-	        
-	        <if test="roomId != null and roomId != ''">
-	            AND r.ROOM_ID = #{roomId}
-	        </if>
-	        
-	        <if test="startDate != null and startDate != ''">
-	            AND r.CHECK_IN_DATE <![CDATA[>=]]> TO_DATE(#{startDate}, 'YYYY-MM-DD')
-	        </if>
-	        <if test="endDate != null and endDate != ''">
-	            AND r.CHECK_IN_DATE <![CDATA[<=]]> TO_DATE(#{endDate}, 'YYYY-MM-DD')
-	        </if>
-	        
-	        <if test="status != null and status != ''">
-	            AND r.STATUS = #{status}
-	        </if>
-	        
-	        <if test="keyword != null and keyword != ''">
-	            AND (m1.USERNAME LIKE '%' || #{keyword} || '%' OR m2.PHONE_NUMBER LIKE '%' || #{keyword} || '%')
-	        </if>
-	    </where>
-	    ORDER BY r.RESERVATION_ID DESC
-	</select>
+	<select id="selectBookingListForPartner" resultType="map" parameterType="map">
+        SELECT 
+            r.RESERVATION_ID as "reservationId",
+            m1.USERNAME as "guestName",
+            m2.PHONE_NUMBER as "guestPhone",
+            rm.ROOM_NAME as "roomName",
+            TO_CHAR(r.CHECK_IN_DATE, 'YYYY-MM-DD') as "checkIn",
+            TO_CHAR(r.CHECK_OUT_DATE, 'YYYY-MM-DD') as "checkOut",
+            r.AMOUNT as "amount",
+            r.GUEST_COUNT as "guestCount",
+            r.STATUS as "status",
+            TO_CHAR(r.REQUEST) as "request"
+        FROM RESERVATION r
+        JOIN MEMBER1 m1 ON r.MEMBER_ID = m1.MEMBER_ID
+        JOIN MEMBER2 m2 ON r.MEMBER_ID = m2.MEMBER_ID
+        JOIN ROOM rm ON r.ROOM_ID = rm.ROOM_ID
+        <where>
+            rm.PLACE_ID = #{placeId}
+            <if test="roomId != null and roomId != ''">
+                AND r.ROOM_ID = #{roomId}
+            </if>
+            <if test="startDate != null and startDate != ''">
+                AND r.CHECK_IN_DATE <![CDATA[>=]]> TO_DATE(#{startDate}, 'YYYY-MM-DD')
+            </if>
+            <if test="endDate != null and endDate != ''">
+                AND r.CHECK_IN_DATE <![CDATA[<=]]> TO_DATE(#{endDate}, 'YYYY-MM-DD')
+            </if>
+            <if test="status != null and status != ''">
+                AND r.STATUS = #{status}
+            </if>
+            <if test="keyword != null and keyword != ''">
+                AND (m1.USERNAME LIKE '%' || #{keyword} || '%' OR m2.PHONE_NUMBER LIKE '%' || #{keyword} || '%')
+            </if>
+        </where>
+        ORDER BY r.RESERVATION_ID DESC
+        OFFSET #{offset} ROWS FETCH NEXT #{limit} ROWS ONLY
+    </select>
+    
+    <select id="countBookingListForPartner" resultType="int" parameterType="map">
+        SELECT COUNT(r.RESERVATION_ID)
+        FROM RESERVATION r
+        JOIN MEMBER1 m1 ON r.MEMBER_ID = m1.MEMBER_ID
+        JOIN MEMBER2 m2 ON r.MEMBER_ID = m2.MEMBER_ID
+        JOIN ROOM rm ON r.ROOM_ID = rm.ROOM_ID
+        <where>
+            rm.PLACE_ID = #{placeId}
+            <if test="roomId != null and roomId != ''">AND r.ROOM_ID = #{roomId}</if>
+            <if test="startDate != null and startDate != ''">AND r.CHECK_IN_DATE <![CDATA[>=]]> TO_DATE(#{startDate}, 'YYYY-MM-DD')</if>
+            <if test="endDate != null and endDate != ''">AND r.CHECK_IN_DATE <![CDATA[<=]]> TO_DATE(#{endDate}, 'YYYY-MM-DD')</if>
+            <if test="status != null and status != ''">AND r.STATUS = #{status}</if>
+            <if test="keyword != null and keyword != ''">
+                AND (m1.USERNAME LIKE '%' || #{keyword} || '%' OR m2.PHONE_NUMBER LIKE '%' || #{keyword} || '%')
+            </if>
+        </where>
+    </select>
+	
+	<select id="getPagedRoomsByPlaceId" resultType="com.tripan.app.partner.domain.dto.PartnerRoomDto" parameterType="map">
+        SELECT
+            r.room_id AS roomId,
+            r.place_id AS placeId,
+            r.room_name AS roomName,
+            r.roombasecount AS roombasecount,
+            r.max_capacity AS maxCapacity,
+            r.room_count AS roomCount,
+            r.amount AS amount,
+            r.roomintro AS roomintro,
+            r.is_active AS isActive,
+            (SELECT image_url FROM room_image ri WHERE ri.room_id = r.room_id AND ROWNUM = 1) AS imageUrl
+        FROM room r
+        WHERE r.place_id = #{placeId}
+        ORDER BY r.room_id DESC
+        OFFSET #{offset} ROWS FETCH NEXT #{limit} ROWS ONLY
+    </select>
+
+    <select id="countRoomsByPlaceId" resultType="int">
+        SELECT COUNT(*) FROM room WHERE place_id = #{placeId}
+    </select>
 	
 </mapper>

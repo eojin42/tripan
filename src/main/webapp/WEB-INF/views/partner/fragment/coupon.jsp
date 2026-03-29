@@ -3,7 +3,6 @@
 <%@ taglib prefix="fmt" uri="jakarta.tags.fmt" %>
 
 <style>
-/* 모달 전용 스타일 */
 .modal-overlay {
     display: none;
     position: fixed;
@@ -76,7 +75,6 @@
     border: 1px solid #E2E8F0;
 }
 
-/* 추가된 발행 주체 뱃지 스타일 */
 .issuer-badge {
     font-size: 11px;
     font-weight: 800;
@@ -129,8 +127,15 @@
     </div>
 
     <div class="card" style="padding: 20px; border-radius: 16px; margin-bottom: 24px; background: #F8FAFC; border: 1px solid #E2E8F0; box-shadow: none;">
-        <form action="main" method="GET" style="display: flex; gap: 12px; align-items: center; flex-wrap: wrap; margin: 0;">
+        <form action="main" method="GET" id="couponSearchForm" style="display: flex; gap: 12px; align-items: center; flex-wrap: wrap; margin: 0;">
             <input type="hidden" name="tab" value="coupon">
+            <input type="hidden" name="page" id="page" value="${empty param.page ? 1 : param.page}">
+            
+            <select name="limit" style="padding: 10px; border: 1px solid #CBD5E1; border-radius: 8px; font-size: 13px; color: #475569;" onchange="document.getElementById('page').value=1; this.form.submit();">
+                <option value="10" ${param.limit == '10' ? 'selected' : ''}>10개씩 보기</option>
+                <option value="30" ${param.limit == '30' ? 'selected' : ''}>30개씩 보기</option>
+                <option value="50" ${param.limit == '50' ? 'selected' : ''}>50개씩 보기</option>
+            </select>
             
             <div style="display: flex; align-items: center; gap: 8px;">
                 <input type="date" name="startDate" value="${param.startDate}" style="padding: 10px; border: 1px solid #CBD5E1; border-radius: 8px; font-size: 13px; color: #475569;">
@@ -180,7 +185,7 @@
                                             <span class="issuer-badge issuer-partner">우리숙소</span>
                                         </c:otherwise>
                                     </c:choose>
-                                    ${coupon.couponName}
+                                    <c:out value="${coupon.couponName}"/>
                                 </td>
                                 
                                 <td style="padding: 16px;">
@@ -208,11 +213,11 @@
                                 </td>
                                 
                                 <td style="padding: 16px; font-size: 13px; font-weight: 600; color: #475569;">
-                                    ⬇️ ${coupon.downloadCount}건 / 💳 <span style="color:#10B981;">${coupon.useCount}건</span>
+                                    ⬇️ <c:out value="${coupon.downloadCount}"/>건 / 💳 <span style="color:#10B981;"><c:out value="${coupon.useCount}"/>건</span>
                                 </td>
                                 
                                 <td style="padding: 16px; font-size: 13px; font-weight: 700; color: #334155;">
-                                    ${coupon.validFrom} ~ ${coupon.validUntil}
+                                    <c:out value="${coupon.validFrom}"/> ~ <c:out value="${coupon.validUntil}"/>
                                 </td>
                                 
                                 <td style="padding: 16px;">
@@ -249,13 +254,16 @@
             </c:when>
             <c:otherwise>
                 <div style="text-align: center; padding: 60px 20px;">
-                    <div style="font-size: 40px; margin-bottom: 16px;">🎫</div>
+                    <div style="font-size: 40px; margin-bottom: 16px;">📭</div>
                     <p style="color: var(--text-gray); font-size: 15px; font-weight: 600; margin: 0;">발행된 쿠폰 내역이 없습니다.</p>
                 </div>
             </c:otherwise>
         </c:choose>
         
     </div>
+    
+    <div id="couponPaginationArea"></div>
+
 </div>
 
 <div id="couponModal" class="modal-overlay">
@@ -271,7 +279,7 @@
                 <label>적용 숙소</label>
                 <select class="form-control" disabled>
                     <c:forEach var="place" items="${partnerPlaceList}">
-                        <option value="${place.placeId}" selected>[숙소] ${place.name}</option>
+                        <option value="${place.placeId}" selected>[숙소] <c:out value="${place.name}"/></option>
                     </c:forEach>
                 </select>
                 <c:forEach var="place" items="${partnerPlaceList}">
@@ -330,9 +338,19 @@
     </div>
 </div>
 
-
-
 <script>
+document.addEventListener("DOMContentLoaded", function() {
+    const totalPages = parseInt('${empty totalPages ? 1 : totalPages}');
+    const currentPage = parseInt('${empty param.page ? 1 : param.page}');
+
+    if (typeof renderPagination === 'function') {
+        renderPagination(totalPages, currentPage, 'couponPaginationArea', function(selectedPage) {
+            document.getElementById('page').value = selectedPage;
+            document.getElementById('couponSearchForm').submit();
+        });
+    }
+});
+
 function openCouponModal() {
     document.getElementById('couponModal').style.display = 'flex';
 }

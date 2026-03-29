@@ -21,7 +21,6 @@ import org.springframework.web.multipart.MultipartFile;
 import com.tripan.app.domain.dto.AccommodationDetailDto;
 import com.tripan.app.partner.domain.dto.PartnerCouponDto;
 import com.tripan.app.partner.domain.dto.PartnerInfoDto;
-import com.tripan.app.partner.domain.dto.PartnerReviewDto;
 import com.tripan.app.partner.domain.dto.PartnerRoomDto;
 import com.tripan.app.partner.service.PartnerCouponService;
 import com.tripan.app.partner.service.PartnerDashboardService;
@@ -105,6 +104,15 @@ public class PartnerMainController {
             model.addAttribute("roomList", roomList);
         }
         
+        if ("room".equals(tab)) {
+            int page = searchParams.containsKey("page") ? Integer.parseInt(searchParams.get("page").toString()) : 1;
+            
+            Map<String, Object> pagingResult = partnerRoomService.getPagedRoomList(placeId, page);
+            model.addAttribute("pagedRoomList", pagingResult.get("roomList"));
+            model.addAttribute("roomTotalPages", pagingResult.get("totalPages"));
+            model.addAttribute("currentPage", page);
+        }
+        
         if ("dashboard".equals(tab)) {
             Map<String, Object> dashData = partnerDashboardService.getDashboardData(currentPartnerId);
             model.addAttribute("dashData", dashData);
@@ -112,20 +120,40 @@ public class PartnerMainController {
          
         if ("booking".equals(tab)) {
             searchParams.put("placeId", placeId); 
-            List<Map<String, Object>> bookingList = partnerRoomService.getBookingListForPartner(searchParams);
-            model.addAttribute("bookingList", bookingList);
+            
+            int page = searchParams.containsKey("page") && searchParams.get("page") != null && !searchParams.get("page").toString().isEmpty() 
+                       ? Integer.parseInt(searchParams.get("page").toString()) : 1;
+                       
+            int limit = searchParams.containsKey("limit") && searchParams.get("limit") != null && !searchParams.get("limit").toString().isEmpty() 
+                        ? Integer.parseInt(searchParams.get("limit").toString()) : 10;
+            
+            searchParams.put("page", page);
+            searchParams.put("limit", limit);
+            
+            Map<String, Object> pagingResult = partnerRoomService.getPagedBookingList(searchParams);
+            
+            model.addAttribute("bookingList", pagingResult.get("bookingList"));
+            model.addAttribute("totalPages", pagingResult.get("totalPages")); 
+            model.addAttribute("currentPage", page);
         }
         
         if ("review".equals(tab)) {
-            String startDate = (String) searchParams.get("startDate");
-            String endDate = (String) searchParams.get("endDate");
-            String searchRoomId = (String) searchParams.get("roomId");
-            String rating = (String) searchParams.get("rating");
-            String keyword = (String) searchParams.get("keyword");
+            searchParams.put("placeId", placeId);
             
-            List<PartnerReviewDto> reviewList = partnerReviewService.getReviewList(
-                    placeId, startDate, endDate, searchRoomId, rating, keyword);
-            model.addAttribute("reviewList", reviewList);
+            int page = searchParams.containsKey("page") && searchParams.get("page") != null && !searchParams.get("page").toString().isEmpty() 
+                       ? Integer.parseInt(searchParams.get("page").toString()) : 1;
+                       
+            int limit = searchParams.containsKey("limit") && searchParams.get("limit") != null && !searchParams.get("limit").toString().isEmpty() 
+                        ? Integer.parseInt(searchParams.get("limit").toString()) : 10;
+            
+            searchParams.put("page", page);
+            searchParams.put("limit", limit);
+            
+            Map<String, Object> pagingResult = partnerReviewService.getPagedReviewList(searchParams);
+            
+            model.addAttribute("reviewList", pagingResult.get("reviewList"));
+            model.addAttribute("totalPages", pagingResult.get("totalPages"));
+            model.addAttribute("currentPage", page);
         }
         
         if ("coupon".equals(tab)) {
@@ -134,8 +162,19 @@ public class PartnerMainController {
             Map<String, Object> kpiStats = partnerCouponService.getCouponKpiStats(currentPartnerId);
             model.addAttribute("kpiStats", kpiStats);
             
-            List<PartnerCouponDto> couponList = partnerCouponService.getCouponList(searchParams);
-            model.addAttribute("couponList", couponList);
+            int page = searchParams.containsKey("page") && searchParams.get("page") != null && !searchParams.get("page").toString().isEmpty() 
+                       ? Integer.parseInt(searchParams.get("page").toString()) : 1;
+            int limit = searchParams.containsKey("limit") && searchParams.get("limit") != null && !searchParams.get("limit").toString().isEmpty() 
+                        ? Integer.parseInt(searchParams.get("limit").toString()) : 10;
+            
+            searchParams.put("page", page);
+            searchParams.put("limit", limit);
+            
+            Map<String, Object> pagingResult = partnerCouponService.getPagedCouponList(searchParams);
+            
+            model.addAttribute("couponList", pagingResult.get("couponList"));
+            model.addAttribute("totalPages", pagingResult.get("totalPages"));
+            model.addAttribute("currentPage", page);
             
             if (placeId != null && model.getAttribute("accommodation") != null) {
                 model.addAttribute("partnerPlaceList", List.of(model.getAttribute("accommodation")));
@@ -188,15 +227,22 @@ public class PartnerMainController {
             @ModelAttribute PartnerRoomDto dto, 
             @RequestParam(value = "images", required = false) List<MultipartFile> images,
             @AuthenticationPrincipal CustomUserDetails userDetails,
-            jakarta.servlet.http.HttpSession session) { // 
+            jakarta.servlet.http.HttpSession session) { 
         try {
             Long currentPartnerId = (Long) session.getAttribute("currentPartnerId");
             Long placeId = partnerInfoService.getPlaceIdByPartnerId(currentPartnerId);
-            dto.setPlaceId(placeId);
+            dto.setPlaceId(placeId); 
             
             if (dto.getRoomId() == null || dto.getRoomId().trim().isEmpty()) {
                 partnerRoomService.registerNewRoom(dto, images);
             } else {
+                List<PartnerRoomDto> myRooms = partnerRoomService.getRoomsByPlaceId(placeId);
+                boolean isMyRoom = myRooms.stream().anyMatch(r -> r.getRoomId().equals(dto.getRoomId()));
+                
+                if (!isMyRoom) {
+                    return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of("message", "해당 객실을 수정할 권한이 없습니다."));
+                }
+                
                 partnerRoomService.updateRoomInfo(dto, images);
             }
 
@@ -222,8 +268,24 @@ public class PartnerMainController {
     // 객실 삭제 컨트롤러
     @ResponseBody
     @PostMapping("/api/room/delete")
-    public ResponseEntity<?> deleteRoom(@RequestParam("roomId") String roomId) {
+    public ResponseEntity<?> deleteRoom(
+            @RequestParam("roomId") String roomId, 
+            jakarta.servlet.http.HttpSession session) { 
         try {
+            Long currentPartnerId = (Long) session.getAttribute("currentPartnerId");
+            if (currentPartnerId == null) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("message", "로그인이 필요합니다."));
+            }
+
+            Long placeId = partnerInfoService.getPlaceIdByPartnerId(currentPartnerId);
+
+            List<PartnerRoomDto> myRooms = partnerRoomService.getRoomsByPlaceId(placeId);
+            boolean isMyRoom = myRooms.stream().anyMatch(r -> r.getRoomId().equals(roomId));
+            
+            if (!isMyRoom) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of("message", "해당 객실을 삭제할 권한이 없습니다."));
+            }
+
             partnerRoomService.deleteRoom(roomId);
             return ResponseEntity.ok(Map.of("message", "success"));
         } catch (Exception e) {

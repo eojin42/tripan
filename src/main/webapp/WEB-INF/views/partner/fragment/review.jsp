@@ -102,7 +102,6 @@
     border-radius: 12px;
     padding: 16px;
     margin-top: 12px;
-    /* 🌟 줄바꿈 유지를 위한 스타일 추가 */
     white-space: pre-wrap; 
     word-break: break-all;
 }
@@ -147,10 +146,10 @@
         <p style="color: #64748B;">고객 리뷰를 관리하고 부적절한 리뷰를 삭제할 수 있습니다.</p>
     </div>
 
-    <div class="search-filter-box">
-        <form action="main" method="GET" style="display: flex; gap: 10px; flex-wrap: wrap;">
+	<div class="search-filter-box">
+        <form action="main" method="GET" style="display: flex; gap: 10px; flex-wrap: wrap; align-items: center;">
             <input type="hidden" name="tab" value="review">
-
+            <input type="hidden" name="page" id="page" value="${empty param.page ? 1 : param.page}">
             <input type="date" name="startDate" value="<c:out value='${param.startDate}'/>">
             <input type="date" name="endDate" value="<c:out value='${param.endDate}'/>">
 
@@ -176,6 +175,13 @@
 
             <button type="submit">검색</button>
             <a href="?tab=review">초기화</a>
+			
+			<select name="limit" onchange="document.getElementById('page').value=1; this.form.submit();">
+			    <option value="10" ${param.limit == '10' ? 'selected' : ''}>10개씩 보기</option>
+			    <option value="30" ${param.limit == '30' ? 'selected' : ''}>30개씩 보기</option>
+			    <option value="50" ${param.limit == '50' ? 'selected' : ''}>50개씩 보기</option>
+			</select>
+						
         </form>
     </div>
 
@@ -187,30 +193,36 @@
 
                     <div class="review-card">
                         
-                        <div style="display:flex; justify-content:space-between;">
-                            
-                            <div>
-                                <div style="display:flex; gap:8px; align-items:center;">
-                                    
-                                    <span class="star">
-                                        <c:forEach begin="1" end="${review.rating}">★</c:forEach>
-                                        <c:forEach begin="1" end="${5 - review.rating}">
-                                            <span style="color:#E5E7EB;">★</span>
-                                        </c:forEach>
-                                    </span>
+						<div style="display:flex; justify-content:space-between;">
+						    
+						    <div>
+						        <div style="display:flex; gap:8px; align-items:center;">
+						            <span class="star">
+						                <c:forEach begin="1" end="${review.rating}">★</c:forEach>
+						                <c:forEach begin="1" end="${5 - review.rating}">
+						                    <span style="color:#E5E7EB;">★</span>
+						                </c:forEach>
+						            </span>
+						            <span class="review-author"><c:out value="${review.memberName}"/></span>
+						        </div>
+						        <div class="review-meta">
+						            ${review.createdAt} | <c:out value="${review.roomName}"/>
+						        </div>
+						    </div>
 
-                                    <span class="review-author"><c:out value="${review.memberName}"/></span>
-                                </div>
+						    <div style="display: flex; gap: 8px; height: fit-content;">
+						        <a href="${pageContext.request.contextPath}/accommodation/review/list/${review.placeId}?tab=review" 
+						           target="_blank" 
+						           style="background: #F8FAFC; border: 1px solid #E2E8F0; color: #475569; font-size: 13px; font-weight: 700; border-radius: 10px; padding: 6px 12px; text-decoration: none; transition: all 0.2s; display: flex; align-items: center;">
+						            리뷰 보러 가기 ↗
+						        </a>
+						        
+						        <button class="btn-delete" onclick="deleteReview('${review.reviewId}')">
+						            삭제
+						        </button>
+						    </div>
 
-                                <div class="review-meta">
-                                    ${review.createdAt} | <c:out value="${review.roomName}"/>
-                                </div>
-                            </div>
-
-                            <button class="btn-delete" onclick="deleteReview('${review.reviewId}')">
-                                삭제
-                            </button>
-                        </div>
+						</div>
 
                         <div class="review-content"><c:out value="${review.content}"/></div>
 
@@ -225,11 +237,37 @@
                 </div>
             </c:otherwise>
         </c:choose>
+		
+		<div id="reviewPaginationArea"></div>
 
     </div>
 </div>
 
 <script>
+	
+document.addEventListener('DOMContentLoaded', function() {
+    const totalPages = parseInt('${empty totalPages ? 0 : totalPages}');
+    const currentPage = parseInt('${empty param.page ? 1 : param.page}');
+
+    if (typeof renderPagination === 'function') {
+        renderPagination(totalPages, currentPage, 'reviewPaginationArea', movePage);
+    }
+});
+
+function movePage(pageNo) {
+    const form = document.querySelector('.search-filter-box form');
+    
+    let pageInput = form.querySelector('input[name="page"]');
+    if (!pageInput) {
+        pageInput = document.createElement('input');
+        pageInput.type = 'hidden';
+        pageInput.name = 'page';
+        form.appendChild(pageInput);
+    }
+    
+    pageInput.value = pageNo;
+    form.submit();
+}
 function deleteReview(reviewId) {
     if(confirm("삭제하시겠습니까?")) {
         fetch('${pageContext.request.contextPath}/partner/api/review/delete', {
