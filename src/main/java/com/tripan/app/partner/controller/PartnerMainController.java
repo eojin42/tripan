@@ -24,10 +24,12 @@ import com.tripan.app.partner.domain.dto.PartnerInfoDto;
 import com.tripan.app.partner.domain.dto.PartnerReviewDto;
 import com.tripan.app.partner.domain.dto.PartnerRoomDto;
 import com.tripan.app.partner.service.PartnerCouponService;
+import com.tripan.app.partner.service.PartnerDashboardService;
 import com.tripan.app.partner.service.PartnerInfoService;
 import com.tripan.app.partner.service.PartnerReviewService;
 import com.tripan.app.partner.service.PartnerRoomService;
 import com.tripan.app.partner.service.PartnerSettlementServiceforPartner;
+import com.tripan.app.partner.service.PartnerStatsService;
 import com.tripan.app.security.CustomUserDetails;
 
 import lombok.RequiredArgsConstructor;
@@ -42,6 +44,8 @@ public class PartnerMainController {
     private final PartnerReviewService partnerReviewService;
     private final PartnerCouponService partnerCouponService;
     private final PartnerSettlementServiceforPartner partnerSettlementServiceforPartner;
+    private final PartnerStatsService partnerStatsService;
+    private final PartnerDashboardService partnerDashboardService; 
 
     @GetMapping("/main")
     public String main(
@@ -99,6 +103,11 @@ public class PartnerMainController {
             
             List<PartnerRoomDto> roomList = partnerRoomService.getRoomsByPlaceId(placeId);
             model.addAttribute("roomList", roomList);
+        }
+        
+        if ("dashboard".equals(tab)) {
+            Map<String, Object> dashData = partnerDashboardService.getDashboardData(currentPartnerId);
+            model.addAttribute("dashData", dashData);
         }
          
         if ("booking".equals(tab)) {
@@ -318,6 +327,110 @@ public class PartnerMainController {
             partnerCouponService.stopCoupon(couponId);
             
             return ResponseEntity.ok(Map.of("message", "success"));
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.badRequest().body(Map.of("message", "fail"));
+        }
+    }
+    
+    @ResponseBody
+    @GetMapping("/api/settlement/detail")
+    public ResponseEntity<?> getSettlementDetail(
+            @RequestParam("month") String month,
+            jakarta.servlet.http.HttpSession session) {
+        try {
+            Long currentPartnerId = (Long) session.getAttribute("currentPartnerId");
+            if (currentPartnerId == null) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("message", "권한 없음"));
+            }
+            
+            List<Map<String, Object>> detailList = partnerSettlementServiceforPartner.getSettlementDetailList(currentPartnerId, month);
+            
+            return ResponseEntity.ok(detailList);
+            
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.badRequest().body(Map.of("message", "fail"));
+        }
+    }
+    
+ // 🌟 [엑셀 다운로드 API] 정산 내역 엑셀 변환
+    @GetMapping("/api/settlement/excel")
+    public void downloadSettlementExcel(
+            @RequestParam(value = "settleMonth", required = false) String settleMonth,
+            @RequestParam(value = "status", required = false) String status,
+            jakarta.servlet.http.HttpSession session,
+            jakarta.servlet.http.HttpServletResponse response) throws java.io.IOException {
+
+        Long currentPartnerId = (Long) session.getAttribute("currentPartnerId");
+        if (currentPartnerId == null) return;
+
+        java.util.List<java.util.Map<String, Object>> list = partnerSettlementServiceforPartner.getSettlementList(currentPartnerId, settleMonth, status);
+
+        org.apache.poi.ss.usermodel.Workbook wb = new org.apache.poi.xssf.usermodel.XSSFWorkbook();
+        org.apache.poi.ss.usermodel.Sheet sheet = wb.createSheet("정산내역");
+        org.apache.poi.ss.usermodel.Row row = null;
+        org.apache.poi.ss.usermodel.Cell cell = null;
+        int rowNum = 0;
+
+        org.apache.poi.ss.usermodel.CellStyle headerStyle = wb.createCellStyle();
+        headerStyle.setFillForegroundColor(org.apache.poi.ss.usermodel.IndexedColors.GREY_25_PERCENT.getIndex());
+        headerStyle.setFillPattern(org.apache.poi.ss.usermodel.FillPatternType.SOLID_FOREGROUND);
+        
+        org.apache.poi.ss.usermodel.Font font = wb.createFont();
+        font.setBold(true);
+        headerStyle.setFont(font);
+
+        row = sheet.createRow(rowNum++);
+        String[] headers = {"정산월", "총 결제 매출액", "수수료율(%)", "수수료액", "쿠폰 분담금", "최종 정산액", "상태"};
+        for(int i=0; i<headers.length; i++) {
+            cell = row.createCell(i);
+            cell.setCellValue(headers[i]);
+            cell.setCellStyle(headerStyle);
+            sheet.setColumnWidth(i, 4000); // 열 너비 살짝 넓게
+        }
+
+        for (java.util.Map<String, Object> map : list) {
+            row = sheet.createRow(rowNum++);
+            row.createCell(0).setCellValue(String.valueOf(map.get("settlementMonth")));
+            row.createCell(1).setCellValue(((Number) map.get("totalSales")).doubleValue());
+            row.createCell(2).setCellValue(((Number) map.get("commissionRate")).doubleValue());
+            row.createCell(3).setCellValue(((Number) map.get("commissionAmount")).doubleValue());
+            row.createCell(4).setCellValue(((Number) map.get("partnerCouponAmount")).doubleValue());
+            row.createCell(5).setCellValue(((Number) map.get("netAmount")).doubleValue());
+            
+            String statusStr = "COMPLETED".equals(map.get("status")) ? "지급 완료" : "정산 예정";
+            row.createCell(6).setCellValue(statusStr);
+        }
+
+        response.setContentType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+        
+        String dateStr = java.time.LocalDate.now().format(java.time.format.DateTimeFormatter.ofPattern("yyyyMMdd"));
+        String fileName = "Settlement_History_" + dateStr + ".xlsx";
+        
+        String encodedFileName = new String(fileName.getBytes("UTF-8"), "ISO-8859-1");
+        response.setHeader("Content-Disposition", "attachment;filename=\"" + encodedFileName + "\"");
+
+        wb.write(response.getOutputStream());
+        wb.close();
+    }   
+    
+    @ResponseBody
+    @GetMapping("/api/stats/data")
+    public ResponseEntity<?> getStatsData(
+            @RequestParam("month") String month,
+            jakarta.servlet.http.HttpSession session) {
+        
+        try {
+            Long currentPartnerId = (Long) session.getAttribute("currentPartnerId");
+            if (currentPartnerId == null) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("message", "권한 없음"));
+            }
+            
+            Map<String, Object> statsData = partnerStatsService.getStatsData(currentPartnerId, month);
+            
+            return ResponseEntity.ok(statsData);
+            
         } catch (Exception e) {
             e.printStackTrace();
             return ResponseEntity.badRequest().body(Map.of("message", "fail"));

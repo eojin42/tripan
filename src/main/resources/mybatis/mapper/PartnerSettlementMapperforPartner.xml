@@ -4,16 +4,28 @@
 <mapper namespace="com.tripan.app.partner.mapper.PartnerSettlementMapperforPartner">
 	<select id="selectExpectedSettlement" resultType="map">
         SELECT 
-            NVL(SUM(r.amount), 0) as "totalSales",
-            NVL(SUM(r.amount * (r.commission_rate / 100)), 0) as "commissionAmount",
-            NVL(SUM(cu.partner_discount_amount), 0) as "partnerCouponAmount",
-            NVL(SUM(r.amount) - SUM(r.amount * (r.commission_rate / 100)) - NVL(SUM(cu.partner_discount_amount), 0), 0) as "netAmount"
-        FROM reservation r
-        LEFT JOIN order_detail od ON r.reservation_id = od.reservation_id
-        LEFT JOIN coupon_usage cu ON od.order_id = cu.order_id AND cu.status = 'USED'
-        WHERE r.partner_id = #{partnerId}
-          AND r.status = 'SUCCESS'
-          AND TO_CHAR(r.check_out_date, 'YYYY-MM') = #{month}
+            NVL(sales."totalSales", 0) as "totalSales",
+            p.commission_rate as "commissionRate",
+            NVL(sales."totalSales" * (p.commission_rate / 100), 0) as "commissionAmount",
+            NVL(sales."partnerCouponAmount", 0) as "partnerCouponAmount",
+            NVL(sales."totalSales" - (sales."totalSales" * (p.commission_rate / 100)) - NVL(sales."partnerCouponAmount", 0), 0) as "netAmount"
+        FROM partner p
+        LEFT JOIN (
+            SELECT 
+                pl.partner_id,
+                SUM(o.real_total_amount) as "totalSales",
+                SUM(cu.partner_discount_amount) as "partnerCouponAmount"
+            FROM place pl
+            JOIN room r ON r.place_id = pl.place_id
+            JOIN reservation rv ON rv.room_id = r.room_id
+            JOIN order_detail od ON od.reservation_id = rv.reservation_id
+            JOIN orders o ON o.order_id = od.order_id
+            LEFT JOIN coupon_usage cu ON cu.order_id = o.order_id AND cu.status = 'USED'
+            WHERE TO_CHAR(rv.check_out_date, 'YYYY-MM') = #{month}
+              AND o.status != 'CANCELED'
+            GROUP BY pl.partner_id
+        ) sales ON sales.partner_id = p.partner_id
+        WHERE p.partner_id = #{partnerId}
     </select>
 
     <select id="selectSettlementList" resultType="map">
@@ -21,6 +33,9 @@
             partner_settlement_id as "settlementId",
             settlement_month as "settlementMonth",
             total_sales as "totalSales",
+            
+            NVL(ROUND(commission_amount / NULLIF(total_sales, 0) * 100), (SELECT commission_rate FROM partner WHERE partner_id = #{partnerId})) as "commissionRate",
+            
             commission_amount as "commissionAmount",
             (total_sales - commission_amount - net_amount) as "partnerCouponAmount",
             net_amount as "netAmount",
@@ -36,5 +51,37 @@
         </if>
         
         ORDER BY settlement_month DESC
+    </select>
+    
+    <select id="selectSettlementDetailList" resultType="map">
+        SELECT 
+            rv.reservation_id as "reservationId",
+            r.room_name as "roomName",
+            o.real_total_amount as "amount",
+            
+            -- 수수료액: 결제금액 * (수수료율 / 100)
+            ROUND(o.real_total_amount * (p.commission_rate / 100)) as "commissionAmount",
+            
+            -- 파트너 쿠폰 부담금
+            NVL(cu.partner_discount_amount, 0) as "couponAmount",
+            
+            -- 최종 정산액 = 결제금액 - 수수료 - 쿠폰부담금
+            (o.real_total_amount 
+             - ROUND(o.real_total_amount * (p.commission_rate / 100)) 
+             - NVL(cu.partner_discount_amount, 0)) as "netAmount"
+             
+        FROM partner p
+        JOIN place pl ON pl.partner_id = p.partner_id
+        JOIN room r ON r.place_id = pl.place_id
+        JOIN reservation rv ON rv.room_id = r.room_id
+        JOIN order_detail od ON od.reservation_id = rv.reservation_id
+        JOIN orders o ON o.order_id = od.order_id
+        LEFT JOIN coupon_usage cu ON cu.order_id = o.order_id AND cu.status = 'USED'
+        
+        WHERE p.partner_id = #{partnerId}
+          AND TO_CHAR(rv.check_out_date, 'YYYY-MM') = #{month}
+          AND o.status != 'CANCELED'
+          
+        ORDER BY rv.check_out_date DESC, rv.reservation_id DESC
     </select>
 </mapper>
