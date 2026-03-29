@@ -13,4 +13,6 @@ public interface PartnerSettlementMapperforPartner {
 
     List<Map<String, Object>> selectSettlementList(Map<String, Object> params);
     
+    List<Map<String, Object>> selectSettlementDetailList(@Param("partnerId") Long partnerId, @Param("month") String month);
+    
 }

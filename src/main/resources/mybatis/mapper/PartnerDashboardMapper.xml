@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.tripan.app.partner.mapper.PartnerDashboardMapper">
+
+   <select id="selectTodayDashboardKpi" resultType="map">
+        SELECT 
+            -- 오늘 체크인 예정 건수
+            (SELECT COUNT(*) FROM reservation rv 
+             JOIN room r ON rv.room_id = r.room_id 
+             JOIN place pl ON pl.place_id = r.place_id 
+             WHERE pl.partner_id = #{partnerId} 
+               AND TO_CHAR(rv.check_in_date, 'YYYY-MM-DD') = TO_CHAR(SYSDATE, 'YYYY-MM-DD') 
+               AND rv.status != 'CANCELED') AS "checkInTotal",
+            
+            -- 오늘 체크아웃 예정 건수
+            (SELECT COUNT(*) FROM reservation rv 
+             JOIN room r ON rv.room_id = r.room_id 
+             JOIN place pl ON pl.place_id = r.place_id 
+             WHERE pl.partner_id = #{partnerId} 
+               AND TO_CHAR(rv.check_out_date, 'YYYY-MM-DD') = TO_CHAR(SYSDATE, 'YYYY-MM-DD') 
+               AND rv.status != 'CANCELED') AS "checkOutTotal",
+             
+            (SELECT COUNT(*) FROM orders o
+             JOIN order_detail od ON o.order_id = od.order_id
+             JOIN reservation rv ON rv.reservation_id = od.reservation_id
+             JOIN room r ON rv.room_id = r.room_id 
+             JOIN place pl ON pl.place_id = r.place_id 
+             WHERE pl.partner_id = #{partnerId} 
+               AND TO_CHAR(o.order_date, 'YYYY-MM-DD') = TO_CHAR(SYSDATE, 'YYYY-MM-DD')
+               AND o.status != 'CANCELED') AS "newReserveTotal"
+        FROM DUAL
+    </select>
+    
+    <select id="selectTodoAndSalesKpi" resultType="map">
+        SELECT
+            (SELECT COUNT(*) FROM place_review pr 
+             JOIN place pl ON pl.place_id = pr.place_id 
+             WHERE pl.partner_id = #{partnerId} 
+               AND TO_CHAR(pr.created_at, 'YYYY-MM') = TO_CHAR(SYSDATE, 'YYYY-MM')) AS "unreadReviewCount",
+             
+            -- 이번 달 총 매출액 (결제 완료된 건만)
+            (SELECT NVL(SUM(o.real_total_amount), 0) 
+             FROM orders o 
+             JOIN order_detail od ON o.order_id = od.order_id 
+             JOIN reservation rv ON rv.reservation_id = od.reservation_id
+             JOIN room r ON r.room_id = rv.room_id 
+             JOIN place pl ON pl.place_id = r.place_id
+             WHERE pl.partner_id = #{partnerId} 
+               AND TO_CHAR(rv.check_out_date, 'YYYY-MM') = TO_CHAR(SYSDATE, 'YYYY-MM') 
+               AND o.status != 'CANCELED') AS "thisMonthSales"
+        FROM DUAL
+    </select>
+
+</mapper>

@@ -59,6 +59,10 @@ dependencies {
 	
 	implementation 'org.springframework.security:spring-security-taglibs'
 	implementation 'org.springframework.boot:spring-boot-starter-oauth2-client'
+	
+	// poi
+	implementation 'org.apache.poi:poi:5.5.1'
+	implementation 'org.apache.poi:poi-ooxml:5.5.1'
 }
 
 tasks.named('test') {

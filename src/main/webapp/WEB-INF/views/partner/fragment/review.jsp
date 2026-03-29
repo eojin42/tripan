@@ -3,14 +3,12 @@
 <%@ taglib prefix="fmt" uri="jakarta.tags.fmt" %>
 
 <style>
-/* 전체 배경 */
 #tab-review {
     background: #F1F5F9;
     padding: 24px;
     border-radius: 16px;
 }
 
-/* 검색 폼 전체 정렬 */
 .search-filter-box form {
     display: flex;
     gap: 10px;
@@ -18,7 +16,6 @@
     align-items: center;
 }
 
-/* input / select 공통 */
 .search-filter-box input,
 .search-filter-box select {
     padding: 10px 12px;
@@ -29,7 +26,6 @@
     transition: all 0.2s;
 }
 
-/* focus 효과 */
 .search-filter-box input:focus,
 .search-filter-box select:focus {
     outline: none;
@@ -38,13 +34,11 @@
     box-shadow: 0 0 0 2px rgba(99,102,241,0.15);
 }
 
-/* 검색 input 넓히기 */
 .search-filter-box input[type="text"] {
     flex: 1;
     min-width: 180px;
 }
 
-/* 버튼 */
 .search-filter-box button {
     padding: 10px 18px;
     background: #6366F1;
@@ -60,7 +54,6 @@
     background: #4F46E5;
 }
 
-/* 초기화 버튼 */
 .search-filter-box a {
     padding: 10px 14px;
     background: #fff;
@@ -76,13 +69,11 @@
     background: #F1F5F9;
 }
 
-/* 날짜 구분 (~) */
 .search-filter-box span {
     color: #64748B;
     font-weight: 600;
 }
 
-/* 검색 박스 */
 .search-filter-box {
     background: #FFFFFF;
     border: 1px solid #E2E8F0;
@@ -91,7 +82,6 @@
     border-radius: 14px;
 }
 
-/* 리뷰 카드 */
 .review-card {
     background: #FFFFFF;
     border-radius: 16px;
@@ -106,16 +96,17 @@
     box-shadow: 0 8px 20px rgba(0,0,0,0.08);
 }
 
-/* 리뷰 내용 */
 .review-content {
     background: #F8FAFC;
     border: 1px solid #E2E8F0;
     border-radius: 12px;
     padding: 16px;
     margin-top: 12px;
+    /* 🌟 줄바꿈 유지를 위한 스타일 추가 */
+    white-space: pre-wrap; 
+    word-break: break-all;
 }
 
-/* 삭제 버튼 */
 .btn-delete {
     background: #FEF2F2;
     border: 1px solid #FCA5A5;
@@ -132,20 +123,17 @@
     color: white;
 }
 
-/* 별점 */
 .star {
     color: #F59E0B;
     letter-spacing: 2px;
     font-weight: 900;
 }
 
-/* 작성자 */
 .review-author {
     font-weight: 800;
     color: #111827;
 }
 
-/* 날짜 */
 .review-meta {
     font-size: 13px;
     color: #94A3B8;
@@ -154,25 +142,23 @@
 
 <div id="tab-review" class="page-section ${activeTab == 'review' ? 'active' : ''}">
     
-    <!-- 헤더 -->
     <div style="margin-bottom: 20px;">
         <h1 style="font-size: 26px; font-weight: 900;">⭐ 리뷰 관리</h1>
         <p style="color: #64748B;">고객 리뷰를 관리하고 부적절한 리뷰를 삭제할 수 있습니다.</p>
     </div>
 
-    <!-- 검색 -->
     <div class="search-filter-box">
         <form action="main" method="GET" style="display: flex; gap: 10px; flex-wrap: wrap;">
             <input type="hidden" name="tab" value="review">
 
-            <input type="date" name="startDate" value="${param.startDate}">
-            <input type="date" name="endDate" value="${param.endDate}">
+            <input type="date" name="startDate" value="<c:out value='${param.startDate}'/>">
+            <input type="date" name="endDate" value="<c:out value='${param.endDate}'/>">
 
             <select name="roomId">
                 <option value="">객실 전체</option>
                 <c:forEach var="room" items="${roomList}">
                     <option value="${room.roomId}" ${param.roomId == room.roomId ? 'selected' : ''}>
-                        ${room.roomName}
+                        <c:out value="${room.roomName}"/>
                     </option>
                 </c:forEach>
             </select>
@@ -186,14 +172,13 @@
                 <option value="1" ${param.rating == '1' ? 'selected' : ''}>1점</option>
             </select>
 
-            <input type="text" name="keyword" value="${param.keyword}" placeholder="검색">
+            <input type="text" name="keyword" value="<c:out value='${param.keyword}'/>" placeholder="검색">
 
             <button type="submit">검색</button>
             <a href="?tab=review">초기화</a>
         </form>
     </div>
 
-    <!-- 리스트 -->
     <div style="margin-top: 20px; display: flex; flex-direction: column; gap: 16px;">
         
         <c:choose>
@@ -214,11 +199,11 @@
                                         </c:forEach>
                                     </span>
 
-                                    <span class="review-author">${review.memberName}</span>
+                                    <span class="review-author"><c:out value="${review.memberName}"/></span>
                                 </div>
 
                                 <div class="review-meta">
-                                    ${review.createdAt} | ${review.roomName}
+                                    ${review.createdAt} | <c:out value="${review.roomName}"/>
                                 </div>
                             </div>
 
@@ -227,9 +212,7 @@
                             </button>
                         </div>
 
-                        <div class="review-content">
-                            ${review.content}
-                        </div>
+                        <div class="review-content"><c:out value="${review.content}"/></div>
 
                     </div>
 

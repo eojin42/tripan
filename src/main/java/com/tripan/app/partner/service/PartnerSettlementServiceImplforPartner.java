@@ -35,4 +35,9 @@ public class PartnerSettlementServiceImplforPartner implements PartnerSettlement
 
         return partnerSettlementMapperforPartner.selectSettlementList(params);
     }
+    
+    @Override
+    public List<Map<String, Object>> getSettlementDetailList(Long partnerId, String month) {
+        return partnerSettlementMapperforPartner.selectSettlementDetailList(partnerId, month);
+    }
 } 

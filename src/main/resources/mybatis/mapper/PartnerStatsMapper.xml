@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.tripan.app.partner.mapper.PartnerStatsMapper">
+
+      <select id="selectMonthlySummary" resultType="map">
+        SELECT 
+            NVL(SUM(o.real_total_amount), 0) as "totalSales",
+            COUNT(DISTINCT rv.reservation_id) as "totalCount"
+        FROM place pl
+        JOIN room r ON r.place_id = pl.place_id
+        JOIN reservation rv ON rv.room_id = r.room_id
+        JOIN order_detail od ON od.reservation_id = rv.reservation_id
+        JOIN orders o ON o.order_id = od.order_id
+        WHERE pl.partner_id = #{partnerId}
+          AND TO_CHAR(rv.check_out_date, 'YYYY-MM') = #{month}
+          AND o.status != 'CANCELED'
+    </select>
+
+    <select id="selectDailySales" resultType="map">
+        SELECT 
+            TO_CHAR(rv.check_out_date, 'YYYY-MM-DD') as "salesDate",
+            SUM(o.real_total_amount) as "dailySales"
+        FROM place pl
+        JOIN room r ON r.place_id = pl.place_id
+        JOIN reservation rv ON rv.room_id = r.room_id
+        JOIN order_detail od ON od.reservation_id = rv.reservation_id
+        JOIN orders o ON o.order_id = od.order_id
+        WHERE pl.partner_id = #{partnerId}
+          AND TO_CHAR(rv.check_out_date, 'YYYY-MM') = #{month}
+          AND o.status != 'CANCELED'
+        GROUP BY TO_CHAR(rv.check_out_date, 'YYYY-MM-DD')
+        ORDER BY "salesDate" ASC
+    </select>
+
+    <select id="selectRoomSales" resultType="map">
+        SELECT 
+            r.room_name as "roomName",
+            SUM(o.real_total_amount) as "roomSales"
+        FROM place pl
+        JOIN room r ON r.place_id = pl.place_id
+        JOIN reservation rv ON rv.room_id = r.room_id
+        JOIN order_detail od ON od.reservation_id = rv.reservation_id
+        JOIN orders o ON o.order_id = od.order_id
+        WHERE pl.partner_id = #{partnerId}
+          AND TO_CHAR(rv.check_out_date, 'YYYY-MM') = #{month}
+          AND o.status != 'CANCELED'
+        GROUP BY r.room_name
+        ORDER BY "roomSales" DESC
+    </select>
+	
+</mapper>
