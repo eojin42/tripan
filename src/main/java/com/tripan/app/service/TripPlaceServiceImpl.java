@@ -19,6 +19,8 @@ import org.springframework.web.client.RestTemplate;
 import java.util.List;
 import java.util.UUID;
 
+import org.springframework.dao.DuplicateKeyException;
+
 @Slf4j
 @Service
 @RequiredArgsConstructor
@@ -76,9 +78,11 @@ public class TripPlaceServiceImpl implements TripPlaceService {
         }
     }
 
-    // ── 나만의 장소 직접 등록 ──────────────────────────────────────
-    // 🐛 BUG FIX: insertPlace() 전 apiContentId(=api_place_id) 반드시 세팅
-    //   원인: api_place_id NOT NULL 컬럼인데 값을 세팅하지 않아 ORA-01400 발생
+    // ── 나만의 장소 직접 등록 (NONE 카테고리) ────────────────────────
+    // 중복 방지 3단계:
+    //   1. name+address 로 기존 레코드 조회
+    //   2. lat/lng 로 기존 레코드 조회 (주소가 다르게 입력된 경우 방어)
+    //   3. INSERT 시 DuplicateKeyException → race condition 방어 (동시 요청)
     @Override
     @Transactional
     public TripPlaceDto registerMyPlace(TripPlaceDto dto, Long memberId) {
@@ -89,10 +93,94 @@ public class TripPlaceServiceImpl implements TripPlaceService {
             dto.setCategory("NONE");
         }
 
-        // ✅ FIX: 서버에서 고유 custom_UUID 생성 → api_place_id NULL 방지
+        // ✅ 1단계: name+address 중복 체크
+        if (dto.getPlaceName() != null && dto.getAddress() != null) {
+            TripPlaceDto existing = tripPlaceMapper.selectPlaceByNameAndAddress(
+                    dto.getPlaceName(), dto.getAddress(), memberId);
+            if (existing != null) {
+                log.debug("나만의 장소 중복(name+address) - 기존 반환: placeId={}", existing.getPlaceId());
+                return existing;
+            }
+        }
+
+        // ✅ 2단계: lat/lng 중복 체크 (주소 표기가 달라도 같은 좌표면 중복)
+        if (dto.getLatitude() != null && dto.getLongitude() != null) {
+            Long existingId = tripPlaceMapper.findPlaceIdByLatLng(
+                    dto.getLatitude(), dto.getLongitude(), memberId);
+            if (existingId != null) {
+                log.debug("나만의 장소 중복(lat/lng) - 기존 반환: placeId={}", existingId);
+                return tripPlaceMapper.selectPlaceById(existingId, memberId);
+            }
+        }
+
+        // ✅ 3단계: INSERT — race condition 대비 DuplicateKeyException catch
         dto.setApiContentId("custom_" + UUID.randomUUID().toString().replace("-", ""));
+        try {
+            tripPlaceMapper.insertPlace(dto);
+        } catch (DuplicateKeyException e) {
+            // 동시 요청으로 인해 이미 삽입된 경우 → 기존 레코드 재조회 후 반환
+            log.warn("나만의 장소 동시 삽입 충돌(race condition) - 기존 레코드 조회: name={}", dto.getPlaceName());
+            TripPlaceDto existing = tripPlaceMapper.selectPlaceByNameAndAddress(
+                    dto.getPlaceName(), dto.getAddress(), memberId);
+            if (existing != null) return existing;
+
+            Long existingId = tripPlaceMapper.findPlaceIdByLatLng(
+                    dto.getLatitude(), dto.getLongitude(), memberId);
+            if (existingId != null) return tripPlaceMapper.selectPlaceById(existingId, memberId);
+
+            throw e; // 진짜 다른 이유의 중복키 에러면 재throw
+        }
+        return dto;
+    }
+
+    // ── 공용 장소 find-or-create (RESTAURANT·TOUR 등 비-NONE 카테고리) ──
+    // ★ BUG FIX: kakaoId 없을 때 addPlaceToDay 를 그냥 호출하면
+    //    백엔드가 기존 레코드(예: id=381)를 api_place_id="381" 로 재사용하지 않고
+    //    새 레코드(407, 408…)를 중복 삽입하는 버그 수정
+    //
+    // 처리 순서:
+    //   ① apiContentId(kakaoId) 로 기존 레코드 조회
+    //   ② 없으면 name+address 로 조회 (apiContentId 무관)
+    //   ③ 없으면 member_id=NULL 공용 레코드 신규 삽입
+    //   ④ 항상 apiContentId 를 채운 DTO 반환
+    @Override
+    @Transactional
+    public TripPlaceDto findOrCreatePublicPlace(TripPlaceDto dto) {
+
+        // ① kakaoId(apiContentId) 로 조회
+        if (dto.getApiContentId() != null && !dto.getApiContentId().isBlank()) {
+            TripPlaceDto existing = tripPlaceMapper.selectPlaceByApiContentId(dto.getApiContentId());
+            if (existing != null) {
+                log.debug("공용 장소 기존 레코드 반환(by apiContentId): {}", existing.getApiContentId());
+                return existing;
+            }
+        }
+
+        // ② name+address 로 조회 (memberId=null → 공용 레코드만 검색)
+        if (dto.getPlaceName() != null && dto.getAddress() != null) {
+            TripPlaceDto existing = tripPlaceMapper.selectPlaceByNameAndAddress(
+                    dto.getPlaceName(), dto.getAddress(), null);
+            if (existing != null) {
+                log.debug("공용 장소 기존 레코드 반환(by name+address): id={}, apiContentId={}",
+                        existing.getPlaceId(), existing.getApiContentId());
+                return existing;
+            }
+        }
+
+        // ③ 신규 삽입 — member_id=NULL, apiContentId 가 없으면 임시 ID 생성
+        dto.setMemberId(null);
+        if (dto.getApiContentId() == null || dto.getApiContentId().isBlank()) {
+            // kakaoId 가 없는 경우 name+address 기반 결정론적 ID 생성
+            String seed = (dto.getPlaceName() + "|" + dto.getAddress()).replaceAll("\\s", "");
+            dto.setApiContentId("place_" + Integer.toHexString(seed.hashCode())
+                    + "_" + UUID.randomUUID().toString().replace("-", "").substring(0, 8));
+        }
+        if (dto.getCategory() == null || dto.getCategory().isBlank()) {
+            dto.setCategory("ETC");
+        }
 
         tripPlaceMapper.insertPlace(dto);
+        log.debug("공용 장소 신규 삽입: placeId={}, apiContentId={}", dto.getPlaceId(), dto.getApiContentId());
         return dto;
     }
 

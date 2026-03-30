@@ -31,7 +31,7 @@
 	        <result property="latitude"   column="latitude"/>
 	        <result property="longitude"  column="longitude"/>
 	        <result property="category"   column="category_name"/>
-	
+	        
 	        <collection property="images" ofType="com.tripan.app.domain.dto.TripDto$ItineraryImageDto">
 	            <id property="imageId" column="image_id"/>
 	            <result property="imageUrl" column="image_url"/>
@@ -71,32 +71,12 @@
 	    ORDER BY d.day_number ASC, i.visit_order ASC, img.image_id ASC
 	</select>
 
-    <select id="searchPlaces" resultType="com.tripan.app.trip.domain.entity.TripPlace">
-        SELECT
-            trip_place_id,
-            member_id,
-            api_place_id,
-            place_name,
-            address,
-            latitude,
-            longitude,
-            category_name,
-            place_url
-        FROM trip_place
-        WHERE
-            (member_id IS NULL OR member_id = #{currentMemberId})
-            <if test="keyword != null and keyword != ''">
-                AND place_name LIKE '%' || #{keyword} || '%'
-            </if>
-            <if test="category != null and category != ''">
-                AND category_name = #{category}
-            </if>
-        ORDER BY
-            CASE WHEN member_id = #{currentMemberId} THEN 0 ELSE 1 END,
-            place_name
-        FETCH FIRST 30 ROWS ONLY
-    </select>
+    <!-- ════════════════════════════════════════════════════
+         신규 쿼리 - 장소 추천/검색/나만의장소
+         (TripPlaceDto 기반, trip_place 실제 컬럼 사용)
+    ════════════════════════════════════════════════════ -->
 
+    <!-- 공개된 여행의 장소 목록 조회 -->
     <select id="findPublicTripPlaces" parameterType="long"
             resultType="com.tripan.app.trip.domain.entity.TripPlace">
         SELECT DISTINCT
@@ -114,111 +94,38 @@
           AND t.is_public = 1
     </select>
 
-    <select id="getExpenseSummary" parameterType="long" resultType="map">
-        SELECT
-            COALESCE(SUM(e.amount), 0)                                          AS totalAmount,
-            COALESCE(SUM(e.amount) / NULLIF(COUNT(DISTINCT m.member_id), 0), 0) AS avgPerPerson
-        FROM expense e
-        JOIN trip_member m ON m.trip_id = e.trip_id
-        WHERE e.trip_id = #{tripId}
-          AND m.invitation_status = 'ACCEPTED'
-    </select>
-
-    <select id="getExpenseByCategory" parameterType="long" resultType="map">
-        SELECT
-            category,
-            SUM(amount) AS totalAmount,
-            COUNT(*)    AS count
-        FROM expense
-        WHERE trip_id = #{tripId}
-        GROUP BY category
-        ORDER BY totalAmount DESC
-    </select>
-
-    <select id="getExpenseList" parameterType="map" resultType="map">
-        SELECT
-            e.expense_id,
-            e.description,
-            e.amount,
-            e.category,
-            TO_CHAR(e.expense_date, 'YYYY-MM-DD') AS expenseDate,
-            e.payment_type,
-            m.nickname                             AS payerNickname,
-            ep.share_amount,
-            ep.is_settled
-        FROM expense e
-        JOIN member             m   ON m.member_id    = e.payer_id
-        JOIN expense_participant ep  ON ep.expense_id  = e.expense_id
-        WHERE e.trip_id    = #{tripId}
-          AND ep.member_id = #{memberId}
-        ORDER BY e.expense_date DESC
-    </select>
-
-    <select id="selectRecommendedPlaces" resultType="com.tripan.app.domain.dto.TripDto">
-        SELECT DISTINCT
-            p.trip_place_id AS placeId,
-            p.place_name    AS placeName,
-            p.category_name AS category,
-            p.address       AS address,
-            p.latitude      AS latitude,
-            p.longitude     AS longitude,
-            p.place_url     AS placeUrl
-        FROM trip_place p
-        <if test="tagNames != null and tagNames.size() > 0">
-            JOIN place_tag pt ON p.trip_place_id = pt.place_id
-            JOIN tag t        ON pt.tag_id = t.tag_id
-        </if>
-        WHERE (p.member_id IS NULL OR p.member_id = #{currentMemberId})
-        <if test="categoryName != null and categoryName != ''">
-            AND p.category_name = #{categoryName}
-        </if>
-        <if test="tagNames != null and tagNames.size() > 0">
-            AND t.tag_name IN
-            <foreach item="tagName" collection="tagNames" open="(" separator="," close=")">
-                #{tagName}
-            </foreach>
-        </if>
-        ORDER BY p.place_name
-        FETCH FIRST 30 ROWS ONLY
-    </select>
-
-    <select id="selectPlacesByKeyword" resultType="com.tripan.app.domain.dto.TripDto">
-        SELECT
-            trip_place_id AS placeId,
-            place_name    AS placeName,
-            category_name AS category,
-            address       AS address,
-            latitude      AS latitude,
-            longitude     AS longitude,
-            place_url     AS placeUrl
-        FROM trip_place
-        WHERE (member_id IS NULL OR member_id = #{currentMemberId})
-          AND (place_name LIKE '%' || #{keyword} || '%' OR address LIKE '%' || #{keyword} || '%')
-        ORDER BY place_name
-        FETCH FIRST 30 ROWS ONLY
-    </select>
-
-    <!-- ════════════════════════════════════════════════════
-         신규 쿼리 - 장소 추천/검색/나만의장소
-         (TripPlaceDto 기반, trip_place 실제 컬럼 사용)
-    ════════════════════════════════════════════════════ -->
-
-    <!-- 장소 저장 -->
-    <!-- trip_place_id는 IDENTITY 자동 생성 (시퀀스 없음) -->
+    <!-- 장소 저장 — MERGE로 race condition 원천 차단
+         (member_id + place_name + address 조합이 같으면 INSERT 생략) -->
     <insert id="insertPlace" parameterType="com.tripan.app.domain.dto.TripPlaceDto"
             useGeneratedKeys="true" keyProperty="placeId" keyColumn="trip_place_id">
-        INSERT INTO trip_place (
-            member_id, api_place_id,
-            place_name, address, latitude, longitude,
-            category_name, place_url, created_at
-        ) VALUES (
-            #{memberId}, #{apiContentId},
-            #{placeName}, #{address}, #{latitude}, #{longitude},
-            #{category}, #{imageUrl}, SYSDATE
+        MERGE INTO trip_place dst
+        USING (
+            SELECT
+                #{memberId,jdbcType=NUMERIC}  AS member_id,
+                #{placeName}                  AS place_name,
+                #{address,jdbcType=VARCHAR}    AS address,
+                #{latitude}                   AS latitude,
+                #{longitude}                  AS longitude
+            FROM DUAL
+        ) src
+        ON (
+            (dst.member_id = src.member_id OR (dst.member_id IS NULL AND src.member_id IS NULL))
+            AND dst.place_name = src.place_name
+            AND dst.address    = src.address
         )
+        WHEN NOT MATCHED THEN
+            INSERT (
+                member_id, api_place_id,
+                place_name, address, latitude, longitude,
+                category_name, place_url, created_at
+            ) VALUES (
+                #{memberId,jdbcType=NUMERIC}, #{apiContentId},
+                #{placeName}, #{address}, #{latitude}, #{longitude},
+                #{category}, #{imageUrl,jdbcType=VARCHAR}, SYSDATE
+            )
     </insert>
 
-    <!-- api_place_id 중복 체크 -->
+    <!-- api_place_id 중복 체크 (Long 반환 — 기존 호환) -->
     <select id="findPlaceIdByApiContentId" resultType="java.lang.Long">
         SELECT trip_place_id
         FROM trip_place
@@ -226,7 +133,17 @@
         AND ROWNUM = 1
     </select>
 
-    <!-- 이름+주소 중복 체크 (나만의 장소 등록 시) -->
+    <!-- 위도+경도+회원ID 중복 체크 (나만의 장소 재등록 방지) -->
+    <select id="findPlaceIdByLatLng" resultType="java.lang.Long">
+        SELECT trip_place_id
+        FROM trip_place
+        WHERE member_id = #{memberId}
+          AND ABS(latitude  - #{lat}) &lt; 0.000001
+          AND ABS(longitude - #{lng}) &lt; 0.000001
+        AND ROWNUM = 1
+    </select>
+
+    <!-- 이름+주소 중복 체크 (Long 반환 — 기존 호환) -->
     <select id="findPlaceIdByNameAndAddress" resultType="java.lang.Long">
         SELECT trip_place_id
         FROM trip_place
@@ -235,9 +152,60 @@
           AND ROWNUM = 1
     </select>
 
-    <!-- 카테고리별 추천 장소 (랜덤)
-         cityKeyword: 콤마 구분 여러 도시 가능 (예: "부산,제주")
-         → Oracle REGEXP_LIKE 로 'address에 부산 OR 제주 포함' 처리 -->
+    <!--
+        ★ BUG FIX: api_place_id 로 전체 DTO 조회
+          findPlaceIdByApiContentId 는 Long 만 반환하므로
+          apiContentId 를 포함한 전체 DTO 가 필요한 findOrCreatePublicPlace 에서 사용
+    -->
+    <select id="selectPlaceByApiContentId" resultType="com.tripan.app.domain.dto.TripPlaceDto">
+        SELECT
+            trip_place_id AS placeId,
+            member_id     AS memberId,
+            api_place_id  AS apiContentId,
+            place_name    AS placeName,
+            address,
+            latitude,
+            longitude,
+            category_name AS category,
+            place_url     AS imageUrl,
+            CASE WHEN member_id IS NOT NULL THEN 1 ELSE 0 END AS isCustom
+        FROM trip_place
+        WHERE api_place_id = #{apiContentId}
+        AND ROWNUM = 1
+    </select>
+
+    <!--
+        ★ BUG FIX: name+address+memberId 로 전체 DTO 조회
+          - memberId = NULL  → 공용 레코드만 검색 (findOrCreatePublicPlace)
+          - memberId = 값    → 해당 유저의 나만의 장소 중복 체크 (registerMyPlace)
+    -->
+    <select id="selectPlaceByNameAndAddress" resultType="com.tripan.app.domain.dto.TripPlaceDto">
+        SELECT
+            trip_place_id AS placeId,
+            member_id     AS memberId,
+            api_place_id  AS apiContentId,
+            place_name    AS placeName,
+            address,
+            latitude,
+            longitude,
+            category_name AS category,
+            place_url     AS imageUrl,
+            CASE WHEN member_id IS NOT NULL THEN 1 ELSE 0 END AS isCustom
+        FROM trip_place
+        WHERE place_name = #{placeName}
+          AND address    = #{address}
+          <choose>
+            <when test="memberId != null">
+              AND member_id = #{memberId}
+            </when>
+            <otherwise>
+              AND member_id IS NULL
+            </otherwise>
+          </choose>
+        AND ROWNUM = 1
+    </select>
+
+    <!-- 카테고리별 추천 장소 (랜덤) -->
     <select id="selectRecommendPlaces" resultType="com.tripan.app.domain.dto.TripPlaceDto">
         SELECT *
         FROM (
@@ -304,6 +272,7 @@
             longitude,
             category_name AS category,
             place_url     AS imageUrl,
+            api_place_id  AS apiContentId,
             1             AS isCustom
         FROM trip_place
         WHERE member_id = #{memberId}
