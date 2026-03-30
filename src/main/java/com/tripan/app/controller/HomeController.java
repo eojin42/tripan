@@ -11,10 +11,11 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 
 import com.tripan.app.admin.service.BannerService;
-import com.tripan.app.domain.dto.PlaceDto;
+import com.tripan.app.domain.dto.AdSearchConditionDto;
 import com.tripan.app.domain.dto.TripDto;
 import com.tripan.app.mapper.PlaceRecommendMapper;
 import com.tripan.app.mapper.TripMapper;
+import com.tripan.app.service.AccommodationService;
 
 import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
@@ -28,6 +29,7 @@ public class HomeController {
     private final TripMapper tripMapper;
     private final BannerService bannerService;
     private final PlaceRecommendMapper placeMapper;
+    private final AccommodationService accommodationService;
     
 
     @GetMapping("/start")
@@ -42,6 +44,19 @@ public class HomeController {
     	model.addAttribute("banners", bannerService.getVisible());
     	// TOP 10 장소 (조회수 + 좋아요 합산)
     	model.addAttribute("top10Places", placeMapper.selectTop10Places());
+    	// 인기 숙소 TOP 10 (북마크순)
+    	AdSearchConditionDto condition = new AdSearchConditionDto();
+    	condition.setSort("POPULAR");
+    	condition.setOffset(0);
+    	condition.setSize(10);
+    	Object loginUserForAcc = session.getAttribute("loginUser");
+    	try {
+    	    if (loginUserForAcc != null) {
+    	        Long mid = (Long) loginUserForAcc.getClass().getMethod("getMemberId").invoke(loginUserForAcc);
+    	        condition.setMemberId(mid);
+    	    }
+    	} catch (Exception ignored) {}
+    	model.addAttribute("popularList", accommodationService.searchAccommodations(condition));
     	
         Object loginUser = session.getAttribute("loginUser");
 
