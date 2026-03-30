@@ -1,6 +1,7 @@
 <%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
 <%@ taglib prefix="c"  uri="http://java.sun.com/jsp/jstl/core" %>
 <%@ taglib prefix="fn" uri="http://java.sun.com/jsp/jstl/functions" %>
+<%@ taglib prefix="fmt" uri="http://java.sun.com/jsp/jstl/fmt" %>
 
 <jsp:include page="../layout/header.jsp" />
 
@@ -117,9 +118,29 @@
     .hero-img img { width: 100%; height: 100%; object-fit: cover;
       filter: brightness(0.8) saturate(1.1) contrast(0.95); }
 
-    /* 비활성 슬라이드 숨김 */
-    .carousel-slide { display: none; position: absolute; inset: 0; width: 100%; height: 100%; }
-    .carousel-slide.active { display: block; position: relative; height: 100%; }
+    /* 슬라이드 — opacity 크로스페이드 방식 */
+    .carousel-slide {
+      display: block;
+      opacity: 0;
+      position: absolute; inset: 0; width: 100%; height: 100%;
+      pointer-events: none;
+      transition: opacity 0.7s ease-in-out;
+    }
+    .carousel-slide.active {
+      opacity: 1;
+      position: relative;
+      pointer-events: auto;
+    }
+    /* 텍스트 슬라이드인 효과 */
+    .carousel-slide .hero-overlay {
+      transform: translateY(14px);
+      opacity: 0;
+      transition: opacity 0.55s ease 0.2s, transform 0.55s ease 0.2s;
+    }
+    .carousel-slide.active .hero-overlay {
+      transform: translateY(0);
+      opacity: 1;
+    }
 
     /* 화살표 */
     .carousel-arrow {
@@ -154,6 +175,7 @@
     var dots    = document.querySelectorAll('#heroCarousel .dot');
     var current = 0;
     var timer;
+    var isAnimating = false;
 
     // 슬라이드 1개면 화살표/도트 숨기기
     if (slides.length <= 1) {
@@ -167,11 +189,21 @@
     }
 
     function goTo(idx) {
-      slides[current].classList.remove('active');
-      dots[current].classList.remove('active');
+      if (isAnimating || idx === current) return;
+      isAnimating = true;
+
+      var prev = current;
       current = (idx + slides.length) % slides.length;
+
+      // 이전 슬라이드 페이드 아웃
+      slides[prev].classList.remove('active');
+      dots[prev].classList.remove('active');
+
+      // 다음 슬라이드 페이드 인
       slides[current].classList.add('active');
       dots[current].classList.add('active');
+
+      setTimeout(function () { isAnimating = false; }, 750);
     }
 
     function startAuto() { timer = setInterval(function () { goTo(current + 1); }, 4500); }
@@ -377,8 +409,8 @@
   <section>
     <div class="feed-header reveal">
       <div>
-        <h2 style="font-size: 28px; font-weight: 900; margin-bottom: 8px;">실시간 인기 피드 🔥</h2>
-        <p style="font-size: 15px; font-weight: 600; color: var(--text-dark);">지금 이 순간 가장 많이 담겨진 여행 코스</p>
+        <h2 class="section-header-title">실시간 인기 피드 🗺️</h2>
+        <p class="section-header-sub">지금 이 순간 가장 많이 담겨진 여행 코스</p>
       </div>
       <button class="btn-more" onclick="location.href='${pageContext.request.contextPath}/feed/feed_list'">전체보기 →</button>
     </div>
@@ -389,69 +421,78 @@
     </div>
   </section>
 
-  <%-- ══ 매거진 — 인스타 그리드 스타일 ══ --%>
-  <section class="mg-insta-section reveal">
-    <div class="feed-header">
-      <div>
-        <h2 style="font-size: 28px; font-weight: 900; margin-bottom: 8px;">여행 인사이트 ✨</h2>
-        <p style="font-size: 15px; font-weight: 600; color: var(--text-dark);">감성 여행자를 위한 큐레이션 매거진</p>
-      </div>
-      <button class="btn-more" onclick="location.href='${pageContext.request.contextPath}/curation/magazine_list'">더보기 →</button>
+	<%-- ══ 인기 숙소 — 매거진 인스타 그리드 ══ --%>
+<section class="mg-insta-section reveal" style="margin-bottom: 80px;">
+  <div class="feed-header">
+    <div>
+      <h2 class="section-header-title">지금 가장 핫한 숙소 🔥</h2>
+      <p class="section-header-sub">Tripan 유저들이 실시간으로 가장 많이 찜한 인기 숙소들을 모았습니다.</p>
     </div>
-    <div class="mg-insta-grid">
-      <a class="mg-ig-card mg-ig-card--big" href="${pageContext.request.contextPath}/curation/magazine_list">
-        <img src="https://images.unsplash.com/photo-1499793983690-e29da59ef1c2?auto=format&fit=crop&w=900&q=85" alt="제주">
-        <div class="mg-ig-overlay">
-          <span class="mg-ig-tag">EDITOR'S CHOICE</span>
-          <h3 class="mg-ig-title">제주, 온전한 쉼을<br>위한 비밀스러운 공간들</h3>
-          <p class="mg-ig-desc">Tripan이 선별한 제주의 숨겨진 스테이 & 로컬 맛집</p>
-        </div>
-      </a>
-      <div class="mg-ig-col">
-        <a class="mg-ig-card" href="${pageContext.request.contextPath}/curation/magazine_list">
-          <img src="https://images.unsplash.com/photo-1555939594-58d7cb561ad1?auto=format&fit=crop&w=600&q=80" alt="부산">
-          <div class="mg-ig-overlay">
-            <span class="mg-ig-tag">TASTE</span>
-            <h3 class="mg-ig-title">부산 해운대, 미식가들의 성지</h3>
-          </div>
-        </a>
-        <a class="mg-ig-card" href="${pageContext.request.contextPath}/curation/magazine_list">
-          <img src="https://images.unsplash.com/photo-1578637387939-43c525550085?auto=format&fit=crop&w=600&q=80" alt="경주">
-          <div class="mg-ig-overlay">
-            <span class="mg-ig-tag">JOURNEY</span>
-            <h3 class="mg-ig-title">경주, 한옥에서의 하룻밤</h3>
-          </div>
-        </a>
+    <button class="btn-more" onclick="location.href='${pageContext.request.contextPath}/accommodation/list'">더보기 →</button>
+  </div>
+
+  <c:choose>
+    <c:when test="${not empty popularList}">
+      <div class="mg-insta-grid">
+
+        <%-- 첫 번째 카드 — 크게 (2행 차지) --%>
+        <c:forEach var="stay" items="${popularList}" varStatus="vs">
+          <c:if test="${vs.index == 0}">
+            <a class="mg-ig-card mg-ig-card--big"
+               href="${pageContext.request.contextPath}/accommodation/detail/${stay.placeId}">
+              <img src="${fn:startsWith(stay.imageUrl, 'http') ? stay.imageUrl : pageContext.request.contextPath += stay.imageUrl}"
+                   onerror="this.src='https://images.unsplash.com/photo-1611892440504-42a792e24d32?w=600'" alt="${stay.name}">
+              <div class="mg-ig-overlay">
+                <span class="mg-ig-tag">🔥 POPULAR</span>
+                <h3 class="mg-ig-title">${stay.name}</h3>
+                <p class="mg-ig-desc">
+                  ★ ${stay.avgRating != null && stay.avgRating > 0 ? stay.avgRating : '0.0'}
+                  &nbsp;·&nbsp; ${stay.region}
+                  &nbsp;·&nbsp; ₩<fmt:formatNumber value="${stay.minPrice}" pattern="#,###"/> /박
+                </p>
+              </div>
+            </a>
+          </c:if>
+        </c:forEach>
+
+        <%-- 나머지 카드 4개 (index 1~4) --%>
+        <c:forEach var="stay" items="${popularList}" varStatus="vs">
+          <c:if test="${vs.index >= 1 && vs.index <= 4}">
+            <a class="mg-ig-card"
+               href="${pageContext.request.contextPath}/accommodation/detail/${stay.placeId}">
+              <img src="${fn:startsWith(stay.imageUrl, 'http') ? stay.imageUrl : pageContext.request.contextPath += stay.imageUrl}"
+                   onerror="this.src='https://images.unsplash.com/photo-1611892440504-42a792e24d32?w=600'" alt="${stay.name}">
+              <div class="mg-ig-overlay">
+                <span class="mg-ig-tag">#${vs.index + 1}</span>
+                <h3 class="mg-ig-title">${stay.name}</h3>
+                <p class="mg-ig-desc">
+                  ★ ${stay.avgRating != null && stay.avgRating > 0 ? stay.avgRating : '0.0'}
+                  &nbsp;·&nbsp; ₩<fmt:formatNumber value="${stay.minPrice}" pattern="#,###"/> /박
+                </p>
+              </div>
+            </a>
+          </c:if>
+        </c:forEach>
+
       </div>
-      <div class="mg-ig-col">
-        <a class="mg-ig-card" href="${pageContext.request.contextPath}/curation/magazine_list">
-          <img src="https://images.unsplash.com/photo-1534351590666-13e3e96b5017?auto=format&fit=crop&w=600&q=80" alt="요트">
-          <div class="mg-ig-overlay">
-            <span class="mg-ig-tag">LIFESTYLE</span>
-            <h3 class="mg-ig-title">광안대교 프라이빗 요트</h3>
-          </div>
-        </a>
-        <a class="mg-ig-card" href="${pageContext.request.contextPath}/curation/magazine_list">
-          <img src="https://images.unsplash.com/photo-1551641506-ee5bf4cb45f1?auto=format&fit=crop&w=600&q=80" alt="우도">
-          <div class="mg-ig-overlay">
-            <span class="mg-ig-tag">TRAVEL</span>
-            <h3 class="mg-ig-title">우도 자전거 여행</h3>
-          </div>
-        </a>
+    </c:when>
+    <c:otherwise>
+      <div style="text-align:center; padding:60px 0; color:#8E8E93; font-weight:600;">
+        현재 등록된 추천 숙소가 없습니다.
       </div>
-    </div>
-  </section>
+    </c:otherwise>
+  </c:choose>
+</section>
 
   <%-- ══ TOP 10 ══ --%>
   <section class="home-top10-section reveal">
-    <div class="top10-header">
-      <div class="top10-header-left">
-        <span class="top10-header-badge">LIVE RANKING</span>
-        <h2 class="top10-header-title">지금 뜨는 장소</h2>
-        <p class="top10-header-sub">실시간 조회수 · 좋아요 기준</p>
-      </div>
-      <button class="btn-more" onclick="location.href='${pageContext.request.contextPath}/curation/place_list?sort=views'">전체보기 →</button>
-    </div>
+    <div class="feed-header">
+	  <div>
+	    <h2 class="section-header-title">지금 뜨는 장소 ✨</h2>
+	    <p class="section-header-sub">실시간 조회수 · 좋아요 기준 TOP 10</p>
+	  </div>
+	  <button class="btn-more" onclick="location.href='${pageContext.request.contextPath}/curation/place_list?sort=views'">전체보기 →</button>
+	</div>
     <c:choose>
       <c:when test="${not empty top10Places}">
         <div class="carousel-wrapper">
