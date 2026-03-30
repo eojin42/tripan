@@ -696,6 +696,13 @@ function searchPlace(keyword) {
           });
         };
 
+        // ★ 나만의 탭: officialPlaces 제외, myPlaces만 표시
+        if (_placeType === 'my') {
+          var myList = Array.isArray(res) ? res : (res.myPlaces || []);
+          renderSearchResults({ officialPlaces: [], myPlaces: myList });
+          return;
+        }
+
         if (Array.isArray(res)) {
           var filtered = filterByCat(res);
           filtered.sort(sortFn);
@@ -1306,6 +1313,104 @@ function openAddPlace(dayNumber) {
   if (typeof openModal === 'function') openModal('addPlaceModal');
 }
 
+/* ══════════════════════════════════════════════════════
+   addPlaceModal 나만의 탭 전용 렌더러
+   — placeResults 컨테이너에 삭제 버튼 포함하여 표시
+══════════════════════════════════════════════════════ */
+function _renderMyPlacesInModal(wrap, list) {
+  if (!wrap) return;
+
+  if (!list || !list.length) {
+    wrap.innerHTML =
+      '<div style="text-align:center;padding:32px 20px;color:#A0AEC0;">' +
+        '<div style="font-size:36px;margin-bottom:10px;">⭐</div>' +
+        '<div style="font-size:13px;font-weight:700;color:#4A5568;margin-bottom:4px;">등록된 나만의 장소가 없어요</div>' +
+        '<div style="font-size:12px;line-height:1.8;">카카오 지도 검색 후 추가하거나<br>지도 검색창에서 직접 등록해보세요</div>' +
+      '</div>';
+    return;
+  }
+
+  var html = '';
+  list.forEach(function(p) {
+    var name = p.placeName || '';
+    var addr = p.address   || '';
+    var lat  = p.latitude  || 0;
+    var lng  = p.longitude || 0;
+    var pid  = p.placeId   || p.tripPlaceId || '';
+
+    html +=
+      '<div style="display:flex;align-items:center;border-bottom:1px solid #F0F4F8;transition:background .12s;" ' +
+        'onmouseover="this.style.background=\'#F7FAFC\'" ' +
+        'onmouseout="this.style.background=\'\'">' +
+
+        /* 클릭 영역 (일정 추가) */
+        '<div style="flex:1;min-width:0;padding:11px 14px;cursor:pointer;display:flex;align-items:center;gap:10px;" ' +
+          'data-name="'     + _esc(name)       + '" ' +
+          'data-address="'  + _esc(addr)        + '" ' +
+          'data-lat="'      + lat               + '" ' +
+          'data-lng="'      + lng               + '" ' +
+          'data-place-id="' + _esc(String(pid)) + '" ' +
+          'data-category="NONE" ' +
+          'onclick="selectPlaceResult(this)">' +
+
+          '<div style="width:36px;height:36px;border-radius:10px;flex-shrink:0;' +
+            'background:linear-gradient(135deg,rgba(137,207,240,.2),rgba(194,184,217,.2));' +
+            'display:flex;align-items:center;justify-content:center;font-size:18px;">⭐</div>' +
+
+          '<div style="min-width:0;flex:1;">' +
+            '<div style="font-size:13px;font-weight:700;color:#1A202C;margin-bottom:2px;' +
+              'white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + _esc(name) + '</div>' +
+            '<div style="font-size:11px;color:#A0AEC0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' +
+              (addr || '주소 없음') +
+            '</div>' +
+          '</div>' +
+
+          '<span style="font-size:10px;font-weight:800;padding:3px 10px;border-radius:20px;flex-shrink:0;margin-right:4px;' +
+            'background:linear-gradient(120deg,rgba(168,200,225,.22),rgba(194,184,217,.22));' +
+            'border:1px solid rgba(194,184,217,.55);color:#5A4E8C;">나만의</span>' +
+        '</div>' +
+
+        /* 삭제 버튼 */
+        (pid ?
+          '<button onclick="deleteMyPlaceFromModal(' + pid + ',this);event.stopPropagation();" ' +
+            'style="width:30px;height:30px;border:1px solid #FED7D7;border-radius:8px;' +
+            'background:#FFF5F5;color:#E53E3E;cursor:pointer;flex-shrink:0;margin-right:10px;' +
+            'display:flex;align-items:center;justify-content:center;font-size:14px;' +
+            'transition:all .15s;" ' +
+            'onmouseover="this.style.background=\'#FEB2B2\'" ' +
+            'onmouseout="this.style.background=\'#FFF5F5\'">🗑</button>'
+        : '') +
+      '</div>';
+  });
+
+  wrap.innerHTML = html;
+}
+
+/* 추천장소 모달 나만의 탭 전용 삭제 — 삭제 후 목록 새로고침 */
+function deleteMyPlaceFromModal(placeId, btnEl) {
+  if (!confirm('이 나만의 장소를 삭제할까요?\n삭제하면 되돌릴 수 없어요.')) return;
+  if (btnEl) { btnEl.disabled = true; btnEl.innerHTML = '…'; }
+
+  fetch(CTX_PATH + '/api/places/my/' + placeId, { method: 'DELETE' })
+    .then(function(r) { return r.json(); })
+    .then(function(d) {
+      if (d.success) {
+        if (typeof showToast === 'function') showToast('🗑️ 나만의 장소가 삭제됐어요');
+        // 모달 내 목록 새로고침
+        _loadCategoryPreview('my');
+        // 우측 패널 나만의 탭도 동기화
+        if (typeof loadMyPlaces === 'function') loadMyPlaces();
+      } else {
+        alert('삭제 실패: ' + (d.message || '오류가 발생했습니다'));
+        if (btnEl) { btnEl.disabled = false; btnEl.innerHTML = '🗑'; }
+      }
+    })
+    .catch(function() {
+      alert('네트워크 오류가 발생했습니다');
+      if (btnEl) { btnEl.disabled = false; btnEl.innerHTML = '🗑'; }
+    });
+}
+
 /* 장소 추가 모달 - 카테고리 프리뷰 + 무한스크롤 */
 var _prOffset   = 0;
 var _prLimit    = 20;
@@ -1315,6 +1420,29 @@ var _prHasMore  = true;
 var _prObserver = null;
 
 function _loadCategoryPreview(category, reset) {
+  // ★ 나만의 탭: /api/places/my 에서 개인 장소 로드
+  if (category === 'my') {
+    _prCategory = 'my';
+    _prHasMore  = false; // 나만의는 페이징 없음
+    _prLoading  = false;
+    var wrap = document.getElementById('placeResults');
+    if (wrap) wrap.innerHTML = '<div style="text-align:center;padding:20px;color:#A0AEC0;">⭐ 불러오는 중...</div>';
+
+    fetch(CTX_PATH + '/api/places/my')
+      .then(function(r) {
+        if (r.status === 401) return [];  // 비로그인 → 빈 목록
+        return r.json();
+      })
+      .then(function(list) {
+        if (!Array.isArray(list)) list = [];
+        _renderMyPlacesInModal(wrap, list);
+      })
+      .catch(function() {
+        if (wrap) wrap.innerHTML = '<div style="text-align:center;padding:20px;color:#A0AEC0;">불러오기 실패 😢</div>';
+      });
+    return;
+  }
+
   if (reset !== false) {
     _prOffset   = 0;
     _prCategory = category;

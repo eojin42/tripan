@@ -25,6 +25,11 @@ public interface TripPlaceMapper {
     // 나만의 장소 저장 
     int insertPlace(TripPlaceDto dto);
 
+    // 위도+경도+회원ID로 나만의 장소 중복 체크 (재등록 방지)
+    Long findPlaceIdByLatLng(@Param("lat")      Double lat,
+                              @Param("lng")      Double lng,
+                              @Param("memberId") Long   memberId);
+
     // 카카오 API 고유 ID로 중복 체크 
     Long findPlaceIdByApiContentId(@Param("apiContentId") String apiContentId);
 
@@ -32,7 +37,15 @@ public interface TripPlaceMapper {
     Long findPlaceIdByNameAndAddress(@Param("placeName") String placeName,
                                      @Param("address")   String address);
 
-    // 키워드 검색 (Track 2 전용) 
+    // api_place_id 로 DTO 전체 조회
+    TripPlaceDto selectPlaceByApiContentId(@Param("apiContentId") String apiContentId);
+
+    // 이름+주소+회원ID로 DTO 전체 조회
+    TripPlaceDto selectPlaceByNameAndAddress(@Param("placeName") String placeName,
+                                             @Param("address") String address,
+                                             @Param("memberId") Long memberId);
+
+    // 키워드 검색 
     List<TripPlaceDto> searchPlacesByKeyword(@Param("keyword")          String keyword,
                                               @Param("currentMemberId") Long   currentMemberId);
 

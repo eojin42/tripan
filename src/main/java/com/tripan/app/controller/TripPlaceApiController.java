@@ -90,7 +90,6 @@ public class TripPlaceApiController {
     // ─────────────────────────────────────────────────────────────
     @GetMapping("/{placeId}/nearby")
     public ResponseEntity<List<PlaceDto>> nearby(@PathVariable Long placeId) {
-        // lat/lng만 필요 → 경량 쿼리 사용 (attraction 테이블 JOIN 없음)
         PlaceDto place = placeRecommendMapper.selectPlaceLatLng(placeId);
         if (place == null
                 || place.getLatitude()  == null
@@ -142,7 +141,7 @@ public class TripPlaceApiController {
     }
 
     // ─────────────────────────────────────────────────────────────
-    // [나만의 장소] 등록
+    // [나만의 장소] 등록 (NONE 카테고리 — member_id = 로그인 유저)
     // ─────────────────────────────────────────────────────────────
     @PostMapping("/my")
     public ResponseEntity<?> registerMyPlace(
@@ -158,6 +157,29 @@ public class TripPlaceApiController {
                 .body(Map.of("success", false, "message", "장소명은 필수입니다"));
 
         TripPlaceDto saved = tripPlaceService.registerMyPlace(dto, memberId);
+        return ResponseEntity.ok(Map.of("success", true, "place", saved));
+    }
+
+    // ─────────────────────────────────────────────────────────────
+    // ★ [공용 장소] find-or-create (비-NONE 카테고리 — member_id = NULL)
+    //
+    // BUG FIX: 지도 검색 결과에서 비-NONE 카테고리(RESTAURANT 등) 장소를 추가할 때
+    //   kakaoId 가 없으면 기존에 addPlaceToDay 를 kakaoId=null 로 호출하여
+    //   백엔드가 기존 레코드를 찾지 못해 member_id=null 복제본을 계속 삽입하는 버그 수정.
+    //
+    //   이 엔드포인트가 항상 apiContentId 를 채운 TripPlaceDto 를 반환하면
+    //   workspace_map.js 의 executeMapAdd() 가 그 apiContentId 를 addPlaceToDay 에 전달해
+    //   백엔드가 기존 레코드를 정확히 재사용함 → 중복 삽입 방지
+    // ─────────────────────────────────────────────────────────────
+    @PostMapping("/findOrCreate")
+    public ResponseEntity<?> findOrCreatePublicPlace(
+            @RequestBody TripPlaceDto dto) {
+
+        if (dto.getPlaceName() == null || dto.getPlaceName().isBlank())
+            return ResponseEntity.badRequest()
+                .body(Map.of("success", false, "message", "장소명은 필수입니다"));
+
+        TripPlaceDto saved = tripPlaceService.findOrCreatePublicPlace(dto);
         return ResponseEntity.ok(Map.of("success", true, "place", saved));
     }
 
