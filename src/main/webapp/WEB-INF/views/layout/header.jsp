@@ -49,7 +49,6 @@
           <li class="nav-item">
             <a href="#" class="nav-link">여행 플래너</a>
             <div class="dropdown-menu">
-              <a href="#">AI 맞춤형 일정 자동 생성</a>
               	<sec:authorize access="isAnonymous()">
 				    <%-- 비로그인 상태 --%>
 				    <a style="cursor:pointer;" onclick="goMyTrips(false, 0)">나의 여행</a>
@@ -59,8 +58,6 @@
 				    <%-- 로그인 상태 --%>
 				    <a style="cursor:pointer;" onclick="goMyTrips(true, ${not empty myTripCount ? myTripCount : 0})">나의 여행</a>
 				</sec:authorize>
-              <a href="#">동행자 목적지 투표</a>
-              <a href="#">준비물 체크리스트</a>
             </div>
           </li>
           
@@ -73,9 +70,8 @@
           </li>
           
           <li class="nav-item">
-            <a href="#" class="nav-link">가계부·안내</a>
+            <a href="#" class="nav-link">안내</a>
             <div class="dropdown-menu">
-              <a href="#">실시간 여행 가계부</a>
               <a href="#">Tripan 이용 가이드</a>
               <a href="#">자주 묻는 질문 (FAQ)</a>
               <a href="#">1:1 문의 게시판</a>
