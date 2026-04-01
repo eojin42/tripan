@@ -673,8 +673,8 @@
       }
 
       // 4. 상세 페이지가 아닐 경우 (목록 페이지로 이동)
-      const regions = selectedRegions.join(',');
-      let listUrl = "${pageContext.request.contextPath}/accommodation/list?adult=" + adult + "&child=" + child;
+      const regions = selectedRegions.filter(region => region !== '전체').join(',');
+	  let listUrl = "${pageContext.request.contextPath}/accommodation/list?adult=" + adult + "&child=" + child;
       
       if (regions) listUrl += "&regions=" + encodeURIComponent(regions);
       if (checkin && checkout) listUrl += "&checkin=" + checkin + "&checkout=" + checkout;
