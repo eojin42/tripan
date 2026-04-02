@@ -49,8 +49,7 @@
                         <input type="hidden" id="realAddress" name="address" value="<c:out value='${partnerInfo.address}'/>">
 
                         <div style="display: flex; gap: 10px; margin-bottom: 8px;">
-                            <input type="text" id="baseAddress" class="info-form-control" value="${partnerInfo.address}" placeholder="버튼을 눌러 주소를 검색하세요" readonly style="flex: 1; cursor: pointer; background: #F8FAFC;" onclick="execDaumPostcode()">
-                            <button type="button" class="btn btn-ghost" style="border: 1px solid var(--border); border-radius: 10px; font-size: 13px; font-weight: 700; white-space: nowrap;" onclick="execDaumPostcode()">주소 검색</button>
+							<input type="text" id="baseAddress" name="baseAddress" class="info-form-control" value="${partnerInfo.address}" placeholder="버튼을 눌러 주소를 검색하세요" readonly style="flex: 1; cursor: pointer; background: #F8FAFC;" onclick="execDaumPostcode()">                            <button type="button" class="btn btn-ghost" style="border: 1px solid var(--border); border-radius: 10px; font-size: 13px; font-weight: 700; white-space: nowrap;" onclick="execDaumPostcode()">주소 검색</button>
                         </div>
                         
                         <div style="margin-bottom: 12px;">

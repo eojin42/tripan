@@ -86,7 +86,7 @@
 	              <div class="meta-user">
 	                <c:choose>
 	                  <c:when test="${not empty board.profilePhoto}">
-	                    <img src="${pageContext.request.contextPath}/uploads/profile/${board.profilePhoto}" alt="profile">
+	                    <img src="${pageContext.request.contextPath}/uploads/member/${board.profilePhoto}" alt="profile">
 	                  </c:when>
 	                  <c:otherwise>
 	                    <img src="${pageContext.request.contextPath}/dist/images/default.png" alt="default profile">

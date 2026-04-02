@@ -123,7 +123,7 @@ window.searchMates = function() {
 
         let html = '';
         list.forEach(mate => {
-            let profileImg = mate.profilePhoto ? '${pageContext.request.contextPath}/uploads/profile/' + mate.profilePhoto : '${pageContext.request.contextPath}/dist/images/default.png';
+            let profileImg = mate.profilePhoto ? '${pageContext.request.contextPath}/uploads/member/' + mate.profilePhoto : '${pageContext.request.contextPath}/dist/images/default.png';
             let statusBadge = mate.status === 'OPEN' ? '<span class="badge-status status-on">🟢 모집중</span>' : '<span class="badge-status status-off">⚪ 모집마감</span>';
             let tagsHtml = '';
             if (mate.tags) mate.tags.split(/[\s,]+/).forEach(t => { 
@@ -261,7 +261,7 @@ window.loadMateComments = function(mateId, page) {
 
         let html = '';
         data.comments.forEach(comment => {
-            let profileImg = comment.profilePhoto ? '${pageContext.request.contextPath}/uploads/profile/' + comment.profilePhoto : '${pageContext.request.contextPath}/dist/images/default.png';
+            let profileImg = comment.profilePhoto ? '${pageContext.request.contextPath}/uploads/member/' + comment.profilePhoto : '${pageContext.request.contextPath}/dist/images/default.png';
             let isMyComment = (CURRENT_USER_ID !== '' && CURRENT_USER_ID == comment.memberId);
 			let kebabMenu = isMyComment 
 			    ? `<button class="kebab-item danger" onclick="window.deleteMateComment(\${comment.commentId}, \${mateId})">🗑️ 삭제하기</button>`
@@ -292,7 +292,7 @@ window.loadMateComments = function(mateId, page) {
               </div>`;
 
             (data.childComments || []).filter(c => c.parentId === comment.commentId).forEach(child => {
-                let cProfileImg = child.profilePhoto ? '${pageContext.request.contextPath}/uploads/profile/' + child.profilePhoto : '${pageContext.request.contextPath}/dist/images/default.png';
+                let cProfileImg = child.profilePhoto ? '${pageContext.request.contextPath}/uploads/member/' + child.profilePhoto : '${pageContext.request.contextPath}/dist/images/default.png';
                 let isMyChild = (CURRENT_USER_ID !== '' && CURRENT_USER_ID == child.memberId);
 				let childKebab = isMyChild 
 				    ? `<button class="kebab-item danger" onclick="window.deleteMateComment(\${child.commentId}, \${mateId})">🗑️ 삭제하기</button>`

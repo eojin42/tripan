@@ -68,7 +68,7 @@
 </style>
 
 <div class="profile-hero">
-  <img src="${not empty targetUser.profilePhoto ? pageContext.request.contextPath += '/uploads/profile/' += targetUser.profilePhoto : pageContext.request.contextPath += '/dist/images/default.png'}" 
+  <img src="${not empty targetUser.profilePhoto ? pageContext.request.contextPath += '/uploads/member/' += targetUser.profilePhoto : pageContext.request.contextPath += '/dist/images/default.png'}" 
        class="profile-avatar-large" alt="Profile">
   
   <div class="profile-info-wrapper">

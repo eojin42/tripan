@@ -66,7 +66,6 @@ function savePartnerInfo() {
     const form = document.getElementById('partnerInfoForm');
     const formData = new FormData(form);
 
-    formData.delete("baseAddress");
     formData.delete("detailAddress");
 
     fetch(TripanConfig.contextPath + '/partner/api/info/update', {

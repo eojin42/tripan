@@ -5,7 +5,7 @@
     
     <div style="display: flex; justify-content: space-between; align-items: center;">
         <div style="display: flex; align-items: center; gap: 12px;">
-            <img src="${not empty feed.profileImage ? pageContext.request.contextPath += '/uploads/profile/' += feed.profileImage : pageContext.request.contextPath += '/dist/images/default.png'}" 
+            <img src="${not empty feed.profileImage ? pageContext.request.contextPath += '/uploads/member/' += feed.profileImage : pageContext.request.contextPath += '/dist/images/default.png'}" 
                  style="width: 48px; height: 48px; border-radius: 50%; object-fit: cover; border: 2px solid var(--border-color);">
             <div>
                 <h4 style="margin: 0 0 4px; font-size: 16px; font-weight: 800; color: var(--text-black);">${feed.nickname}</h4>
@@ -47,7 +47,7 @@
                 <c:otherwise>
                     <c:forEach var="comment" items="${comments}">
                         <div style="display: flex; gap: 10px; border-bottom: 1px solid var(--border-color); padding-bottom: 12px;">
-                            <img src="${not empty comment.profileImage ? pageContext.request.contextPath += '/uploads/profile/' += comment.profileImage : pageContext.request.contextPath += '/dist/images/default.png'}" style="width: 32px; height: 32px; border-radius: 50%; object-fit: cover;">
+                            <img src="${not empty comment.profileImage ? pageContext.request.contextPath += '/uploads/member/' += comment.profileImage : pageContext.request.contextPath += '/dist/images/default.png'}" style="width: 32px; height: 32px; border-radius: 50%; object-fit: cover;">
                             <div style="flex: 1;">
                                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
                                     <span style="font-size: 13px; font-weight: 800; color: var(--text-dark);">${comment.nickname}</span>

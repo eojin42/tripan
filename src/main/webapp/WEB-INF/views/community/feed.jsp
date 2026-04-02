@@ -499,7 +499,7 @@
 		        <div class="profile-avatar">
 		          <c:choose>
 		            <c:when test="${not empty sessionScope.loginUser.profilePhoto}">
-		              <img src="${pageContext.request.contextPath}/uploads/profile/${sessionScope.loginUser.profilePhoto}" alt="My Profile">
+		              <img src="${pageContext.request.contextPath}/uploads/member/${sessionScope.loginUser.profilePhoto}" alt="My Profile">
 		            </c:when>
 		            <c:otherwise>
 		              <img src="${pageContext.request.contextPath}/dist/images/default.png" alt="Default Profile">
@@ -1914,7 +1914,7 @@ function loadFeedComments(postId, isInit = false) {
         const childComments = comments.filter(c => c.parentCommentId !== 0 && c.parentCommentId !== null);
 
         parentComments.forEach(comment => {
-            let profileImg = comment.profileImage ? `${pageContext.request.contextPath}/uploads/profile/\${comment.profileImage}` : `${pageContext.request.contextPath}/dist/images/default.png`;
+            let profileImg = comment.profileImage ? `${pageContext.request.contextPath}/uploads/member/\${comment.profileImage}` : `${pageContext.request.contextPath}/dist/images/default.png`;
             let isMyComment = (currentUserId !== '' && currentUserId == comment.memberId);
             
             let kebabMenu = isMyComment 
@@ -1945,7 +1945,7 @@ function loadFeedComments(postId, isInit = false) {
                 </div>`;
 
             childComments.filter(child => child.parentCommentId === comment.commentId).forEach(child => {
-                let cProfileImg = child.profileImage ? `${pageContext.request.contextPath}/uploads/profile/\${child.profileImage}` : `${pageContext.request.contextPath}/dist/images/default.png`;
+                let cProfileImg = child.profileImage ? `${pageContext.request.contextPath}/uploads/member/\${child.profileImage}` : `${pageContext.request.contextPath}/dist/images/default.png`;
                 let isMyChild = (currentUserId !== '' && currentUserId == child.memberId);
                 
                 let childKebab = isMyChild 
@@ -2599,7 +2599,7 @@ window.switchProfileTab = function(element, tabName) {
          const childComments = comments.filter(c => c.parentId !== 0 && c.parentId !== null);
 
          parentComments.forEach(comment => {
-             let profileImg = comment.profilePhoto ? `${pageContext.request.contextPath}/uploads/profile/\${comment.profilePhoto}` : `${pageContext.request.contextPath}/dist/images/default.png`;
+             let profileImg = comment.profilePhoto ? `${pageContext.request.contextPath}/uploads/member/\${comment.profilePhoto}` : `${pageContext.request.contextPath}/dist/images/default.png`;
              
              let isMyComment = (myId !== '' && String(myId) === String(comment.memberId));
 
@@ -2631,7 +2631,7 @@ window.switchProfileTab = function(element, tabName) {
                  </div>`;
 
              childComments.filter(child => child.parentId === comment.commentId).forEach(child => {
-                 let cProfileImg = child.profilePhoto ? `${pageContext.request.contextPath}/uploads/profile/\${child.profilePhoto}` : `${pageContext.request.contextPath}/dist/images/default.png`;
+                 let cProfileImg = child.profilePhoto ? `${pageContext.request.contextPath}/uploads/member/\${child.profilePhoto}` : `${pageContext.request.contextPath}/dist/images/default.png`;
                  
                  let isMyChild = (myId !== '' && String(myId) === String(child.memberId));
 
@@ -2946,7 +2946,7 @@ function switchFollowTab(type) {
          const btnText = isFollowing ? '팔로잉' : '팔로우';
          
          const profileSrc = user.profile && user.profile !== 'default.png' 
-             ? `${pageContext.request.contextPath}/uploads/profile/\${user.profile}` 
+             ? `${pageContext.request.contextPath}/uploads/member/\${user.profile}` 
              : `${pageContext.request.contextPath}/dist/images/default.png`;
 
          html += `
