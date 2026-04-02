@@ -24,6 +24,35 @@
     .chart-card { padding: 24px; border-radius: 16px; border: 1px solid #E2E8F0; background: #FFFFFF; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); }
     .chart-title { font-size: 16px; font-weight: 800; color: #1E293B; margin-top: 0; margin-bottom: 20px; }
     .chart-container { position: relative; height: 300px; width: 100%; }
+    
+    .stats-header-container { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 24px; }
+    .stats-title { font-size: 26px; font-weight: 900; color: var(--text-black); letter-spacing: -0.5px; margin: 0; }
+    .stats-subtitle { color: var(--text-gray); margin-top: 8px; font-weight: 500; margin-bottom: 0; }
+    
+    .stats-filter-card { padding: 20px 24px; border-radius: 16px; margin-bottom: 24px; background: #F8FAFC; border: 1px solid #E2E8F0; display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
+    
+    .filter-input { padding: 10px 16px; border: 1px solid #CBD5E1; border-radius: 8px; font-size: 14px; color: #334155; background: white; font-family: inherit; font-weight: 700; cursor: pointer; }
+    .filter-input:focus { outline: none; border-color: #0F172A; box-shadow: 0 0 0 3px rgba(15, 23, 42, 0.05); }
+    
+    .btn-month-move { padding: 10px 16px; border: 1px solid #CBD5E1; border-radius: 8px; background: white; cursor: pointer; color: #475569; font-weight: 900; transition: background 0.2s; display: flex; align-items: center; justify-content: center; }
+    .btn-month-move:hover { background: #E2E8F0; color: #0F172A; }
+    .btn-month-current { background: #F1F5F9; color: #0F172A; border-color: #CBD5E1; } 
+
+    .stats-kpi-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; margin-bottom: 24px; width: 100%; }
+    
+    .stats-kpi-card { padding: 24px; border-radius: 16px; border: 1px solid #E2E8F0; background: #FFFFFF; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); display: flex; justify-content: space-between; align-items: center; min-width: 0; }
+    
+    .kpi-title { font-size: 14px; font-weight: 700; color: #64748B; margin-bottom: 8px; }
+    .kpi-value { font-size: 32px; font-weight: 900; color: #0F172A; font-family: 'Sora', sans-serif; white-space: nowrap; text-overflow: ellipsis; overflow: hidden; } /* 🌟 글자 길어질 때 점처리 */
+    .kpi-icon { font-size: 40px; opacity: 0.2; flex-shrink: 0; } /* 🌟 아이콘 찌그러짐 방지 */
+
+    .chart-grid { display: grid; grid-template-columns: 2fr 1fr; gap: 24px; width: 100%; }
+    
+    .chart-card { padding: 24px; border-radius: 16px; border: 1px solid #E2E8F0; background: #FFFFFF; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); min-width: 0; }
+    
+    .chart-title { font-size: 16px; font-weight: 800; color: #1E293B; margin-top: 0; margin-bottom: 20px; }
+    .chart-container { position: relative; height: 300px; width: 100%; }
+    
 </style>
 
 <div id="tab-stats" class="page-section ${activeTab == 'stats' ? 'active' : ''}">
