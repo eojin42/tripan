@@ -4,6 +4,7 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import org.springframework.http.ResponseEntity;
 import org.springframework.messaging.handler.annotation.MessageMapping;
@@ -16,6 +17,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 
 import com.tripan.app.admin.service.CsManageService;
+import com.tripan.app.config.WebSocketEventListener;
 import com.tripan.app.domain.dto.CommunityChatMessageDto;
 import com.tripan.app.domain.dto.CommunityChatRoomDto;
 import com.tripan.app.domain.dto.MemberDto;
@@ -33,6 +35,8 @@ public class CommunityChatController {
     private final SimpMessageSendingOperations messagingTemplate;
     private final CommunityChatService chatService;
     private final CsManageService csService;
+    
+    private final WebSocketEventListener webSocketEventListener;
 
     @MessageMapping("/chat/message")
     public void message(CommunityChatMessageDto message) {
@@ -71,7 +75,21 @@ public class CommunityChatController {
     @GetMapping("/api/chat/rooms/region")
     @ResponseBody
     public List<CommunityChatRoomDto> getRegionRooms() {
-        return chatService.getRegionRooms();
+        List<CommunityChatRoomDto> rooms = chatService.getRegionRooms();
+        
+        Map<String, AtomicInteger> roomUserCountMap = webSocketEventListener.getRoomUserCount();
+
+        for (CommunityChatRoomDto room : rooms) {
+            String roomIdStr = String.valueOf(room.getChatRoomId());
+            
+            if (roomUserCountMap.containsKey(roomIdStr)) {
+                room.setUserCount(roomUserCountMap.get(roomIdStr).get());
+            } else {
+                room.setUserCount(0);
+            }
+        }
+
+        return rooms;
     }
 
     @GetMapping("/api/chat/rooms/private")

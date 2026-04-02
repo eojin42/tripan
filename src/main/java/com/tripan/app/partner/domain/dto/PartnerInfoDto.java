@@ -19,7 +19,10 @@ public class PartnerInfoDto {
     private String accommodationType;
     
     private Long placeId;
+    
     private String address;
+    private String baseAddress;
+    
     private Double latitude;
     private Double longitude;
     private String imageUrl; 

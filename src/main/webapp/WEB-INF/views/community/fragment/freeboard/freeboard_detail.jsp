@@ -119,7 +119,7 @@
     <div style="display: flex; align-items: center; gap: 12px;">
       <c:choose>
           <c:when test="${not empty board.profilePhoto}">
-              <img src="${pageContext.request.contextPath}/uploads/profile/${board.profilePhoto}" style="width: 50px; height: 50px; border-radius: 50%; object-fit: cover; border: 1px solid #edf2f7;">
+              <img src="${pageContext.request.contextPath}/uploads/member/${board.profilePhoto}" style="width: 50px; height: 50px; border-radius: 50%; object-fit: cover; border: 1px solid #edf2f7;">
           </c:when>
           <c:otherwise>
               <img src="${pageContext.request.contextPath}/dist/images/default.png" style="width: 50px; height: 50px; border-radius: 50%; object-fit: cover; border: 1px solid #edf2f7;">
@@ -207,7 +207,7 @@
             <div class="comment-item">
               <c:choose>
                   <c:when test="${not empty comment.profilePhoto}">
-                      <img src="${pageContext.request.contextPath}/uploads/profile/${comment.profilePhoto}">
+                      <img src="${pageContext.request.contextPath}/uploads/member/${comment.profilePhoto}">
                   </c:when>
                   <c:otherwise>
                       <img src="${pageContext.request.contextPath}/dist/images/default.png">

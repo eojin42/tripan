@@ -255,7 +255,7 @@
       <div class="author-left" onclick="loadUserProfile('${feed.memberId}')">
         <c:choose>
           <c:when test="${not empty feed.profileImage}">
-            <img src="${pageContext.request.contextPath}/uploads/profile/${feed.profileImage}" alt="User">
+            <img src="${pageContext.request.contextPath}/uploads/member/${feed.profileImage}" alt="User">
           </c:when>
           <c:otherwise>
             <img src="${pageContext.request.contextPath}/dist/images/default.png" alt="User">
