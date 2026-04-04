@@ -13,8 +13,33 @@
   .section-title { font-size: 26px; font-weight: 900; color: var(--text-black); margin-bottom: 8px; letter-spacing: -0.5px; }
   .section-desc { font-size: 15px; color: var(--text-gray); margin-bottom: 24px; font-weight: 500; }
   
+  body {
+      overflow-x: hidden;
+  }
+
   /* --- 1. 히어로 섹션 --- */
-  .acc-hero { position: relative; width: 100%; height: 65vh; min-height: 550px; display: flex; align-items: center; justify-content: center; flex-direction: column; overflow: hidden; margin-bottom: 60px; }
+  .acc-hero { 
+      position: relative; 
+      
+      max-width: 100vw !important;
+      width: 100vw !important;
+      
+      margin: 0 !important; 
+      margin-left: calc(-50vw + 50%) !important;
+      
+      left: auto !important;
+      right: auto !important;
+      transform: none !important;
+      
+      height: 65vh; 
+      min-height: 550px; 
+      display: flex; 
+      align-items: center; 
+      justify-content: center; 
+      flex-direction: column; 
+      overflow: hidden; 
+      margin-bottom: 60px; 
+  }
   .hero-bg { position: absolute; inset: 0; background: url('https://images.unsplash.com/photo-1542314831-068cd1dbfeeb?w=1600&q=80') center/cover no-repeat; z-index: 1; transform: scale(1.05); animation: slowZoom 20s infinite alternate; }
   @keyframes slowZoom { from { transform: scale(1); } to { transform: scale(1.05); } }
   .hero-overlay { position: absolute; inset: 0; background: linear-gradient(to bottom, rgba(0,0,0,0.2) 0%, rgba(0,0,0,0.6) 100%); z-index: 2; }
