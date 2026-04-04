@@ -33,7 +33,7 @@
 	        SELECT mc.COUPON_ID, COUNT(cu.USAGE_ID) as USE_CNT
 	        FROM TRIPAN.MEMBER_COUPON mc
 	        INNER JOIN TRIPAN.COUPON_USAGE cu ON mc.MEMBER_COUPON_ID = cu.MEMBER_COUPON_ID
-	        WHERE cu.STATUS = 'USED' GROUP BY mc.COUPON_ID
+	        WHERE cu.STATUS IN ('USED', 'UNAVAILABLE') GROUP BY mc.COUPON_ID
 	    ) us ON c.COUPON_ID = us.COUPON_ID
 	    
 	    WHERE ct.PARTNER_ID = #{partnerId}
@@ -109,7 +109,7 @@
              
             (SELECT COUNT(*) FROM TRIPAN.COUPON_USAGE cu
              WHERE cu.PARTNER_ID = #{partnerId} 
-             AND cu.STATUS = 'USED'
+             AND cu.STATUS IN ('USED', 'UNAVAILABLE')
              AND EXTRACT(MONTH FROM cu.USED_AT) = EXTRACT(MONTH FROM SYSDATE)
              AND EXTRACT(YEAR FROM cu.USED_AT) = EXTRACT(YEAR FROM SYSDATE)) AS "monthUseCount"
         FROM DUAL
