@@ -566,7 +566,26 @@
               {{ String(detailCoupon.validUntil || '').replace('T', ' ') }}
             </div>
           </div>
-
+		
+		
+		  <!-- 적용 대상 -->
+		<div style="padding:14px 16px;background:var(--bg);border-radius:12px;"
+		     v-if="detailCoupon.targetList && detailCoupon.targetList.length > 0">
+		  <div style="font-size:11px;font-weight:800;color:var(--muted);margin-bottom:10px;">적용 대상</div>
+		  <div style="display:flex;flex-direction:column;gap:6px;">
+		    <div v-for="t in detailCoupon.targetList" :key="t.targetId"
+		         style="display:flex;align-items:center;gap:8px;font-size:13px;font-weight:700;">
+		      <span style="padding:2px 8px;border-radius:20px;font-size:11px;font-weight:800;"
+		            :style="t.isExclude === 'Y' ? 'background:#FEF2F2;color:#DC2626;' : 'background:#EFF6FF;color:#1D4ED8;'">
+		        {{ t.isExclude === 'Y' ? '제외' : '포함' }}
+		      </span>
+		      <span style="color:var(--muted);font-size:11px;">
+		        {{ {ACC_TYPE:'숙소 타입', ACCOMMODATION:'숙소', ROOM:'객실'}[t.targetType] || t.targetType }}
+		      </span>
+		      <span>{{ t.targetValue }}</span>
+		    </div>
+		  </div>
+		</div>
           <!-- 발급 조건 -->
           <div style="padding:14px 16px;background:var(--bg);border-radius:12px;" v-if="detailCoupon.issueConditionType && detailCoupon.issueConditionType !== 'NONE'">
             <div style="font-size:11px;font-weight:800;color:var(--muted);margin-bottom:6px;">발급 조건</div>
