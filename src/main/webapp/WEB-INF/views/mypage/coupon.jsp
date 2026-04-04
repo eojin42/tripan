@@ -152,7 +152,7 @@
     <div class="toolbar">
       <div class="tab-bar">
         <button class="tab-btn active" onclick="switchTab('available', this)"><i class="bi bi-ticket-perforated"></i> 사용 가능</button>
-        <button class="tab-btn" onclick="switchTab('used', this)"><i class="bi bi-check2-circle"></i> 사용 완료</button>
+        <button class="tab-btn" onclick="switchTab('used', this)"><i class="bi bi-check2-circle"></i> 사용완료/만료</button>
       </div>
       <select class="sort-select" id="sort-select" onchange="renderFiltered()">
         <option value="default">기본순</option>
@@ -189,37 +189,57 @@
   }
 
   async function loadCoupons() {
-    var area = document.getElementById('coupon-list-area');
-    if (!area) return;
-    area.innerHTML = '<div class="spin"></div>';
-    document.getElementById('result-count-area').innerHTML = '';
+	    var area = document.getElementById('coupon-list-area');
+	    if (!area) return;
+	    area.innerHTML = '<div class="spin"></div>';
+	    document.getElementById('result-count-area').innerHTML = '';
 
-    try {
-      var url = '/mypage/api/coupons?status=' + currentTab.toUpperCase();
-      var res = await fetch(url);
-      if (!res.ok) throw new Error('Network response was not ok');
-      allCoupons = await res.json();
-      renderFiltered();
-    } catch(e) {
-      console.error('로드 중 에러 발생:', e);
-      area.innerHTML = '<div class="empty-state"><i class="bi bi-exclamation-circle"></i><p>쿠폰 정보를 불러올 수 없어요</p></div>';
-    }
-  }
+	    try {
+	        var coupons = [];
+	        if (currentTab === 'used') {
+	            var [resUsed, resAvail] = await Promise.all([
+	                fetch('/mypage/api/coupons?status=USED'),
+	                fetch('/mypage/api/coupons?status=AVAILABLE')
+	            ]);
+	            var used  = await resUsed.json();
+	            var avail = await resAvail.json();
+	            var now = new Date();
+	            var expired = avail.filter(function(c) {
+	                return c.expiredAt && new Date(c.expiredAt) < now;
+	            });
+	            coupons = used.concat(expired);
+	        } else {
+	            var res = await fetch('/mypage/api/coupons?status=AVAILABLE');
+	            coupons = await res.json();
+	        }
+	        allCoupons = coupons;
+	        renderFiltered();
+	    } catch(e) {
+	        console.error('로드 중 에러 발생:', e);
+	        area.innerHTML = '<div class="empty-state"><i class="bi bi-exclamation-circle"></i><p>쿠폰 정보를 불러올 수 없어요</p></div>';
+	    }
+	}
 
   function renderFiltered() {
     var area = document.getElementById('coupon-list-area');
     var keyword = (document.getElementById('coupon-search').value || '').trim().toLowerCase();
     var sort = document.getElementById('sort-select').value;
 
-    // 1. 검색 필터
+    // 검색 필터
     var filtered = allCoupons.filter(function(c) {
-      if (!keyword) return true;
-      var name = (c.couponName || '').toLowerCase();
-      var hotel = (c.hotelName || '').toLowerCase();  // 숙소명 필드 (API 응답에 있을 경우)
-      return name.includes(keyword) || hotel.includes(keyword);
-    });
+	    var exp = c.expiredAt ? new Date(c.expiredAt) : null;
+	    var isExpired = exp && exp < new Date();
+	
+	    // 사용가능 탭: 만료된 쿠폰 제외
+	    if (currentTab === 'available' && isExpired) return false;
+	
+	    if (!keyword) return true;
+	    var name = (c.couponName || '').toLowerCase();
+	    var hotel = (c.hotelName || '').toLowerCase();
+	    return name.includes(keyword) || hotel.includes(keyword);
+	});
 
-    // 2. 정렬
+    // 정렬
     filtered = filtered.slice().sort(function(a, b) {
       if (sort === 'discount-desc') return (b.discountAmount || 0) - (a.discountAmount || 0);
       if (sort === 'discount-asc')  return (a.discountAmount || 0) - (b.discountAmount || 0);
@@ -232,7 +252,7 @@
       return 0; // default: 서버 순서 유지
     });
 
-    // 3. 결과 카운트
+    // 결과 카운트
     var countArea = document.getElementById('result-count-area');
     if (keyword) {
       countArea.innerHTML = '<p class="result-count"><strong>' + filtered.length + '</strong>개의 쿠폰을 찾았어요</p>';
@@ -240,7 +260,7 @@
       countArea.innerHTML = '';
     }
 
-    // 4. 빈 결과
+    // 빈 결과
     if (!filtered || filtered.length === 0) {
       area.innerHTML = '<div class="empty-state"><i class="bi bi-ticket-perforated"></i><p>' +
         (keyword ? '"' + escHtml(keyword) + '" 검색 결과가 없어요' :
@@ -249,7 +269,7 @@
       return;
     }
 
-    // 5. 렌더링
+    // 렌더링
     var html = '<div class="coupon-list">';
     html += filtered.map(function(c) {
       var now = new Date();

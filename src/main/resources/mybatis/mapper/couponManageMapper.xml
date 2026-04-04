@@ -216,7 +216,7 @@
             #{validUntil},
             'ACTIVE',
             #{issueConditionType, jdbcType=VARCHAR},
-            #{issueConditionValue, jdbcType=VARCHAR},
+            #{issueConditionValue, jdbcType=NUMERIC},
             SYSDATE
         )
     </insert>
