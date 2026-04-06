@@ -31,7 +31,7 @@ public class PlaceReview {
     private String content;
 
     @Lob
-    @Column(name = "images")
+    @Transient
     private String images;
 
     @Transient
@@ -48,9 +48,9 @@ public class PlaceReview {
     private LocalDateTime updatedAt;
 
     @Lob
-    @Column(name = "owner_reply")
+    @Transient
     private String ownerReply;
 
-    @Column(name = "reply_created_at")
+    @Transient
     private LocalDateTime replyCreatedAt;
 }

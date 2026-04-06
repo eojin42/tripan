@@ -294,27 +294,37 @@
 
   // ── 삭제 ──
   function askDelete(id, btn) {
-    pendingDeleteId = id;
-    pendingDeleteEl = btn.closest('.review-card');
-    document.getElementById('deleteModal').classList.add('active');
-    document.body.style.overflow = 'hidden';
-  }
-
-  async function confirmDelete() {
-    if (!pendingDeleteId) return;
-    try {
-      var res = await fetch('${pageContext.request.contextPath}/mypage/api/reviews/' + pendingDeleteId, { method: 'DELETE' });
-      if (!res.ok) throw new Error();
-      if (pendingDeleteEl) {
-        pendingDeleteEl.style.transition = 'all .3s';
-        pendingDeleteEl.style.opacity = '0';
-        pendingDeleteEl.style.transform = 'translateX(20px)';
-        setTimeout(function() { if (pendingDeleteEl) pendingDeleteEl.remove(); }, 300);
-      }
-      closeModal('deleteModal');
-    } catch(e) { alert('삭제에 실패했어요'); closeModal('deleteModal'); }
-    pendingDeleteId = null; pendingDeleteEl = null;
-  }
+	  pendingDeleteId = id;
+	  pendingDeleteEl = btn.closest('.review-card');
+	  document.getElementById('deleteModal').classList.add('active');
+	  document.body.style.overflow = 'hidden';
+	}
+	
+	async function confirmDelete() {
+	  if (!pendingDeleteId) return;
+	
+	  try {
+	    const res = await fetch('${pageContext.request.contextPath}/mypage/api/reviews/' + pendingDeleteId, {
+	      method: 'DELETE'
+	    });
+	
+	    if (!res.ok) throw new Error();
+	
+	    closeModal('deleteModal');
+	    document.body.style.overflow = '';
+	
+	    // 화면을 서버 기준으로 다시 그림
+	    location.reload();
+	
+	  } catch (e) {
+	    alert('삭제에 실패했어요');
+	    closeModal('deleteModal');
+	    document.body.style.overflow = '';
+	  }
+	
+	  pendingDeleteId = null;
+	  pendingDeleteEl = null;
+	}
 
   // ── 수정 모달 ──
   function openEditModal(reviewId, rating, btn) {

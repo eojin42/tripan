@@ -153,7 +153,7 @@
 	    var list = await res.json();
 
 	    if (!list.length) {
-	      area.innerHTML = renderEmpty('bi-bookmark-heart', '좋아요한 장소가 없어요', '${pageContext.request.contextPath}/guest/list');
+	      area.innerHTML = renderEmpty('bi-bookmark-heart', '좋아요한 장소가 없어요', '${pageContext.request.contextPath}/curation/place_list');
 	      return;
 	    }
 
@@ -179,7 +179,7 @@
 	      }).join('') +
 	    '</div>';
 	  } catch (e) {
-	    area.innerHTML = renderEmpty('bi-bookmark-heart', '불러오기에 실패했어요', '${pageContext.request.contextPath}/guest/list');
+	    area.innerHTML = renderEmpty('bi-bookmark-heart', '불러오기에 실패했어요', '${pageContext.request.contextPath}/curation/place_list');
 	  }
 	}
 
@@ -201,7 +201,7 @@
 	      var remain = document.querySelectorAll('#place-grid-area .wish-card').length;
 	      if (remain === 0) {
 	        document.getElementById('place-grid-area').innerHTML =
-	          renderEmpty('bi-bookmark-heart', '좋아요한 장소가 없어요', '${pageContext.request.contextPath}/guest/list');
+	          renderEmpty('bi-bookmark-heart', '좋아요한 장소가 없어요', '${pageContext.request.contextPath}/curation/place_list');
 	      }
 	    }, 300);
 	  } catch (e) {
@@ -347,9 +347,9 @@
   }
 
   function renderEmpty(icon, msg, href) {
-    return '<div class="empty-state"><i class="bi ' + icon + '"></i><p>' + msg + '</p>' +
-    '<button class="btn-primary" onclick="location.href=\'/curation/place_list\'">둘러보기</button></div>'
-  }
+	  return '<div class="empty-state"><i class="bi ' + icon + '"></i><p>' + msg + '</p>' +
+	  '<button class="btn-primary" onclick="location.href=\'' + href + '\'">둘러보기</button></div>';
+	}
   function escHtml(s) { if (!s) return ''; return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
 
   document.addEventListener('DOMContentLoaded', function() {

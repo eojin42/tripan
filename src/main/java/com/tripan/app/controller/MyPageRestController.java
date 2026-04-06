@@ -105,25 +105,6 @@ public class MyPageRestController {
 		}
 	}
 	
-	@GetMapping("badges")
-	public ResponseEntity<?> getBadges(HttpSession session){
-		MemberDto loginUser = getLoginUser(session);
-        if (loginUser == null) return unauthorized();
-        return ResponseEntity.ok(myPageService.getMyBadges(loginUser.getMemberId()));
-	}
-	
-	@PostMapping("badges/{badgeId}/equip")
-	public ResponseEntity<?> equipBadge(@PathVariable("badgeId") Long badgeId, HttpSession session) {
-		  MemberDto loginUser = getLoginUser(session);
-	       if (loginUser == null) return unauthorized();
-	        
-	       try {
-	    	   myPageService.updateEquippedBadge(loginUser.getMemberId(), badgeId);
-	    	   return ResponseEntity.ok(Map.of("message","배지가 장착되었습니다."));
-	       } catch (IllegalArgumentException e) {
-	    	   return ResponseEntity.status(400).body(Map.of("message",e.getMessage()));
-	       }
-	}
 	
 	// 내 지도 데이터 불러오기
     @GetMapping("visited-regions-data")

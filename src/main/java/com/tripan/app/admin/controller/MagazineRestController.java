@@ -23,7 +23,7 @@ public class MagazineRestController {
  
     // 단건 조회 (수정 모달용)
     @GetMapping("/{articleId}")
-    public ResponseEntity<MagazineArticleDto> getOne(@PathVariable int articleId) {
+    public ResponseEntity<MagazineArticleDto> getOne(@PathVariable("articleId") int articleId) {
         return ResponseEntity.ok(magazineService.getDetail(articleId));
     }
  
@@ -74,7 +74,7 @@ public class MagazineRestController {
  
     // 삭제
     @DeleteMapping("/{articleId}")
-    public ResponseEntity<Map<String, Object>> delete(@PathVariable int articleId) {
+    public ResponseEntity<Map<String, Object>> delete(@PathVariable("articleId") int articleId) {
         magazineService.delete(articleId);
         return ResponseEntity.ok(Map.of("success", true));
     }

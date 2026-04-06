@@ -169,18 +169,18 @@
         var isUpcoming = start > now;
         var statusLabel = isOngoing ? '여행 중' : (isUpcoming ? ('D-' + dday) : '완료');
         var statusClass = isOngoing ? 'badge-ongoing' : (isUpcoming ? 'badge-upcoming' : 'badge-completed');
-        return '<div class="trip-card" onclick="location.href=\'/trip/detail/' + t.tripId + '\'">' +
-          '<div class="trip-color-bar" style="background:' + colors[i % colors.length] + '"></div>' +
-          '<div class="trip-info">' +
-            '<div class="trip-name">' + escHtml(t.tripName) + '</div>' +
-            '<div class="trip-meta">' +
-              '<span><i class="bi bi-calendar3"></i> ' + fmtDate(t.startDate) + ' ~ ' + fmtDate(t.endDate) + '</span>' +
-              (t.regionName ? '<span><i class="bi bi-geo-alt"></i> ' + escHtml(t.regionName) + '</span>' : '') +
-              '<span><i class="bi bi-people"></i> ' + (t.memberCount || 1) + '명</span>' +
-            '</div>' +
+        return '<div class="trip-card" onclick="location.href=\'/trip/' + t.tripId + '/workspace\'">' +
+        '<div class="trip-color-bar" style="background:' + colors[i % colors.length] + '"></div>' +
+        '<div class="trip-info">' +
+          '<div class="trip-name">' + escHtml(t.tripName) + '</div>' +
+          '<div class="trip-meta">' +
+            '<span><i class="bi bi-calendar3"></i> ' + fmtDate(t.startDate) + ' ~ ' + fmtDate(t.endDate) + '</span>' +
+            (t.regionName ? '<span><i class="bi bi-geo-alt"></i> ' + escHtml(t.regionName) + '</span>' : '') +
+            '<span><i class="bi bi-people"></i> ' + (t.memberCount || 1) + '명</span>' +
           '</div>' +
-          '<span class="trip-badge ' + statusClass + '">' + statusLabel + '</span>' +
-        '</div>';
+        '</div>' +
+        '<span class="trip-badge ' + statusClass + '">' + statusLabel + '</span>' +
+      '</div>';
       }).join('') +
     '</div>';
   }
@@ -213,7 +213,8 @@
 
 	            // var canCancel = diffCancel >= 4 && checkIn >= now;
 	            var canCancel = diffCancel >= 5 && checkIn >= now;
-	            var canWriteReview = daysSinceCheckIn >= 0 && daysSinceCheckIn <= 30; 
+	            var canWriteReview = daysSinceCheckIn >= 0 && daysSinceCheckIn <= 30 && b.hasReview != 1;
+	            var isCompleted = checkOut < now && !isCanceled;
 
 	            var currentStatus = String(b.status || '').toUpperCase();
 	            var isCanceled = (currentStatus === '0' || currentStatus === 'CANCELED' || currentStatus === 'CANCEL');
@@ -225,7 +226,7 @@
 	            if (!isCanceled && checkOut < now) {
 	                statusTxt = '이용완료';
 	                statusClass = 'badge-completed';
-	                isConfirmed = true; // 리뷰 쓰기 활성화를 위해
+	                isConfirmed = true; 
 	            }
 
 	            var isCancelable = (canCancel && !isCanceled);
@@ -247,15 +248,26 @@
 	                '</div>' +
 	                
 	                '<div style="display: flex; gap: 8px; margin-top: 5px;">' +
-	                    '<button class="btn-edit-profile" style="' + cancelBtnStyle + '" ' + 
-	                    	(isCancelable ? 'onclick="cancelReservation(' + b.reservationId + ', ' + diffCancel + ')"' : 'disabled') + '>' +
-	                        '예약 취소' + 
-	                    '</button>' +
-	                    
-	                    (canWriteReview && !isCanceled && isConfirmed ? 
-	                    		'<button class="btn-primary" style="flex: 1; padding: 8px; font-size: 13px;" onclick="location.href=\'/accommodation/review/write/' + b.reservationId + '\'">리뷰 쓰기</button>' 
-	                        : '') +
-	                '</div>' +
+
+	                // 이용완료 또는 취소됨이면 예약취소 버튼 숨김
+	                (!isCanceled && checkOut >= now ?
+	                    '<button class="btn-edit-profile" style="' + cancelBtnStyle + '" ' +
+	                    (isCancelable ? 'onclick="cancelReservation(' + b.reservationId + ', ' + diffCancel + ')"' : 'disabled') + '>' +
+	                    '예약 취소' +
+	                    '</button>'
+	                : '') +
+
+	                (isConfirmed && !isCanceled
+	                	    ? b.hasReview == 1
+	                	        ? '<button class="btn-edit-profile" style="flex:1;" disabled>리뷰 작성 완료 ✓</button>'
+	                	        : canWriteReview
+	                	            ? '<button class="btn-primary" style="flex:1;padding:8px;font-size:13px;" onclick="location.href=\'/accommodation/review/write/' + b.reservationId + '\'">리뷰 쓰기</button>'
+	                	            : isCompleted
+	                	                ? '<button class="btn-edit-profile" style="flex:1;cursor:not-allowed;color:var(--text-gray);" disabled>리뷰 작성 기간 만료</button>'
+	                	                : ''
+	                	    : '') +
+
+	            '</div>' +
 	            '</div>';
 	        }).join('') +
 	        '</div>';

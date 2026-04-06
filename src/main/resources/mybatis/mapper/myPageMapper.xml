@@ -96,22 +96,26 @@
 
     <!-- 예약 -->
     <select id="getMyBookings" parameterType="Long" resultType="map">
-        SELECT
-            r.RESERVATION_ID  AS "reservationId",
-            r.ROOM_ID         AS "roomId",
-            r.CHECK_IN_DATE   AS "checkIn",
-            r.CHECK_OUT_DATE  AS "checkOut",
-            r.STATUS          AS "status",
-            p.PLACE_NAME      AS "accommodationName",
-            p.ADDRESS         AS "address",
-            rm.ROOM_NAME      AS "roomName"
-        FROM RESERVATION r
-        JOIN ROOM         rm ON r.ROOM_ID    = rm.ROOM_ID
-        JOIN ACCOMMODATION a ON rm.PLACE_ID  = a.PLACE_ID
-        JOIN PLACE         p ON a.PLACE_ID   = p.PLACE_ID
-        WHERE r.MEMBER_ID = #{memberId}
-        ORDER BY r.CHECK_IN_DATE DESC
-    </select>
+	    SELECT
+	        r.RESERVATION_ID  AS "reservationId",
+	        r.ROOM_ID         AS "roomId",
+	        r.CHECK_IN_DATE   AS "checkIn",
+	        r.CHECK_OUT_DATE  AS "checkOut",
+	        r.STATUS          AS "status",
+	        p.PLACE_NAME      AS "accommodationName",
+	        p.ADDRESS         AS "address",
+	        rm.ROOM_NAME      AS "roomName",
+	        CASE WHEN EXISTS (
+	            SELECT 1 FROM PLACE_REVIEW pr
+	            WHERE pr.RESERVATION_ID = r.RESERVATION_ID
+	        ) THEN 1 ELSE 0 END AS "hasReview"
+	    FROM RESERVATION r
+	    JOIN ROOM         rm ON r.ROOM_ID    = rm.ROOM_ID
+	    JOIN ACCOMMODATION a ON rm.PLACE_ID  = a.PLACE_ID
+	    JOIN PLACE         p ON a.PLACE_ID   = p.PLACE_ID
+	    WHERE r.MEMBER_ID = #{memberId}
+	    ORDER BY r.CHECK_IN_DATE DESC
+	</select>
    
     <!-- 내 지도 기록 전체 조회 -->
     <select id="selectVisitedRegionsData" resultType="com.tripan.app.domain.dto.ConquestMapDto">

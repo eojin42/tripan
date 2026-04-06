@@ -71,7 +71,7 @@ async function loadUpcoming() {
 	const diff = Math.floor((start - today) / (1000 * 60 * 60 * 24));
 	const ddayLabel = diff === 0 ? 'D-Day!' : diff > 0 ? `D-${diff}` : `D+${Math.abs(diff)}`;
     area.innerHTML = `
-      <div class="upcoming-banner" onclick="location.href='${ctxPath}/mypage/schedule'">
+      <div class="upcoming-banner" onclick="location.href='${ctxPath}/trip/${data.tripId}/workspace'">
         <i class="bi bi-airplane-fill"></i>
         <div class="up-info">
           <div class="up-lbl">다음 여행</div>
@@ -110,23 +110,29 @@ async function loadWishlist() {
       return;
     }
 	const cards = list.slice(0, 5).map(a => {
-	      let imgSrc = a.thumbnailUrl || a.imageUrl || '';
-	      if (imgSrc && !imgSrc.startsWith('http')) imgSrc = ctxPath + imgSrc;
+	  const placeId = a.placeId || a.accommodationId || a.id;
 
-	      const img = imgSrc
-	        ? '<img src="' + escHtml(imgSrc) + '" style="width:100%;height:150px;object-fit:cover;">'
-	        : '<div style="width:100%;height:150px;background:#E6F4FF;display:flex;align-items:center;justify-content:center;"><i class="bi bi-building" style="font-size:32px;color:#89CFF0;"></i></div>';
+	  let imgSrc = a.thumbnailUrl || a.imageUrl || '';
+	  if (imgSrc && !imgSrc.startsWith('http')) imgSrc = ctxPath + imgSrc;
 
-	      return '<div onclick="location.href=\'' + ctxPath + '/accommodation/detail/' + a.accommodationId + '\'" '
-	        + 'style="background:#fff;border-radius:12px;border:1px solid #E2E8F0;cursor:pointer;overflow:hidden;transition:all .2s;"'
-	        + 'onmouseover="this.style.transform=\'translateY(-4px)\';this.style.boxShadow=\'0 8px 24px rgba(137,207,240,.2)\'"'
-	        + 'onmouseout="this.style.transform=\'\';this.style.boxShadow=\'\'">'
-	        + img
-	        + '<div style="padding:10px;background:#F8FAFC;border-top:1px solid #E2E8F0;">'
-	        + '<div style="font-size:13px;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + escHtml(a.placeName || '') + '</div>'
-	        + '<div style="font-size:11px;color:#718096;margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + escHtml(a.address || '') + '</div>'
-	        + '</div></div>';
-	    }).join('');
+	  const img = imgSrc
+	    ? '<img src="' + escHtml(imgSrc) + '" style="width:100%;height:150px;object-fit:cover;">'
+	    : '<div style="width:100%;height:150px;background:#E6F4FF;display:flex;align-items:center;justify-content:center;"><i class="bi bi-building" style="font-size:32px;color:#89CFF0;"></i></div>';
+
+	  return '<div onclick="' + (
+	      placeId
+	        ? "location.href='" + ctxPath + "/accommodation/detail/" + placeId + "'"
+	        : "alert('숙소 ID가 없습니다.')"
+	    ) + '" '
+	    + 'style="background:#fff;border-radius:12px;border:1px solid #E2E8F0;cursor:pointer;overflow:hidden;transition:all .2s;"'
+	    + 'onmouseover="this.style.transform=\'translateY(-4px)\';this.style.boxShadow=\'0 8px 24px rgba(137,207,240,.2)\'"'
+	    + 'onmouseout="this.style.transform=\'\';this.style.boxShadow=\'\'">'
+	    + img
+	    + '<div style="padding:10px;background:#F8FAFC;border-top:1px solid #E2E8F0;">'
+	    + '<div style="font-size:13px;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + escHtml(a.placeName || a.name || '') + '</div>'
+	    + '<div style="font-size:11px;color:#718096;margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + escHtml(a.address || '') + '</div>'
+	    + '</div></div>';
+	}).join('');
 
 	    area.innerHTML = '<div style="display:grid;grid-template-columns:repeat(5,1fr);gap:12px;">' + cards + '</div>';
 
