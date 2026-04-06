@@ -178,7 +178,7 @@
         </div>
         <div class="dest-item" onclick="location.href='${pageContext.request.contextPath}/accommodation/list?regions=제주'">
           <%-- 제주: 성산일출봉과 바다 --%>
-          <div class="dest-img"><img src="https://images.unsplash.com/photo-1612977512598-3b8d6a498bbb?q=80&w=1074&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D" alt="제주"></div><div class="dest-name">제주도</div>
+          <div class="dest-img"><img src="https://images.unsplash.com/photo-1612977512598-3b8d6a498bbb?q=80&w=1074&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D" alt="제주"></div><div class="dest-name">제주</div>
         </div>
         <div class="dest-item" onclick="location.href='${pageContext.request.contextPath}/accommodation/list?regions=부산'">
           <%-- 부산: 해운대 광안대교 전경 --%>
