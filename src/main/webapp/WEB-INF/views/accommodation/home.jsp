@@ -220,8 +220,8 @@
 	        <button class="scroll-btn right" onclick="scrollCarousel(this, 1)">&#10095;</button>
 	    </div>
 	</section>
-
-    <c:choose>
+	
+	<c:choose>
         <c:when test="${empty sessionScope.loginUser}">
             <div class="promo-banner" onclick="try { showLoginModal(); } catch(e) { location.href='${pageContext.request.contextPath}/member/login'; }">
                 <div class="promo-text">
@@ -285,6 +285,8 @@
 	      <button class="scroll-btn right" onclick="scrollCarousel(this, 1)">&#10095;</button>
       </div>
     </section>
+    
+    
 
     <section class="theme-section">
       <h2 class="section-title">취향으로 찾는 테마 여행 🎯</h2>
