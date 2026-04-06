@@ -24,4 +24,5 @@ public class ChatMemberManageDto {
 
     private LocalDateTime joinedAt;
     private LocalDateTime lastConnectedAt;
+   
 }

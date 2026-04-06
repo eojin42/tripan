@@ -37,4 +37,5 @@ public interface PartnerManageMapper {
     void insertPartner(Map<String, Object> params);
     void insertPartnerStatusPending(Map<String, Object> params);
     void insertPartnerContract(Map<String, Object> params);
+    void insertPlace(Map<String, Object> params);
 }

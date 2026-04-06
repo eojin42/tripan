@@ -31,6 +31,7 @@ public class PartnerManageDto {
     private BigDecimal commissionRate;
     private Integer    status;            // partner.status 숫자 (1=활성, 0=비활성)
     private Date       createdAt;
+    private String address;
     
     private Double rating;
     private Integer reviewCount;

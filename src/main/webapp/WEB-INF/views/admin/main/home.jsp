@@ -269,12 +269,29 @@ function renderChart(list) {
       plugins: {
         legend: { position: 'bottom', labels: { padding: 14, usePointStyle: true } },
         tooltip: {
-          callbacks: {
-            label: ctx => ctx.datasetIndex === 0
-              ? ` 예약 ${ctx.raw}건`
-              : ` 매출 ${ctx.raw.toLocaleString()}천원`
-          }
-        }
+        	  mode: 'index',        // 같은 x축 위치의 두 데이터셋을 동시에 표시
+        	  intersect: false,     // 막대/선 위가 아니어도 hover 인식
+        	  callbacks: {
+        	    title: function(items) {
+        	      return items[0]?.label || '';
+        	    },
+        	    label: function(ctx) {
+        	      if (ctx.datasetIndex === 0) {
+        	        return '  📋 예약 건수: ' + ctx.raw + '건';
+        	      } else {
+        	        // y1축 데이터는 천원 단위로 저장됐으므로 * 1000 해서 원 단위로 표시
+        	        const won = (ctx.raw * 1000).toLocaleString();
+        	        return '  💰 매출액: ' + won + '원';
+        	      }
+        	    }
+        	  },
+        	  backgroundColor: 'rgba(30,30,40,0.85)',
+        	  titleColor: '#fff',
+        	  bodyColor: '#E2E8F0',
+        	  padding: 12,
+        	  cornerRadius: 8,
+        	  bodySpacing: 6
+        	}
       },
       scales: {
         x:  { grid: { display: false } },

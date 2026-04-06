@@ -121,6 +121,33 @@
 
     /* 일괄처리 로딩 */
     .btn-m:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    /* 회원 검색 자동완성 */
+    .member-search-wrap { position:relative; }
+    .member-dropdown {
+      position:absolute; top:calc(100% + 4px); left:0; right:0;
+      background:#fff; border:1.5px solid var(--border); border-radius:10px;
+      box-shadow:0 8px 24px rgba(0,0,0,0.10); z-index:100;
+      max-height:200px; overflow-y:auto;
+    }
+    .member-dropdown-item {
+      padding:10px 14px; cursor:pointer; font-size:13px;
+      display:flex; align-items:center; gap:10px;
+      border-bottom:1px solid var(--border); transition:background 0.1s;
+    }
+    .member-dropdown-item:last-child { border-bottom:none; }
+    .member-dropdown-item:hover { background:var(--bg); }
+    .member-dropdown-item .mid { font-weight:800; color:var(--text); }
+    .member-dropdown-item .mname { font-size:12px; color:var(--muted); }
+    .member-selected {
+      display:flex; align-items:center; gap:10px;
+      padding:10px 14px; background:#F0FDF4; border:1.5px solid #BBF7D0;
+      border-radius:10px; font-size:13px;
+    }
+    .member-selected .mid { font-weight:800; color:#15803D; }
+    .member-selected .mname { font-size:12px; color:#15803D; }
+    .member-clear { margin-left:auto; background:none; border:none; cursor:pointer; color:#94A3B8; font-size:16px; line-height:1; }
+    .member-clear:hover { color:#DC2626; }
   </style>
 </head>
 <body>
@@ -394,6 +421,37 @@
             <label>담당자 이메일</label>
             <input type="email" v-model="register.managerEmail" placeholder="partner@example.com">
           </div>
+          <!-- ══ 회원 연결 ══ -->
+          <div class="fg">
+            <label>연결 회원</label>
+            <div v-if="register.selectedMember" class="member-selected">
+              <div>
+                <div class="mid">{{ register.selectedMember.loginId }}</div>
+                <div class="mname">{{ register.selectedMember.username }} · {{ register.selectedMember.email }}</div>
+              </div>
+              <button class="member-clear" @click="clearRegisterMember" title="다시 선택">✕</button>
+            </div>
+            <div v-else class="member-search-wrap">
+              <input type="text" v-model="register.memberKeyword"
+                     placeholder="회원 ID 또는 이름으로 검색"
+                     @input="searchRegisterMember"
+                     @keydown.escape="registerMemberResults = []"
+                     autocomplete="off" />
+              <div class="member-dropdown" v-if="registerMemberResults.length > 0">
+                <div class="member-dropdown-item"
+                     v-for="m in registerMemberResults" :key="m.memberId"
+                     @click="selectRegisterMember(m)">
+                  <div>
+                    <div class="mid">{{ m.loginId }}</div>
+                    <div class="mname">{{ m.username }} · {{ m.email }}</div>
+                  </div>
+                </div>
+              </div>
+              <div class="member-dropdown" v-if="registerMemberSearched && registerMemberResults.length === 0">
+                <div class="member-dropdown-item" style="color:var(--muted);cursor:default;">검색 결과가 없습니다.</div>
+              </div>
+            </div>
+          </div>
           <div class="fg">
             <label>메모</label>
             <textarea v-model="register.memo" placeholder="계약 내용, 특이사항 등을 입력하세요."></textarea>
@@ -577,7 +635,7 @@
       const searched    = ref(false);
       const sortAsc     = ref(false);
       const selectedIds = ref([]);
-      const bulkLoading = ref(false); // ✅ 일괄처리 로딩 상태
+      const bulkLoading = ref(false);
 
       const isAllChecked = computed(() =>
         partnerList.value.length > 0 &&
@@ -598,8 +656,10 @@
 
       /* ── 모달 데이터 ── */
       const register = reactive({
-        partnerName:'', bizNo:'', commissionRate: 10,
-        managerName:'', managerPhone:'', managerEmail:'', memo:''
+        partnerName:'', businessNumber:'', commissionRate: 10,
+        contactName:'', contactPhone:'', managerEmail:'', memo:'',
+        selectedMember: null,
+        memberKeyword: ''
       });
       const bulkStatus       = reactive({ status: 'ACTIVE', reason: '' });
       const deactivateTarget = reactive({ partnerId:'', partnerName:'' });
@@ -643,7 +703,6 @@
         pageNo.value = page;
         let list = [...allPartners.value];
 
-        // 상태 필터 (statusCode 우선, 없으면 status 숫자 폴백)
         if (filter.status && filter.status !== 'ALL') {
           list = list.filter(p => {
             const sc = (p.statusCode || '').toUpperCase();
@@ -652,7 +711,6 @@
           });
         }
 
-        // 키워드 필터
         if (filter.keyword.trim()) {
           const keywords = filter.keyword.split(',').map(k => k.trim()).filter(k => k);
           list = list.filter(p =>
@@ -660,7 +718,6 @@
           );
         }
 
-        // ✅ 등록일 정렬 (toggleSort 클릭 시 sortAsc 반영)
         list.sort((a, b) => {
           const dateA = new Date(a.createdAt || 0).getTime();
           const dateB = new Date(b.createdAt || 0).getTime();
@@ -691,7 +748,6 @@
         }
       };
 
-      // ✅ 등록일 정렬 토글 - applyFilter에서 sortAsc 반영하므로 재조회 불필요
       const toggleSort = () => {
         sortAsc.value = !sortAsc.value;
         if (searched.value) applyFilter(pageNo.value);
@@ -727,7 +783,6 @@
         }
         if (rows.length === 0) { alert('다운로드할 데이터가 없습니다.'); return; }
 
-        // ✅ statusCode(문자열) + status(숫자) 둘 다 처리
         const statusLabel = s => {
           if (s == null) return '-';
           const code = String(s).toUpperCase();
@@ -751,9 +806,9 @@
             p.contactName    ?? '-',
             p.contactPhone   ?? '-',
             p.commissionRate != null ? Number(p.commissionRate).toFixed(1) + '%' : '-',
-            statusLabel(p.statusCode || p.status),  // ✅ statusCode 우선
-            p.salesLabel     ?? '-',                 // ✅ 매출 레이블 추가
-            p.rating != null ? Number(p.rating).toFixed(1) : '-', // ✅ 평점 추가
+            statusLabel(p.statusCode || p.status),
+            p.salesLabel     ?? '-',
+            p.rating != null ? Number(p.rating).toFixed(1) : '-',
             p.createdAt ? String(p.createdAt).substring(0,10) : '-'
           ];
           csv += cols.map(v => '"' + String(v).replace(/"/g, '""') + '"').join(',') + '\n';
@@ -774,11 +829,50 @@
       };
       const closeDetailModal = () => {};
 
+      /* ── 등록 모달 회원 검색 ── */
+      const registerMemberResults = ref([]);
+      const registerMemberSearched = ref(false);
+      let registerMemberTimer = null;
+
+      const searchRegisterMember = () => {
+        registerMemberSearched.value = false;
+        clearTimeout(registerMemberTimer);
+        if (!register.memberKeyword?.trim()) { registerMemberResults.value = []; return; }
+        registerMemberTimer = setTimeout(async () => {
+          try {
+            const res = await axios.get(contextPath + '/api/admin/coupon/member/search', {
+              params: { keyword: register.memberKeyword.trim() }
+            });
+            registerMemberResults.value = res.data;
+            registerMemberSearched.value = true;
+          } catch(e) { console.error('회원 검색 오류', e); }
+        }, 300);
+      };
+
+      const selectRegisterMember = (m) => {
+        register.selectedMember = m;
+        registerMemberResults.value = [];
+        registerMemberSearched.value = false;
+      };
+
+      const clearRegisterMember = () => {
+        register.selectedMember = null;
+        register.memberKeyword = '';
+        registerMemberResults.value = [];
+        registerMemberSearched.value = false;
+      };
+
       /* ── 등록 모달 ── */
       const openRegisterModal  = () => { showRegisterModal.value = true; };
       const closeRegisterModal = () => {
         showRegisterModal.value = false;
-        Object.assign(register, { partnerName:'', businessNumber:'', commissionRate:10, contactName:'', contactPhone:'', managerEmail:'', memo:'' });
+        Object.assign(register, {
+          partnerName:'', businessNumber:'', commissionRate:10,
+          contactName:'', contactPhone:'', managerEmail:'', memo:'',
+          selectedMember: null, memberKeyword: ''
+        });
+        registerMemberResults.value = [];
+        registerMemberSearched.value = false;
       };
       const submitRegister = async () => {
         if (!register.partnerName.trim() || !register.businessNumber.trim()) {
@@ -786,7 +880,16 @@
           return;
         }
         try {
-          await axios.post(contextPath + '/api/admin/partner/register', register);
+          await axios.post(contextPath + '/api/admin/partner/register', {
+            partnerName:    register.partnerName,
+            businessNumber: register.businessNumber,
+            commissionRate: register.commissionRate,
+            contactName:    register.contactName,
+            contactPhone:   register.contactPhone,
+            managerEmail:   register.managerEmail,
+            memo:           register.memo,
+            memberId:       register.selectedMember?.memberId ?? null
+          });
           alert('파트너사가 등록되었습니다. (승인 대기 상태)');
           closeRegisterModal();
           fetchList(1);
@@ -799,7 +902,7 @@
       const closeBulkStatusModal = () => { showBulkStatusModal.value = false; bulkStatus.reason = ''; };
       const submitBulkStatus = async () => {
         if (selectedIds.value.length === 0) { alert('선택된 파트너사가 없습니다.'); return; }
-        bulkLoading.value = true; // ✅ 로딩 시작
+        bulkLoading.value = true;
         try {
           if (bulkStatus.status === 'ACTIVE') {
             await Promise.all(selectedIds.value.map(id =>
@@ -821,7 +924,7 @@
           console.error('일괄 변경 오류', e);
           alert('처리 중 오류가 발생했습니다.');
         } finally {
-          bulkLoading.value = false; // ✅ 로딩 종료
+          bulkLoading.value = false;
         }
       };
 
@@ -879,7 +982,7 @@
       const submitBulkDeactivate = async () => {
         if (!bulkDeactivate.reason)        { alert('차단 사유를 선택해주세요.'); return; }
         if (selectedIds.value.length === 0) { alert('선택된 파트너사가 없습니다.'); return; }
-        bulkLoading.value = true; // ✅ 로딩 시작
+        bulkLoading.value = true;
         try {
           await Promise.all(selectedIds.value.map(id =>
             axios.post(contextPath + '/api/admin/partner/suspend/' + id)
@@ -892,7 +995,7 @@
           console.error('일괄 차단 오류', e?.response || e);
           alert(e?.response?.data || '처리 중 오류가 발생했습니다.');
         } finally {
-          bulkLoading.value = false; // ✅ 로딩 종료
+          bulkLoading.value = false;
         }
       };
 
@@ -910,6 +1013,7 @@
         showDeactivateModal, deactivateTarget, deactivate,
         showActivateModal, activateTarget, activate,
         showBulkDeactivateModal, bulkDeactivate,
+        registerMemberResults, registerMemberSearched,
         fetchList, toggleSort, toggleCheckAll, downloadExcel, copySelectedNames,
         openDetailModal,         closeDetailModal,
         openRegisterModal,       closeRegisterModal,       submitRegister,
@@ -917,6 +1021,7 @@
         openDeactivateModal,     closeDeactivateModal,     submitDeactivate,
         openActivateModal,       closeActivateModal,       submitActivate,
         openBulkDeactivateModal, closeBulkDeactivateModal, submitBulkDeactivate,
+        searchRegisterMember, selectRegisterMember, clearRegisterMember,
         resetFilter: () => {
           filter.status = 'ALL'; filter.sort = 'SALES_DESC'; filter.keyword = '';
           allPartners.value = [];

@@ -3,6 +3,9 @@ package com.tripan.app.admin.domain.dto;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.NoArgsConstructor;
+
+import java.time.LocalDateTime;
+
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 
@@ -19,4 +22,5 @@ public class ChatMessageManageDto {
     private String messageType;  // TALK, ENTER, LEAVE, SYSTEM
     private String content;
     private String createdAt;    // 화면 표시용 포맷 문자열
+    private LocalDateTime lastMessageAt;
 }

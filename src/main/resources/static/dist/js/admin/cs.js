@@ -98,7 +98,7 @@ function renderChatRooms(rooms) {
         <div class="room-info">
           <div class="room-info-top">
             <span class="room-user">${escHtml(r.userName || '사용자')}</span>
-            <span class="room-time">${formatDate(r.createdAt)}</span>
+            <span class="room-time">${formatDate(r.lastMessageAt || r.createdAt)}</span>
           </div>
           <div class="room-preview">${escHtml(r.lastMessage || '대화를 시작해보세요')}</div>
           <span class="room-status-pill ${meta.cls}">${meta.label}</span>

@@ -116,38 +116,30 @@
          · business_number 기준 최신 1건만 (신청 페이지와 동일 로직)
          · partner_status 최신 이력 = 'PENDING'-->
     <select id="selectPendingPartners"
-            resultType="com.tripan.app.admin.domain.dto.DashboardDto$PendingPartnerDto">
-        SELECT
-            p.PARTNER_ID                              AS memberId,
-            p.PARTNER_NAME                            AS username,
-            p.CONTACT_EMAIL                           AS email,
-            p.CONTACT_NAME                            AS loginId,
-            TO_CHAR(p.CREATED_AT, 'YYYY-MM-DD')      AS regDate
-        FROM (
-            SELECT p2.*,
-                   ROW_NUMBER() OVER (
-                       PARTITION BY p2.BUSINESS_NUMBER
-                       ORDER BY p2.CREATED_AT DESC
-                   ) AS rn
-            FROM PARTNER p2
-        ) p
-        JOIN (
-            SELECT ps.PARTNER_ID, ps.STATUS_CODE
-            FROM (
-                SELECT ps2.*,
-                       ROW_NUMBER() OVER (
-                           PARTITION BY ps2.PARTNER_ID
-                           ORDER BY ps2.PARTNER_STATUS_ID DESC
-                       ) AS rn
-                FROM PARTNER_STATUS ps2
-            ) ps
-            WHERE ps.rn = 1
-        ) latest_status ON latest_status.PARTNER_ID = p.PARTNER_ID
-        WHERE p.rn = 1
-          AND latest_status.STATUS_CODE = 'PENDING'
-        ORDER BY p.CREATED_AT DESC
-        FETCH FIRST 10 ROWS ONLY
-    </select>
+        resultType="com.tripan.app.admin.domain.dto.DashboardDto$PendingPartnerDto">
+	    SELECT
+	        p.PARTNER_ID                              AS memberId,
+	        p.PARTNER_NAME                            AS username,
+	        p.CONTACT_EMAIL                           AS email,
+	        p.CONTACT_NAME                            AS loginId,
+	        TO_CHAR(p.CREATED_AT, 'YYYY-MM-DD')      AS regDate
+	    FROM PARTNER p
+	    JOIN (
+	        SELECT ps2.PARTNER_ID, ps2.STATUS_CODE
+	        FROM (
+	            SELECT ps2.*,
+	                   ROW_NUMBER() OVER (
+	                       PARTITION BY ps2.PARTNER_ID
+	                       ORDER BY ps2.PARTNER_STATUS_ID DESC
+	                   ) AS rn
+	            FROM PARTNER_STATUS ps2
+	        ) ps2
+	        WHERE ps2.rn = 1
+	    ) latest_status ON latest_status.PARTNER_ID = p.PARTNER_ID
+	    WHERE latest_status.STATUS_CODE = 'PENDING'
+	    ORDER BY p.CREATED_AT DESC
+	    FETCH FIRST 10 ROWS ONLY
+	</select>
 
     <!-- 신고 상위 유저 TOP 10
          · 탈퇴(MEMBER1.STATUS=0) 제외 -->

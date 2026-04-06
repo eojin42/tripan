@@ -30,7 +30,7 @@
 	    FROM (
 	        SELECT p.*,
 	               ROW_NUMBER() OVER (
-	                   PARTITION BY p.business_number
+	                   PARTITION BY p.partner_id
 	                   ORDER BY p.created_at DESC
 	               ) AS rn
 	        FROM partner p
@@ -148,14 +148,27 @@
 
     <!-- 신규 등록 (partner_status: PENDING INSERT) -->
     <insert id="insertPartner" parameterType="map">
-        INSERT INTO partner (
-            partner_name, business_number, contact_name, contact_phone,
-            commission_rate, created_at
-        ) VALUES (
-            #{partnerName}, #{businessNumber}, #{contactName}, #{contactPhone},
-            #{commissionRate}, SYSDATE
-        )
-    </insert>
+	    <selectKey keyProperty="partnerId" resultType="long" order="BEFORE">
+	        SELECT SEQ_PARTNER_ID.NEXTVAL FROM DUAL
+	    </selectKey>
+	    INSERT INTO partner (
+		    partner_id, member_id, partner_name, business_number, contact_name, contact_phone,
+		    commission_rate, created_at
+		) VALUES (
+		    #{partnerId}, #{memberId}, #{partnerName}, #{businessNumber}, #{contactName}, #{contactPhone},
+		    #{commissionRate}, SYSDATE
+		)
+	</insert>
+	
+	<insert id="insertPlace" parameterType="map">
+	    INSERT INTO place (
+	        place_id, partner_id, place_name, category, address,
+	        latitude, longitude, is_active, createdtime
+	    ) VALUES (
+	        SEQ_PLACE.NEXTVAL, #{partnerId}, #{placeName}, 'ACCOMMODATION', #{address},
+	        0, 0, 1, SYSTIMESTAMP
+	    )
+	</insert>
 
     <!-- 신규 등록 시 PENDING 상태 INSERT -->
     <insert id="insertPartnerStatusPending" parameterType="map">

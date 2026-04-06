@@ -11,7 +11,7 @@
         <line x1="3" y1="18" x2="21" y2="18"></line>
       </svg>
     </button>
-    <a href="${pageContext.request.contextPath}/admin/dashboard" class="brand-logo">
+    <a href="${pageContext.request.contextPath}/admin/main" class="brand-logo">
       <div class="logo-text-wrapper">
         <span class="trip">Trip</span><span class="an">an</span> 
         <div class="logo-track">

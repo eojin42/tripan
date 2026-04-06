@@ -19,6 +19,7 @@ public class ChatRoomManageDto {
     private String chatRoomName;
     private String chatRoomType;   // REGION, WORKSPACE, SUPPORT
     private String userName;
+    private LocalDateTime lastMessageAt;
 
     /* ── 지역 연결 (region 테이블 JOIN) ── */
     private Long   regionId;
@@ -71,5 +72,9 @@ public class ChatRoomManageDto {
         private int totalCs;        // CS 채팅방 수
         private int activeRegion;   // 활성 지역 채팅방 수
         private int activeCs;       // 활성 CS 채팅방 수
+    }
+    
+    public boolean isHasUnread() {
+        return unreadCount != null && unreadCount > 0;
     }
 }

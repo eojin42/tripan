@@ -265,7 +265,7 @@
   // ── 상담 목록 로드 ──
   async function loadInquiryList() {
     try {
-      const res   = await fetch(`${ctxPath}/api/admin/chat/rooms/support`);
+      const res   = await fetch(`${ctxPath}/admin/cs/api/chat/rooms/support`);
       const rooms = await res.json();
 
       const listEl      = document.getElementById('inquiryList');
@@ -285,18 +285,18 @@
       let unread = 0;
 
       rooms.forEach(room => {
-        if (room.hasUnread) unread++;
+    	  if (room.unreadCount > 0) unread++;
 
         const div = document.createElement('div');
-        div.className = `inquiry-item${room.hasUnread ? ' unread' : ''}`;
+        div.className = `inquiry-item${room.unreadCount > 0 ? ' unread' : ''}`;
         div.dataset.roomId = room.chatRoomId;
         div.innerHTML = `
           <div class="inquiry-top">
             <span class="inquiry-user">
               👤 ${escHtml(room.userName || '사용자')}
-              ${room.hasUnread ? '<span class="unread-dot"></span>' : ''}
+              ${room.unreadCount > 0 ? '<span class="unread-dot"></span>' : ''}
             </span>
-            <span class="inquiry-time">${formatTime(room.createdAt)}</span>
+            <span class="inquiry-time">${formatTime(room.lastMessageAt || room.createdAt)}</span>
           </div>
           <div class="inquiry-preview">${escHtml(room.lastMessage || '대화를 시작해보세요')}</div>`;
 
@@ -441,9 +441,14 @@
     return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
   }
   function formatTime(v) {
-    if (!v) return '';
-    return new Date(v).toLocaleDateString('ko-KR', { month:'2-digit', day:'2-digit', hour:'2-digit', minute:'2-digit' });
-  }
+	    if (!v) return '';
+	    // Oracle LocalDateTime 형식 처리 (점을 제거하고 T를 공백으로)
+	    const normalized = String(v).replace('T', ' ').substring(0, 16);
+	    const [datePart, timePart] = normalized.split(' ');
+	    const [year, month, day] = datePart.split('-');
+	    const [hour, minute] = timePart.split(':');
+	    return `${month}.${day}. ${hour}:${minute}`;
+	}
 
   // ── textarea 자동 높이 조절 + Enter 전송 ──
   const inputEl = document.getElementById('adminChatInput');

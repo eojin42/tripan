@@ -215,6 +215,7 @@ public class PartnerManageServiceImpl implements PartnerManageService {
         params.put("contactPhone",   req.getContactPhone()   != null ? req.getContactPhone()   : "");
         params.put("commissionRate", req.getCommissionRate() != null
             ? req.getCommissionRate().doubleValue() : 10.0);
+        params.put("memberId", req.getMemberId());
 
         partnerMapper.insertPartner(params);
 
@@ -225,6 +226,13 @@ public class PartnerManageServiceImpl implements PartnerManageService {
                 "partnerId",  newPartnerId,
                 "registerId", 0L
             ));
+
+            // place 함께 생성
+            Map<String, Object> placeParams = new HashMap<>();
+            placeParams.put("partnerId", newPartnerId);
+            placeParams.put("placeName", req.getPartnerName());
+            placeParams.put("address",   req.getAddress() != null ? req.getAddress() : "-");
+            partnerMapper.insertPlace(placeParams);
         }
         log.info("신규 등록 완료: {}", req.getPartnerName());
     }
