@@ -160,7 +160,6 @@
           <div class="chip-container" id="chipContainer">
             <input type="text" id="tsInput" placeholder="떠나고 싶은 지역, 숙소를 찾아보세요" onkeypress="handleTsEnter(event)" autocomplete="off">
           </div>
-          <button class="btn-ts-search" onclick="executeTextSearch(event)">검색</button>
           <div style="color:#CBD5E0; cursor: pointer; margin-left:4px; padding: 4px;" onclick="clearRegions(event)">✕</div>
         </div>
     </c:if>
@@ -362,30 +361,25 @@
   }
 
   function handleTsEnter(e) {
-      if(e.key === 'Enter' || e.keyCode === 13) {
-          e.preventDefault();
-          executeTextSearch();
-      }
-  }
+	    if(e.key === 'Enter' || e.keyCode === 13) {
+	        e.preventDefault(); 
+	        addKeywordAsChip(); 
+	    }
+	}
 
-  function executeTextSearch(e) {
-      if(e) { e.preventDefault(); e.stopPropagation(); }
-      
-      const val = document.getElementById('tsInput').value.trim();
-      if(val) {
-          saveRecentSearch(val);
-          selectedRegions = [val]; 
-          document.getElementById('tsInput').value = '';
-          renderChips();
-          refreshGridHighlight();
-      }
-      
-      if(selectedRegions.length > 0) {
-          submitSearch(); 
-      } else {
-          document.getElementById('tsInput').focus();
-      }
-  }
+  function addKeywordAsChip() {
+	    const tsInput = document.getElementById('tsInput');
+	    if(!tsInput) return;
+	    
+	    const val = tsInput.value.trim();
+	    if(val) { 
+	        saveRecentSearch(val); 
+	        selectedRegions = [val]; 
+	        tsInput.value = ''; 
+	        renderChips();
+	        refreshGridHighlight(); 
+	    }
+	}
   
   function clickRecentSearch(keyword) {
       selectedRegions = [keyword];
@@ -642,6 +636,15 @@
 
   //--- 검색 제출 ---
   function submitSearch() {
+	  const tsInput = document.getElementById('tsInput');
+	    if (tsInput && tsInput.value.trim() !== '') {
+	        const val = tsInput.value.trim();
+	        saveRecentSearch(val);
+	        selectedRegions = [val];
+	        tsInput.value = '';
+	        renderChips();
+	    }
+	  
       let checkin = '';
       let checkout = '';
       
