@@ -383,7 +383,7 @@ function showToast(msg) {
   setTimeout(function() { t.classList.remove('show'); }, 2800);
 }
 
-/* ── 예약 영수증 모달 ── */
+/* 예약 영수증 모달 */
 function openResModal(row) {
   var d = row.dataset;
   document.getElementById('md_orderId').textContent   = '예약번호: ' + d.resid;
@@ -417,7 +417,7 @@ function downloadReceipt() {
   });
 }
 
-/* ── 포인트 내역 모달 ── */
+/* 포인트 내역 모달 */
 function openPointModal(memberId) {
   document.getElementById('pointModal').style.display = 'flex';
   document.getElementById('pointModalContent').innerHTML = '<div class="loading-msg">불러오는 중...</div>';
@@ -451,7 +451,7 @@ function openPointModal(memberId) {
 }
 function closePointModal() { document.getElementById('pointModal').style.display = 'none'; }
 
-/* ── 보유 쿠폰 모달 ── */
+/* 보유 쿠폰 모달 */
 function openCouponModal(memberId) {
   document.getElementById('couponModal').style.display = 'flex';
   document.getElementById('couponModalContent').innerHTML = '<div class="loading-msg">불러오는 중...</div>';
@@ -491,7 +491,7 @@ function openCouponModal(memberId) {
 }
 function closeCouponModal() { document.getElementById('couponModal').style.display = 'none'; }
 
-/* ── 예약 필터 ── */
+/* 예약 필터 */
 function filterReservations() {
   var s = document.getElementById('resStartDate').value;
   var e = document.getElementById('resEndDate').value;
@@ -512,7 +512,7 @@ function filterReservations() {
   if (el) el.textContent = '검색 결과: ' + cnt + '건';
 }
 
-/* ── 상태/역할 변경 모달 ── */
+/* 상태/역할 변경 모달 */
 function openSuspendModal() {
   document.getElementById('suspendReasonInput').value = '';
   document.getElementById('suspendModal').style.display = 'flex';
@@ -547,7 +547,7 @@ function saveSuspendStatus() {
   .catch(function() { showToast('변경 중 오류가 발생했습니다.'); });
 }
 
-/* ── 오버레이 클릭 닫기 ── */
+/* 오버레이 클릭 닫기 */
 window.addEventListener('click', function(e) {
   if (e.target.classList.contains('modal-overlay')) {
     closeResModal(); closeSuspendModal(); closePointModal(); closeCouponModal();

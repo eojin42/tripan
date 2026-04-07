@@ -201,7 +201,7 @@
   var editingReviewId = null;
   var editRating = 5;
 
-  // ── 미작성 리뷰 로드 ──
+  // 미작성 리뷰 로드
   async function loadPendingReviews() {
     try {
       var res = await fetch('${pageContext.request.contextPath}/mypage/api/pending-reviews');
@@ -236,7 +236,7 @@
     location.href = '${pageContext.request.contextPath}/accommodation/detail/' + placeId + '?reservationId=' + reservationId + '#review';
   }
 
-  // ── 작성된 리뷰 로드 ──
+  // 작성된 리뷰 로드
   async function loadReviews() {
     var area = document.getElementById('review-list-area');
     try {
@@ -292,7 +292,7 @@
     }
   }
 
-  // ── 삭제 ──
+  // 삭제
   function askDelete(id, btn) {
 	  pendingDeleteId = id;
 	  pendingDeleteEl = btn.closest('.review-card');
@@ -326,7 +326,7 @@
 	  pendingDeleteEl = null;
 	}
 
-  // ── 수정 모달 ──
+  // 수정 모달
   function openEditModal(reviewId, rating, btn) {
     editingReviewId = reviewId;
     editRating = rating || 5;

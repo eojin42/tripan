@@ -10,7 +10,7 @@ public class ReservationResponseDto {
     private String resId;
     private String username;
  
-    /* 숙소 + 객실 */
+    /* 숙소 / 객실 */
     private String placeName;
     private String roomName;
  

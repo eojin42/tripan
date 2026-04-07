@@ -385,7 +385,7 @@
 
     </main>
 
-    <!-- ══════════════ 파트너사 등록 모달 ══════════════ -->
+    <!-- 파트너사 등록 모달 -->
     <div class="modal-overlay" :class="{ open: showRegisterModal }" @click.self="closeRegisterModal">
       <div class="modal-sheet" style="max-width:520px;">
         <div class="ms-head">
@@ -464,7 +464,7 @@
       </div>
     </div>
 
-    <!-- ══════════════ 상태 일괄 변경 모달 ══════════════ -->
+    <!-- 상태 일괄 변경 모달 -->
     <div class="modal-overlay" :class="{ open: showBulkStatusModal }" @click.self="closeBulkStatusModal">
       <div class="modal-sheet">
         <div class="ms-head">
@@ -494,7 +494,7 @@
       </div>
     </div>
 
-    <!-- ══════════════ 단건 차단 모달 ══════════════ -->
+    <!-- 단건 차단 모달 -->
     <div class="modal-overlay" :class="{ open: showDeactivateModal }" @click.self="closeDeactivateModal">
       <div class="modal-sheet">
         <div class="ms-head">
@@ -533,7 +533,7 @@
       </div>
     </div>
 
-    <!-- ══════════════ 단건 활성화 모달 ══════════════ -->
+    <!-- 단건 활성화 모달 -->
     <div class="modal-overlay" :class="{ open: showActivateModal }" @click.self="closeActivateModal">
       <div class="modal-sheet">
         <div class="ms-head">
@@ -553,7 +553,7 @@
       </div>
     </div>
 
-    <!-- ══════════════ 일괄 차단 모달 ══════════════ -->
+    <!--일괄 차단 모달 -->
     <div class="modal-overlay" :class="{ open: showBulkDeactivateModal }" @click.self="closeBulkDeactivateModal">
       <div class="modal-sheet">
         <div class="ms-head">
@@ -616,18 +616,18 @@
   createApp({
     setup() {
 
-      /* ── KPI ── */
+      /* KPI */
       const kpi = reactive({
         total: 0, active: 0, suspended: 0, pending: 0,
         totalSalesLabel: '-', lowRatingCount: 0
       });
 
-      /* ── 필터 ── */
+      /* 필터 */
       const filter = reactive({
         status: 'ALL', sort: 'SALES_DESC', keyword: ''
       });
 
-      /* ── 목록 ── */
+      /* 목록 */
       const partnerList = ref([]);
       const totalCount  = ref(0);
       const pageNo      = ref(1);

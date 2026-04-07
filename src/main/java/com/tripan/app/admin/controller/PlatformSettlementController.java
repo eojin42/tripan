@@ -31,8 +31,6 @@ public class PlatformSettlementController {
 	/**
      * 플랫폼 정산 데이터 조회 (KPI + 월별 목록)
      * GET /admin/settlement/platform/data?year=2026&month=03
-     *
-     * month 를 생략하면 연간 전체 반환
      */
     @GetMapping("/data")
     @ResponseBody

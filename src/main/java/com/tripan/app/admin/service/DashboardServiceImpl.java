@@ -23,7 +23,6 @@ public class DashboardServiceImpl implements DashboardService {
         response.setDailyOrders(mapper.selectDailyOrders());
         response.setAccomRanking(mapper.selectAccomRanking());
         response.setRegionRanking(mapper.selectRegionRanking());
-        // 미답변 채팅은 /admin/cs/api/chat/rooms/support 를 JSP에서 직접 호출
         response.setPendingPartners(mapper.selectPendingPartners());
         response.setTopReported(mapper.selectTopReported());
         return response;

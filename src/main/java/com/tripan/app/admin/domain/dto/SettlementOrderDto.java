@@ -4,9 +4,6 @@ import lombok.Data;
 import java.math.BigDecimal;
 import java.util.Date;
 
-/**
- * 정산 상세 페이지 - 예약(주문) 건별 라인
- */
 @Data
 public class SettlementOrderDto {
 

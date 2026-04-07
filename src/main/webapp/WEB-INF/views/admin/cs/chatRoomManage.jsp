@@ -353,9 +353,7 @@
 </div>
 
 
-<!-- ══════════════════════════════════════
-     개설 모달 — 전용 클래스(cr-modal-*)로 admin.css 충돌 방지
-══════════════════════════════════════ -->
+<!-- 개설 모달 — 전용 클래스(cr-modal-*)로 admin.css 충돌 방지 -->
 <div class="cr-modal-overlay" id="crCreateModal">
   <div class="cr-modal-sheet">
 
@@ -448,9 +446,7 @@
 </div>
 
 
-<!-- ══════════════════════════════════════
-     JavaScript
-══════════════════════════════════════ -->
+<!-- JavaScript -->
 <script>
 (function () {
   var CTX        = '${pageContext.request.contextPath}';
@@ -481,7 +477,7 @@
       }).catch(function () {});
   }
 
-  /* ── 채팅방 목록 ── */
+  /* 채팅방 목록 */
   function loadRooms() {
     fetch(CTX + '/admin/api/chat/rooms')
       .then(function (r) { return r.json(); })
@@ -495,7 +491,7 @@
       });
   }
 
-  /* ── 필터 ── */
+  /* 필터 */
   window.crFilter = function () {
     var kw     = document.getElementById('searchInput').value.toLowerCase();
     var type   = document.getElementById('filterType').value;
@@ -518,7 +514,7 @@
     crFilter();
   };
 
-  /* ── 테이블 렌더링 ── */
+  /* 테이블 렌더링 */
   function renderTable() {
     var tbody = document.getElementById('roomTableBody');
     var total = filtered.length;
@@ -565,7 +561,7 @@
     renderPagination(total);
   }
 
-  /* ── 페이지네이션 ── */
+  /* 페이지네이션 */
   function renderPagination(total) {
     var totalPages = Math.ceil(total / PAGE_SIZE);
     var area = document.getElementById('paginationArea');
@@ -579,7 +575,7 @@
   }
   window.crGoPage = function (p) { page = p; renderTable(); };
 
-  /* ── 행 선택 / 상세 패널 ── */
+  /* 행 선택 / 상세 패널 */
   window.crSelectRoom = function (roomId) {
     selectedId = roomId;
     renderTable();
@@ -609,7 +605,7 @@
     document.getElementById('tabMessages').style.display = 'none';
   };
 
-  /* ── 탭 전환 ── */
+  /* 탭 전환 */
   window.crSwitchTab = function (btn, tab) {
     document.querySelectorAll('.cr-tab').forEach(function (t) { t.classList.remove('active'); });
     btn.classList.add('active');
@@ -617,7 +613,7 @@
     document.getElementById('tabMessages').style.display = tab === 'messages' ? '' : 'none';
   };
 
-  /* ── 멤버 목록 ── */
+  /* 멤버 목록 */
   function loadMembers(roomId) {
     var el = document.getElementById('tabMembers');
     el.innerHTML = '<div style="padding:24px;text-align:center;color:var(--muted);font-size:13px;">불러오는 중...</div>';
@@ -655,7 +651,7 @@
       });
   }
 
-  /* ── 채팅 내역 ── */
+  /* 채팅 내역 */
   var currentMsgRoomId = null;
 
   function loadMessages(roomId, searchDate) {
@@ -721,7 +717,7 @@
     if (currentMsgRoomId) loadMessages(currentMsgRoomId, null);
   };
 
-  /* ── 활성/비활성 토글 ── */
+  /* 활성/비활성 토글 */
   window.crToggleStatus = function (roomId, cb) {
     var status = cb.checked ? 'ACTIVE' : 'CLOSED';
     fetch(CTX + '/admin/api/chat/rooms/' + roomId + '/status', {
@@ -738,7 +734,7 @@
     .catch(function () { alert('상태 변경에 실패했습니다.'); cb.checked = !cb.checked; });
   };
 
-  /* ── 삭제 ── */
+  /* 삭제 */
   window.crDeleteRoom = function (roomId) {
     if (!confirm('채팅방을 삭제하시겠습니까?\n대화 내역도 모두 삭제됩니다.')) return;
     fetch(CTX + '/admin/api/chat/rooms/' + roomId, { method: 'DELETE' })
@@ -755,7 +751,7 @@
       .catch(function () { alert('삭제에 실패했습니다.'); });
   };
 
-  /* ── 강퇴 / 차단 ── */
+  /* 강퇴 / 차단 */
   window.crKickMember = function (roomId, memberId) {
     if (!confirm('해당 멤버를 강퇴하시겠습니까?')) return;
     fetch(CTX + '/admin/api/chat/rooms/' + roomId + '/members/' + memberId + '/kick', { method: 'POST' })
@@ -769,7 +765,7 @@
       .catch(function () { alert('차단에 실패했습니다.'); });
   };
 
-  /* ── 지역 드롭다운 ── */
+  /* 지역 드롭다운 */
   function loadSido() {
     fetch(CTX + '/api/regions/sido')
       .then(function (r) { return r.json(); })
@@ -797,7 +793,7 @@
       }).catch(function () {});
   };
 
-  /* ── 이름 미리보기 ── */
+  /* 이름 미리보기 */
   window.crUpdatePreview = function () {
     var prefix  = document.getElementById('formNamePrefix').value;
     var suffix  = document.getElementById('formRoomSuffix').value.trim();
@@ -811,7 +807,7 @@
     }
   };
 
-  /* ── 모달 ── */
+  /* 모달 */
   window.crOpenModal = function () {
     document.getElementById('formNamePrefix').value  = '';
     document.getElementById('formRoomSuffix').value  = '';
@@ -828,7 +824,7 @@
     if (e.target === this) crCloseModal();
   });
 
-  /* ── 개설 제출 ── */
+  /* 개설 제출 */
   window.crSubmitCreate = function () {
     var prefix  = document.getElementById('formNamePrefix').value;
     var suffix  = document.getElementById('formRoomSuffix').value.trim();
@@ -855,7 +851,7 @@
     .catch(function () { alert('채팅방 개설에 실패했습니다.'); });
   };
 
-  /* ── XSS 방지 ── */
+  /* XSS 방지 */
   function escHtml(str) {
     return String(str)
       .replace(/&/g, '&amp;').replace(/</g, '&lt;')

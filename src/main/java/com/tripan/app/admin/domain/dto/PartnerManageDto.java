@@ -53,10 +53,7 @@ public class PartnerManageDto {
     private String  message;   // 반려사유 / 승인메시지 (심사 처리 요청 시)
     private List<Map<String, Object>> docs; // 제출 서류 목록
 
-    /**
-     * DB에서 받지 않고 statusCode 기준으로 계산하는 한국어 상태 라벨.
-     * statusCode가 없으면 partner.status 숫자(1/0)로 폴백.
-     */
+
     public String getStatusLabel() {
         String s = (statusCode != null && !statusCode.isEmpty()) ? statusCode
                  : (status != null ? (status == 1 ? "ACTIVE" : "SUSPENDED") : "");

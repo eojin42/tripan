@@ -30,9 +30,7 @@ public class ReportManageController {
     private final ObjectMapper        objectMapper;
     private final ReportManageMapper reportMapper;
 
-    // ─────────────────────────────────────────
     //  신고 관리 메인 페이지
-    // ─────────────────────────────────────────
     @GetMapping("/main")
     public String main(@RequestParam(value = "targetType", required = false) String targetType,Model model) throws Exception {
         List<ReportManageDto> contentList  = reportManageService.getContentList(targetType);
@@ -44,10 +42,8 @@ public class ReportManageController {
         return "admin/report/main";
     }
 
-    // ─────────────────────────────────────────
     //  콘텐츠 비활성화 API
     //  POST /admin/report/deactivate
-    // ─────────────────────────────────────────
     @PostMapping("/deactivate")
     @ResponseBody
     public ResponseEntity<?> deactivate(@RequestBody Map<String, Object> body) {
@@ -61,10 +57,8 @@ public class ReportManageController {
         }
     }
 
-    // ─────────────────────────────────────────
     //  콘텐츠 활성화 API
     //  POST /admin/report/activate
-    // ─────────────────────────────────────────
     @PostMapping("/activate")
     @ResponseBody
     public ResponseEntity<?> activate(@RequestBody Map<String, Object> body) {

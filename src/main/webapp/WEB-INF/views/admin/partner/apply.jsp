@@ -320,9 +320,7 @@
 
     </main>
 
-    <!-- ══════════════════════════════════════
-         심사 처리 모달
-    ════════════════════════════════════════ -->
+    <!-- 심사 처리 모달 -->
     <div class="modal-overlay" :class="{ open: showReviewModal }" @click.self="closeReviewModal">
       <div class="modal-sheet" style="max-width:580px;">
         <div class="ms-head">
@@ -434,9 +432,7 @@
       </div>
     </div>
 
-    <!-- ══════════════════════════════════════
-         서류 확인 모달
-    ════════════════════════════════════════ -->
+    <!-- 서류 확인 모달 -->
     <div class="modal-overlay" :class="{ open: showDocModal }" @click.self="closeDocModal">
       <div class="modal-sheet" style="max-width:480px;">
         <div class="ms-head">
@@ -468,9 +464,7 @@
     </div>
 
 
-    <!-- ══════════════════════════════════════
-         일괄 심사 처리 모달
-    ════════════════════════════════════════ -->
+    <!-- 일괄 심사 처리 모달 -->
     <div class="modal-overlay" :class="{ open: showBulkReviewModal }" @click.self="closeBulkReviewModal">
       <div class="modal-sheet" style="max-width:480px;">
         <div class="ms-head">
@@ -526,7 +520,7 @@
   createApp({
     setup() {
 
-      /* ── 상태 ── */
+      /* 상태 */
       const kpi = reactive({
         total: 0, pending: 0, supplement: 0,
         active: 0, approved: 0, rejected: 0, approvedThisMonth: 0
@@ -567,7 +561,7 @@
       const showDocModal = ref(false);
       const docTarget = reactive({ partnerName: '', docs: [] });
 
-      /* ── KPI ── */
+      /* KPI */
       const fetchKpi = async () => {
         try {
           const res = await axios.get(buildApiUrl('/api/admin/partner/apply/kpi'));
@@ -575,7 +569,7 @@
         } catch(e) { console.error('KPI 오류', e); }
       };
 
-      /* ── 탭 카운트 계산 (allApplies 기준) ── */
+      /* 탭 카운트 계산 (allApplies 기준) */
       const updateTabCounts = () => {
         const all = allApplies.value;
         const getCode = (p) => p.statusCode ? p.statusCode.toUpperCase()
@@ -587,7 +581,7 @@
         kpi.rejected = all.filter(p => getCode(p) === 'REJECTED').length;
       };
 
-      /* ── 전체 목록 캐시 (프론트 페이징용) ── */
+      /* 전체 목록 캐시 (프론트 페이징용) */
       const allApplies = ref([]);
       const PAGE_SIZE  = 10;
 
@@ -641,13 +635,13 @@
         searched.value   = true;
       };
 
-      /* ── 탭 클릭 ── */
+      /* 탭 클릭 */
       const setTab = (status) => {
         filter.status = status;
         fetchList(1); 
       };
 
-      /* ── 목록 조회 (전체 1회 로드 후 캐시) ── */
+      /* 목록 조회 (전체 1회 로드 후 캐시) */
       const fetchList = async (page = 1) => {
         try {
           searched.value = true;
@@ -669,7 +663,7 @@
         }
       };
 
-      /* ── 파트너사명 복사 ── */
+      /* 파트너사명 복사 */
       const copySelectedNames = () => {
         const names = allApplies.value
           .filter(p => selectedIds.value.includes(p.partnerId))
@@ -680,7 +674,7 @@
         }).catch(() => { prompt('아래를 복사하세요:', names.join(', ')); });
       };
 
-      /* ── 심사 처리 모달 ── */
+      /* 심사 처리 모달 */
       const openReviewModal = async (item) => {
         // 이미 승인/반려된 건 모달 열지 않음
         const sc = item.statusCode || '';
@@ -705,7 +699,7 @@
       };
       const closeReviewModal = () => { showReviewModal.value = false; };
 
-      /* ── 일괄 심사 처리 ── */
+      /* 일괄 심사 처리*/
       const openBulkReviewModal = (result) => {
         if (selectedIds.value.length === 0) { alert('처리할 파트너사를 선택해주세요.'); return; }
         Object.assign(bulkReview, { statusCode: result, commissionRate: '', message: '' });
@@ -766,11 +760,11 @@
         }
       };
 
-      /* ── 서류 확인 모달 ── */
+      /* 서류 확인 모달 */
       const openDocModal = async (item) => {
         docTarget.partnerName = item.partnerName;
         docTarget.docs        = [];
-        Object.assign(docTarget, item); // applyId 포함
+        Object.assign(docTarget, item);
         showDocModal.value = true;
         try {
           const res = await axios.get(contextPath + '/api/admin/partner/apply/docs', {

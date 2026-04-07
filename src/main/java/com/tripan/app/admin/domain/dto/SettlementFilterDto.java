@@ -2,9 +2,6 @@ package com.tripan.app.admin.domain.dto;
 
 import lombok.Data;
 
-/**
- * 정산 검색 필터 파라미터
- */
 @Data
 public class SettlementFilterDto {
 

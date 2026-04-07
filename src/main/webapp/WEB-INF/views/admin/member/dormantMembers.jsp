@@ -537,8 +537,6 @@ function closeDeleteModal() { document.getElementById('deleteModal').style.displ
 function confirmDelete() {
   if (!deleteTarget) return;
 
-  // TODO: fetch DELETE /admin/member/dormant { email: deleteTarget }
-
   // UI 즉시 반영
   const row = [...document.querySelectorAll('.dormant-row')]
               .find(r => r.dataset.email === deleteTarget);
@@ -578,7 +576,6 @@ function confirmBulkDelete() {
     }
   });
 
-  // TODO: fetch DELETE /admin/member/dormant/bulk { emails: [...] }
 
   deletedRows.forEach(r => { r.style.display = 'none'; });
   filteredRows = filteredRows.filter(r => !deletedRows.includes(r));
@@ -597,7 +594,6 @@ function confirmBulkDelete() {
 /* 메일 발송 */
 function sendEmail(email) {
   if (confirm(email + ' 님에게 복귀 안내 메일을 발송하시겠습니까?')) {
-    // TODO: fetch POST /admin/member/dormant/mail { email }
     alert('✅ 메일 발송이 요청되었습니다.');
   }
 }
@@ -625,7 +621,6 @@ function openBulkMailModal() {
 function closeBulkMailModal() { document.getElementById('bulkMailModal').style.display = 'none'; }
 
 function confirmBulkMail() {
-  // TODO: fetch POST /admin/member/dormant/mail/bulk { emails: [...] }
   closeBulkMailModal();
   alert('✅ 일괄 메일 발송이 시작되었습니다.');
 }

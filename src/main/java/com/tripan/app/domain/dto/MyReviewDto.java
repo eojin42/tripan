@@ -9,7 +9,6 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-//place_review 테이블 member_id 조회용
 @Getter
 @Setter
 @Builder

@@ -316,9 +316,7 @@
   </div>
 </div>
 
-<!-- ════════════════════════════════════════
-     MODAL: 배너 등록/수정
-════════════════════════════════════════ -->
+<!-- MODAL: 배너 등록/수정 -->
 <div class="mo-overlay" id="moBanner">
   <div class="mo-box">
     <button class="mo-x" onclick="closeMo('moBanner')">✕</button>
@@ -401,9 +399,7 @@
   </div>
 </div>
 
-<!-- ════════════════════════════════════════
-     MODAL: 매거진 아티클 작성/수정
-════════════════════════════════════════ -->
+<!-- MODAL: 매거진 아티클 작성/수정 -->
 <div class="mo-overlay" id="moMag">
   <div class="mo-box" style="max-width:900px">
     <button class="mo-x" onclick="closeMo('moMag')">✕</button>
@@ -527,7 +523,7 @@
 <script>
 const CP = '${pageContext.request.contextPath}';
 
-/* ── TAB ── */
+/* TAB */
 function sw(t){
   document.querySelectorAll('.panel').forEach(p=>p.classList.remove('on'));
   document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('on'));
@@ -535,7 +531,7 @@ function sw(t){
   document.getElementById('tb-'+t).classList.add('on');
 }
 
-/* ── MODAL ── */
+/* MODAL */
 function openBanner(mode, bannerId){
   document.getElementById('bnTitle').textContent = mode==='edit' ? '배너 수정' : '새 배너 추가';
   if(mode==='edit' && bannerId){
@@ -605,7 +601,7 @@ document.querySelectorAll('.mo-overlay').forEach(o=>{
   o.addEventListener('click', e=>{ if(e.target===o) o.classList.remove('open'); });
 });
 
-/* ── IMAGE PREVIEW ── */
+/* IMAGE PREVIEW */
 function prevIU(input, wrId, prevId){
   const f = input.files[0]; if(!f) return;
   const r = new FileReader();
@@ -618,7 +614,7 @@ function prevIU(input, wrId, prevId){
   r.readAsDataURL(f);
 }
 
-/* ── BANNER DRAG SORT ── */
+/* BANNER DRAG SORT */
 (function(){
   const list = document.getElementById('bnList');
   if (!list) return;
@@ -665,14 +661,14 @@ function saveSortOrder(){
     .then(function(d){ if(d.success) showToast('순서가 저장되었습니다 ✅'); });
 }
 
-/* ── BANNER LIVE PREVIEW ── */
+/* BANNER LIVE PREVIEW */
 function updatePv(){
   document.getElementById('pvEy').textContent = document.getElementById('bnEyebrow').value;
   document.getElementById('pvTi').innerHTML   = document.getElementById('bnMainTitle').value.replace(/\n/g,'<br>');
   document.getElementById('pvSb').textContent = document.getElementById('bnSub').value;
 }
 
-/* ── BANNER SUBMIT ── */
+/* BANNER SUBMIT */
 function submitBanner(){
   const id    = document.getElementById('bnId').value;
   const url   = id && id !== '0'
@@ -686,7 +682,7 @@ function submitBanner(){
     });
 }
 
-/* ── DELETE BANNER ── */
+/* DELETE BANNER */
 function deleteBanner(bannerId, btn){
   if(!confirm('배너를 삭제하시겠습니까?')) return;
   fetch(CP+'/admin/curation/banner/delete/'+bannerId,{
@@ -697,7 +693,7 @@ function deleteBanner(bannerId, btn){
   });
 }
 
-/* ── BLOCK EDITOR ── */
+/* BLOCK EDITOR */
 let blkId = 0, dragSrc = null;
 
 function resetCanvas(){
@@ -802,7 +798,7 @@ function checkEmpty(){
 }
 function fmt(cmd){ document.execCommand(cmd,false,null); }
 
-/* ── MAG SUBMIT ── */
+/* MAG SUBMIT */
 function submitMag(status){
   // 블록 직렬화
   const blocks = [];
@@ -844,7 +840,7 @@ function submitMag(status){
     });
 }
 
-/* ── DELETE MAG ── */
+/* DELETE MAG */
 function deleteMag(articleId, btn){
   if(!confirm('아티클을 삭제하시겠습니까? 본문 블록도 함께 삭제됩니다.')) return;
   fetch(CP+'/admin/curation/magazine/delete',{
@@ -857,7 +853,7 @@ function deleteMag(articleId, btn){
   });
 }
 
-/* ── TAG INPUT ── */
+/* TAG INPUT */
 function addTag(e){
   if(e.key!=='Enter') return; e.preventDefault();
   const inp=document.getElementById('tagIn');
@@ -873,7 +869,7 @@ function appendTagChip(v){
   document.getElementById('tagWrap').insertBefore(chip,document.getElementById('tagIn'));
 }
 
-/* ── TOAST ── */
+/* TOAST */
 function showToast(msg){
   let t=document.getElementById('_toast');
   if(!t){ t=document.createElement('div'); t.id='_toast';

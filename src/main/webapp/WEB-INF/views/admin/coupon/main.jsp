@@ -361,9 +361,7 @@
         </div>
       </template>
 
-      <!-- ══════════════════════════════
-           회원 발급 현황 탭
-      ══════════════════════════════ -->
+      <!-- 회원 발급 현황 탭 -->
       <template v-if="activeTab === 'issued'">
         <div class="card filter-card fade-up">
           <div class="filter-row">
@@ -472,7 +470,7 @@
 
     </main>
 
-    <!-- ══════════ 삭제 확인 모달 ══════════ -->
+    <!-- 삭제 확인 모달 -->
     <div class="modal-overlay" :class="{ open: showDeleteModal }" @click.self="closeDeleteModal">
       <div class="modal-sheet" style="max-width:420px;">
         <div class="ms-head">
@@ -492,7 +490,7 @@
       </div>
     </div>
 
-    <!-- ══════════ 쿠폰 상세 모달 ══════════ -->
+    <!-- 쿠폰 상세 모달-->
     <div class="modal-overlay" :class="{ open: showDetailModal }" @click.self="closeDetailModal">
       <div class="modal-sheet" style="max-width:540px;">
         <div class="ms-head">
@@ -616,7 +614,7 @@
       </div>
     </div>
 
-    <!-- ══════════ 회원 쿠폰 지급 모달 ══════════ -->
+    <!-- 회원 쿠폰 지급 모달 -->
     <div class="modal-overlay" :class="{ open: showGrantModal }" @click.self="closeGrantModal">
       <div class="modal-sheet" style="max-width:480px;">
         <div class="ms-head">
@@ -687,7 +685,7 @@
       </div>
     </div>
 
-    <!-- ══════════ 쿠폰 회수 확인 모달 ══════════ -->
+    <!-- 쿠폰 회수 확인 모달 -->
     <div class="modal-overlay" :class="{ open: showRevokeModal }" @click.self="closeRevokeModal">
       <div class="modal-sheet" style="max-width:420px;">
         <div class="ms-head">

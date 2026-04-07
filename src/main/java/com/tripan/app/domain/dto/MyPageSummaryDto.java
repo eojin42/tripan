@@ -11,7 +11,6 @@ import com.tripan.app.admin.domain.dto.MemberDto;
 public class MyPageSummaryDto {
 
 	private MemberDto member;
-	private BadgeInfoDto equippedBadge;
 	
     // follow 집계
     private int followerCount;
@@ -20,7 +19,7 @@ public class MyPageSummaryDto {
 
     // 장착 배지
 
-    // ── 여행 통계 ──
+    // 여행 통계
     private long totalTripCount;       // 참여한 여행 총 횟수
     private long ownedTripCount;       // 내가 만든 여행 수 (OWNER)
     private long visitedRegionCount;   // 방문 지역 수 (regionId distinct)

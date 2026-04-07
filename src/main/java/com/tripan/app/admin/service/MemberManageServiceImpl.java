@@ -51,9 +51,7 @@ public class MemberManageServiceImpl implements MemberManageService {
         return member;
     }
 
-    // ─────────────────────────────────────────
     //  상태 + 역할 변경
-    // ─────────────────────────────────────────
     @Override
     public List<PointManageDto.HistoryDto> getPointHistory(Long memberId) {
         return memberMapper.selectPointHistory(memberId);
@@ -83,7 +81,6 @@ public class MemberManageServiceImpl implements MemberManageService {
         // 상태 이력 저장
         saveMemberStatusLog(targetMember, adminMember, newStatus, memo);
 
-        // 탈퇴(4) 추가 처리
         if (newStatus == 4) {
             Member3 withdrawInfo = new Member3();
             withdrawInfo.setMember1(targetMember);

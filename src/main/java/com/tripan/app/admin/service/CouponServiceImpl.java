@@ -159,7 +159,6 @@ public class CouponServiceImpl implements CouponService {
                 }
                 break;
             case "ROOM":
-                // room 은 targetValue(room_id) 유지, 숙소 단위 조회용으로 placeId 보조 저장
                 break;
             default:
                 break;

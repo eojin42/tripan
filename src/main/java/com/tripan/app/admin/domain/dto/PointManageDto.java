@@ -14,7 +14,7 @@ import lombok.Setter;
 @Builder
 public class PointManageDto {
 
-    /* ── 회원 포인트 요약 (목록용) ── */
+    /* 회원 포인트 요약 (목록용) */
     private Long   memberId;
     private String loginId;
     private String nickname;
@@ -24,7 +24,7 @@ public class PointManageDto {
     private int    totalUsed;     // 누적 사용
     private String lastChangeDate; // 마지막 변경일
 
-    /* ── 포인트 내역 (개인 상세용) ── */
+    /* 포인트 내역 (개인 상세용) */
     @Getter @Setter
     @NoArgsConstructor
     @AllArgsConstructor
@@ -39,7 +39,7 @@ public class PointManageDto {
         private String regDate;       // 날짜 포맷 문자열
     }
 
-    /* ── 포인트 지급/차감 요청 ── */
+    /* 포인트 지급/차감 요청 */
     @Getter @Setter
     @NoArgsConstructor
     public static class AdjustRequest {
@@ -48,7 +48,7 @@ public class PointManageDto {
         private String     changeReason;
     }
 
-    /* ── 검색 조건 ── */
+    /* 검색 조건 */
     @Getter @Setter
     @NoArgsConstructor
     public static class SearchRequest {

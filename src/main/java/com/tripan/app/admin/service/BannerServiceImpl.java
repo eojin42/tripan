@@ -82,7 +82,6 @@ public class BannerServiceImpl implements BannerService {
 	 
 	    @Override
 	    public void delete(int bannerId) {
-	        // 이미지 파일도 같이 삭제
 	        MainBannerDto existing = bannerMapper.selectById(bannerId);
 	        if (existing != null && existing.getImageUrl() != null && !existing.getImageUrl().isBlank()) {
 	            storageService.deleteFile(uploadPath, existing.getImageUrl());

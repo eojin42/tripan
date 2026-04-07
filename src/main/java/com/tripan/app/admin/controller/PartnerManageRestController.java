@@ -35,7 +35,7 @@ public class PartnerManageRestController {
     @Value("${file.upload-root}")
     private String uploadRoot;
 
-    /* ── KPI ── */
+    /* KPI */
     @GetMapping("/kpi")
     public ResponseEntity<PartnerKpiDto> getKpi() {
         return ResponseEntity.ok(partnerService.getKpi());
@@ -46,7 +46,7 @@ public class PartnerManageRestController {
         return ResponseEntity.ok(partnerService.getKpi());
     }
 
-    /* ── 전체 목록 ── */
+    /* 전체 목록 */
     @GetMapping("/list")
     public ResponseEntity<Map<String, Object>> getList() {
         List<PartnerManageDto> list = partnerService.getAllPartners();
@@ -57,13 +57,13 @@ public class PartnerManageRestController {
         return ResponseEntity.ok(result);
     }
 
-    /* ── 활성 파트너 옵션 ── */
+    /* 활성 파트너 옵션 */
     @GetMapping("/options")
     public ResponseEntity<List<PartnerManageDto>> getOptions() {
         return ResponseEntity.ok(partnerService.getActivePartners());
     }
 
-    /* ── 신규 등록 ── */
+    /* 신규 등록 */
     @PostMapping("/register")
     public ResponseEntity<String> register(@RequestBody PartnerManageDto req) {
         if (req.getPartnerName() == null || req.getPartnerName().isBlank()
@@ -74,28 +74,28 @@ public class PartnerManageRestController {
         return ResponseEntity.ok("등록 완료");
     }
 
-    /* ── 파트너 상세 조회 ── */
+    /* 파트너 상세 조회 */
     @GetMapping("/detail/{partnerId}")
     public ResponseEntity<PartnerManageDto> getDetail(
             @PathVariable("partnerId") Long partnerId) {
         return ResponseEntity.ok(partnerService.getPartnerDetail(partnerId));
     }
 
-    /* ── 운영중인 숙소 목록 ── */
+    /* 운영중인 숙소 목록 */
     @GetMapping("/detail/{partnerId}/places")
     public ResponseEntity<List<Map<String, Object>>> getPartnerPlaces(
             @PathVariable("partnerId") Long partnerId) {
         return ResponseEntity.ok(partnerService.getPlacesByPartnerId(partnerId));
     }
 
-    /* ── 예약 내역 목록 ── */
+    /* 예약 내역 목록 */
     @GetMapping("/detail/{partnerId}/reservations")
     public ResponseEntity<List<Map<String, Object>>> getPartnerReservations(
             @PathVariable("partnerId") Long partnerId) {
         return ResponseEntity.ok(partnerService.getReservationsByPartnerId(partnerId));
     }
 
-    /* ── 심사 처리 ── */
+    /* 심사 처리 */
     @PostMapping("/apply/review")
     public ResponseEntity<String> review(@RequestBody PartnerManageDto req) {
         if (req.getApplyId() == null || req.getStatusCode() == null) {
@@ -113,7 +113,7 @@ public class PartnerManageRestController {
         return ResponseEntity.ok("처리 완료");
     }
 
-    /* ── 차단 ── */
+    /* 차단 */
     @PostMapping("/suspend/{partnerId}")
     public ResponseEntity<String> suspend(
             @PathVariable("partnerId") Long partnerId) {
@@ -121,7 +121,7 @@ public class PartnerManageRestController {
         return ResponseEntity.ok("차단 완료");
     }
 
-    /* ── 활성화 ── */
+    /* 활성화 */
     @PostMapping("/activate")
     public ResponseEntity<String> activate(@RequestBody PartnerManageDto req) {
         Long id = req.getPartnerId() != null ? req.getPartnerId() : req.getApplyId();
@@ -129,7 +129,7 @@ public class PartnerManageRestController {
         return ResponseEntity.ok("활성화 완료");
     }
 
-    /* ── 제출 서류 목록 ── */
+    /* 제출 서류 목록 */
     @GetMapping("/apply/docs")
     public ResponseEntity<List<Map<String, Object>>> getApplyDocs(
             @RequestParam("applyId") Long applyId) {
@@ -143,17 +143,11 @@ public class PartnerManageRestController {
         try {
             log.info("[파일다운로드] fileUrl={} fileName={}", fileUrl, fileName);
 
-            // /uploads/partner/uuid_파일명.png → 파일명 분리
             int lastSlash   = fileUrl.lastIndexOf("/");
-            String saveFilename = fileUrl.substring(lastSlash + 1); // uuid_파일명.png
+            String saveFilename = fileUrl.substring(lastSlash + 1);
 
-            // webDir: /uploads/partner → /partner (uploadRoot 이후 경로)
-            // uploadRoot = .../tripan/uploads
-            // fileUrl    = /uploads/partner/xxx.png
-            // → uploads/ 이후: partner/xxx.png
-            // → dirPath  = uploadRoot + /partner
-            String afterUploads = fileUrl.replaceFirst("^/uploads", ""); // /partner/uuid_...png
-            String subDir = afterUploads.substring(0, afterUploads.lastIndexOf("/")); // /partner
+            String afterUploads = fileUrl.replaceFirst("^/uploads", "");
+            String subDir = afterUploads.substring(0, afterUploads.lastIndexOf("/"));
 
             String realDirPath = uploadRoot + subDir.replace("/", java.io.File.separator);
             log.info("[파일다운로드] realDirPath={} file={}", realDirPath, saveFilename);

@@ -64,9 +64,7 @@ public class MemberManageController {
         return "admin/member/dormantMembers";
     }
 
-    // ─────────────────────────────────────────────
     //  상태 + 역할 변경
-    // ─────────────────────────────────────────────
     @PostMapping("status")
     public ResponseEntity<?> updateStatus(
             @RequestBody MemberDto request,
@@ -81,7 +79,7 @@ public class MemberManageController {
         memberService.updateMemberStatus(
             request.getMemberId(),
             request.getStatusCode(),
-            request.getRole(),     // ← 역할 추가
+            request.getRole(),
             request.getMemo(),
             adminId
         );

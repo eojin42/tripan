@@ -21,7 +21,7 @@ public class SettlementDetailSummaryDto {
     private int  approvedPlaceCount; // 승인 완료 숙소 수
     private boolean allApproved;     // 전체 승인 완료 여부
  
-    /* 정산 상태 문자열 — JSP에서 분기 없이 바로 사용 가능 */
+    /* 정산 상태 문자열 */
     public String getSettlementStatus() {
         if (allApproved)              return "done";
         if (approvedPlaceCount > 0)   return "partial";

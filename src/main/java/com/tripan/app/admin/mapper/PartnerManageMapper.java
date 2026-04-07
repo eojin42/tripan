@@ -10,7 +10,7 @@ import com.tripan.app.admin.domain.dto.PartnerManageDto;
 @Mapper
 public interface PartnerManageMapper {
  
-	 // ── 조회 ──────────────────────────────────────────────────────────────
+	 // 조회
     List<PartnerManageDto>    selectAllPartners();
     List<PartnerManageDto>    selectActivePartners();
     PartnerManageDto          selectPartnerDetail(Long partnerId);
@@ -27,13 +27,13 @@ public interface PartnerManageMapper {
     /** 제출 서류 목록 */
     List<Map<String, Object>> selectPartnerDocs(Long applyId);
  
-    // ── 상태 변경 ──────────────────────────────────────────────────────────
-    void insertPartnerStatus(Map<String, Object> params);        // → updatePartnerStatus (XML id 맞춤)
+    // 상태 변경
+    void insertPartnerStatus(Map<String, Object> params);
     void updatePartnerStatus(Map<String, Object> params);
     void updatePartnerActiveStatus(Map<String, Object> params);
     void updateMemberRoleToPartner(Map<String, Object> params);
  
-    // ── 등록 ──────────────────────────────────────────────────────────────
+    // 등록
     void insertPartner(Map<String, Object> params);
     void insertPartnerStatusPending(Map<String, Object> params);
     void insertPartnerContract(Map<String, Object> params);

@@ -273,7 +273,7 @@
   const currentUserId = '${sessionScope.loginUser.memberId}';
   const RECENT_STORAGE_KEY = currentUserId ? 'tripan_recent_stays_' + currentUserId : 'tripan_recent_stays_guest';
   
-  // ── 최근 본 숙소 (서버 API → 없으면 localStorage fallback) ──
+  // 최근 본 숙소 (서버 API → 없으면 localStorage fallback)
   async function loadRecent() {
     var area = document.getElementById('recent-grid-area');
     area.innerHTML = '<div class="spin"></div>';

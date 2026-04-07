@@ -26,13 +26,12 @@ public class PartnerManageServiceImpl implements PartnerManageService {
     private final PartnerManageMapper partnerMapper;
     private final MailSender          mailSender;
 
-    // ── 조회 ────────────────────────────────────────────────
+    // 조회
 
     @Override
     public List<PartnerManageDto> getAllPartners() {
         List<PartnerManageDto> list = partnerMapper.selectAllPartners();
 
-        // 이번 달 매출 → salesLabel / salesRatio 가공
         long maxSales = list.stream()
             .mapToLong(p -> p.getMonthlySales() != null ? p.getMonthlySales() : 0L)
             .max().orElse(1L);
@@ -106,21 +105,21 @@ public class PartnerManageServiceImpl implements PartnerManageService {
             .build();
     }
 
-    // ── 숙소 목록 ────────────────────────────────────────────
+    // 숙소 목록
 
     @Override
     public List<Map<String, Object>> getPlacesByPartnerId(Long partnerId) {
         return partnerMapper.selectPlacesByPartnerId(partnerId);
     }
 
-    // ── 예약 내역 ─────────────────────────────────────────────
+    // 예약 내역
 
     @Override
     public List<Map<String, Object>> getReservationsByPartnerId(Long partnerId) {
         return partnerMapper.selectReservationsByPartnerId(partnerId);
     }
 
-    // ── 상태 변경 ─────────────────────────────────────────────
+    // 상태 변경
 
     @Override
     @Transactional
@@ -242,7 +241,7 @@ public class PartnerManageServiceImpl implements PartnerManageService {
         return partnerMapper.selectPartnerDocs(partnerId);
     }
 
-    // ── 메일 발송 공통 ────────────────────────────────────────
+    // 메일 발송 공통
 
     private void sendMail(String to, String subject, String content) {
         if (to == null || to.isBlank()) return;

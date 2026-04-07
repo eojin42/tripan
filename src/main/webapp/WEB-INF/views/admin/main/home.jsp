@@ -184,10 +184,10 @@
 const contextPath = '${pageContext.request.contextPath}';
 let dailyChart = null;
 
-/* ── 포맷 헬퍼 ── */
+/* 포맷 헬퍼 */
 function fmtK(n) { return n == null ? '0' : Math.floor(n / 1000).toLocaleString(); }
 
-/* ── 메인 로드 ── */
+/* 메인 로드 */
 function loadDashboard() {
   // 채팅은 cs.js와 동일한 API 직접 호출 (unreadCount 포함)
   fetch(contextPath + '/admin/cs/api/chat/rooms/support')
@@ -221,7 +221,7 @@ function loadDashboard() {
     });
 }
 
-/* ── ① 차트 ── */
+/* 차트 */
 function renderChart(list) {
   const canvas = document.getElementById('dailyChart');
   if (!canvas) return;
@@ -302,7 +302,7 @@ function renderChart(list) {
   });
 }
 
-/* ── ② 숙소 랭킹 ── */
+/* 숙소 랭킹 */
 function renderAccomRank(list) {
   const el = document.getElementById('accomRankList');
   if (!list || list.length === 0) {
@@ -324,7 +324,7 @@ function renderAccomRank(list) {
   }).join('');
 }
 
-/* ── ③ 지역 랭킹 ── */
+/* 지역 랭킹 */
 function renderRegionRank(list) {
   const el = document.getElementById('regionRankList');
   if (!list || list.length === 0) {
@@ -344,7 +344,7 @@ function renderRegionRank(list) {
   }).join('');
 }
 
-/* ── ④ 미답변 채팅 — cs.js의 loadChatRooms 방식 재활용 ── */
+/* 미답변 채팅 — cs.js의 loadChatRooms 방식 재활용 */
 function renderChatList(list) {
   const el    = document.getElementById('chatList');
   const badge = document.getElementById('chatBadge');
@@ -386,7 +386,7 @@ function renderChatList(list) {
   }).join('');
 }
 
-/* ── ⑤ 입점 승인 대기 ── */
+/* 입점 승인 대기 */
 function renderPartnerList(list) {
   const el    = document.getElementById('partnerList');
   const badge = document.getElementById('partnerBadge');
@@ -409,7 +409,7 @@ function renderPartnerList(list) {
   }).join('');
 }
 
-/* ── ⑥ 신고 상위 유저 ── */
+/* 신고 상위 유저 */
 function renderReportList(list) {
   const el = document.getElementById('reportList');
   if (!list || list.length === 0) {
@@ -431,7 +431,7 @@ function renderReportList(list) {
   }).join('');
 }
 
-/* ── XSS 방지 ── */
+/* XSS 방지 */
 function escHtml(s) {
   if (!s) return '';
   return String(s)
@@ -439,7 +439,7 @@ function escHtml(s) {
     .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
 
-/* ── 초기 로드 ── */
+/* 초기 로드 */
 document.addEventListener('DOMContentLoaded', loadDashboard);
 </script>
 </body>

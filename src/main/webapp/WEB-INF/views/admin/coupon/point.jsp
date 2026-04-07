@@ -8,7 +8,7 @@
   <title>TripanSuper — 포인트 관리</title>
   <link rel="stylesheet" href="${pageContext.request.contextPath}/dist/css/admin.css">
   <style>
-    /* ── 포인트 관리 전용 스타일 ── */
+    /* 포인트 관리 전용 스타일 */
     .pt-main-grid {
       display: grid;
       grid-template-columns: 1fr 380px;
@@ -212,7 +212,7 @@
         </div>
       </div>
 
-      <!-- ── KPI ── -->
+      <!-- KPI -->
       <div class="kpi-grid" style="grid-template-columns:repeat(3,1fr);">
         <div class="card kpi-card fade-up fade-up-1">
           <div class="kpi-label">포인트 보유 회원</div>
@@ -231,7 +231,7 @@
         </div>
       </div>
 
-      <!-- ── 필터 카드 ── -->
+      <!-- 필터 카드 -->
       <div class="card filter-card fade-up">
         <div class="filter-row">
           <div class="filter-label">회원 검색</div>
@@ -252,7 +252,7 @@
         </div>
       </div>
 
-      <!-- ── 일괄 액션 바 ── -->
+      <!-- 일괄 액션 바 -->
       <div class="pt-bulk-bar" id="ptBulkBar">
         <span class="pt-bulk-count" id="ptBulkCount">0명</span>
         <span class="pt-bulk-label">선택됨</span>
@@ -265,7 +265,7 @@
         </div>
       </div>
 
-      <!-- ── 메인: 회원 목록 풀폭 ── -->
+      <!-- 메인: 회원 목록 풀폭 -->
       <div class="fade-up">
 
         <!-- 회원 목록 -->
@@ -308,9 +308,7 @@
 </div>
 
 
-<!-- ══════════════════════════════════════
-     포인트 내역 모달
-══════════════════════════════════════ -->
+<!-- 포인트 내역 모달 -->
 <div class="pt-modal-overlay" id="ptHistModal">
   <div class="pt-modal-sheet" style="max-width:560px;">
     <div class="pt-ms-head" style="display:flex;align-items:flex-start;justify-content:space-between;">
@@ -348,9 +346,7 @@
   </div>
 </div>
 
-<!-- ══════════════════════════════════════
-     포인트 지급/차감 모달
-══════════════════════════════════════ -->
+<!-- 포인트 지급/차감 모달 -->
 <div class="pt-modal-overlay" id="ptAdjustModal">
   <div class="pt-modal-sheet">
 
@@ -396,9 +392,7 @@
 </div>
 
 
-<!-- ══════════════════════════════════════
-     JavaScript
-══════════════════════════════════════ -->
+<!-- JavaScript -->
 <script>
 (function () {
   var CTX         = '${pageContext.request.contextPath}';
@@ -411,13 +405,13 @@
   var modalType   = 'give';   // 'give' | 'deduct'
   var isBulk      = false;
 
-  /* ── 초기화 ── */
+  /* 초기화 */
   function init() {
     ptLoadList();
     ptLoadKpi();
   }
 
-  /* ── KPI ── */
+  /* KPI */
   function ptLoadKpi() {
     fetch(CTX + '/admin/api/point/members')
       .then(function (r) { return r.json(); })
@@ -432,7 +426,7 @@
     document.getElementById('kpiToday').textContent = '-';
   }
 
-  /* ── 목록 로드 ── */
+  /* 목록 로드 */
   window.ptLoadList = function () {
     var keyword = document.getElementById('searchKeyword').value.trim();
     var url     = CTX + '/admin/api/point/members';
@@ -461,7 +455,7 @@
     ptLoadList();
   };
 
-  /* ── 테이블 렌더링 ── */
+  /* 테이블 렌더링 */
   function renderTable() {
     var tbody = document.getElementById('ptTableBody');
     var total = filtered.length;
@@ -508,7 +502,7 @@
     renderPagination(total);
   }
 
-  /* ── 페이지네이션 ── */
+  /* 페이지네이션 */
   function renderPagination(total) {
     var totalPages = Math.ceil(total / PAGE_SIZE);
     var area       = document.getElementById('ptPagination');
@@ -522,7 +516,7 @@
   }
   window.ptGoPage = function (p) { page = p; renderTable(); };
 
-  /* ── 체크박스 ── */
+  /* 체크박스 */
   window.ptCheckAll = function (cb) {
     var start = (page - 1) * PAGE_SIZE;
     var paged = filtered.slice(start, start + PAGE_SIZE);
@@ -559,7 +553,7 @@
     updateBulkBar();
   };
 
-  /* ── 회원 선택 / 내역 모달 ── */
+  /* 회원 선택 / 내역 모달 */
   window.ptSelectMember = function (memberId) {
     selectedId = memberId;
     renderTable();
@@ -575,7 +569,7 @@
     ptLoadHistory();
   };
 
-  /* ── 포인트 내역 로드 ── */
+  /* 포인트 내역 로드 */
   function ptLoadHistory() {
     if (!selectedId) return;
     var start  = document.getElementById('histStart').value;
@@ -633,7 +627,7 @@
     ptLoadHistory();
   };
 
-  /* ── 모달 ── */
+  /* 모달 */
   window.ptOpenModal = function (type, bulk) {
     modalType = type;
     isBulk    = bulk;
@@ -685,7 +679,7 @@
     if (e.target === this) ptCloseModal();
   });
 
-  /* ── 포인트 지급/차감 제출 ── */
+  /* 포인트 지급/차감 제출 */
   window.ptSubmitAdjust = function () {
     var amount = parseInt(document.getElementById('ptAdjustAmount').value, 10);
     var reason = document.getElementById('ptAdjustReason').value.trim();
@@ -699,7 +693,7 @@
 
     if (ids.length === 0) { alert('대상 회원을 선택해주세요.'); return; }
 
-    /* ── 차감 초과 검증 ── */
+    /* 차감 초과 검증 */
     if (modalType === 'deduct') {
       var insufficient = [];
       ids.forEach(function (id) {
@@ -738,7 +732,7 @@
     .catch(function (e) { alert(e.message || '처리에 실패했습니다.'); });
   };
 
-  /* ── XSS 방지 ── */
+  /* XSS 방지 */
   function escHtml(str) {
     return String(str)
       .replace(/&/g, '&amp;').replace(/</g, '&lt;')

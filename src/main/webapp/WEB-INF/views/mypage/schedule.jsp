@@ -305,16 +305,6 @@
   document.addEventListener('DOMContentLoaded', function() { loadStats(); loadTrips(); });
   
   async function cancelReservation(reservationId, diffCancel) {
-	    /*
-	  	let refundRate = 0;
-	    if (diffCancel >= 10) refundRate = 100;
-	    else if (diffCancel >= 4 && diffCancel <= 9) refundRate = diffCancel * 10; 
-
-	    let msg = '정말로 이 예약을 취소하시겠습니까?\n\n';
-	    msg += '※ 현재 체크인 기준 D-' + diffCancel + '일 전입니다.\n';
-	    msg += '※ 환불 규정에 따라 결제 금액의 [' + refundRate + '%]만 환불됩니다.\n';
-     	msg += '(결제 취소 시 사용하신 마일리지와 쿠폰은 100% 즉시 복구됩니다.)';
-     	*/
      	
      	let msg = '정말로 이 예약을 취소하시겠습니까?\n\n';
         msg += '※ 현재 체크인 기준 D-' + diffCancel + '일 전입니다.\n';

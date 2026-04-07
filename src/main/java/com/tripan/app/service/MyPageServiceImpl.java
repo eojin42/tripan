@@ -8,7 +8,6 @@ import java.util.Set;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.tripan.app.domain.dto.BadgeInfoDto;
 import com.tripan.app.domain.dto.BookmarkDto;
 import com.tripan.app.domain.dto.ConquestMapDto;
 import com.tripan.app.domain.dto.FollowDto;
@@ -127,32 +126,6 @@ public class MyPageServiceImpl implements MyPageService {
             if (result == 0) throw new IllegalArgumentException("삭제 권한이 없거나 존재하지 않는 북마크입니다.");
         } catch (Exception e) {
             log.info("deleteBookmark : ", e);
-            throw e;
-        }
-    }
-
-    // 배지 목록 조회
-    @Override
-    public List<BadgeInfoDto> getMyBadges(Long memberId) {
-        try {
-            return mapper.selectAllBadgesWithStatus(memberId);
-        } catch (Exception e) {
-            log.info("getMyBadges : ", e);
-            return null;
-        }
-    }
-
-    // 배지 장착
-    @Transactional
-    @Override
-    public void updateEquippedBadge(Long memberId, Long badgeId) {
-        try {
-            // 획득한 배지인지 검증
-            boolean isEarned = memberBadgeRepository.existsByMemberIdAndBadgeId(memberId, badgeId);
-            if (!isEarned) throw new IllegalArgumentException("획득하지 않은 배지는 장착할 수 없습니다.");
-            member2Repository.updateEquippedBadge(memberId, badgeId);
-        } catch (Exception e) {
-            log.info("updateEquippedBadge : ", e);
             throw e;
         }
     }

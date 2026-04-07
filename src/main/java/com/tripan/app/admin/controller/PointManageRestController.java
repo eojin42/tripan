@@ -18,8 +18,8 @@ public class PointManageRestController {
 
     private final PointManageService pointManageService;
 
-    /* ── 회원별 포인트 요약 목록
-         GET /admin/api/point/members?keyword=&startDate=&endDate= ── */
+    /* 회원별 포인트 요약 목록
+         GET /admin/api/point/members?keyword=&startDate=&endDate= */
     @GetMapping("/members")
     public ResponseEntity<List<PointManageDto>> getMemberPointList(
             @RequestParam(name = "keyword",   required = false) String keyword,
@@ -34,8 +34,8 @@ public class PointManageRestController {
         return ResponseEntity.ok(pointManageService.getMemberPointList(req));
     }
 
-    /* ── 개인 포인트 내역
-         GET /admin/api/point/members/{memberId}/history?startDate=&endDate= ── */
+    /* 개인 포인트 내역
+         GET /admin/api/point/members/{memberId}/history?startDate=&endDate= */
     @GetMapping("/members/{memberId}/history")
     public ResponseEntity<List<PointManageDto.HistoryDto>> getPointHistory(
             @PathVariable("memberId") Long memberId,
@@ -46,8 +46,8 @@ public class PointManageRestController {
                 pointManageService.getPointHistory(memberId, startDate, endDate));
     }
 
-    /* ── 포인트 지급/차감 (개인 or 일괄)
-         POST /admin/api/point/adjust ── */
+    /* 포인트 지급/차감 (개인 or 일괄)
+         POST /admin/api/point/adjust */
     @PostMapping("/adjust")
     public ResponseEntity<Void> adjustPoints(
             @RequestBody PointManageDto.AdjustRequest request) {
@@ -55,7 +55,7 @@ public class PointManageRestController {
         return ResponseEntity.ok().build();
     }
 
-    /* ── 예외 처리 ── */
+    /* 예외 처리 */
     @ExceptionHandler(IllegalArgumentException.class)
     public ResponseEntity<Map<String, String>> handleIllegalArg(IllegalArgumentException e) {
         log.warn("[PointManage] 잘못된 요청: {}", e.getMessage());

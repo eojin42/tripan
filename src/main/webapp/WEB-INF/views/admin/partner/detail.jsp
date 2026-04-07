@@ -202,7 +202,7 @@
   const { createApp, ref, reactive, onMounted } = Vue;
   const contextPath = '${pageContext.request.contextPath}';
 
-  // ✅ partnerId: URL 파라미터에서 숫자만 추출 (혹시 모를 문자 오염 방지)
+  // partnerId: URL 파라미터에서 숫자만 추출 (문자 오염 방지)
   const rawPartnerId = new URLSearchParams(window.location.search).get('partnerId');
   const partnerId    = rawPartnerId ? String(parseInt(rawPartnerId, 10)) : null;
 
@@ -220,7 +220,7 @@
       const reservations        = ref([]);
       const reservationsLoading = ref(false);
 
-      /* ── 유틸 ── */
+      /* 유틸 */
       const formatDate = (value) => value ? String(value).substring(0, 10) : '-';
       const numberOrDash = (value) =>
         (value === null || value === undefined || value === '') ? '-' : Number(value).toFixed(0);
@@ -235,10 +235,10 @@
         return '-';
       };
 
-      /* ── 파일 다운로드
+      /*  파일 다운로드
        *  form GET 방식으로 전송 → 한글 파일명 인코딩 안전
        *  contextPath가 '/' 일 때 '//' 방지
-       * ── */
+       *  */
       const downloadDoc = (doc) => {
         console.log('[downloadDoc] doc =', JSON.stringify(doc));
         if (!doc.url) { alert('다운로드 URL이 없습니다.\n(file_url 컬럼이 비어있습니다)'); return; }
@@ -267,7 +267,7 @@
         document.body.removeChild(form);
       };
 
-      /* ── 제출 서류 목록 ── */
+      /* 제출 서류 목록 */
       const loadDocs = async () => {
         if (!partnerId) return;
         docsLoading.value = true;
@@ -284,7 +284,7 @@
         }
       };
 
-      /* ── 운영중인 숙소 ── */
+      /* 운영중인 숙소 */
       const loadPlaces = async () => {
         if (!partnerId) return;
         placesLoading.value = true;
@@ -300,7 +300,7 @@
         }
       };
 
-      /* ── 예약 내역 ── */
+      /* 예약 내역 */
       const loadReservations = async () => {
         if (!partnerId) return;
         reservationsLoading.value = true;
@@ -316,7 +316,7 @@
         }
       };
 
-      /* ── 기본 상세 ── */
+      /* 기본 상세 */
       const loadDetail = async () => {
         loading.value      = true;
         errorMessage.value = '';

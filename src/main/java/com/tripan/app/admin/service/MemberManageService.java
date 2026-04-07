@@ -33,6 +33,5 @@ public interface MemberManageService {
     
     List<PointManageDto.HistoryDto> getPointHistory(Long memberId);
     
-    // 보유 쿠폰 내역
     List<CouponDto.IssuedItem> getMemberCoupons(Long memberId);
 }

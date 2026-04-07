@@ -3,7 +3,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import com.tripan.app.domain.dto.BadgeInfoDto;
 import com.tripan.app.domain.dto.BookmarkDto;
 import com.tripan.app.domain.dto.ConquestMapDto;
 import com.tripan.app.domain.dto.FollowDto;
@@ -33,10 +32,6 @@ public interface MyPageService {
     // 찜 (bookmark)
     List<BookmarkDto> getMyBookmarks(Long memberId, String type);
     void deleteBookmark(Long memberId, Long bookmarkId);
-
-    // 배지 & 칭호
-    List<BadgeInfoDto> getMyBadges(Long memberId);
-    void updateEquippedBadge(Long memberId, Long badgeId);
     
     // 내 예약
     List<Map<String, Object>> getMyBookings(Long memberId) ;

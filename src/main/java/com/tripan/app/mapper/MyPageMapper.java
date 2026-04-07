@@ -7,7 +7,6 @@ import java.util.Set;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 
-import com.tripan.app.domain.dto.BadgeInfoDto;
 import com.tripan.app.domain.dto.BookmarkDto;
 import com.tripan.app.domain.dto.ConquestMapDto;
 import com.tripan.app.domain.dto.FollowDto;
@@ -34,9 +33,6 @@ public interface MyPageMapper {
 
     // 찜 목록 (bookmark 테이블)
     List<BookmarkDto> selectMyBookmarks(@Param("memberId") Long memberId, @Param("type") String type);
-    
-    // 배지 전체 (badge LEFT JOIN member_badge)
-    List<BadgeInfoDto> selectAllBadgesWithStatus(Long memberId);
 
     // 팔로잉 목록
     List<FollowDto> selectFollowingList(Long memberId);

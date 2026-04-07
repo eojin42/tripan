@@ -7,7 +7,7 @@ import lombok.Setter;
 @Setter
 public class ReservationDto {
 	
-	/* ── 목록 + 상세 공통 ── */
+	/* 목록/상세 공통*/
     private Long    reservationId;
     private String  orderId;
     private String  memberName;
@@ -21,7 +21,7 @@ public class ReservationDto {
     private String  status;
     private String  paymentStatus;
  
-    /* ── 상세 전용 ── */
+    /* 상세 전용 */
     private Integer guestCount;
     private String  request;
     private Long    couponDiscount;
@@ -29,7 +29,7 @@ public class ReservationDto {
     private Long    settlementTargetAmount;
     private Double  commissionRate;
  
-    /* ── KPI 전용 ── */
+    /* KPI 전용 */
     private Long totalCount;
     private Long reservedCount;
     private Long usedCount;

@@ -27,9 +27,7 @@ public class PartnerSettlementServiceImpl implements PartnerSettlementService {
     private final PartnerSettlementMapper settlementMapper;
     private final SettlementBatchMapper   batchMapper;
 
-    // ─────────────────────────────────────────
     //  조회
-    // ─────────────────────────────────────────
 
     @Override
     public List<SettlementManageDto> getSummaryList(SettlementFilterDto filter) {
@@ -66,9 +64,7 @@ public class PartnerSettlementServiceImpl implements PartnerSettlementService {
         return settlementMapper.selectExcelByPlace(filter);
     }
 
-    // ─────────────────────────────────────────
     //  정산 승인 — 개별 파트너(숙소) 1개 승인
-    // ─────────────────────────────────────────
 
     @Override
     @Transactional
@@ -80,12 +76,7 @@ public class PartnerSettlementServiceImpl implements PartnerSettlementService {
         log.info("[정산 승인] partnerId={}, month={}, adminId={}", partnerId, settlementMonth, adminId);
     }
 
-    // ─────────────────────────────────────────
     //  정산 승인 — 멤버 소속 파트너 전체 승인
-    //  memberId 소속 파트너 ID 전체를 조회한 뒤
-    //  각 partnerId 별로 upsertSettlement 호출
-    //  → partial 상태에서도 미승인 파트너만 순회하며 done 처리
-    // ─────────────────────────────────────────
 
     @Override
     @Transactional
@@ -110,9 +101,7 @@ public class PartnerSettlementServiceImpl implements PartnerSettlementService {
         log.info("[전체 정산 승인] 완료 - memberId={}, month={}", memberId, settlementMonth);
     }
 
-    // ─────────────────────────────────────────
     //  배치 정산 집계
-    // ─────────────────────────────────────────
 
     @Override
     @Transactional(rollbackFor = Exception.class)

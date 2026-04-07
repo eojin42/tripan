@@ -18,7 +18,7 @@ public class PointManageServiceImpl implements PointManageService{
 
 	private final PointManageMapper pointManageMapper;
 	 
-    /* ── 회원별 포인트 요약 목록 ── */
+    /* 회원별 포인트 요약 목록 */
     @Override
     @Transactional(readOnly = true)
     public List<PointManageDto> getMemberPointList(PointManageDto.SearchRequest request) {
@@ -29,7 +29,7 @@ public class PointManageServiceImpl implements PointManageService{
         );
     }
  
-    /* ── 개인 포인트 내역 ── */
+    /* 개인 포인트 내역 */
     @Override
     @Transactional(readOnly = true)
     public List<PointManageDto.HistoryDto> getPointHistory(Long memberId,
@@ -38,7 +38,7 @@ public class PointManageServiceImpl implements PointManageService{
         return pointManageMapper.selectPointHistory(memberId, startDate, endDate);
     }
  
-    /* ── 포인트 지급/차감 (개인 or 일괄) ── */
+    /* 포인트 지급/차감 (개인 or 일괄) */
     @Override
     @Transactional
     public void adjustPoints(PointManageDto.AdjustRequest request) {
@@ -53,12 +53,10 @@ public class PointManageServiceImpl implements PointManageService{
         }
  
         for (Long memberId : request.getMemberIds()) {
-            /* 현재 잔여 포인트 조회 */
         	Integer currentRem = pointManageMapper.selectRemPoint(memberId);
-        	int rem = (currentRem != null) ? currentRem : 0;  // null이면 0으로
+        	int rem = (currentRem != null) ? currentRem : 0;
         	int newRem = rem + request.getPointAmount();
  
-            /* 차감 시 잔액 부족 체크 */
             if (newRem < 0) {
                 log.warn("[Point] 잔액 부족으로 차감 스킵: memberId={}, current={}, amount={}",
                         memberId, currentRem, request.getPointAmount());
