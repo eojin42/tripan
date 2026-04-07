@@ -5,7 +5,6 @@
 
     <!--
         member_coupon bulk INSERT (쿠폰 등록 시 대상 회원 일괄 발급)
-        memberId : Long, couponId : Long
     -->
     <insert id="insertMemberCoupon" parameterType="map">
         INSERT INTO member_coupon (member_coupon_id, member_id, coupon_id , status, issued_at, expired_at)

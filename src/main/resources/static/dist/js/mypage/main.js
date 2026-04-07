@@ -160,53 +160,6 @@ async function toggleWish(e, accomId, btn) {
   } catch (e) { console.error(e); }
 }
 
-/* 
-// ── 팔로워/팔로잉 모달 ──
-async function openFollowModal(type) {
-  const modal = document.getElementById('followModal');
-  const title = document.getElementById('follow-modal-title');
-  const body  = document.getElementById('follow-modal-body');
-  if (!modal) return;
-  title.textContent = type === 'follower' ? '팔로워' : '팔로잉';
-  body.innerHTML    = '<div style="text-align:center;padding:30px;color:var(--muted);">불러오는 중...</div>';
-  modal.classList.add('active');
-  try {
-    const res  = await fetch(ctxPath + '/mypage/api/' + type);
-    const list = await res.json();
-    if (!list.length) {
-      body.innerHTML = '<div style="text-align:center;padding:30px;color:var(--muted);font-size:13px;">목록이 없습니다</div>';
-      return;
-    }
-	body.innerHTML = list.map(u => `
-	  <div class="user-item" style="cursor:pointer;" onclick="location.href='${ctxPath}/community/feed?tab=profile&memberId=${u.memberId}'">
-	    <div class="user-pic">
-	      <img 
-	        src="${ctxPath}/dist/images/trip_icon.png"
-	        onload="this._loaded=true"
-	        onerror="this.src='${ctxPath}/dist/images/trip_icon.png'"
-	        style="width:100%;height:100%;object-fit:cover;"
-	        ${u.profileImage ? `data-src="${ctxPath}/uploads/member/${escHtml(u.profileImage)}"` : ''}
-	      >
-	    </div>
-	    <div>
-	      <div class="user-name">${escHtml(u.nickname)}</div>
-	      <div class="user-id" style="font-size:11px;color:var(--muted);">@${escHtml(u.nickname||'')}</div>
-	    </div>
-	  </div>`).join('');
-
-	// 프로필 이미지 있는 것만 따로 로드 시도
-	body.querySelectorAll('img[data-src]').forEach(img => {
-	  const testImg = new Image();
-	  testImg.onload  = () => { img.src = img.dataset.src; };
-	  testImg.onerror = () => {  기본 이미지 유지 };
-	  testImg.src = img.dataset.src;
-	});
-  } catch (e) {
-    body.innerHTML = '<div style="text-align:center;padding:30px;color:#FC8181;font-size:13px;">불러오기 실패</div>';
-  }
-}
-
-window.closeModal = (id) => document.getElementById(id)?.classList.remove('active');*/
 
 // ── 초기화 ──
 document.addEventListener('DOMContentLoaded', () => {

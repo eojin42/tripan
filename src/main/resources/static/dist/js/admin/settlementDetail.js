@@ -134,9 +134,7 @@ function updateBarCount(delta) {
   }
 }
 
-/* ════════════════════════════════════════════
-   CSV 다운로드 (회원관리와 동일한 방식)
-   ════════════════════════════════════════════ */
+/* CSV 다운로드 (회원관리와 동일한 방식) */
 
 /* 파트너 전체 숙소 CSV */
 function downloadPartnerCsv(memberId, month) {

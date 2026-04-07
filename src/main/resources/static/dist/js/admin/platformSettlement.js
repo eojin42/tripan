@@ -28,9 +28,7 @@ function setBarWidth(id, pct) {
   if (el) el.style.width = Math.min(Math.max(pct ?? 0, 2), 100).toFixed(1) + '%';
 }
 
-/* ─────────────────────────────────────────
-   메인 로드
-───────────────────────────────────────── */
+/* 메인 로드 */
 function loadData() {
   const year  = document.getElementById('filterYear').value;
   const month = document.getElementById('filterMonth').value;
@@ -56,11 +54,7 @@ function loadData() {
     });
 }
 
-/* ─────────────────────────────────────────
-   미정산 배너
-   ✅ pendingPartnerCount/pendingAmount는 이번달 기준 고정값
-      → 월 필터 상관없이 항상 렌더 (숨김 조건은 count=0일 때만)
-───────────────────────────────────────── */
+/* 미정산 배너 */
 function renderBanner(kpi) {
   const count = kpi.pendingPartnerCount ?? 0;
   setText('pendingCount', count);
@@ -177,11 +171,7 @@ function renderTable(list, total) {
   }
 }
 
-/* ─────────────────────────────────────────
-   일별 수익 추이 차트
-   ✅ 버그수정1: canvas가 div로 교체된 후 재렌더 안 되는 문제 → canvas 복원
-   ✅ 버그수정2: month 파라미터 추가로 연간 전체 선택시에도 현재 월 차트 표시
-───────────────────────────────────────── */
+/* 일별 수익 추이 차트 */
 function renderChart(dailyList, chartMonth) {
   if (revenueChart) { revenueChart.destroy(); revenueChart = null; }
 

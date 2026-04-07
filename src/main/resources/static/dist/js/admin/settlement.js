@@ -13,7 +13,7 @@ var STL_CTX = (function () {
   return '';
 }());
 
-/* ── 포맷 유틸 ── */
+/* 포맷 유틸 */
 function stlWon(n) {
   if (n == null || n === '') return '-';
   return '\u20a9' + Number(n).toLocaleString('ko-KR');
@@ -29,9 +29,6 @@ function stlShowToast(msg) {
 /*
  * 정산 상태 뱃지
  * DB 값 기준: 'done' / 'partial' / 'wait'
- * - done    : 멤버 소속 파트너 전체 승인 완료
- * - partial : 일부 파트너만 승인 완료 (부분승인)
- * - wait    : 하나도 승인 안 됨
  */
 function stlStatusBadge(s) {
   if (s === 'done')    return '<span class="badge badge-done">정산 완료</span>';

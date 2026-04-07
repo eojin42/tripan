@@ -4,11 +4,7 @@
 
 <mapper namespace="com.tripan.app.admin.mapper.PartnerManageMapper">
 
-    <!-- 전체 파트너 목록 (사업자번호 기준 최신 1건) -->
-    <!--
-        변경: partner.status(문자열) → partner_status.status_code(최신 상태) 로 조회
-             partner_intro, reject_reason, updated_at 컬럼 제거
-    -->
+    <!-- 전체 파트너 목록 -->
     <select id="selectAllPartners" resultType="com.tripan.app.admin.domain.dto.PartnerManageDto">
 	    SELECT
 	        p.partner_id       AS partnerId,
@@ -92,9 +88,6 @@
 
     <!--
         상태 업데이트 공통 → partner_status INSERT 방식으로 변경
-        - 승인(ACTIVE)   : partner_status INSERT(ACTIVE) + partner.status = 1, commission_rate 업데이트
-        - 반려(REJECTED) : partner_status INSERT(REJECTED) + memo에 rejectReason 저장
-        - 차단(SUSPENDED/BLOCKED) : partner_status INSERT + partner.status = 0
     -->
     <insert id="updatePartnerStatus" parameterType="map">
         INSERT INTO partner_status (
@@ -129,12 +122,7 @@
 	    WHERE partner_id = #{partnerId}
 	</select>
 
-    <!-- 승인/차단 시 partner.status 숫자값 업데이트 -->
-    <!--
-        ACTIVE      → status = 1
-        SUSPENDED, BLOCKED → status = 0
-        PENDING, REJECTED  → status 변경 없음 (필요 시 호출)
-    -->
+    <!-- 승인/차단 시 partner.status 업데이트 -->
     <update id="updatePartnerActiveStatus" parameterType="map">
         UPDATE partner
         <set>

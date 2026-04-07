@@ -197,7 +197,7 @@ function subscribeRoom(roomId) {
   roomSubscription = stompClient.subscribe(`/sub/chat/room/${roomId}`, frame => {
     const msg = JSON.parse(frame.body);
 
-    // 1. 종료 메시지 처리 (상대방 혹은 내가 종료했을 때)
+    // 종료 메시지 처리 (상대방 혹은 내가 종료했을 때)
     if (msg.messageType === 'CLOSED' || msg.messageType === 'END' || msg.messageType === 'SYSTEM') {
       renderMsg(msg);
       const badge = document.getElementById('chatStatusBadge');
@@ -212,14 +212,14 @@ function subscribeRoom(roomId) {
       return;
     }
 
-    // 2. 메시지 수신 (일반 TALK 메시지 등)
+    // 메시지 수신 (일반 TALK 메시지 등)
     renderMsg(msg);
 
-    // 3. 실시간 상태 업데이트 (종료 상태에서 새 메시지가 오면 UI 복구)
+    // 실시간 상태 업데이트 (종료 상태에서 새 메시지가 오면 UI 복구)
     const badge = document.getElementById('chatStatusBadge');
     const endBtn = document.querySelector('.btn-end-chat');
 
-    // 현재 UI가 '종료' 상태일 때만 실행하여 리소스를 아낍니다.
+    // 현재 UI가 '종료' 상태일 때만 실행
     if (badge && badge.className === 'chat-status-closed') {
         // 뱃지 상태 변경
         badge.className = 'chat-status-open';

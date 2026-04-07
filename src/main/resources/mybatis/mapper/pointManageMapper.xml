@@ -4,10 +4,8 @@
 
 <mapper namespace="com.tripan.app.admin.mapper.PointManageMapper">
 
-    <!-- ======================================================
-         회원별 포인트 요약 목록
-         - 현재 잔액 / 누적 적립 / 누적 사용 / 마지막 변동일
-    ====================================================== -->
+    <!-- 회원별 포인트 요약 목록
+         - 현재 잔액 / 누적 적립 / 누적 사용 / 마지막 변동일 -->
     <select id="selectMemberPointList"
             resultType="com.tripan.app.admin.domain.dto.PointManageDto">
         SELECT
@@ -51,9 +49,7 @@
         ORDER BY (SELECT MAX(reg_date) FROM point WHERE member_id = m1.member_id) DESC NULLS LAST
     </select>
 
-    <!-- ======================================================
-         개인 포인트 내역 (은행 계좌 내역 스타일)
-    ====================================================== -->
+    <!-- 개인 포인트 내역 -->
     <select id="selectPointHistory"
             resultType="com.tripan.app.admin.domain.dto.PointManageDto$HistoryDto">
         SELECT
@@ -75,9 +71,7 @@
         ORDER BY p.point_id DESC
     </select>
 
-    <!-- ======================================================
-         현재 잔여 포인트 조회
-    ====================================================== -->
+    <!-- 현재 잔여 포인트 조회 -->
     <select id="selectRemPoint" resultType="int">
         SELECT NVL(rem_point, 0)
         FROM   point
@@ -87,9 +81,7 @@
         )
     </select>
 
-    <!-- ======================================================
-         포인트 내역 INSERT (시퀀스: point_seq)
-    ====================================================== -->
+    <!-- 포인트 내역 INSERT (시퀀스: point_seq) -->
     <insert id="insertPointHistory">
         INSERT INTO point (
             point_id,

@@ -4,20 +4,17 @@
 
 <mapper namespace="com.tripan.app.admin.mapper.SettlementBatchMapper">
 
-    <!-- ================================================================
-            미정산 집계 조회
+    <!--  미정산 집계 조회
             - reservation.status = 'SUCCESS' (정상 예약만)
             - check_out_date < 오늘 (체크아웃 완료)
             - partner_settlement에 해당 partner_id + settlement_month 없는 것
-              → 중복 집계 방지의 핵심
 
          조인 경로:
             reservation → room (room_id)
             room        → place (place_id)
             place       → partner (partner_id)
             reservation → order_detail (reservation_id)
-            order_detail → orders (order_id)
-         ================================================================ -->
+            order_detail → orders (order_id) -->
     <select id="selectUnsettledAggregates"
             parameterType="String"
             resultType="com.tripan.app.admin.domain.dto.SettlementAggregateDto">
@@ -44,7 +41,6 @@
         JOIN orders       o  ON o.order_id            = od.order_id
 
         WHERE r.status         = 'SUCCESS'
-        <!-- 프로젝트 테스트를 위해 기존 쿼리조건 주석처리 : AND r.check_out_date &lt; ADD_MONTHS(TO_DATE(#{targetDate}, 'YYYY-MM'), 1) -->
           AND r.check_out_date  &lt; TRUNC(SYSDATE) 
           AND o.status         != 'CANCELED'
           AND p.partner_id     IS NOT NULL
@@ -66,9 +62,7 @@
         ORDER BY settlementMonth, partnerId
     </select>
 
-    <!-- ================================================================
-           정산 존재 여부 확인
-         ================================================================ -->
+    <!-- 정산 존재 여부 확인 -->
     <select id="existsSettlement" parameterType="map" resultType="boolean">
         SELECT CASE WHEN COUNT(*) > 0 THEN 1 ELSE 0 END
         FROM partner_settlement
@@ -76,9 +70,7 @@
           AND settlement_month = #{settlementMonth}
     </select>
 
-    <!-- ================================================================
-           신규 정산 INSERT
-         ================================================================ -->
+    <!-- 신규 정산 INSERT -->
     <insert id="insertSettlement" parameterType="com.tripan.app.admin.domain.dto.SettlementAggregateDto">
         INSERT INTO partner_settlement (
             partner_settlement_id,
@@ -99,11 +91,9 @@
         )
     </insert>
 
-    <!-- ================================================================
-            기존 정산 금액 누적 UPDATE
+    <!-- 기존 정산 금액 누적 UPDATE
             배치를 재실행해도 기존 데이터에 덮어쓰지 않고 누적
-            status가 이미 '완료'면 건드리지 않음 (승인 완료된 건 보호)
-         ================================================================ -->
+            status가 이미 '완료'면 건드리지 않음-->
     <update id="updateSettlementAmount" parameterType="com.tripan.app.admin.domain.dto.SettlementAggregateDto">
         UPDATE partner_settlement
         SET total_sales       = total_sales       + #{totalSales},
