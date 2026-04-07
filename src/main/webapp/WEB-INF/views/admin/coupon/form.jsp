@@ -523,7 +523,7 @@
                     <div class="modal-acc-row" @click="toggleRoomExpand(acc.placeId)">
                       <div class="modal-acc-info">
                         <div class="modal-acc-name">
-                          {{ expandedAccId === acc.placeId ? '▼' : '▶' }} {{ acc.name }}
+                          {{ expandedAccId === String(acc.placeId) ? '▼' : '▶' }} {{ acc.name }}
                         </div>
                         <div class="modal-acc-sub">{{ acc.accommodationType || '숙소 타입 미지정' }}
                           <span v-if="countSelectedRooms(acc.placeId) > 0"
@@ -533,17 +533,17 @@
                         </div>
                       </div>
                       <button class="modal-acc-expand" @click.stop="toggleRoomExpand(acc.placeId)">
-                        {{ expandedAccId === acc.placeId ? '접기' : '객실 보기' }}
+                        {{ expandedAccId === String(acc.placeId) ? '접기' : '객실 보기' }}
                       </button>
                     </div>
                     <!-- 객실 행 (펼침) -->
-                    <template v-if="expandedAccId === acc.placeId">
+                    <template v-if="expandedAccId === String(acc.placeId)">
                       <div v-if="roomLoading" class="modal-loading" style="padding:16px 0 16px 52px;">객실 불러오는 중...</div>
                       <div v-for="room in expandedRooms" :key="room.roomId"
                            class="modal-room-row" @click="toggleRoomSelect(room, acc)">
                         <input type="checkbox" :checked="isRoomSelected(room.roomId)" @click.stop="toggleRoomSelect(room, acc)">
                         <span class="modal-room-name">{{ room.roomName }}</span>
-                        <span class="modal-room-sub">기준 {{ room.roombasecount }}인 · 최대 {{ room.maxCapacity }}인</span>
+                        <span class="modal-room-sub">기준 {{ room.roomBaseCount }}인 · 최대 {{ room.maxCapacity }}인</span>
                       </div>
                     </template>
                   </template>
@@ -649,9 +649,8 @@
 
 <jsp:include page="/WEB-INF/views/layout/vue_cdn.jsp" />
 
-<script type="module">
-import { createApp, ref, reactive, computed, onMounted } from 'vue';
-import axios from 'axios';
+<script>
+const { createApp, ref, reactive, computed, onMounted } = Vue;
 
 const contextPath = '${pageContext.request.contextPath}' === '/' ? '' : '${pageContext.request.contextPath}';
   const _rawId = '${param.id}'; 
@@ -771,28 +770,23 @@ const contextPath = '${pageContext.request.contextPath}' === '/' ? '' : '${pageC
 
       /* 제외객실 탭 — 숙소 펼치기/접기 */
       const toggleRoomExpand = async (placeId) => {
-
-	
-        if (expandedAccId.value === placeId) {
+    	  console.log('placeId 값:', placeId, typeof placeId);
+        const id = String(placeId);
+        if (expandedAccId.value === id) {
           expandedAccId.value = null;
           expandedRooms.value = [];
           return;
         }
-        expandedAccId.value = placeId;
+        expandedAccId.value = id;
         expandedRooms.value = [];
-        roomLoading.value   = true;
+        roomLoading.value = true;
         try {
-		const url = `${contextPath}/api/admin/coupon/accommodation/${placeId}/rooms`;
-console.log('placeId:', placeId);
-console.log('room url:', url);
-			
+        	const url = contextPath + '/api/admin/coupon/accommodation/' + placeId + '/rooms';
           const res = await axios.get(url);
           expandedRooms.value = res.data;
         } catch(e) {
-           console.error('객실 목록 오류', e);
-  console.error('응답 상태:', e?.response?.status);
-  console.error('응답 데이터:', e?.response?.data);
-  expandedRooms.value = [];
+          console.error('객실 목록 오류', e);
+          expandedRooms.value = [];
         } finally {
           roomLoading.value = false;
         }
@@ -982,6 +976,7 @@ console.log('room url:', url);
       };
     }
   }).mount('#app');
+
 </script>
 
 </body>

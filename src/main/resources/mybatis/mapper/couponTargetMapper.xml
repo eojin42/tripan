@@ -74,19 +74,21 @@
     </select>
 
     <select id="selectRoomsByAccommodation" resultType="com.tripan.app.domain.dto.RoomDto">
-        SELECT
-            r.room_id    AS roomId,
-            r.place_id   AS placeId,
-            r.room_name  AS roomName,
-            p.place_name AS placeName
-        FROM room r
-        JOIN place p ON r.place_id = p.place_id
-        WHERE r.place_id = #{placeId}
-        <if test="keyword != null and keyword != ''">
-            AND r.room_name LIKE '%' || #{keyword} || '%'
-        </if>
-        ORDER BY r.room_name
-    </select>
+	    SELECT
+	        r.room_id         AS roomId,
+	        r.place_id        AS placeId,
+	        r.room_name       AS roomName,
+	        p.place_name      AS placeName,
+	        r.roombasecount      AS roomBaseCount,
+	        r.max_capacity    AS maxCapacity
+	    FROM room r
+	    JOIN place p ON r.place_id = p.place_id
+	    WHERE r.place_id = #{placeId}
+	    <if test="keyword != null and keyword != ''">
+	        AND r.room_name LIKE '%' || #{keyword} || '%'
+	    </if>
+	    ORDER BY r.room_name
+	</select>
 
     <select id="isCouponApplicable" resultType="int">
         SELECT CASE WHEN EXISTS (

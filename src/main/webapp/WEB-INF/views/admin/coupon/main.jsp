@@ -720,9 +720,8 @@
 
 <jsp:include page="/WEB-INF/views/layout/vue_cdn.jsp" />
 
-<script type="module">
-  import { createApp, ref, reactive, computed, onMounted } from 'vue';
-  import axios from 'axios';
+<script>
+  const { createApp, ref, reactive, computed, onMounted } = Vue;
 
   /* CSRF 토큰 설정 */
   const csrfToken = document.querySelector('meta[name="_csrf"]')?.getAttribute('content');
