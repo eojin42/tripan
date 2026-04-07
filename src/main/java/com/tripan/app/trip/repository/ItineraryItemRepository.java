@@ -25,7 +25,6 @@ public interface ItineraryItemRepository extends JpaRepository<ItineraryItem, Lo
 
     /**
      * [순서 변경] visitOrder는 LexoRank 방식 String ("000001", "000002" ...)
-     * 기존 Integer 타입은 잘못됨 → String으로 수정
      */
     @Modifying
     @Transactional

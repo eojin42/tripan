@@ -12,10 +12,6 @@ public interface TripPlaceService {
     // 카카오맵 등에서 추가하여 memberId 를 반드시 기록 (나만의 장소 / NONE 카테고리)
     TripPlaceDto registerMyPlace(TripPlaceDto dto, Long memberId);
 
-    // ★ 공용 장소 find-or-create (RESTAURANT·TOUR 등 비-NONE 카테고리)
-    //   - apiContentId(kakaoId) 로 먼저 조회 → 없으면 name+address 로 조회 → 없으면 신규 삽입
-    //   - member_id = NULL (공용 레코드)
-    //   - 항상 apiContentId 를 채운 TripPlaceDto 반환 → 호출자가 addPlaceToDay 에 전달
     TripPlaceDto findOrCreatePublicPlace(TripPlaceDto dto);
 
     // 나만의 장소 목록 

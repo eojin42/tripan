@@ -1,10 +1,4 @@
-/**
- * workspace.chat.js v20260322 — 여행 워크스페이스 채팅
- * ─────────────────────────────────────────────
- * 의존: CTX_PATH, TRIP_ID, MY_MEMBER_ID, MY_NICK (workspace.jsp에서 주입)
- *       SockJS + STOMP (이미 로드됨)
- * ─────────────────────────────────────────────
- */
+
 console.log('[Chat] workspace.chat.js v20260322 로드됨');
 
 /* ══════════════════════════════════════════
@@ -354,7 +348,7 @@ function _buildMsgHtml(msg) {
     return '<div class="chat-msg--system"><span>' + _escChat(msg.content) + '</span></div>';
   }
 
-  // ★ msg.mine 필드는 무시 — WS broadcast에서 mine=true가 수신자에게도 오는 오염 방지
+  // msg.mine 필드는 무시 — WS broadcast에서 mine=true가 수신자에게도 오는 오염 방지
   // memberId 기준으로만 판별
   var mine   = String(msg.memberId) === String(MY_MEMBER_ID);
   var side   = mine ? 'chat-msg--me' : 'chat-msg--other';

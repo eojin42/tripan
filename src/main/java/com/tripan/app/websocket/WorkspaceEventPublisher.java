@@ -7,12 +7,6 @@ import org.springframework.stereotype.Component;
 import java.util.HashMap;
 import java.util.Map;
 
-/**
- * WorkspaceEventPublisher
- *
- * 컨트롤러에서 DB 저장 완료 후 이 클래스로 broadcast 한 줄 호출.
- * 구독 주소: /sub/trip/{tripId}
- */
 @Component
 @RequiredArgsConstructor
 public class WorkspaceEventPublisher {

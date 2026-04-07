@@ -16,12 +16,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 
-/**
- * VoteServiceImpl
- * ─────────────────────────────────────────
- * 조회  → VoteMapper  (MyBatis)
- * CUD   → Repository  (JPA)
- */
+
 @Slf4j
 @Service
 @RequiredArgsConstructor
@@ -32,7 +27,6 @@ public class VoteServiceImpl implements VoteService {
     private final VoteRepository          voteRepository;
     private final VoteCandidateRepository voteCandidateRepository;
     private final VoteRecordRepository    voteRecordRepository;
-    // ★ 알림 서비스 주입
     private final NotificationService     notificationService;
 
     // ── 조회 ─────────────────────────────────────────────
@@ -111,7 +105,7 @@ public class VoteServiceImpl implements VoteService {
             .orElse("투표");
     }
 
-    // ── ★ 알림 포함 생성 (VoteRestController에서 호출) ─────
+    // ── 알림 포함 생성 (VoteRestController에서 호출) ─────
     /**
      * 투표 생성 + 알림 저장
      * @param senderMemberId 투표 만든 사람 memberId (본인 제외하고 notifyAll)
@@ -121,7 +115,7 @@ public class VoteServiceImpl implements VoteService {
                                     LocalDateTime deadline, Long senderMemberId, String senderNickname) {
         Long voteId = createVote(tripId, title, candidates, deadline);
 
-        // ★ 나머지 멤버들에게 알림 저장
+        // 나머지 멤버들에게 알림 저장
         String nick = (senderNickname != null && !senderNickname.isEmpty()) ? senderNickname : "누군가";
         notificationService.notifyAll(tripId, senderMemberId,
             nick + "님이 투표 [" + title + "] 를 만들었어요 🗳️", "VOTE");

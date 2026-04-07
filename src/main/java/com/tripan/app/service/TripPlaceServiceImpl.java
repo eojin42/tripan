@@ -78,11 +78,7 @@ public class TripPlaceServiceImpl implements TripPlaceService {
         }
     }
 
-    // ── 나만의 장소 직접 등록 (NONE 카테고리) ────────────────────────
-    // 중복 방지 3단계:
-    //   1. name+address 로 기존 레코드 조회
-    //   2. lat/lng 로 기존 레코드 조회 (주소가 다르게 입력된 경우 방어)
-    //   3. INSERT 시 DuplicateKeyException → race condition 방어 (동시 요청)
+    // ── 나만의 장소 직접 등록 ────────────────────────
     @Override
     @Transactional
     public TripPlaceDto registerMyPlace(TripPlaceDto dto, Long memberId) {
@@ -93,7 +89,7 @@ public class TripPlaceServiceImpl implements TripPlaceService {
             dto.setCategory("NONE");
         }
 
-        // ✅ 1단계: name+address 중복 체크
+        // name+address 중복 체크
         if (dto.getPlaceName() != null && dto.getAddress() != null) {
             TripPlaceDto existing = tripPlaceMapper.selectPlaceByNameAndAddress(
                     dto.getPlaceName(), dto.getAddress(), memberId);
@@ -103,7 +99,7 @@ public class TripPlaceServiceImpl implements TripPlaceService {
             }
         }
 
-        // ✅ 2단계: lat/lng 중복 체크 (주소 표기가 달라도 같은 좌표면 중복)
+        // lat/lng 중복 체크 (주소 표기가 달라도 같은 좌표면 중복)
         if (dto.getLatitude() != null && dto.getLongitude() != null) {
             Long existingId = tripPlaceMapper.findPlaceIdByLatLng(
                     dto.getLatitude(), dto.getLongitude(), memberId);
@@ -113,7 +109,7 @@ public class TripPlaceServiceImpl implements TripPlaceService {
             }
         }
 
-        // ✅ 3단계: INSERT — race condition 대비 DuplicateKeyException catch
+        // INSERT — race condition 대비 DuplicateKeyException catch
         dto.setApiContentId("custom_" + UUID.randomUUID().toString().replace("-", ""));
         try {
             tripPlaceMapper.insertPlace(dto);
@@ -128,26 +124,17 @@ public class TripPlaceServiceImpl implements TripPlaceService {
                     dto.getLatitude(), dto.getLongitude(), memberId);
             if (existingId != null) return tripPlaceMapper.selectPlaceById(existingId, memberId);
 
-            throw e; // 진짜 다른 이유의 중복키 에러면 재throw
+            throw e; 
         }
         return dto;
     }
 
-    // ── 공용 장소 find-or-create (RESTAURANT·TOUR 등 비-NONE 카테고리) ──
-    // ★ BUG FIX: kakaoId 없을 때 addPlaceToDay 를 그냥 호출하면
-    //    백엔드가 기존 레코드(예: id=381)를 api_place_id="381" 로 재사용하지 않고
-    //    새 레코드(407, 408…)를 중복 삽입하는 버그 수정
-    //
-    // 처리 순서:
-    //   ① apiContentId(kakaoId) 로 기존 레코드 조회
-    //   ② 없으면 name+address 로 조회 (apiContentId 무관)
-    //   ③ 없으면 member_id=NULL 공용 레코드 신규 삽입
-    //   ④ 항상 apiContentId 를 채운 DTO 반환
+
     @Override
     @Transactional
     public TripPlaceDto findOrCreatePublicPlace(TripPlaceDto dto) {
 
-        // ① kakaoId(apiContentId) 로 조회
+        // kakaoId(apiContentId) 로 조회
         if (dto.getApiContentId() != null && !dto.getApiContentId().isBlank()) {
             TripPlaceDto existing = tripPlaceMapper.selectPlaceByApiContentId(dto.getApiContentId());
             if (existing != null) {
@@ -156,7 +143,7 @@ public class TripPlaceServiceImpl implements TripPlaceService {
             }
         }
 
-        // ② name+address 로 조회 (memberId=null → 공용 레코드만 검색)
+        //  name+address 로 조회 (memberId=null → 공용 레코드만 검색)
         if (dto.getPlaceName() != null && dto.getAddress() != null) {
             TripPlaceDto existing = tripPlaceMapper.selectPlaceByNameAndAddress(
                     dto.getPlaceName(), dto.getAddress(), null);
@@ -167,7 +154,7 @@ public class TripPlaceServiceImpl implements TripPlaceService {
             }
         }
 
-        // ③ 신규 삽입 — member_id=NULL, apiContentId 가 없으면 임시 ID 생성
+        // 신규 삽입 — member_id=NULL, apiContentId 가 없으면 임시 ID 생성
         dto.setMemberId(null);
         if (dto.getApiContentId() == null || dto.getApiContentId().isBlank()) {
             // kakaoId 가 없는 경우 name+address 기반 결정론적 ID 생성
@@ -185,16 +172,14 @@ public class TripPlaceServiceImpl implements TripPlaceService {
     }
 
     // ── 나만의 장소 삭제 (본인 소유 검증 + 자식 레코드 cascade) ─────────────────────────
-    // ORA-02292(FK_ITEM_PLACE) 방지:
-    //   itinerary_image → itinerary_item → trip_place 순서로 삭제
     @Override
     @Transactional
     public boolean deleteMyPlace(Long placeId, Long memberId) {
-        // Step 1: 해당 장소를 참조하는 itinerary_item 의 이미지 삭제
+        //  해당 장소를 참조하는 itinerary_item 의 이미지 삭제
         tripPlaceMapper.deleteItineraryImagesByPlaceId(placeId);
-        // Step 2: 해당 장소를 참조하는 itinerary_item 삭제
+        //  해당 장소를 참조하는 itinerary_item 삭제
         tripPlaceMapper.deleteItineraryItemsByPlaceId(placeId);
-        // Step 3: trip_place 본체 삭제 (본인 소유 검증)
+        //  trip_place 본체 삭제 (본인 소유 검증)
         int deleted = tripPlaceMapper.deleteMyPlace(placeId, memberId);
         return deleted > 0;
     }

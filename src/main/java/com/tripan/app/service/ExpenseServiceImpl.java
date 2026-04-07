@@ -133,7 +133,7 @@ public class ExpenseServiceImpl implements ExpenseService {
         BigDecimal totalAmount = expenseRepository.sumAmountByTripId(tripId);
         List<ExpenseDto.CategorySummary> categories = expenseMapper.selectCategorySummaryByTripId(tripId);
         List<ExpenseDto.MemberPaymentSummary> payments = expenseMapper.selectMemberPaymentSummaryByTripId(tripId);
-        // ★ SETTLED 지출 제외한 balance 계산
+        // SETTLED 지출 제외한 balance 계산
         List<ExpenseDto.MemberShareSummary> shares = expenseMapper.calculateBalancesForUnlinkedExpenses(tripId);
 
         return ExpenseDto.TripSummaryResponse.builder()
@@ -162,20 +162,7 @@ public class ExpenseServiceImpl implements ExpenseService {
                 .build();
     }
 
-    /**
-     * 정산 일괄 생성
-     *
-     * ★ 핵심 변경: settlement_expense_link 기반 재정산
-     * - COMPLETED batch에 연결된 expense는 재정산 대상에서 제외
-     * - 새 batch 생성 후 계산 대상 expense를 settlement_expense_link에 저장
-     *
-     * [흐름]
-     * ① PENDING/REQUESTED 정산 삭제 (COMPLETED 보존)
-     * ② COMPLETED batch 미연결 expense만 balance 계산
-     * ③ 최적 정산 경로 계산
-     * ④ settlement INSERT
-     * ⑤ settlement_expense_link INSERT (② 목록 전체 연결)
-     */
+  
     @Override
     @Transactional
     public SettlementDto.TripSettlementResponse createSettlements(
@@ -183,21 +170,21 @@ public class ExpenseServiceImpl implements ExpenseService {
 
         Long tripId = req.getTripId();
 
-        // ① COMPLETED 제외하고 PENDING/REQUESTED 만 삭제
+        //  COMPLETED 제외하고 PENDING/REQUESTED 만 삭제
         settlementRepository.deleteNonCompletedByTripId(tripId);
 
-        // ② COMPLETED batch에 포함되지 않은 expense만 대상으로 balance 계산
+        //  COMPLETED batch에 포함되지 않은 expense만 대상으로 balance 계산
         List<ExpenseDto.MemberShareSummary> balances =
                 expenseMapper.calculateBalancesForUnlinkedExpenses(tripId);
 
-        // ③ 최적 정산 경로 계산
+        //  최적 정산 경로 계산
         List<SettlementDto.SettlementDetail> details = calculateOptimalSettlements(balances);
 
         if (details.isEmpty()) {
             return getTripSettlements(tripId, requestMemberId);
         }
 
-        // ④ batch_id 결정 후 settlement 저장
+        //  batch_id 결정 후 settlement 저장
         Long batchId = req.getBatchId() != null
                 ? req.getBatchId()
                 : settlementRepository.generateNextBatchId();
@@ -214,9 +201,9 @@ public class ExpenseServiceImpl implements ExpenseService {
                 .collect(Collectors.toList());
         settlementRepository.saveAll(settlements);
 
-        // ⑤ 이번 정산에 포함된 expense 목록 → settlement_expense_link INSERT
+        // 이번 정산에 포함된 expense 목록 → settlement_expense_link INSERT
         List<Long> settledExpenseIds = expenseMapper.selectSettledExpenseIdsByTripId(tripId);
-        // ★ 혼자 쓴 지출 제외: participants 중 서로 다른 member_id가 2명 이상인 expense만 포함
+        //  혼자 쓴 지출 제외: participants 중 서로 다른 member_id가 2명 이상인 expense만 포함
         //   XML 쿼리 없이 Java 코드로 직접 판별 (participants fetch join 활용)
         List<Expense> allExpenses = expenseRepository.findAllWithParticipantsByTripId(tripId);
         List<Long> allExpenseIds = allExpenses.stream()
@@ -252,24 +239,7 @@ public class ExpenseServiceImpl implements ExpenseService {
     @Override
     @Transactional
     public void completeSettlements(SettlementDto.CompleteRequest req) {
-        /*
-         * ★ 최종 수정: settlement row의 status/settledAt만 COMPLETED로 변경
-         *
-         * settlement_expense_link는 건드리지 않음.
-         *
-         * [이유]
-         * settlement_expense_link는 expense 단위로 연결됨.
-         * 한 expense에 참여자가 여러 명이면,
-         * 1명 완료 시 그 expense가 SETTLED → 다른 참여자 정산도 화면에서 사라지는 버그.
-         *
-         * [해결]
-         * 프론트 p2pMap이 settleStatus(expense 단위) 대신
-         * COMPLETED settlement의 (fromMid, toMid) 페어를 직접 비교해서 제외.
-         * → 다른 참여자에게 영향 없이 정확하게 동작.
-         * → settlement row만 COMPLETED로 바꾸면 충분.
-         *
-         * JPA dirty checking으로 자동 UPDATE됨.
-         */
+    
         for (Long id : req.getSettlementIds()) {
             settlementRepository.findById(id).ifPresent(s -> {
                 s.setStatus("COMPLETED");

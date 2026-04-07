@@ -71,8 +71,7 @@ function loadRecommendCards(category, city, offset) {
   fetch(url)
     .then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
     .then(function (data) {
-      // ★ 컨트롤러가 List<PlaceDto> 배열로 반환 (현재 구버전) 또는
-      //   { places, hasMore, total } 신버전 모두 처리
+
       var list, hasMore;
       if (Array.isArray(data)) {
         list    = data;
@@ -125,7 +124,6 @@ function _appendRpCards(list) {
     var bi  = _categoryBadgeInfo(p.category);
     var ph  = _categoryPlaceholder(p.category);
 
-    // [BUG 3] 이미지 빈 문자열 명시적 체크
     var hasImg = p.imageUrl && p.imageUrl.trim() !== '';
 
     var imgHtml = hasImg
@@ -154,7 +152,6 @@ function _appendRpCards(list) {
   });
 }
 
-/* ── [BUG 5] 무한스크롤 IntersectionObserver ── */
 function _initInfiniteScroll() {
   var pane = document.getElementById('rpPane-suggest') || document.getElementById('rpCards');
   if (!pane) return;
@@ -199,7 +196,7 @@ function searchRpCards(keyword) {
   if (grid) grid.innerHTML = '<div style="text-align:center;padding:32px;color:#A0AEC0;"><div style="font-size:32px;margin-bottom:8px;">🔍</div><div>검색 중...</div></div>';
 
   _rpSearchTimer = setTimeout(function() {
-    // ★ 현재 선택된 카테고리를 쿼리에 포함 → 지역 검색 시에도 카테고리 필터 작동
+    // 현재 선택된 카테고리를 쿼리에 포함 → 지역 검색 시에도 카테고리 필터 작동
     var catParam = (_rpCategory && _rpCategory !== 'all') ? _rpCategory : '';
     var url = CTX_PATH + '/api/places/search?keyword=' + encodeURIComponent(kw)
       + (catParam ? '&category=' + encodeURIComponent(catParam) : '');
@@ -209,7 +206,7 @@ function searchRpCards(keyword) {
       .then(function(res) {
          var list = Array.isArray(res) ? res : (res.officialPlaces || []);
 
-         // ★ 클라이언트 2차 필터 — 서버가 category를 무시했을 경우 안전망
+         // 클라이언트 2차 필터 — 서버가 category를 무시했을 경우 안전망
          if (catParam) {
            // DB category 값 매핑 (필터 버튼 value → DB 저장값)
            var catMap = {
@@ -271,7 +268,7 @@ function filterRec(btn, category) {
   document.querySelectorAll('.rp-filter-btn').forEach(function (b) { b.classList.remove('active'); });
   btn.classList.add('active');
 
-  _rpCategory = category; // ★ 카테고리 상태 먼저 업데이트
+  _rpCategory = category; // 카테고리 상태 먼저 업데이트
 
   // 검색어가 있으면 → 현재 검색어로 재검색 (카테고리 필터 반영)
   var inp = document.getElementById('rpSearchInput');
@@ -295,7 +292,7 @@ function switchRpTab(tab, btn) {
   var t = document.getElementById('rpPane-' + tab);
   if (t) t.classList.add('active');
 
-  // ★ 추천 장소 탭일 때만 검색바 표시
+  // 추천 장소 탭일 때만 검색바 표시
   var searchbar = document.getElementById('rpSearchbar');
   if (searchbar) {
     searchbar.style.display = (tab === 'suggest') ? '' : 'none';
@@ -334,7 +331,6 @@ function openDayPicker() {
     console.warn('[dayPicker] #dayPickerPopup 없음 — JSP 확인 필요');
     return;
   }
-  // [BUG 2] position:fixed + 중앙 정렬로 강제 표시
   popup.style.cssText =
     'display:block !important;' +
     'position:fixed !important;' +
@@ -354,11 +350,6 @@ function closeDayPicker() {
 
 /**
  * JSP dpp-btn: onclick="addRecToDay(${day.dayNumber})"
- *
- * [BUG 2] addPlaceToDay 시그니처 불일치 수정
- *   schedule.js 실제 시그니처: addPlaceToDay(el, name, addr, lat, lng, apiPlaceId)
- *   - el: 첫 번째 파라미터지만 함수 내부에서 사용 안 함 (null 전달 OK)
- *   - currentAddDay: schedule.js 전역 변수 → dayNumber 주입 필수
  */
 function addRecToDay(dayNumber) {
   var p = _pendingRpCard || window._selectedRecPlace;
@@ -370,7 +361,7 @@ function addRecToDay(dayNumber) {
   var lng     = p.longitude || p.lng  || 0;
   var placeId = p.placeId              || null;
 
-  // ★ schedule.js의 currentAddDay 전역에 dayNumber 주입
+  // schedule.js의 currentAddDay 전역에 dayNumber 주입
   if (typeof currentAddDay !== 'undefined') {
     currentAddDay = dayNumber;
   }
@@ -468,7 +459,6 @@ function openPlaceDetailModal(p) {
   if (isRestaurant && p.placeId && !String(p.placeId).startsWith('custom_')) {
     var base = (typeof CTX_PATH !== 'undefined' ? CTX_PATH : '');
     
-    // 🔥 KTO API 대신 조장님이 만든 로컬 DB API 호출
     fetch(base + '/api/places/restaurant/' + p.placeId)
       .then(function (r) { return r.ok ? r.json() : {}; })
       .then(function (d) {
@@ -497,7 +487,6 @@ function openPlaceDetailModal(p) {
         rows.forEach(function (r) {
           var val = d[r.key];
           
-          // 🔥 0/1 불리언 데이터 변환 로직 ("가능" / "불가")
           if (r.isBool) {
               if (val == 1) val = "가능";
               else if (val == 0) val = "불가";
@@ -661,14 +650,12 @@ function searchPlace(keyword) {
   if (results) results.innerHTML = '<div style="text-align:center;padding:24px;color:#A0AEC0;">🔍 검색 중...</div>';
 
   _searchTimer = setTimeout(function () {
-    // ✅ 버그 수정: category 파라미터 추가 → 서버에서 1차 필터
     var catParam = (_placeType && _placeType !== 'all') ? _placeType : '';
     fetch(CTX_PATH + '/api/places/search?keyword=' + encodeURIComponent(keyword)
           + (catParam ? '&category=' + encodeURIComponent(catParam) : ''))
       .then(function (r) { return r.json(); })
       .then(function (res) {
         
-        // ★ 여행지 우선 정렬 함수
         var sortFn = function(a, b) {
             var aMatch = KAKAO_CITIES.some(function(c) { return (a.address || '').includes(c); });
             var bMatch = KAKAO_CITIES.some(function(c) { return (b.address || '').includes(c); });
@@ -677,7 +664,6 @@ function searchPlace(keyword) {
             return 0;
         };
 
-        // ✅ 버그 수정: 클라이언트 2차 필터 (서버가 category를 지원 안 해도 안전)
         var filterByCat = function(list) {
           if (!catParam || !list) return list;
           // DB category값 매핑 (탭 value → DB 저장값)
@@ -696,7 +682,6 @@ function searchPlace(keyword) {
           });
         };
 
-        // ★ 나만의 탭: officialPlaces 제외, myPlaces만 표시
         if (_placeType === 'my') {
           var myList = Array.isArray(res) ? res : (res.myPlaces || []);
           renderSearchResults({ officialPlaces: [], myPlaces: myList });
@@ -752,7 +737,6 @@ function renderSearchResults(data) {
 function _searchItemHtml(p, type) {
   var PT    = window.PLACE_TYPE || { OFFICIAL: 'OFFICIAL', CUSTOM: 'CUSTOM' };
   var isOff = (type === PT.OFFICIAL);
-  // ★ 공식 배지 제거됨
 
   return '<div style="padding:11px 14px;border-bottom:1px solid #F0F4F8;cursor:pointer;background:'
     + (isOff ? 'rgba(137,207,240,.04)' : '#fff') + ';" '
@@ -1288,7 +1272,6 @@ function openAddPlace(dayNumber) {
   var myInput = document.getElementById('myPlaceSearchInput');
   if (myInput) { myInput.value = ''; }
 
-  // ★ currentAddDay를 schedule.js와 공유
   if (typeof currentAddDay !== 'undefined') currentAddDay = dayNumber;
 
   // 메인 탭 초기화 — 항상 추천 장소 패널로 시작
@@ -1420,7 +1403,7 @@ var _prHasMore  = true;
 var _prObserver = null;
 
 function _loadCategoryPreview(category, reset) {
-  // ★ 나만의 탭: /api/places/my 에서 개인 장소 로드
+  // 나만의 탭: /api/places/my 에서 개인 장소 로드
   if (category === 'my') {
     _prCategory = 'my';
     _prHasMore  = false; // 나만의는 페이징 없음

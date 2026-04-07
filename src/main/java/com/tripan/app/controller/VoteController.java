@@ -13,12 +13,7 @@ import java.time.format.DateTimeParseException;
 import java.util.List;
 import java.util.Map;
 
-/**
- * VoteController
- * ─────────────────────────────────────────
- * HttpSession 방식으로 통일 (TripController 와 동일)
- * → @AuthenticationPrincipal 이 null 되는 문제 완전 차단
- */
+
 @RestController
 @RequestMapping("/api/trip/{tripId}/vote")
 @RequiredArgsConstructor
@@ -35,7 +30,6 @@ public class VoteController {
             @RequestParam(value = "memberId", required = false) Long memberIdParam,
             HttpSession session) {
 
-        // ★ 세션에서 직접 꺼냄 (Security 의존 제거) → 새로고침 후에도 항상 올바른 ID
         Long memberId = getLoginMemberId(session);
         // 세션이 없으면 쿼리파라미터 폴백 (JSP LOGIN_MEMBER_ID)
         if (memberId == null) memberId = memberIdParam;
@@ -59,7 +53,6 @@ public class VoteController {
         if (candidates == null || candidates.size() < 2)
             return ResponseEntity.ok(Map.of("success", false, "message", "후보지가 2개 이상 필요합니다"));
 
-        // deadline: "2026-03-20T18:00" 형식 or null(무기한)
         LocalDateTime deadline = null;
         String deadlineStr = (String) body.get("deadline");
         if (deadlineStr != null && !deadlineStr.isBlank()) {
@@ -79,7 +72,7 @@ public class VoteController {
         wsPublisher.publish(tripId, "VOTE_CREATED", voteId, nick != null ? nick : "멤버",
                 WorkspaceEventPublisher.payload("title", title));
 
-        // ★ DB 알림 저장
+        // DB 알림 저장
         notificationService.notifyAll(tripId, myId,
             (nick != null ? nick : "누군가") + "님이 투표 [" + title + "] 를 만들었어요 🗳️", "VOTE");
 
@@ -128,7 +121,7 @@ public class VoteController {
         String nick = getLoginNickname(session);
         Long   myId = getLoginMemberId(session);
 
-        // ★ 삭제 전 투표 제목 조회 (서비스에 메서드 있으면 사용, 없으면 fallback)
+        // 삭제 전 투표 제목 조회 (서비스에 메서드 있으면 사용, 없으면 fallback)
         String voteTitle = "투표";
         try {
             String fetched = voteService.getVoteTitle(voteId);
@@ -139,7 +132,7 @@ public class VoteController {
 
         wsPublisher.publish(tripId, "VOTE_DELETED", voteId, nick != null ? nick : "멤버");
 
-        // ★ DB 알림 저장
+        // DB 알림 저장
         notificationService.notifyAll(tripId, myId,
             (nick != null ? nick : "누군가") + "님이 투표 [" + voteTitle + "] 를 삭제했어요 🗑️", "VOTE");
 

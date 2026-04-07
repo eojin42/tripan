@@ -27,14 +27,7 @@ public interface PlaceMapper {
     /** 숙박 상세 (accommodation 테이블) — insertKtoPlace 후 별도 호출 */
     int insertAccommodationDetail(PlaceDto place);
 
-    // ── 추천 장소 (무한스크롤 offset 지원) ────────────────────────
-    /**
-     * @param category  'all' | 'TOUR' | 'STAY' | 'RESTAURANT' | 'CULTURE' | 'LEISURE' | 'SHOPPING'
-     * @param cityList  여행 도시 목록 - 빈 리스트면 전체
-     *                  (KAKAO_CITIES = ["제주"] → ["제주"] / ["전라","강원"] → 두 도시 OR 조건)
-     * @param limit     페이지당 건수 (기본 12)
-     * @param offset    시작 위치 (0-based, 기본 0) — 무한스크롤
-     */
+    // ── 추천 장소 ──────────────────────────────────────────────────
     List<PlaceDto> selectRecommendPlaces(@Param("category") String category,
                                           @Param("cityList") List<String> cityList,
                                           @Param("limit")    int limit,

@@ -49,7 +49,6 @@ public class ItineraryServiceImpl implements ItineraryService {
         boolean isCustom = (apiId == null || apiId.isBlank() || apiId.startsWith("custom_"));
 
         if (!isCustom) {
-            // ── Track A: 공식 장소 Upsert ──────────────────────────
             place = placeRepository.findByApiPlaceId(apiId)
                 .orElseGet(() -> {
                     // 처음 등록되는 공식 장소만 INSERT
@@ -66,8 +65,6 @@ public class ItineraryServiceImpl implements ItineraryService {
                     return placeRepository.save(np);
                 });
         } else {
-            // ── Track B: 나만의 장소 Always Insert ─────────────────
-            // 서버에서 고유한 custom_UUID 생성 → 프론트 timestamp 의존 제거
             String customId = "custom_" + UUID.randomUUID().toString().replace("-", "");
             TripPlace np = new TripPlace();
             np.setApiPlaceId(customId);
@@ -119,7 +116,7 @@ public class ItineraryServiceImpl implements ItineraryService {
     }
 
     /* ────────────────────────────────────────────────────
-    ★ 메모 + 다중 이미지 저장 (최대 3장)
+       메모 + 다중 이미지 저장 (최대 3장)
     ──────────────────────────────────────────────────── */
  @Override
  @Transactional
@@ -138,14 +135,13 @@ public class ItineraryServiceImpl implements ItineraryService {
      List<String> currentUrls = currentImages.stream()
          .map(ItineraryImage::getImageUrl).toList();
 
-     // 3. 기존 이미지 삭제 로직 (✨ JPA 벌크 다중 삭제 쿼리 적용!)
+     // 3. 기존 이미지 삭제 로직 
      if (keepImageUrls != null) {
          // 남길 이미지(keepImageUrls)에 없는 URL들만 골라내기
          List<String> urlsToDelete = currentUrls.stream()
              .filter(url -> !keepImageUrls.contains(url))
              .toList();
          
-         // 삭제할 대상이 있다면, 우리가 만든 JPA 메서드로 DB에서 한 번에 싹 삭제!
          if (!urlsToDelete.isEmpty()) {
              imageRepository.deleteByItemIdAndImageUrlIn(itemId, urlsToDelete);
          }

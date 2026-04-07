@@ -63,11 +63,6 @@ public class ChecklistController {
 
         checklistMapper.toggleItem(checklistId);
 
-        /*
-         * ✅ getIsDone 쿼리 추가 없이 해결:
-         *    broadcast 수신 측(ws.js)에서 loadChecklist() 전체 리로드.
-         *    isDone payload는 보내지 않음 → XML 수정 불필요.
-         */
         wsPublisher.publish(tripId, "CHECKLIST_TOGGLED", checklistId, "멤버");
 
         return ResponseEntity.ok(Map.of("success", true));

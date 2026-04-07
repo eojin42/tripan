@@ -9,10 +9,6 @@ import java.util.List;
 
 public class ExpenseDto {
 
-    // ────────────────────────────────────────────────
-    // REQUEST DTOs
-    // ────────────────────────────────────────────────
-
     @Getter @Setter @NoArgsConstructor @AllArgsConstructor @Builder
     public static class CreateRequest {
         private Long tripId;
@@ -46,9 +42,6 @@ public class ExpenseDto {
         private List<ParticipantRequest> participants;
     }
 
-    // ────────────────────────────────────────────────
-    // RESPONSE DTOs
-    // ────────────────────────────────────────────────
 
     /** 지출 목록 응답 (요약) */
     @Getter @Setter @NoArgsConstructor @AllArgsConstructor @Builder
@@ -64,12 +57,12 @@ public class ExpenseDto {
         private String paymentType;
         private LocalDateTime createdAt;
         /**
-         * ★ 정산 상태: UNSETTLED / PENDING / SETTLED
+         * 정산 상태: UNSETTLED / PENDING / SETTLED
          * settlement_expense_link 기반으로 MyBatis에서 계산
          */
         private String settleStatus;
         /**
-         * ★ SETTLED인 경우 완료된 batch_id
+         * SETTLED인 경우 완료된 batch_id
          */
         private Long settledBatchId;
     }

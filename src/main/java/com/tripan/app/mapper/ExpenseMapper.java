@@ -9,11 +9,7 @@ import org.apache.ibatis.annotations.Param;
 import com.tripan.app.domain.dto.ExpenseDto;
 import com.tripan.app.domain.dto.SettlementDto;
 
-/**
- * 통계/복잡 조회 전용 MyBatis Mapper
- * 단순 CRUD는 JPA Repository 사용
- * 집계, 정산 계산, 다중 조인 등 복잡한 쿼리만 여기서 처리
- */
+
 @Mapper
 public interface ExpenseMapper {
 
@@ -53,7 +49,7 @@ public interface ExpenseMapper {
             @Param("tripId") Long tripId);
 
     /**
-     * ★ 재정산용 balance 계산
+     * 재정산용 balance 계산
      * COMPLETED batch에 연결된 expense를 제외하고 계산
      */
     List<ExpenseDto.MemberShareSummary> calculateBalancesForUnlinkedExpenses(
@@ -75,9 +71,7 @@ public interface ExpenseMapper {
     int updateSingleSettlementAmount(SettlementDto.SingleRequest req);
 
     /**
-     * ★ 단건 settlement_id 기준 amount 업데이트
-     * 기존 updateSingleSettlementAmount는 (tripId, toMemberId, fromMemberId) 조합으로
-     * 전체 미완료 정산을 덮어써서 "1건 눌렀는데 전부 처리" 버그 발생 → 이 메서드로 대체
+     * 단건 settlement_id 기준 amount 업데이트
      */
     int updateSettlementById(@Param("settlementId") Long settlementId,
                              @Param("amount") java.math.BigDecimal amount);
@@ -123,7 +117,7 @@ public interface ExpenseMapper {
 	 );
     
     // ════════════════════════════════════════════════════════
-    //  settlement_expense_link 관련 (★ 신규)
+    //  settlement_expense_link 관련 
     // ════════════════════════════════════════════════════════
 
     /** settlement_expense_link batch INSERT */
@@ -136,7 +130,7 @@ public interface ExpenseMapper {
     List<Long> selectSettledExpenseIdsByTripId(@Param("tripId") Long tripId);
 
     // ════════════════════════════════════════════════════════
-    //  정산 완료 상세보기 (★ 신규)
+    //  정산 완료 상세보기
     // ════════════════════════════════════════════════════════
 
     /** batch의 settlement(transfer) 목록 */

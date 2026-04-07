@@ -42,7 +42,6 @@ public class TourApiSyncServiceImpl implements TourApiSyncService {
     @Value("${tripan.api.kto-base-url}")
     private String baseUrl;
 
-    /** 동시 API 호출 수 제한 (초당 처리량 초과 방지) — 필요 시 조정 */
     private static final int MAX_CONCURRENT = 5;
     private final Semaphore apiSemaphore = new Semaphore(MAX_CONCURRENT, true);
 
@@ -81,7 +80,7 @@ public class TourApiSyncServiceImpl implements TourApiSyncService {
                     ResponseEntity<String> response = restTemplate.exchange(
                             uri, HttpMethod.GET, new HttpEntity<>(headers), String.class);
 
-                    // ★ TourAPI는 할당량 초과도 HTTP 200으로 반환 → resultCode 체크 필수
+                    //TourAPI는 할당량 초과도 HTTP 200으로 반환 → resultCode 체크 필수
                     JsonNode root = objectMapper.readTree(response.getBody());
                     String resultCode = root.path("response").path("header").path("resultCode").asText("0000");
                     if (isQuotaError(resultCode)) {
@@ -232,7 +231,7 @@ public class TourApiSyncServiceImpl implements TourApiSyncService {
                     ResponseEntity<String> response = restTemplate.exchange(
                             uri, HttpMethod.GET, new HttpEntity<>(headers), String.class);
 
-                    // ★ HTTP 200이라도 resultCode 체크
+                    // HTTP 200이라도 resultCode 체크
                     JsonNode root = objectMapper.readTree(response.getBody());
                     String resultCode = root.path("response").path("header").path("resultCode").asText("0000");
                     if (isQuotaError(resultCode)) {
@@ -285,7 +284,7 @@ public class TourApiSyncServiceImpl implements TourApiSyncService {
     }
 
     // ─────────────────────────────────────────────────────────────────
-    // [4] ★ 관광지/문화시설/레포츠 배치 동기화 → attraction 테이블 MERGE
+    // [4] 관광지/문화시설/레포츠 배치 동기화 → attraction 테이블 MERGE
     // ─────────────────────────────────────────────────────────────────
     @Override
     public String forceSyncAttractionDetails() {

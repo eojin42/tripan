@@ -64,10 +64,10 @@ function renderVotes(rows) {
         voteId:             vid,
         title:              r.title  || r.TITLE  || '',
         deadline:           r.deadline || r.DEADLINE || null,
-        /* ★ Oracle 숫자 1/0 → Number로 올 수 있음 */
+        /* Oracle 숫자 1/0 → Number로 올 수 있음 */
         isClosed:           Number(r.isClosed || r.ISCLOSED || 0) === 1,
         totalVotes:         r.totalVotes || r.TOTALVOTES || 0,
-        /* ★ 서버에서 오는 myVotedCandidateId: 숫자 또는 문자열 → String으로 통일 */
+        /* 서버에서 오는 myVotedCandidateId: 숫자 또는 문자열 → String으로 통일 */
         myVotedCandidateId: r.myVotedCandidateId != null ? String(r.myVotedCandidateId) : null,
         candidates: []
       };
@@ -80,7 +80,7 @@ function renderVotes(rows) {
     var total    = parseInt(v.totalVotes) || 0;
     var isClosed = v.isClosed;
 
-    /* ★ 서버 응답 우선 → 로컬 폴백 */
+    /* 서버 응답 우선 → 로컬 폴백 */
     var myVotedId = v.myVotedCandidateId || _myVotes[v.voteId] || null;
     var alreadyVoted = !!myVotedId;
 

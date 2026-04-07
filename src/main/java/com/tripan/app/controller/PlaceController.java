@@ -30,8 +30,8 @@ import com.tripan.app.service.TourApiSyncService;
 public class PlaceController {
 
     private final PlaceRecommendMapper placeMapper;
-    private final PlaceMapper          placeWriteMapper; // 조회수/좋아요 쓰기
-    private final TourApiSyncService   tourApiSyncService; // 온디맨드 sync
+    private final PlaceMapper          placeWriteMapper; 
+    private final TourApiSyncService   tourApiSyncService; 
 
     @Value("${tripan.api.kakao-map-api-key}")
     private String kakaoMapsAppkey;
@@ -47,8 +47,6 @@ public class PlaceController {
         PlaceDto place = placeMapper.selectPlaceDetailById(id);
         if (place == null) return "redirect:/curation/place_list";
 
-        // ★ 온디맨드 sync (@Async) — 백그라운드에서 채움, 사용자 대기 없음
-        // 다음 방문부터 데이터 표시됨
         tourApiSyncService.syncOnDemand(id, place.getCategory());
 
         // 조회수 +1
@@ -70,7 +68,7 @@ public class PlaceController {
         // 조회수 +1 반영 (화면에는 업데이트된 값 보여주기)
         place.setViewCount(place.getViewCount() != null ? place.getViewCount() + 1 : 1L);
 
-        // 좋아요 상태 (place.likeCount는 selectPlaceDetailById에서 이미 계산됨)
+        // 좋아요 상태
         Long memberId = getLoginMemberId(session);
         boolean liked = false;
         if (memberId != null) {

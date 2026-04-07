@@ -4,12 +4,6 @@
 
 <mapper namespace="com.tripan.app.mapper.TripPlaceMapper">
 
-    <!--
-        ▶ trip_place 실제 컬럼
-          trip_place_id, member_id, api_place_id,
-          place_name, address, latitude, longitude,
-          category_name, place_url, created_at
-    -->
 
     <!-- ════════════════════════════════════════════════════
          ResultMap (기존 - 워크스페이스 일정 조회용)
@@ -72,7 +66,7 @@
 	</select>
 
     <!-- ════════════════════════════════════════════════════
-         신규 쿼리 - 장소 추천/검색/나만의장소
+         장소 추천/검색/나만의장소
          (TripPlaceDto 기반, trip_place 실제 컬럼 사용)
     ════════════════════════════════════════════════════ -->
 
@@ -152,11 +146,7 @@
           AND ROWNUM = 1
     </select>
 
-    <!--
-        ★ BUG FIX: api_place_id 로 전체 DTO 조회
-          findPlaceIdByApiContentId 는 Long 만 반환하므로
-          apiContentId 를 포함한 전체 DTO 가 필요한 findOrCreatePublicPlace 에서 사용
-    -->
+
     <select id="selectPlaceByApiContentId" resultType="com.tripan.app.domain.dto.TripPlaceDto">
         SELECT
             trip_place_id AS placeId,
@@ -174,11 +164,7 @@
         AND ROWNUM = 1
     </select>
 
-    <!--
-        ★ BUG FIX: name+address+memberId 로 전체 DTO 조회
-          - memberId = NULL  → 공용 레코드만 검색 (findOrCreatePublicPlace)
-          - memberId = 값    → 해당 유저의 나만의 장소 중복 체크 (registerMyPlace)
-    -->
+
     <select id="selectPlaceByNameAndAddress" resultType="com.tripan.app.domain.dto.TripPlaceDto">
         SELECT
             trip_place_id AS placeId,

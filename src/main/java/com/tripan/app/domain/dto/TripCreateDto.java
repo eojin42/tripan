@@ -23,7 +23,6 @@ public class TripCreateDto {
 
     /**
      * 썸네일 이미지 (선택)
-     * - 프론트: FileReader.readAsDataURL() → "data:image/jpeg;base64,..." 전달
      * - null → 서버에서 기본 이미지 경로 /dist/images/logo.png 사용
      */
     private String thumbnailBase64;

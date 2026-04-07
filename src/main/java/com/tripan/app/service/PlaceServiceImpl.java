@@ -25,23 +25,6 @@ import lombok.extern.slf4j.Slf4j;
 
 /**
  * KTO 한국관광공사 Open API 동기화 서비스
- *
- * 수정 내역:
- *  [1] firstimage 빈 문자열 방지
- *      - KTO areaBasedList2 응답에서 firstimage 필드는 optional(0)
- *        → 없으면 null 또는 ""로 옴 → asText()로 ""를 저장하면 이미지 없는 카드 생성됨
- *      - 수정: firstimage가 비어 있으면 image_url을 null로 저장
- *              → PlaceMapper.xml의 image_url IS NOT NULL AND image_url != '' 조건으로 필터됨
- *
- *  [2] 숙박(contentTypeId=32) accommodation 테이블 분리 저장
- *      - 기존: insertPlace()로 place 테이블만 INSERT
- *      - 수정: detailIntro2 API로 체크인/아웃 시간 추가 조회 후 accommodation에도 INSERT
- *
- *  [3] 배치 대상 contentType 정리
- *      - "숙소/축제 외 나머지" 가져오기
- *      - 현재 배치: 12(관광), 14(문화), 32(숙박), 38(쇼핑), 39(식당), 28(레포츠)
- *      - 축제(15)는 festival 테이블이 별도로 있으므로 PlaceServiceImpl에서 제외
- *      - 숙박(32)은 DB에 이미 있으므로 배치에서 스킵 가능 — 환경에 따라 조절
  */
 @Slf4j
 @Service
@@ -76,9 +59,8 @@ public class PlaceServiceImpl implements PlaceService {
     public void syncPlacesBatch() {
         log.info("======== [KTO Sync] 배치 시작 ========");
 
-        // ★ 숙소(32)는 이미 DB에 있으므로 배치에서 제외
-        //   축제(15)는 festival 별도 테이블 관리 → 제외
-        //   나머지: 관광(12), 문화(14), 쇼핑(38), 식당(39), 레포츠(28)
+
+        // 관광(12), 문화(14), 쇼핑(38), 식당(39), 레포츠(28)
         String[] contentTypes = {"12", "14", "38", "39", "28"};
         int totalSaved = 0;
 
@@ -156,7 +138,7 @@ public class PlaceServiceImpl implements PlaceService {
         dto.setLatitude(listItem.path("mapy").asDouble());
         dto.setLongitude(listItem.path("mapx").asDouble());
 
-        // [1] ★ firstimage 빈 문자열 방지
+        //  firstimage 빈 문자열 방지
         String img = listItem.path("firstimage").asText("").trim();
         dto.setImageUrl(img.isEmpty() ? null : img);
 

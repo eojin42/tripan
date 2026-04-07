@@ -11,16 +11,7 @@ import com.tripan.app.service.TourApiSyncService;
 
 import lombok.RequiredArgsConstructor;
 
-/**
- * TourAPI → DB 배치 동기화 트리거 (관리자/테스트용)
- *
- * 엔드포인트 목록:
- *  GET /api/admin/sync/places       → place.description, place.phone_number
- *  GET /api/admin/sync/images       → place.image_url
- *  GET /api/admin/sync/restaurants  → restaurant + restaurant_facility + menu
- *  GET /api/admin/sync/attractions  → attraction (휴무일/이용시간)
- *  GET /api/admin/sync/all          → 위 4개 한번에 (통합 배치)
- */
+
 @RestController
 @RequestMapping("/api/admin/sync")
 @RequiredArgsConstructor

@@ -30,15 +30,7 @@ import com.tripan.app.domain.dto.TripDto.WeatherShortDayDto;
 
 import lombok.extern.slf4j.Slf4j;
 
-/**
- * 기상청 단기/중기 예보 API
- *
- * ★ 핵심 수정:
- *  - startDate/endDate 무시, 항상 오늘 기준 7일 예보 반환
- *  - base_date = 오늘, base_time = 현재 시각 기준 최신 발표 시각
- *  - 단기(D~D+3): 한 번 조회 후 fcstDate 필터링
- *  - 중기(D+4~D+7): getMidLandFcst + getMidTa
- */
+
 @Slf4j
 @Service
 public class WeatherServiceImpl implements WeatherService {

@@ -268,7 +268,6 @@
 
     <!-- ════════════════════════════════
          축제 상세 ResultMap
-         ※ FestivalDto 기존 필드명 기준
     ════════════════════════════════ -->
     <resultMap id="festivalDetailMap" type="com.tripan.app.domain.dto.FestivalDto">
         <id     property="festivalId"     column="festival_id"/>

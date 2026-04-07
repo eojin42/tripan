@@ -56,7 +56,7 @@ public class ItineraryController {
                         "longitude", dto.getLongitude(),
                         "categoryName",  dto.getCategoryName() != null ? dto.getCategoryName() : "ETC"));
 
-            // ★ DB 알림 저장 — 알림 뱃지에 표시
+            // DB 알림 저장 — 알림 뱃지에 표시
             String nick     = userDetails.getMember().getNickname();
           
             notificationService.notifyAll(tripId, memberId,
@@ -70,7 +70,7 @@ public class ItineraryController {
         }
     }
 
-    // ── ★ 메모/이미지 저장 + broadcast ───────────────────
+    // ── 메모/이미지 저장 + broadcast ───────────────────
     // 요청 body: { memo, imageBase64List, keepImageUrls }
     @PatchMapping("/{itemId}/memo")
     public ResponseEntity<Map<String, Object>> saveMemo(
@@ -92,7 +92,7 @@ public class ItineraryController {
                 b64List = (single != null && !single.isBlank()) ? List.of(single) : List.of();
             }
 
-            // ✅ 유지할 기존 이미지 URL 목록 (없으면 전체 삭제 — 기존 동작 유지)
+            // 유지할 기존 이미지 URL 목록 (없으면 전체 삭제 — 기존 동작 유지)
             @SuppressWarnings("unchecked")
             List<String> keepImageUrls = (List<String>) body.get("keepImageUrls");
 
@@ -151,7 +151,7 @@ public class ItineraryController {
         }
     }
 
-    // ── ★ 리스트 전체 순서 일괄 저장 + 단 1회 broadcast ──────
+    // ── 리스트 전체 순서 일괄 저장 + 단 1회 broadcast ──────
     // body: { dayNumber: int, items: [{itemId, visitOrder}, ...] }
     @PatchMapping("/trip/{tripId}/day/{dayNumber}/reorder")
     public ResponseEntity<Map<String, Object>> reorderDay(
@@ -203,7 +203,7 @@ public class ItineraryController {
         try {
             Long tripId = itineraryService.getTripIdByItemId(itemId);
 
-            // ★ 삭제 전 장소명 조회 (서비스에 메서드 있으면 사용, 없으면 "장소" fallback)
+            // 삭제 전 장소명 조회 (서비스에 메서드 있으면 사용, 없으면 "장소" fallback)
             String placeName = "장소";
             try {
                 String fetched = itineraryService.getPlaceNameByItemId(itemId);
@@ -216,7 +216,7 @@ public class ItineraryController {
                 String nick = userDetails.getMember().getNickname();
                 wsPublisher.publish(tripId, "PLACE_DELETED", itemId, nick);
 
-                // ★ DB 알림 저장
+                // DB 알림 저장
                 notificationService.notifyAll(tripId, userDetails.getMember().getMemberId(),
                     nick + "님이 [" + placeName + "] 장소를 삭제했어요 🗑️", "SYSTEM");
             }

@@ -177,9 +177,7 @@ public class TripServiceImpl implements TripService {
         saveTags(tripId, dto.getTags());
     }
 
-    // ═══════════════════════════════════════════════════════
-    //  getTripDetails
-    // ═══════════════════════════════════════════════════════
+
     @Override
     @Transactional(readOnly = true)
     public TripDto getTripDetails(Long tripId) {
@@ -202,9 +200,7 @@ public class TripServiceImpl implements TripService {
         return dto;
     }
 
-    // ═══════════════════════════════════════════════════════
-    //  스케줄러: 매일 자정 status 자동 갱신
-    // ═══════════════════════════════════════════════════════
+
     @Scheduled(cron = "0 0 0 * * *")
     @Transactional
     public void updateTripStatuses() {
@@ -293,8 +289,6 @@ public class TripServiceImpl implements TripService {
         });
 
         // ── STEP 6: Day 생성 + old→new day_id 매핑 Map 구성 ────
-        //   핵심: 날짜(trip_date)가 아닌 day_number(순서) 기준으로 구조 유지
-        //   trip_date는 원본 그대로 복사하여 날짜 연속성 보장
         List<TripDay> origDays = tripDayRepository.findByTripIdOrderByDayNumberAsc(originalTripId);
 
         // key: 원본 day_id  /  value: 새로 발급된 day_id
@@ -313,10 +307,6 @@ public class TripServiceImpl implements TripService {
         log.info("[cloneTrip] Day 복사 완료 - {}개, tripId={}", origDays.size(), newTripId);
 
         // ── STEP 7: ItineraryItem 복사 ──────────────────────────
-        //   - dayIdMapping으로 old_day_id → new_day_id 변환
-        //   - trip_place_id: 기존 ID 그대로 참조 (신규 생성 절대 금지)
-        //   - visit_order(LexoRank 문자열) 그대로 유지 → 순서 보장
-        //   - ItineraryImage 절대 복사 금지 (개인 사진)
         int copiedItemCount = 0;
         for (TripDay origDay : origDays) {
             Long newDayId = dayIdMapping.get(origDay.getDayId());
@@ -328,7 +318,7 @@ public class TripServiceImpl implements TripService {
             List<ItineraryItem> origItems = itineraryItemRepository.findByDayId(origDay.getDayId());
             for (ItineraryItem origItem : origItems) {
                 ItineraryItem newItem = new ItineraryItem();
-                newItem.setDayId(newDayId);                          // ★ 새 day_id로 교체
+                newItem.setDayId(newDayId);                          // 새 day_id로 교체
                 newItem.setTripPlaceId(origItem.getTripPlaceId());   // 기존 place_id 그대로 참조
                 newItem.setVisitOrder(origItem.getVisitOrder());     // LexoRank 순서 유지
                 newItem.setMemo(origItem.getMemo());
@@ -337,7 +327,7 @@ public class TripServiceImpl implements TripService {
                 newItem.setDurationMinutes(origItem.getDurationMinutes());
                 newItem.setTransportation(origItem.getTransportation());
                 newItem.setDistanceKm(origItem.getDistanceKm());
-                // ★ ItineraryImage: 복사하지 않음
+          
 
                 itineraryItemRepository.save(newItem);
                 copiedItemCount++;
@@ -354,8 +344,8 @@ public class TripServiceImpl implements TripService {
             newChecklist.setTripId(newTripId);
             newChecklist.setItemName(origChecklist.getItemName());
             newChecklist.setCategory(origChecklist.getCategory());
-            newChecklist.setIsChecked(0);       // ★ 체크 상태 초기화
-            newChecklist.setCheckManager(null); // ★ 담당자 초기화 (개인 데이터 제거)
+            newChecklist.setIsChecked(0);       // 체크 상태 초기화
+            newChecklist.setCheckManager(null); // 담당자 초기화 (개인 데이터 제거)
             tripChecklistRepository.save(newChecklist);
         }
         log.info("[cloneTrip] Checklist 복사 완료 - {}개, tripId={}", origChecklists.size(), newTripId);

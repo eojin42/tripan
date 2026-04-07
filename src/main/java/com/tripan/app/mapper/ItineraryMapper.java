@@ -23,6 +23,4 @@ public interface ItineraryMapper {
     /** 특정 일정 아이템의 이미지 URL 목록 조회 */
     List<String> findImageUrlsByItemId(@Param("itemId") Long itemId);
 
-    // ❌ CUD 메서드(insertImage, deleteImagesByItemIdAndUrls, deleteAllImagesByItemId)는 
-    // JPA Repository 로 이관되었으므로 깔끔하게 삭제되었습니다!
 }

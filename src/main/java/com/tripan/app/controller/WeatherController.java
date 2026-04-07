@@ -6,9 +6,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-/**
- * GET /api/weather?city=제주&startDate=2025-04-01&endDate=2025-04-10
- */
+
 @RestController
 @RequestMapping("/api/weather")
 @RequiredArgsConstructor

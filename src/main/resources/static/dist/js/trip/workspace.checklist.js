@@ -1,15 +1,4 @@
-/**
- * workspace.checklist.js
- * ──────────────────────────────────────────────
- * 담당: 체크리스트 CRUD 전체
- *       ← JSP 인라인 loadChecklist / renderChecklist /
- *          openCheckModal / submitCheckItem / toggleCheckItem /
- *          deleteCheckItem 이동 + 기존 인라인 추가 UI 통합
- *
- * 의존: workspace.ui.js (showToast, openModal, closeModal, normalizeRow)
- *       TRIP_ID, CTX_PATH
- * ──────────────────────────────────────────────
- */
+
 
 /* ══════════════════════════════
    API 로드 & 렌더

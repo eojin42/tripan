@@ -68,11 +68,11 @@ public class TripMemberServiceImpl implements TripMemberService {
         target.setInvitationStatus("DECLINED");
         memberRepository.save(target);
 
-        // ★ 강퇴당한 본인에게 알림 저장
+        // 강퇴당한 본인에게 알림 저장
         notificationService.notifyOne(tripId, targetMemberId, requesterId,
             "방장에 의해 여행에서 강퇴되었습니다. 이 여행방에는 다시 입장하실 수 없습니다. 🚨", "SYSTEM");
 
-        // ★ 나머지 멤버들에게 강퇴 사실 알림 (닉네임 포함)
+        // 나머지 멤버들에게 강퇴 사실 알림 (닉네임 포함)
         String nick = (targetNickname != null && !targetNickname.isEmpty()) ? targetNickname : "동행자";
         notificationService.notifyAll(tripId, requesterId,
             nick + "님이 방장에 의해 강퇴되었습니다 🚪", "SYSTEM");
@@ -94,7 +94,7 @@ public class TripMemberServiceImpl implements TripMemberService {
         // DB에서 내 정보 삭제
         memberRepository.delete(me);
 
-        // ★ 닉네임: RestController가 세션에서 꺼내 전달
+        // 닉네임: RestController가 세션에서 꺼내 전달
         String nick = (requesterNickname != null && !requesterNickname.isEmpty()) ? requesterNickname : "동행자";
 
         // 방나가기 완료 후 남은 멤버들에게 알림 발송

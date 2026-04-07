@@ -511,15 +511,6 @@ window.executeMapAdd = function() {
     _tempMarkers = [];
     window.currentAddDay = parseInt(day);
 
-    // ★★ BUG FIX ★★
-    // 기존 코드: NONE 은 /api/places/my 호출 후 placeId(DB PK) 를 apiPlaceId 로 전달
-    //   → 백엔드가 findPlaceIdByApiContentId(DB PK) 를 찾지 못해 member_id=null 새 레코드 중복 삽입
-    //
-    // 수정 후:
-    //   ① NONE(나만의 장소): /api/places/my 호출 → saved.place.apiContentId(custom_UUID) 를 전달
-    //   ② 비-NONE(공용 장소): kakaoId 있으면 그대로 전달,
-    //      kakaoId 없으면 /api/places/findOrCreate 호출 → 기존 레코드 재사용 or 신규 생성 후 apiContentId 전달
-    //   두 경우 모두 DB PK 가 아닌 api_place_id(=apiContentId) 값을 전달하므로 중복 삽입 방지
 
     if (cat === 'NONE') {
         // ── 나만의 장소: member_id = 로그인 유저 ──────────────────
@@ -537,8 +528,7 @@ window.executeMapAdd = function() {
         .then(function(r) { return r.ok ? r.json() : null; })
         .catch(function() { return null; })
         .then(function(saved) {
-            // ✅ FIX: placeId(숫자 PK) 대신 apiContentId(custom_UUID) 사용
-            //    placeId 를 넘기면 백엔드가 api_place_id 컬럼에서 못 찾아 member_id=null 인 복제본 생성
+ 
             var apiId = (saved && saved.place && saved.place.apiContentId)
                 ? saved.place.apiContentId
                 : null;
@@ -553,10 +543,7 @@ window.executeMapAdd = function() {
             // kakaoId 가 있으면 → 백엔드가 api_place_id 로 기존 레코드를 찾을 수 있음
             addPlaceToDay(null, p.name, p.addr, p.lat, p.lng, kakaoId, cat);
         } else {
-            // ✅ FIX: kakaoId 없을 때 → /api/places/findOrCreate 로 name+address 중복 체크
-            //    기존 코드는 kakaoId=null 인 채로 addPlaceToDay 를 호출해서
-            //    백엔드가 기존 레코드(예: id=381)를 찾더라도 그걸 apiPlaceId 로 재사용하지 않고
-            //    api_place_id="381" 인 새 레코드(407)를 중복 삽입하는 버그 발생
+
             fetch(CTX_PATH + '/api/places/findOrCreate', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },

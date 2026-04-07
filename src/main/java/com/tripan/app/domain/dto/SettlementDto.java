@@ -13,10 +13,6 @@ import lombok.Setter;
 
 public class SettlementDto {
 
-    // ────────────────────────────────────────────────
-    // REQUEST DTOs
-    // ────────────────────────────────────────────────
-
     /**
      * 정산 일괄 생성 요청
      * 여행이 끝난 후, expense + expense_participant 기반으로 정산 계산 후 저장
@@ -28,7 +24,7 @@ public class SettlementDto {
     @Builder
     public static class CreateBatchRequest {
  
-        /** ★ 추가: 어떤 여행의 정산인지 */
+        /** 추가: 어떤 여행의 정산인지 */
         private Long tripId;
  
         /**

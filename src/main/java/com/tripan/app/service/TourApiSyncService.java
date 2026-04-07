@@ -20,7 +20,7 @@ public interface TourApiSyncService {
     String forceSyncAttractionDetails();
 
     /**
-     * [온디맨드] 디테일 진입 시 해당 장소 DB에 없으면 즉시 API 호출 → 저장
+     * 디테일 진입 시 해당 장소 DB에 없으면 즉시 API 호출 → 저장
      * PlaceController.detail()에서 호출
      */
     void syncOnDemand(Long placeId, String category);

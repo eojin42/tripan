@@ -6,12 +6,7 @@ import org.apache.ibatis.annotations.Param;
 import java.util.List;
 import java.util.Map;
 
-/**
- * VoteMapper — 투표 조회 전용 (MyBatis)
- *
- * 생성 / 삭제 는 VoteService → Repository(JPA) 에서 처리합니다.
- * 복잡한 JOIN + 서브쿼리가 필요한 조회만 여기에 작성합니다.
- */
+
 @Mapper
 public interface VoteMapper {
 

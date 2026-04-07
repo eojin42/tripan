@@ -1,8 +1,4 @@
-/**
- * workspace.schedule.js  ★ ULTIMATE V3
- */
 
-// 🟢 [전역] 카테고리 영문 DB값 ➔ 예쁜 한글 UI 변환기
 window.getTripanCategory = function(cat) {
   var c = (cat || '').toUpperCase();
   if (c.includes('RESTAURANT') || c.includes('음식') || c.includes('맛집')) return { icon: '🍽️', label: '맛집', value: 'RESTAURANT' };
@@ -237,9 +233,6 @@ function _esc(str) {
 function addPlaceToDay(el, name, addr, lat, lng, apiPlaceId, categoryName) {
   var cat = categoryName || 'NONE';
 
-  // ✅ FIX: 공식 장소 여부 판별
-  //   - apiPlaceId가 존재하고 'custom_'으로 시작하지 않으면 → 공식 장소 (카카오 ID)
-  //   - null이거나 'custom_'으로 시작하면 → 나만의 장소 (서버에서 UUID 생성)
   var isCustom = !apiPlaceId || String(apiPlaceId).indexOf('custom_') === 0;
   var finalApiPlaceId = isCustom ? null : apiPlaceId;  // 나만의 장소는 null 전달 → 서버 UUID
 
@@ -253,9 +246,9 @@ function addPlaceToDay(el, name, addr, lat, lng, apiPlaceId, categoryName) {
       address:      addr || '',
       latitude:     lat  || 0,
       longitude:    lng  || 0,
-      apiPlaceId:   finalApiPlaceId,   // ✅ 공식 장소: 카카오 ID / 나만의: null
+      apiPlaceId:   finalApiPlaceId,   // 공식 장소: 카카오 ID / 나만의: null
       categoryName: cat,
-      customPlace:  isCustom           // ✅ 백엔드 two-track 분기 힌트
+      customPlace:  isCustom           // 백엔드 two-track 분기 힌트
     })
   })
   .then(function (r) { return r.json(); })
@@ -411,7 +404,6 @@ function removePlace(btn) {
 /* ══════════════════════════════
    드래그앤드롭 (LexoRank) & 마커 완벽 재정렬
 ══════════════════════════════ */
-// ✅ 순서값 생성: 항상 000001 형식 (DB 기존값과 호환, LexoRank 제거)
 function toRank(idx) { return String(idx + 1).padStart(6, '0'); }
 
 var _dragCard    = null;
@@ -445,9 +437,7 @@ function onListDragOver(e) {
   if (after == null) list.appendChild(_dragCard);
   else if (after !== _dragCard) list.insertBefore(_dragCard, after);
 
-  // ✅ refreshPlaceNums 제거 — 드래그 중 중간 리스트에서 호출하면
-  // data-day가 아직 안 바뀐 카드들의 dataset.order가 오염됨
-  // 번호 갱신은 드롭 확정(onListDrop/onDropZoneDrop) 시에만 수행
+
 }
 
 function onListDragLeave(e) {
@@ -456,7 +446,6 @@ function onListDragLeave(e) {
   }
 }
 
-// ✅ 같은 날짜 안에서 드롭
 function onListDrop(e) {
   e.preventDefault(); e.stopPropagation();
   if (!_dragCard) return;
@@ -465,7 +454,6 @@ function onListDrop(e) {
   var dayTo = parseInt(list.dataset.day);
   list.classList.remove('list-drag-over');
 
-  // ✅ dataset.day 먼저 확정 후 refreshPlaceNums 호출 (filter 기준이 됨)
   _dragCard.dataset.day = dayTo;
 
   var oldList = document.getElementById('places-' + _dragDayFrom);
@@ -499,7 +487,6 @@ function onDropZoneDragOver(e) {
 
 function onDropZoneDragLeave(e) { e.currentTarget.classList.remove('dz-active'); }
 
-// ✅ 다른 날짜(빈 공간)로 완전히 넘길 때
 function onDropZoneDrop(e) {
   e.preventDefault(); e.stopPropagation();
   e.currentTarget.classList.remove('dz-active');
@@ -537,7 +524,6 @@ function getDragAfterElement(container, y) {
   }, { offset: Number.NEGATIVE_INFINITY }).element;
 }
 
-// ✅ UI 번호 갱신 + dataset.order를 000001 형식으로 동기화
 function refreshPlaceNums(list) {
   list.querySelectorAll('.place-card').forEach(function (card, i) {
     var n = card.querySelector('.place-num');
@@ -546,7 +532,6 @@ function refreshPlaceNums(list) {
   });
 }
 
-// ✅ 리스트 전체 순서를 서버에 저장 (카드마다 순서대로 PATCH)
 // refreshPlaceNums 호출 이후 dataset.order가 최신 상태가 된 뒤 호출
 function _persistListOrder(list, dayNum) {
   // data-day가 일치하는 카드만 (다른 날로 이미 이동된 카드 제외)
@@ -614,7 +599,7 @@ function openMemoView(card) {
   modal.className = 'modal-overlay open'; // 생성과 동시에 열림 클래스 추가
   modal.style.cssText = 'display:flex;align-items:center;justify-content:center;';
 
-  // 📸 1. 사진 영역 (trip.css의 modern-grid와 openImageViewer 뷰어 적용!)
+  // 1. 사진 영역 (trip.css의 modern-grid와 openImageViewer 뷰어 적용!)
   var imgsHtml = '';
   if (images.length > 0) {
     imgsHtml = '<div style="margin-top:20px;">'
@@ -627,13 +612,13 @@ function openMemoView(card) {
       + '</div></div>';
   }
 
-  // 📝 2. 메모 영역 (모던한 텍스트 박스 스타일)
+  // 2. 메모 영역 (모던한 텍스트 박스 스타일)
   var memoHtml = memo
     ? '<div class="modern-textarea" style="background:#F8FAFC !important; border:none !important; cursor:default; white-space:pre-wrap;">'
         + _escHtml(memo) + '</div>'
     : '<div style="color:#A0AEC0;font-size:13px;text-align:center;padding:12px 0;">작성된 메모가 없습니다.</div>';
 
-  // ✨ 3. 전체 모달 HTML 조립 (청량하고 둥근 글래스모피즘 스타일)
+  // 3. 전체 모달 HTML 조립 (청량하고 둥근 글래스모피즘 스타일)
   modal.innerHTML =
     '<div class="modal-box" style="max-width: 420px; border-radius: 24px;">' +
       '<div class="modal-box__head" style="border-bottom: none; padding-bottom: 10px;">' +
@@ -725,9 +710,7 @@ function saveMemo() {
   var btnTxt = document.getElementById('saveMemoTxt');
   if (btnTxt) btnTxt.textContent = '저장 중…';
 
-  // ✅ BUG FIX: 기존 이미지 중 유지할 URL 목록을 서버에 함께 전달
-  // 이전: newImages(새 업로드)만 전달 → 서버가 기존 이미지 전부 삭제 후 새것만 저장
-  // 이후: keepImageUrls 추가 → 서버가 목록에 없는 것만 삭제, 있는 것은 유지
+
   var newImages       = _memoImages.filter(function (img) { return img.base64 && !img.existing; });
   var keepImageUrls   = _memoImages.filter(function (img) { return img.existing && img.src; })
                                    .map(function (img) { return img.src; });

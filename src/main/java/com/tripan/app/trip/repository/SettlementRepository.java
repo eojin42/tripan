@@ -84,11 +84,6 @@ public interface SettlementRepository extends JpaRepository<Settlement, Long> {
     """)
     int completeBatch(@Param("batchId") Long batchId);
 
-    /**
-     * ★ Bug Fix: 재정산 시 COMPLETED(완료) 정산은 이력으로 남기고
-     *            PENDING / REQUESTED 상태인 미완료 정산만 삭제
-     *            기존 deleteByTripId() 는 전체 삭제라 완료 이력도 날렸음
-     */
     @Modifying
     @Query("""
         DELETE FROM Settlement s

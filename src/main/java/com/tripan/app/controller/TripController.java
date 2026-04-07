@@ -65,7 +65,7 @@ public class TripController {
         
         if (!myMemberInfo.isPresent() || 
             "DECLINED".equals(myMemberInfo.get().getInvitationStatus()) || 
-            "KICKED".equals(myMemberInfo.get().getInvitationStatus())) { // 👈 KICKED 조건 추가!
+            "KICKED".equals(myMemberInfo.get().getInvitationStatus())) { 
             
             session.setAttribute("toastMsg", "접근 권한이 없거나 강퇴된 여행입니다.");
             return "redirect:/trip/my_trips"; 
@@ -89,13 +89,13 @@ public class TripController {
         boolean showWelcome = Integer.valueOf(1).equals(myMemberInfo.get().getIsFirstVisit());
         model.addAttribute("showWelcome",  showWelcome);
         
-        // 🚨 2. 내 권한(OWNER, EDITOR, VIEWER)을 JSP로 넘기기
+        // 내 권한(OWNER, EDITOR, VIEWER)을 JSP로 넘기기
         String myRole = myMemberInfo.get().getRole();
         model.addAttribute("myMemberId", loginMemberIdForWelcome);
         model.addAttribute("memberRole", myRole);
         model.addAttribute("isOwner", "OWNER".equals(myRole));
 
-        // ★ 담아온 여행 여부 — originalTripId가 있으면 스크랩본
+        //   담아온 여행 여부 — originalTripId가 있으면 스크랩본
         //   본인이 OWNER이고 스크랩본일 때만 "담아오기 안내 모달" 표시
         com.tripan.app.trip.domain.entity.Trip tripEntity =
             tripRepository.findById(tripId).orElse(null);
@@ -266,7 +266,6 @@ public class TripController {
         return ResponseEntity.ok(Map.of("success", true));
     }
 
-    // 🚨 여기서 방금 전 뺀 "없는 메서드" 대신, 서비스에 만든 확실한 메서드를 호출합니다!
     @PatchMapping("/{tripId}/invite-code")
     @ResponseBody
     public ResponseEntity<Map<String, Object>> regenerateInviteCode(@PathVariable("tripId") Long tripId, HttpSession session) {

@@ -2,19 +2,7 @@
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 
-<!--
-    ※ 수정 사항 요약
-    1. namespace: com.tripan.expense.mapper → com.tripan.app.mapper
-    2. 모든 ResultMap type: com.tripan.expense.dto → com.tripan.app.domain.dto
-    3. selectTotalExpenseAmount 쿼리 추가 (TripServiceImpl.getTripDetails 에서 사용)
-    4. selectSettlementsByTripId, selectSettlementsByTripIdAndMember
-       → from_member_id / to_member_id nullable이므로 JOIN → LEFT JOIN 변경
--->
 <mapper namespace="com.tripan.app.mapper.ExpenseMapper">
-
-    <!-- ════════════════════════════════════════
-         ResultMap 정의
-    ════════════════════════════════════════ -->
 
     <resultMap id="categorySummaryMap" type="com.tripan.app.domain.dto.ExpenseDto$CategorySummary">
         <result property="category"     column="category"/>
@@ -45,7 +33,7 @@
         <result property="expenseDate"      column="expense_date"/>
         <result property="paymentType"      column="payment_type"/>
         <result property="createdAt"        column="created_at"/>
-        <!-- ★ 정산 상태 (UNSETTLED / PENDING / SETTLED) -->
+        <!-- 정산 상태 (UNSETTLED / PENDING / SETTLED) -->
         <result property="settleStatus"     column="settle_status"/>
         <result property="settledBatchId"   column="settled_batch_id"/>
     </resultMap>
@@ -89,7 +77,6 @@
 
     <!-- ════════════════════════════════════════
          여행 전체 지출 합계
-         TripServiceImpl.getTripDetails() → dto.setCurrentExpense() 에서 사용
     ════════════════════════════════════════ -->
     <select id="selectTotalExpenseAmount" resultType="java.lang.Double">
         SELECT NVL(SUM(e.amount), 0)
@@ -149,7 +136,6 @@
     ════════════════════════════════════════ -->
     <select id="calculateBalancesByTripId" resultMap="memberShareSummaryMap">
         WITH
-        /* 각 멤버가 실제로 결제한 금액 합계 */
         paid AS (
             SELECT
                 e.payer_id    AS member_id,
@@ -158,7 +144,6 @@
             WHERE e.trip_id = #{tripId}
             GROUP BY e.payer_id
         ),
-        /* 각 멤버가 부담해야 하는 금액 합계 (외부 인원 제외) */
         shared AS (
             SELECT
                 ep.member_id,
@@ -169,7 +154,6 @@
               AND ep.member_id IS NOT NULL
             GROUP BY ep.member_id
         ),
-        /* 여행 참여 멤버 전체 (ACCEPTED 상태만) */
         members AS (
             SELECT DISTINCT tm.member_id
             FROM trip_member tm
@@ -191,7 +175,6 @@
 
     <!-- ════════════════════════════════════════
          지출 목록 요약 (Oracle ROWNUM 페이징)
-         ★ settle_status: SETTLED / PENDING / UNSETTLED
     ════════════════════════════════════════ -->
     <select id="selectExpenseSummaryListByTripId" resultMap="expenseSummaryMap">
         SELECT *
@@ -207,7 +190,6 @@
                 e.expense_date,
                 e.payment_type,
                 e.created_at,
-                /* ★ 정산 상태 판단 (settlement_expense_link 연동) */
                 CASE
                   WHEN EXISTS (
                     SELECT 1 FROM settlement_expense_link sel
@@ -223,7 +205,6 @@
                   ) THEN 'PENDING'
                   ELSE 'UNSETTLED'
                 END AS settle_status,
-                /* ★ 완료된 batch_id (SETTLED인 경우) */
                 (SELECT MIN(sel2.batch_id)
                  FROM settlement_expense_link sel2
                  JOIN settlement s2 ON sel2.batch_id = s2.batch_id
@@ -264,7 +245,6 @@
     <!-- ════════════════════════════════════════
          지출별 분담자 목록 (멤버 닉네임 포함)
     ════════════════════════════════════════ -->
-    <!-- 외부 인원(member_id IS NULL)도 포함 — LEFT JOIN + COALESCE -->
     <select id="selectParticipantsByExpenseId" resultMap="participantResponseMap">
         SELECT
             ep.participant_id,
@@ -281,7 +261,6 @@
 
     <!-- ════════════════════════════════════════
          여행 정산 목록 조회 (멤버 닉네임 포함)
-         from_member_id / to_member_id nullable → LEFT JOIN 사용
     ════════════════════════════════════════ -->
     <select id="selectSettlementsByTripId" resultMap="settlementResponseMap">
         SELECT
@@ -305,7 +284,6 @@
 
     <!-- ════════════════════════════════════════
          내가 관련된 정산 조회 (보내는 것 + 받는 것)
-         from_member_id / to_member_id nullable → LEFT JOIN 사용
     ════════════════════════════════════════ -->
     <select id="selectSettlementsByTripIdAndMember" resultMap="settlementResponseMap">
         SELECT
@@ -421,7 +399,6 @@
 
     <!-- ════════════════════════════════════════
          내가 결제한 지출의 카테고리별 합계
-         (홈탭 — 내 지출 요약 섹션용)
     ════════════════════════════════════════ -->
     <select id="selectMyCategorySummaryByTripId" resultMap="categorySummaryMap">
         SELECT
@@ -436,7 +413,6 @@
 
     <!-- ════════════════════════════════════════
          나에게 온 정산 요청 건수 (홈탭 대기 칩용)
-         from_member_id = 나(debtor) + REQUESTED/PENDING 상태
     ════════════════════════════════════════ -->
     <select id="countIncomingSettlementRequests" resultType="int">
         SELECT COUNT(*)
@@ -564,8 +540,6 @@
 
     <!--
         settlement_expense_link INSERT
-        ★ Oracle INSERT ALL + NEXTVAL = 모든 행에 동일 시퀀스값 → PK 중복
-          SELECT UNION ALL 서브쿼리 방식으로 교체: 행마다 시퀀스 증가 보장
     -->
     <insert id="insertSettlementExpenseLinks">
         INSERT INTO settlement_expense_link (
@@ -589,8 +563,7 @@
     </insert>
 
 
-    <!-- ★ 혼자 쓴 지출 제외: participants가 2명 이상인 expense ID 조회
-         (정산 대상 = 다른 사람과 함께 쓴 지출만)
+    <!-- 혼자 쓴 지출 제외: participants가 2명 이상인 expense ID 조회
          createSettlements의 settlement_expense_link INSERT에서 사용 -->
     <select id="selectMultiParticipantExpenseIds" resultType="java.lang.Long">
         SELECT e.expense_id
@@ -613,7 +586,7 @@
           AND s.status = 'COMPLETED'
     </select>
 
-    <!-- ★ 재정산용 balance 계산: COMPLETED batch 포함 expense 제외 -->
+    <!-- 재정산용 balance 계산: COMPLETED batch 포함 expense 제외 -->
     <select id="calculateBalancesForUnlinkedExpenses" resultMap="memberShareSummaryMap">
         WITH
         settled_expenses AS (

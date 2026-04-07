@@ -83,7 +83,6 @@ public class MemberController {
         return "member/member";
     }
 
-    /* ── 아래는 기존 코드 그대로 유지 ── */
 
     @ResponseBody
     @PostMapping("userIdCheck")

@@ -37,7 +37,7 @@ public class ExpenseController {
     private final ExpenseService expenseService;
     private final ExpenseMapper expenseMapper;
     private final SimpMessagingTemplate messagingTemplate;
-    private final NotificationService notificationService; // ★ 추가 (생성자 주입 자동 처리)
+    private final NotificationService notificationService; 
 
     // ════════════════════════════════════════════════════════
     //  지출 API
@@ -46,19 +46,17 @@ public class ExpenseController {
     /**
      * 지출 등록
      * POST /api/trips/{tripId}/expenses
-     *
-     * ★ Bug Fix: 지출 추가 시 알림 발송 + WebSocket 브로드캐스트 추가
      */
     @PostMapping("/trips/{tripId}/expenses")
     public ResponseEntity<ExpenseDto.DetailResponse> createExpense(
             @PathVariable("tripId") Long tripId,
             @RequestBody ExpenseDto.CreateRequest req,
-            HttpSession session) { // ★ session 추가 (senderId 추출용)
+            HttpSession session) { // session 추가 (senderId 추출용)
 
         req.setTripId(tripId);
         ExpenseDto.DetailResponse result = expenseService.createExpense(req);
 
-        // ★ 알림 발송 (결제자를 제외한 모든 멤버에게)
+        // 알림 발송 (결제자를 제외한 모든 멤버에게)
         try {
             Long senderId    = req.getPayerId();
             String payerNick = result.getPayerNickname() != null ? result.getPayerNickname() : "누군가";
@@ -115,7 +113,7 @@ public class ExpenseController {
 
             int existing = expenseMapper.countActiveSettlement(tripId, myId, fromMemberId);
 
-            // ★ 단건 정산에도 batch_id 부여 → settlement_expense_link 연결 가능
+            // 단건 정산에도 batch_id 부여 → settlement_expense_link 연결 가능
             Long batchId = expenseMapper.selectNextBatchId();
 
             SettlementDto.SingleRequest req = SettlementDto.SingleRequest.builder()
@@ -133,7 +131,7 @@ public class ExpenseController {
                 // 신규 INSERT (batch_id 포함)
                 expenseMapper.insertSingleSettlement(req);
 
-                // ★ 이 pair(결제자=myId, 분담자=fromMemberId)의 미정산 expense 연결
+                // 이 pair(결제자=myId, 분담자=fromMemberId)의 미정산 expense 연결
                 java.util.List<Long> pairExpIds =
                     expenseMapper.selectPairExpenseIds(tripId, myId, fromMemberId);
                 if (!pairExpIds.isEmpty()) {
@@ -157,7 +155,7 @@ public class ExpenseController {
             Map<String, Object> wsMsg = new HashMap<>();
             wsMsg.put("type", "NEW_NOTIFICATION");
             messagingTemplate.convertAndSend("/sub/trip/" + tripId, wsMsg);
-            /* ★ 상대방 정산탭 즉시 갱신 */
+            /* 상대방 정산탭 즉시 갱신 */
             Map<String, Object> refreshMsg = new HashMap<>();
             refreshMsg.put("type", "REFRESH_SETTLEMENT");
             messagingTemplate.convertAndSend("/sub/trip/" + tripId, refreshMsg);
@@ -309,7 +307,7 @@ public class ExpenseController {
             @RequestBody SettlementDto.CompleteRequest req) {
 
         expenseService.completeSettlements(req);
-        /* ★ 정산 완료 후 전체 멤버 화면 즉시 갱신 */
+        /* 정산 완료 후 전체 멤버 화면 즉시 갱신 */
         try {
             Long tripId = req.getTripId();
             if (tripId != null) {

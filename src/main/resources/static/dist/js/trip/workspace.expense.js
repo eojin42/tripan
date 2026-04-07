@@ -1,5 +1,5 @@
 /**
- * workspace_expense.js — 전면 개편
+ * workspace_expense.js
  * ──────────────────────────────────────────────────────────
  * 담당: 가계부 · 정산 CRUD + 내부 3탭 (홈 / 내역 / 정산)
  * ──────────────────────────────────────────────────────────
@@ -96,9 +96,7 @@ function _loadHomeTab() {
 
       _setText('myPaidAmt',  _fmtAmt(myPaid));
 
-      /* ★ 내 부담 = 여행 전체에서 내가 분담한 금액 합계
-         (정산 완료 여부 무관 — with-participants API로 전체 계산)
-         calculateBalancesForUnlinkedExpenses는 미정산만 계산해서 쓰면 안 됨 */
+      /*  내 부담 = 여행 전체에서 내가 분담한 금액 합계*/
       fetch(CTX_PATH + '/api/trips/' + TRIP_ID + '/expenses/with-participants')
         .then(function(r) { return r.ok ? r.json() : []; })
         .then(function(expenses) {
@@ -124,13 +122,13 @@ function _loadHomeTab() {
       var myBalEl = document.getElementById('myBalanceLine');
       if (myBalEl) myBalEl.innerHTML = '';
 
-      /* ── 정산 대기 현황 (수정 요구사항 1: 나에게 온 정산 요청 건수) ── */
+      /* ── 정산 대기 현황  ── */
       _renderSettleStatusChip();
 
-      /* ── 카테고리별 지출 (수정 요구사항 2: 가로 스크롤 카드) ── */
+      /* ── 카테고리별 지출 ── */
       _renderCategoryCards(data.categoryBreakdown || [], total);
 
-      /* ── 내 지출 요약 (수정 요구사항 3) ── */
+      /* ── 내 지출 요약  ── */
       _renderMyExpenseSummaryV2(myPaid, myShare, myBal, data.categoryBreakdown || [], data.memberShares || [], myMid);
     })
     .catch(function(err) { console.warn('[Expense] 홈 탭 로드 실패:', err); });
@@ -139,10 +137,7 @@ function _loadHomeTab() {
 function _setText(id, txt) { var el = document.getElementById(id); if (el) el.textContent = txt; }
 
 
-/* ─── 정산 대기 현황 칩 (수정 요구사항 1) ─── */
-/* 정산 요청 건수 = "상대방이 나에게 정산 요청을 보낸 건수"
-   → settlement 테이블에서 from_member_id = 나 AND status = REQUESTED|PENDING
-   (내가 debtor이고, creditor가 요청한 건)                                    */
+/* ─── 정산 대기 현황 칩 ─── */
 function _renderSettleStatusChip() {
   var el = document.getElementById('expSettleStatus');
   if (!el) return;
@@ -226,14 +221,14 @@ function _scrollCats(dir) {
   if (inner) inner.scrollBy({ left: dir * 140, behavior: 'smooth' });
 }
 
-/* ─── 내 지출 요약 (수정 요구사항 3 — "나" 중심, 결제/부담 중복 제거) ─── */
+/* ─── 내 지출 요약 ─── */
 function _renderMyExpenseSummaryV2(myPaid, myShare, myBal, categoryBreakdown, memberShares, myMid) {
   var el = document.getElementById('expMySummarySection');
   if (!el) return;
   if (!myMid || (myPaid === 0 && myShare === 0)) { el.style.display='none'; return; }
   el.style.display = '';
 
-  /* ★ 수정: 배지 제거 — 카테고리 분석만 */
+  /* 배지 제거 — 카테고리 분석만 */
   var summaryBody = document.getElementById('expMySummaryBody');
   summaryBody.innerHTML = ''
     + '<div id="myCatBreakdown" class="my-cat-breakdown"></div>'
@@ -302,11 +297,7 @@ function _renderMyExpenseSummaryV2(myPaid, myShare, myBal, categoryBreakdown, me
         return { type: 'pay', expenseId: e.expenseId, desc: e.description||'', cat: e.category||'ETC', amt: Number(e.amount||0), date: e.expenseDate||'' };
       });
 
-    /* 내가 송금 완료한 정산 (status=COMPLETED, fromMemberId=나)
-     * ★ 수정: settlement 1건 = 최근 활동 1줄
-     *   - 단건 정산은 settlementId별로 각각 표시
-     *   - 배치 정산은 batchId 단위로 묶되, to가 다른 경우 각각 표시
-     *   - 절대로 금액을 합산하지 않음 */
+    /* 내가 송금 완료한 정산 (status=COMPLETED, fromMemberId=나)*/
     var mySentRaw = settlements.filter(function(s) {
       return s.status === 'COMPLETED' && Number(s.fromMemberId) === myMid;
     });
@@ -370,9 +361,7 @@ function loadExpenseList() {
 
   var myMid = _getMyMid() || 0;
 
-  /* settlements API 동시 호출: 타임스탬프로 정확히 판별
-     - expense.createdAt < settlement.settledAt → SETTLED (이 expense가 정산됐을 당시)
-     - expense.createdAt >= settlement.settledAt → UNSETTLED (정산 완료 후 새로 추가된 것) */
+
   Promise.all([
     fetch(CTX_PATH + '/api/trips/' + TRIP_ID + '/expenses?page=1&size=50')
       .then(function(r) { return r.ok ? r.json() : Promise.reject(r.status); }),
@@ -383,10 +372,6 @@ function loadExpenseList() {
       var list = (results[0]||[]).map(normalizeRow);
       var settlements = ((results[1]||{}).settlements||[]).map(normalizeRow);
 
-      /* ★ DB settle_status 그대로 신뢰
-         (settlement_expense_link 기반 — 혼자 쓴 지출은 링크 안 됨)
-         JS 타임스탬프 오버라이드 제거: 결제자 기준으로 덮어쓰면
-         혼자 쓴 지출도 SETTLED 처리되는 버그 발생 */
 
       var cntEl = document.getElementById('expenseCount');
       if (cntEl) cntEl.textContent = list.length ? '총 ' + list.length + '건' : '';
@@ -468,9 +453,7 @@ function loadExpenseList() {
       });
       listEl.innerHTML = html;
 
-      /* ★ Bug 2 Fix: loadExpenseList() 재호출 시 리스너 중복 방지
-         listEl.innerHTML 교체로 자식 DOM은 매번 새로 만들어지지만
-         listEl 자체는 유지되어 addEventListener가 누적됨 → _hasClickDelegate로 막음 */
+  
       if (!listEl._hasClickDelegate) {
         listEl._hasClickDelegate = true;
         listEl.addEventListener('click', function(e) {
@@ -575,27 +558,7 @@ function _loadSettleStatusView() {
     var existingList = (results[1] && results[1].settlements) ? results[1].settlements : [];
     var summaryList  = (results[2] || []).map(normalizeRow);
 
-    /*
-     * ══════════════════════════════════════════════════════════
-     * 정산 현황 계산 — 버그 수정 버전 (Bug 1 Fix)
-     *
-     * [핵심 원칙 - 배치/단건 분리 처리]
-     * - 배치 완료 정산: DB settle_status='SETTLED' 지출은 p2pMap에서 완전 제외
-     *   (settlement_expense_link 연결 → 이미 완료된 묶음)
-     * - 단건 완료 정산: batchId=null COMPLETED settlement만 allCompletedAmt로 차감
-     *
-     * [기존 버그 원인]
-     * 모든 expenses를 합산 후 COMPLETED 정산 전체를 차감하는 방식 →
-     * 배치 완료 후 새 지출 추가 시 "내역 보기"에 완료된 지출들도 함께 표시됨
-     *
-     * [수정 후 기대 동작]
-     * - 배치 완료 후 새 지출: 새 지출만 카드/내역에 표시 ✓
-     * - 단건 완료 후 새 지출: netAmt = 새 지출분만큼 정확히 증가 ✓
-     * - 정산 완료 후 새 지출 없음: netAmt = 0 → 카드 사라짐 ✓
-     * ══════════════════════════════════════════════════════════
-     */
-
-    /* ★ Bug 1: SETTLED expense IDs (배치 정산으로 완료된 지출 — DB settle_status 기반) */
+ 
     var settledExpIds = {};
     summaryList.forEach(function(e) {
       if ((e.settleStatus || '').toUpperCase() === 'SETTLED') {
@@ -645,10 +608,7 @@ function _loadSettleStatusView() {
      *
      * - 배치 완료: batchId 있음 → expenses는 이미 settledExpIds로 필터됨
      * - 단건 완료: batchId 없음 → allCompletedAmt로 금액 차감
-     *
-     * ★ 추가: lastCompletedAt[key] — pair별 마지막 완료 시각
-     *   이 시각 이전에 생성된 expense는 "내역 보기"에서 제외
-     *   (단건 정산 완료된 지출이 내역에 계속 뜨는 버그 수정) */
+     */
     var allCompletedAmt = {};
     var lastCompletedAt = {}; // key → 마지막 완료 timestamp
     existingList.forEach(function(s) {
@@ -712,7 +672,7 @@ function _loadSettleStatusView() {
       if (pendingSettle) {
         statusBadge = '<span class="settle-badge settle-badge--requested">📬 요청 전송됨</span>';
         actionBtn = '<button class="settle-action-btn settle-action-btn--complete" onclick="completeSettlement(this,' + pendingSettle.settlementId + ')">✅ 정산 완료 처리</button>';
-        /* ★ 핵심: 이 settlement에 연결된 지출 목록을 sessionStorage에 저장
+        /* 핵심: 이 settlement에 연결된 지출 목록을 sessionStorage에 저장
            완료 후 상세보기에서 이 데이터를 사용 → "이번 정산 지출만 표시" 보장 */
         try {
           sessionStorage.setItem(
@@ -722,7 +682,7 @@ function _loadSettleStatusView() {
         } catch(e) {}
       } else {
         statusBadge = '<span class="settle-badge settle-badge--pending">⏳ 미요청</span>';
-        // ★ data-settle-id="0" → 신규 INSERT 신호
+        // data-settle-id="0" → 신규 INSERT 신호
         actionBtn = '<button class="settle-action-btn settle-action-btn--request" '
           + 'data-from-mid="' + item.fromMid + '" '
           + 'data-amount="' + netAmt + '" '
@@ -731,7 +691,7 @@ function _loadSettleStatusView() {
           + 'onclick="requestSettlementBtn(this)">📬 정산 요청하기</button>';
       }
 
-      /* ★ 내역 필터: 단건 완료 이후에 추가된 지출만 표시
+      /* 내역 필터: 단건 완료 이후에 추가된 지출만 표시
          lastCompletedAt[key] 이전 생성 지출은 "이미 정산 완료"이므로 제외 */
       var lastTs = lastCompletedAt[key] || 0;
       var visibleExpenses = item.expenses.filter(function(e) {
@@ -791,7 +751,7 @@ function _loadSettleStatusView() {
         subText = '<span class="settle-sub-text">상대방의 요청을 기다려주세요</span>';
       }
 
-      /* ★ 내역 필터: 단건 완료 이후 지출만 표시 */
+      /* 내역 필터: 단건 완료 이후 지출만 표시 */
       var lastTsSend = lastCompletedAt[key] || 0;
       var visibleExpensesSend = item.expenses.filter(function(e) {
         if (!lastTsSend) return true;
@@ -937,7 +897,7 @@ function _loadSettleDoneView() {
         batchMap[bid].push(s);
       });
 
-      /* ★ 완료 내역 최신순 정렬 (settledAt 내림차순) */
+      /* 완료 내역 최신순 정렬 (settledAt 내림차순) */
       var sortedBids = Object.keys(batchMap).sort(function(a, b) {
         var ga = batchMap[a], gb = batchMap[b];
         var ta = ga[0].settledAt ? new Date(ga[0].settledAt).getTime() : 0;
@@ -952,7 +912,7 @@ function _loadSettleDoneView() {
         var firstS     = group[0];
         var settledDate = group[0].settledAt
           ? _parseDateStr(group[0].settledAt).replace(/-/g, '.') : '';
-        /* ★ 이 settlement의 완료 시각 + 같은 pair의 직전 완료 시각 저장
+        /* 이 settlement의 완료 시각 + 같은 pair의 직전 완료 시각 저장
            "직전_settledAt < expCreatedAt <= 현재_settledAt" 범위로 필터 */
         if (!window._settleAtMs)   window._settleAtMs   = {};
         if (!window._settlePrevMs) window._settlePrevMs = {};
@@ -1010,7 +970,7 @@ function _loadSettleDoneView() {
           +   (isRealBatch
               ? '<button class="settle-detail-link" onclick="event.stopPropagation();openSettledBatchDetail(' + bid + ')">상세 보기 →</button>'
               : (function() {
-                  /* ★ 단건 정산도 batchId 있으면 배치 API로 정확 조회 (신규 방식)
+                  /* 단건 정산도 batchId 있으면 배치 API로 정확 조회 (신규 방식)
                      batchId 없는 구 데이터는 _openSingleSettleDetail fallback */
                   if (firstS.batchId) {
                     return '<button class="settle-detail-link" onclick="event.stopPropagation();openSettledBatchDetail(' + firstS.batchId + ')">상세 보기 →</button>';
@@ -1024,8 +984,6 @@ function _loadSettleDoneView() {
           + '</div>';
       });
 
-      /* ★ Bug Fix: 항목이 있어도 이전 호출에서 표시된 빈상태가 남아있는 문제 방지
-         → 항목이 있으면 반드시 명시적으로 doneEmpty를 숨긴다 */
       if (doneEmpty) doneEmpty.style.display = 'none';
       doneList.innerHTML = html;
     })
@@ -1039,10 +997,7 @@ function _loadSettleDoneView() {
    정산 액션 함수들
 ═══════════════════════════════════════════ */
 
-/* 정산 요청하기
- * ★ 수정: existingSettlementId를 함께 전송 → 백엔드가 그 1건만 처리
- *         data-settle-id="0" 이면 신규 INSERT, 양수이면 그 ID만 UPDATE
- */
+
 function requestSettlementBtn(btn) {
   var fromMid  = parseInt(btn.getAttribute('data-from-mid')) || 0;
   var amount   = parseFloat(btn.getAttribute('data-amount')) || 0;
@@ -1066,7 +1021,7 @@ function requestSettlementBtn(btn) {
       showToast('📬 ' + nick + '님에게 정산을 요청했어요!');
       _loadSettleStatusView();
       _renderSettleStatusChip();
-      /* ★ 알림 발송 */
+      /* 알림 발송 */
       fetch(CTX_PATH + '/api/notification/send', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -1097,7 +1052,7 @@ function completeSettlement(btn, settlementId) {
   .then(function(r) {
     if (r.ok) {
       showToast('✅ 정산 완료 처리됐어요!');
-      /* ★ settlements 목록 갱신 후 정산탭 재계산 (completedPairs 갱신 필요) */
+      /* settlements 목록 갱신 후 정산탭 재계산 (completedPairs 갱신 필요) */
       _loadSettleTab();
       _loadHomeTab();
     } else {
@@ -1121,7 +1076,7 @@ function deleteSettlement(btn, settlementId) {
         if (_settleView === 'done') _loadSettleDoneView();
         else _loadSettleStatusView();
         _loadHomeTab();
-        /* ★ 상대방 화면도 갱신: tripId는 전역 TRIP_ID 사용 */
+        /* 상대방 화면도 갱신: tripId는 전역 TRIP_ID 사용 */
         try {
           if (typeof _stompClient !== 'undefined' && _stompClient && _wsConnected) {
             _stompClient.send('/pub/trip/' + TRIP_ID + '/item/update',
@@ -1243,7 +1198,6 @@ function _openSingleSettleDetail(settlementId, otherNick, amount, settledDate, i
       var allExp = (rawList || []).map(normalizeRow);
       var settledDateCmp = String(settledDate || '').replace(/\./g, '-');
 
-      /* ★ DEBUG: 첫 번째 expense의 participants 구조 확인 */
       if (allExp.length > 0) {
         console.log('[SettleDetail] myMid=', myMid, 'isSentByMe=', isSentByMe, 'settledDateCmp=', settledDateCmp);
         console.log('[SettleDetail] allExp count=', allExp.length);
@@ -1283,7 +1237,7 @@ function _openSingleSettleDetail(settlementId, otherNick, amount, settledDate, i
         }
         if (!pairMatch) return false;
 
-        /* ★ 핵심: settledAt(완료시각) 이전에 생성된 지출만 포함
+        /* 핵심: settledAt(완료시각) 이전에 생성된 지출만 포함
            settledAtMs가 있으면 createdAt ms로 비교, 없으면 날짜 비교 fallback */
         if (settledAtMs > 0) {
           var expCreatedMs = _parseDatetimeToMs(exp.createdAt || exp.created_at);
@@ -1312,8 +1266,7 @@ function _openSingleSettleDetail(settlementId, otherNick, amount, settledDate, i
 
 
 /* ═══════════════════════════════════════════
-   지출 상세 모달 (수정 요구사항 2 — 전면 개선)
-   정보 구역 명확 분리 + 영수증 이미지 UX
+   지출 상세 모달 
 ═══════════════════════════════════════════ */
 function openExpenseDetail(expenseId) {
   var body = document.getElementById('expenseDetailBody');
@@ -1658,9 +1611,7 @@ var _wsParticipants=[], _extraParticipants=[], _extraIdCounter=0;
 function _getAllParticipants() { return _wsParticipants.concat(_extraParticipants).filter(function(p){return p.checked;}); }
 
 function _initParticipants() {
-  /* ★ 수정: 매번 새로 구성 (호출 전에 _wsParticipants=[] 로 초기화됨)
-     나 자신(MY_MEMBER_ID)이 포함되도록 보장
-     is-me 클래스나 data-is-me 속성으로 구분 */
+
   var myMid = _getMyMid();
   var found = {};
   document.querySelectorAll('#expPayerMenu .exp-payer-option').forEach(function(opt) {
@@ -1751,7 +1702,7 @@ function _resetExpenseForm() {
   if (menu) menu.classList.remove('open');
   if (btn)  btn.classList.remove('open');
 
-  /* ★ 수정: 결제자를 나로 초기화 */
+  /* 결제자를 나로 초기화 */
   var myMid = _getMyMid();
   var myOpt = myMid
     ? document.querySelector('#expPayerMenu .exp-payer-option[data-id="' + myMid + '"]')
@@ -1763,7 +1714,7 @@ function _resetExpenseForm() {
     selectPayer(fid, fnick ? fnick.textContent.replace('(나)', '').trim() : '나', !!myOpt);
   }
 
-  /* ★ 수정: 분담자 목록 재초기화 */
+  /* 분담자 목록 재초기화 */
   _wsParticipants = [];
   _extraParticipants = [];
   _extraIdCounter = 0;
@@ -1800,7 +1751,7 @@ function deleteExpenseItem(expenseId, event) {
         loadExpenseList();
         _loadHomeTab();
         _loadSettleTab();
-        /* ★ 상대방 화면도 갱신 — WebSocket broadcast */
+        /* 상대방 화면도 갱신 — WebSocket broadcast */
         try {
           if (typeof _stompClient !== 'undefined' && _stompClient && _wsConnected) {
             var myNick = (typeof _myNickname !== 'undefined') ? _myNickname : '';
@@ -1857,9 +1808,7 @@ function removeReceiptImage() {
 document.addEventListener('DOMContentLoaded', function() {
   _loadHomeTab();
 
-  /* ★ 수정: 결제자 초기화 — selected 옵션 기준으로 설정
-     DOMContentLoaded 시점에 .selected 클래스가 없을 수 있으므로
-     첫 번째 옵션을 fallback으로 사용 */
+
   var firstSelected = document.querySelector('.exp-payer-option.selected')
                    || document.querySelector('.exp-payer-option');
   if (firstSelected) {
@@ -1869,9 +1818,6 @@ document.addEventListener('DOMContentLoaded', function() {
     if (fnick) selectPayer(fid, fnick.textContent.trim(), fisMe);
   }
 
-  /* ★ 수정: 지출 추가 모달 열릴 때마다 참여자 목록 재초기화
-     기존: _wsParticipants.length===0 일 때만 초기화 → 모달 재열기 시 누락 버그
-     수정: 매번 _wsParticipants를 새로 구성 */
   document.addEventListener('click', function(e) {
     var tgt = e.target;
     /* 버튼 자체 또는 버튼 내 자식 요소 클릭 모두 처리 */

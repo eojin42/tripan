@@ -70,7 +70,6 @@ function _wsFlushOrders(day) {
   var list = document.getElementById('places-' + day);
   if (!list) return;
 
-  // ★ [핵심 수정] 타 섹션에서 넘어온 카드를 처리하기 위해 전체 문서에서 카드를 탐색
   Object.keys(orderMap).forEach(function(itemId) {
     var card = document.querySelector('.place-card[data-id="' + itemId + '"]');
     if (card) {
@@ -99,12 +98,12 @@ function _wsFlushOrders(day) {
 // ─────────────────────────────────────────────────────────
 
 function wsHandle(msg) {
-  // ★ 백엔드에서 action으로 보냈을 경우를 대비해 type으로 변환
+  // 백엔드에서 action으로 보냈을 경우를 대비해 type으로 변환
   if (msg.action && !msg.type) msg.type = msg.action;
 
   if (!msg || !msg.type) return;
 
-  // ★ 멤버 이벤트 및 시스템 알림은 발신자 필터 예외 (본인이 보낸 알림/정산도 화면 갱신해야 함)
+  // 멤버 이벤트 및 시스템 알림은 발신자 필터 예외 (본인이 보낸 알림/정산도 화면 갱신해야 함)
   var BYPASS_EVENTS = { 
       MEMBER_KICKED:1, MEMBER_LEFT:1, MEMBER_JOINED:1, 
       NEW_NOTIFICATION:1, REFRESH_SETTLEMENT:1 
@@ -120,7 +119,7 @@ function wsHandle(msg) {
   switch (msg.type) {
 
     // ══════════════════════════════════════
-    // 👇 새로 추가된 정산 & 알림 실시간 동기화 👇
+    // 정산 & 알림 실시간 동기화
     // ══════════════════════════════════════
     case 'NEW_NOTIFICATION':
       if (typeof showToast === 'function') {
@@ -133,8 +132,7 @@ function wsHandle(msg) {
       break;
 
     case 'REFRESH_SETTLEMENT':
-      /* 정산 완료/요청 변경사항 → 정산탭·홈탭·지출목록 즉시 갱신
-         (settle_status 표시도 달라지므로 지출 목록도 갱신) */
+    
       if (typeof _loadSettleTab === 'function') _loadSettleTab();
       if (typeof _loadHomeTab === 'function') _loadHomeTab();
       if (typeof loadExpenseList === 'function') loadExpenseList();
@@ -326,7 +324,7 @@ function wsMoveCard(itemId, dayNumber, visitOrder) {
   var newList = document.getElementById('places-' + dayNumber);
   if (!card || !newList) return;
 
-  // ✅ 숫자 비교 (문자열 'p','U' 등 LexoRank값 vs '000001' 혼용 버그 방지)
+  // 숫자 비교 (문자열 'p','U' 등 LexoRank값 vs '000001' 혼용 버그 방지)
   var targetNum = parseInt(visitOrder, 10) || 0;
   var siblings  = Array.from(newList.querySelectorAll('.place-card'));
   var before    = null;
@@ -369,7 +367,7 @@ function wsReorderList(dayNumber, items) {
   var list = document.getElementById('places-' + dayNumber);
   if (!list || !items || !items.length) return;
 
-  // ✅ 전체 DOM에서 카드 찾기 (다른 DAY에서 이동해 온 카드도 포함)
+  // 전체 DOM에서 카드 찾기 (다른 DAY에서 이동해 온 카드도 포함)
   var cardMap = {};
   document.querySelectorAll('.place-card').forEach(function(card) {
     if (card.dataset.id) cardMap[card.dataset.id] = card;
@@ -501,7 +499,7 @@ function toggleCheckOptimistic(checklistId, labelEl, cbEl) {
   if (cbEl) cbEl.checked = nowDone;
 
   fetch(CTX_PATH + '/api/trip/' + TRIP_ID + '/checklist/' + checklistId + '/toggle', {
-    method: 'PATCH'
+    method: 'PATCH' 
   })
   .then(function (r) {
     if (!r.ok) throw new Error('toggle fail');

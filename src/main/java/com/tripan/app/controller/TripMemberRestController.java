@@ -33,8 +33,6 @@ public class TripMemberRestController {
     }
 
     // 강퇴 (DELETE)
-    // ★ body에 targetNickname 을 함께 받아서 서비스로 전달
-    //   JS(workspace_ui.js): fetch body에 { targetNickname: MEMBER_DICT[memberId] } 추가 필요
     @DeleteMapping("/{targetMemberId}/kick")
     public ResponseEntity<?> kickMember(
             @PathVariable("tripId") Long tripId,
@@ -51,7 +49,6 @@ public class TripMemberRestController {
     }
 
     // 스스로 나가기 (DELETE)
-    // ★ CustomUserDetails에서 닉네임 추출해서 서비스로 전달
     @DeleteMapping("/leave")
     public ResponseEntity<?> leaveTrip(
             @PathVariable("tripId") Long tripId,
