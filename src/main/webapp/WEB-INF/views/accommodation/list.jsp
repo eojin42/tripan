@@ -192,7 +192,7 @@
   /* 그리드 */
   .accommodation-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 40px 32px; }
   
-  /* --- 🌟 지도 모드 맞춤형 가로 카드 레이아웃 (중복 제거 & 통합) --- */
+  /* --- 지도 모드 맞춤형 가로 카드 레이아웃 (중복 제거 & 통합) --- */
   .list-container.map-mode .accommodation-grid { 
       grid-template-columns: 1fr; 
       gap: 16px;
@@ -649,7 +649,7 @@
           tag: urlParams.get('tag') || '',
 	    	
 	      offset: currentOffset,
-	      size: PAGE_SIZE // 🚨 이제 정상적으로 페이징 개수(9개)가 날아갑니다!
+	      size: PAGE_SIZE 
 	    };
 
 	    try {
@@ -802,8 +802,7 @@
       }
   };
   
-  // 정렬 관련 스크립트
-  //🌟 정렬 모달 제어 함수
+  // 정렬 모달 제어 함수
   function openSortModal() {
       document.getElementById('sortOverlay').classList.add('open');
       document.getElementById('sortModal').classList.add('open');
@@ -835,7 +834,6 @@
               alert("현재 브라우저에서는 위치 정보를 지원하지 않습니다.");
           }
       } else {
-          // 다른 정렬은 위치가 필요 없음
           applySort(sortCode, text);
       }
   }
@@ -864,7 +862,7 @@
           // 위치 정보 요청
           navigator.geolocation.getCurrentPosition(
               function(position) {
-                  // 🌟 전역 변수에 현재 위치 갱신 (정렬 기능과 데이터 공유!)
+                  // 전역 변수에 현재 위치 갱신 (정렬 기능과 데이터 공유!)
                   userLat = position.coords.latitude; 
                   userLng = position.coords.longitude; 
                   

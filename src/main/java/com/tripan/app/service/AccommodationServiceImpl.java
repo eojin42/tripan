@@ -389,9 +389,7 @@ public class AccommodationServiceImpl implements AccommodationService{
 	    long realAmount = ((Number) info.get("realAmount")).longValue();
 	    Long memberCouponId = info.get("memberCouponId") != null ? ((Number) info.get("memberCouponId")).longValue() : null;
 	    
-	    // -------------------------------------------------------------------
-	    // 1. 체크인 날짜와 오늘 날짜를 비교해 D-Day 계산
-	    // -------------------------------------------------------------------
+	    // 체크인 날짜와 오늘 날짜를 비교해 D-Day 계산
 	    java.sql.Timestamp checkInTimestamp = (java.sql.Timestamp) info.get("checkInDate");
 	    LocalDate checkInDate = checkInTimestamp.toInstant().atZone(ZoneId.systemDefault()).toLocalDate();
 	    LocalDate today = LocalDate.now();
@@ -415,11 +413,9 @@ public class AccommodationServiceImpl implements AccommodationService{
 	    }
 	    double refundRate = 1.0; // 5일 전 이상이면 100% 환불 처리
 
-	    // -------------------------------------------------------------------
-	    // 2. 🌟 포인트 100% 우선 복구 로직 🌟
-	    // -------------------------------------------------------------------
-	    long totalOriginalPrice = realAmount + usedPoint; // 원래 총 결제 가치
-	    long totalRefundAmount = (long) (totalOriginalPrice * refundRate); // 고객이 돌려받아야 할 총액
+	    // 포인트 100% 우선 복구 로직
+	    long totalOriginalPrice = realAmount + usedPoint; 
+	    long totalRefundAmount = (long) (totalOriginalPrice * refundRate); 
 
 	    long cancelPoint = 0;
 	    long cancelRealAmount = 0;
@@ -434,9 +430,7 @@ public class AccommodationServiceImpl implements AccommodationService{
 	        cancelRealAmount = 0;
 	    }
 
-	    // -------------------------------------------------------------------
-	    // 3. DB 상태 업데이트 및 복구 처리
-	    // -------------------------------------------------------------------
+	    // DB 상태 업데이트 및 복구 처리
 	    mapper.cancelReservationStatus(reservationId);
 	    mapper.cancelOrderStatus(orderId);
 	    mapper.cancelOrderDetailStatus(orderId);
@@ -455,9 +449,7 @@ public class AccommodationServiceImpl implements AccommodationService{
 	        pointService.processPointForCancel(memberId, orderId, cancelPoint, earnPoint);
 	    }
 	    
-	    // -------------------------------------------------------------------
-	    // 4. 포트원 실제 결제 취소 요청
-	    // -------------------------------------------------------------------
+	    // 포트원 실제 결제 취소 요청
 	    if (cancelRealAmount > 0) {
 	        portOneService.cancelPayment(orderId, "환불 규정에 따른 사용자 취소", cancelRealAmount);
 	    }

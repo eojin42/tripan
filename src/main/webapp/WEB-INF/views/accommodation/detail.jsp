@@ -22,7 +22,6 @@
 <jsp:include page="../layout/header.jsp" />
 
 <style>
-  /* (기존 메인 스타일 유지) */
   .detail-page-wrapper { background-color: var(--bg-white, #ffffff); padding-top: 100px; padding-bottom: 120px; font-family: var(--font-sans); }
   .detail-container { max-width: 1100px; margin: 0 auto; padding: 0 20px; }
   
@@ -37,7 +36,6 @@
   .carousel-next { right: 20px; }
   .carousel-counter { position: absolute; bottom: 20px; right: 20px; background: rgba(0,0,0,0.6); color: white; padding: 6px 16px; border-radius: 20px; font-size: 13px; font-weight: 700; z-index: 10; letter-spacing: 2px; }
 
-  /* 🌟 수정: 전체사진 갤러리 모달 Z-INDEX 상승 (객실 모달 위로 올라오게 20000으로 설정) */
   .photo-modal { display: none; position: fixed; z-index: 20000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0, 0, 0, 0.9); }
   .photo-modal.open { display: flex; justify-content: center; align-items: center; flex-direction: column; }
   .photo-modal .modal-content { margin: auto; display: block; width: 100%; max-width: 1000px; max-height: 80vh; object-fit: contain; }
@@ -94,7 +92,7 @@
   .rd-close:hover { color: var(--text-black); }
   .rd-body { overflow-y: auto; display: flex; flex-direction: column; }
   
-  /* 🌟 객실 상세 모달 캐러셀(슬라이더) 전용 스타일 */
+  /* 객실 상세 모달 캐러셀(슬라이더) 전용 스타일 */
   .rd-img-container { width: 100%; height: 300px; background: #eee; position: relative; overflow: hidden; }
   .rd-carousel-track { display: flex; transition: transform 0.3s ease-in-out; height: 100%; }
   .rd-carousel-slide { min-width: 100%; height: 100%; object-fit: cover; cursor: pointer; transition: opacity 0.2s; }
@@ -625,7 +623,7 @@ document.addEventListener('keydown', function(e) {
 });
 
 
-// 🌟 [신규] 객실 상세보기 모달 & 캐러셀 로직 🌟
+// 객실 상세보기 모달 & 캐러셀 로직 
 const roomFacDict = [
     { key: 'bathFacility', icon: '🚿', name: '목욕시설' },
     { key: 'bath', icon: '🛁', name: '욕조' },

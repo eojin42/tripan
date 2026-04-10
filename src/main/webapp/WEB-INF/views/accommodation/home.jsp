@@ -17,7 +17,7 @@
       overflow-x: hidden;
   }
 
-  /* --- 1. 히어로 섹션 --- */
+  /* --- 히어로 섹션 --- */
   .acc-hero { 
       position: relative; 
       
@@ -46,7 +46,7 @@
   .hero-content { position: relative; z-index: 3; width: 100%; max-width: 900px; padding: 0 20px; text-align: center; }
   .hero-content h1 { color: white; font-size: 42px; font-weight: 900; margin-bottom: 40px; text-shadow: 0 4px 12px rgba(0,0,0,0.3); line-height: 1.3; }
   
-  /* 🌟 수정: 기존 통통한 검색바 스타일 복원 */
+  /* 기존 통통한 검색바 스타일 복원 */
   .unified-search-bar { display: inline-flex; align-items: center; background: white; border: 1px solid #E2E8F0; border-radius: 100px; box-shadow: 0 10px 30px rgba(0,0,0,0.2); padding: 8px; transition: all 0.3s ease; cursor: pointer; }
   .unified-search-bar:hover { box-shadow: 0 15px 40px rgba(0,0,0,0.3); transform: translateY(-2px); }
   .search-segment { display: flex; align-items: center; gap: 12px; padding: 14px 32px; color: var(--text-black); font-size: 16px; font-weight: 700; position: relative; transition: background 0.2s; border-radius: 50px; }
@@ -70,7 +70,7 @@
   .sc-info .sc-price { font-size: 18px; font-weight: 900; color: var(--text-black); }
   .sc-info .sc-price span { font-size: 13px; color: var(--text-gray); font-weight: 500; }
 
-  /* --- 2. 인기 여행지 --- */
+  /* --- 인기 여행지 --- */
   .dest-section { margin-bottom: 80px; background: white; padding: 40px; border-radius: 24px; box-shadow: 0 4px 20px rgba(0,0,0,0.02); }
   .dest-grid { display: flex; justify-content: space-between; overflow-x: auto; padding-bottom: 10px; scrollbar-width: none; }
   .dest-grid::-webkit-scrollbar { display: none; }
@@ -80,20 +80,20 @@
   .dest-img img { width: 100%; height: 100%; object-fit: cover; }
   .dest-name { font-size: 15px; font-weight: 800; color: var(--text-black); }
 
-  /* --- 3. 최근 본 숙소 --- */
+  /* --- 최근 본 숙소 --- */
   #recentViewsSection { margin-bottom: 80px; }
 
-  /* --- 4. 프로모션 배너 --- */
+  /* --- 프로모션 배너 --- */
   .promo-banner { margin-bottom: 80px; border-radius: 24px; overflow: hidden; background: linear-gradient(135deg, #4A44F2 0%, #00C6FF 100%); color: white; display: flex; align-items: center; justify-content: space-between; padding: 40px 60px; box-shadow: 0 10px 30px rgba(74, 68, 242, 0.2); cursor: pointer; transition: transform 0.2s; }
   .promo-banner:hover { transform: translateY(-4px); }
   .promo-text h3 { font-size: 28px; font-weight: 900; margin-bottom: 8px; }
   .promo-text p { font-size: 16px; font-weight: 500; opacity: 0.9; }
   .promo-btn { background: white; color: #4A44F2; padding: 12px 32px; border-radius: 100px; font-weight: 800; font-size: 15px; }
 
-  /* --- 5. 인기 숙소 --- */
+  /* --- 인기 숙소 --- */
   .popular-section { margin-bottom: 80px; }
 
-  /* --- 6. 테마 여행 --- */
+  /* --- 테마 여행 --- */
   .theme-section { margin-bottom: 80px; background: white; padding: 40px; border-radius: 24px; box-shadow: 0 4px 20px rgba(0,0,0,0.02); }
   .theme-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; }
   .theme-card { position: relative; height: 180px; border-radius: 16px; overflow: hidden; cursor: pointer; background:#eee; }
@@ -102,7 +102,7 @@
   .theme-overlay { position: absolute; inset: 0; background: linear-gradient(to top, rgba(0,0,0,0.7) 0%, rgba(0,0,0,0) 100%); display: flex; align-items: flex-end; padding: 20px; }
   .theme-title { color: white; font-size: 18px; font-weight: 800; letter-spacing: -0.5px; }
 
-  /* --- 7. Tripan 혜택 --- */
+  /* --- Tripan 혜택 --- */
   .benefits-section { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; margin-bottom: 60px; }
   .benefit-card { background: white; padding: 32px; border-radius: 20px; text-align: center; border: 1px solid #F1F3F5; }
   .benefit-icon { font-size: 40px; margin-bottom: 16px; }

@@ -7,7 +7,6 @@
     <title>Tripan - 숙소 리뷰</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
     <style>
-        /* 🚀 2단 레이아웃을 위해 넓이를 좀 더 넓게 설정 */
         .review-page-wrapper {
             max-width: 1100px;
             margin: 120px auto 80px;
@@ -15,7 +14,7 @@
             display: grid;
             grid-template-columns: 340px 1fr; /* 좌측 340px, 우측 나머지 넓이 */
             gap: 40px;
-            align-items: start; /* sticky 적용을 위해 start 필수 */
+            align-items: start; 
         }
         
         /* ================== 좌측 사이드바 (고정) ================== */
@@ -105,41 +104,40 @@
         
         @media (max-width: 992px) {
             .review-page-wrapper {
-                grid-template-columns: 1fr; /* 2단을 1단으로 꽉 차게 변경 */
+                grid-template-columns: 1fr; 
                 gap: 24px;
                 margin-top: 100px;
             }
             .left-sidebar {
-                position: relative; /* 모바일에서는 따라다니는 sticky 효과 해제 */
+                position: relative; 
                 top: 0;
             }
             .place-summary-img {
                 height: auto;
-                aspect-ratio: 16 / 9; /* 세로형 이미지를 가로로 넓게 시원하게 변경 */
+                aspect-ratio: 16 / 9; 
             }
         }
 
-        /* 스마트폰 크기 (화면 폭 576px 이하) */
         @media (max-width: 576px) {
             .review-page-wrapper {
                 padding: 0 16px;
             }
             .review-item {
-                padding: 20px; /* 모바일 화면에 맞춰 패딩 축소 */
+                padding: 20px; 
             }
             .review-header {
-                flex-direction: column; /* 양옆으로 퍼져있던 정보를 위아래로 배치 */
+                flex-direction: column; 
                 align-items: flex-start;
                 gap: 12px;
             }
             .review-meta {
-                text-align: left; /* 별점과 날짜를 왼쪽 정렬로 변경 */
+                text-align: left; 
             }
             .stats-average h2 {
-                font-size: 38px; /* 통계 숫자 크기 살짝 축소 */
+                font-size: 38px; 
             }
             .review-images img {
-                width: 80px; /* 첨부 이미지 썸네일 크기 축소 */
+                width: 80px; 
                 height: 80px;
             }
             .section-title {
@@ -186,19 +184,19 @@
         .paginate a:hover { background: #F0F8FF; color: #89CFF0; border-color: #89CFF0; }
         .paginate span { background: #89CFF0; color: white; border-color: #89CFF0; } 
         
-        /* 🚀 탭 메뉴 스타일 */
+        /* 탭 메뉴 스타일 */
         .tab-container { display: flex; gap: 24px; margin-bottom: 24px; border-bottom: 2px solid #EDF2F7; }
         .tab-btn { background: none; border: none; font-size: 20px; font-weight: 800; color: #A0AEC0; padding-bottom: 12px; cursor: pointer; position: relative; transition: color 0.2s; }
         .tab-btn.active { color: #2D3748; }
         .tab-btn.active::after { content: ''; position: absolute; bottom: -2px; left: 0; width: 100%; height: 2px; background: #2D3748; }
         
-        /* 🚀 사진 모아보기 그리드 */
+        /* 사진 모아보기 그리드 */
         .photo-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 12px; }
         .photo-grid-item { width: 100%; aspect-ratio: 1; border-radius: 12px; overflow: hidden; cursor: pointer; position: relative; }
         .photo-grid-item img { width: 100%; height: 100%; object-fit: cover; transition: transform 0.3s; }
         .photo-grid-item:hover img { transform: scale(1.05); }
 
-        /* 🚀 전체화면 라이트박스(모달) 갤러리형 업그레이드 */
+        /* 전체화면 라이트박스(모달) 갤러리형 업그레이드 */
         .lightbox-modal { display: none; position: fixed; z-index: 9999; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(15, 15, 15, 0.95); flex-direction: column; align-items: center; justify-content: center; opacity: 0; transition: opacity 0.3s ease; }
         .lightbox-modal.show { display: flex; opacity: 1; }
         

@@ -434,7 +434,7 @@ public class AccommodationController {
     
     @GetMapping("review/list/{placeId}")
     public String reviewList(@PathVariable("placeId") Long placeId, 
-                             @RequestParam(value = "page", defaultValue = "1") int current_page, // 🚀 현재 페이지 파라미터 추가
+                             @RequestParam(value = "page", defaultValue = "1") int current_page, 
                              @RequestParam(value = "sort", defaultValue = "latest") String sort,
                              @RequestParam(value = "roomId", required = false) String roomId, 
                              HttpServletRequest req, 

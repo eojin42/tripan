@@ -93,7 +93,6 @@
 </style>
 
 <script>
-  // 🌟 [수정] 전역(window) 변수로 만들어 list.jsp와 상태를 공유합니다!
   window.filterState = {
     minPrice: 0,
     maxPrice: 1000000,
@@ -159,7 +158,6 @@
     syncFilterUI();
   }
 
-  // 🌟 [핵심 수정] 여기서 직접 서버로 요청하지 않고, 값만 저장 후 list.jsp의 함수를 호출!
   function applyFilters() {
     window.filterState.accTypes = Array.from(document.querySelectorAll('#accTypeGrid input:checked')).map(cb => cb.value);
     window.filterState.accFacilities = Array.from(document.querySelectorAll('#accAmenityGrid input:checked')).map(cb => cb.value);
@@ -167,7 +165,6 @@
 
     closeFilterModal();
 
-    // 🌟 list.jsp에 있는 메인 검색 함수를 "초기화 모드(true)"로 강력하게 호출!
     if (typeof fetchAccommodations === 'function') {
         fetchAccommodations(true);
     }

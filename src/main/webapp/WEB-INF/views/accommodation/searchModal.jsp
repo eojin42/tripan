@@ -32,7 +32,7 @@
 
   .c-search-area { padding: 0 24px 20px; flex-shrink: 0; border-bottom: 1px solid #F1F3F5; }
   
-  /* 🌟 검색바(통합된 영역) 스타일 */
+  /* 검색바(통합된 영역) 스타일 */
   .search-row {
     display: flex; align-items: center; gap: 8px; padding: 12px 4px;
     border-bottom: 1px solid #E2E8F0; cursor: text; transition: border 0.2s;
@@ -58,7 +58,7 @@
   }
   .btn-chip-close:hover { background: rgba(0,0,0,0.1); color: #E53E3E; }
   
-  /* 🌟 검색창(input)이 칩 옆에 자연스럽게 위치하도록 설정 */
+  /* 검색창(input)이 칩 옆에 자연스럽게 위치하도록 설정 */
   #tsInput {
     flex: 1; min-width: 150px; border: none; outline: none; background: transparent;
     font-size: 15px; font-weight: 600; color: var(--text-black); padding: 4px 0;
@@ -340,11 +340,9 @@
   }
 
 
-  // 🌟 최근 검색어 및 직접 검색 통합 로직 🌟
   function getRecentSearches() {
       try {
           let data = JSON.parse(localStorage.getItem('recentSearches') || '[]');
-          // 문자열(키워드)만 깔끔하게 빼옵니다.
           return data.map(item => typeof item === 'object' ? item.keyword : item).filter(Boolean);
       } catch(e) {
           return [];
@@ -425,7 +423,7 @@
       `).join('');
   }
 
-  // --- [로직 1] 지역 (타일 & 칩 연동) ---
+  // --- 지역 (타일 & 칩 연동) ---
   function toggleRegion(name) {
     if (selectedRegions.includes(name)) {
       selectedRegions = [];
@@ -448,7 +446,6 @@
     });
   }
 
-  // 🌟 입력창을 유지한 채 칩만 자연스럽게 추가/삭제하는 렌더링 함수
   function renderChips() {
     const container = document.getElementById('chipContainer');
     const input = document.getElementById('tsInput');
@@ -486,7 +483,7 @@
     refreshGridHighlight();
   }
 
-  // --- [로직 2] 달력 ---
+  // --- 달력 ---
   function renderCalendar() {
     const container = document.getElementById('calendarContainer');
     const now = new Date();
@@ -590,7 +587,7 @@
     });
   }
 
-  // --- [로직 3] 인원 ---
+  // ---인원 ---
   function updateGuest(type, delta) {
     let newVal = guests[type] + delta;
     if (newVal < 0) return;
@@ -675,7 +672,6 @@
           }
       }
 
-      // 4. 상세 페이지가 아닐 경우 (목록 페이지로 이동)
       const regions = selectedRegions.filter(region => region !== '전체').join(',');
 	  let listUrl = "${pageContext.request.contextPath}/accommodation/list?adult=" + adult + "&child=" + child;
       

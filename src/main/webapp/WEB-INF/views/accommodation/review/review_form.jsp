@@ -18,7 +18,7 @@
         .review-title { font-size: 24px; font-weight: 900; margin-bottom: 8px; color: #2D3748; }
         .review-subtitle { font-size: 15px; color: #718096; margin-bottom: 30px; }
 
-        /* ✨ 새롭게 추가된 예약 정보 카드 스타일 */
+        /* 새롭게 추가된 예약 정보 카드 스타일 */
         .booking-summary-card {
             display: flex;
             align-items: center;
@@ -90,7 +90,7 @@
             font-size: 14px; color: #4A5568;
         }
         
-        /* ✨ 드래그 앤 드롭 박스 스타일 */
+        /* 드래그 앤 드롭 박스 스타일 */
 		.file-upload-box {
 		    margin-top: 12px; padding: 40px 16px;
 		    border: 2px dashed #A0AEC0; border-radius: 16px;
@@ -103,7 +103,7 @@
 		    border-color: #89CFF0; background: #E6F4FF; transform: scale(1.02);
 		}
 		
-		/* ✨ 썸네일 미리보기 영역 */
+		/* 썸네일 미리보기 영역 */
 		.image-preview-container {
 		    display: flex; gap: 12px; flex-wrap: wrap; margin-top: 16px;
 		}
@@ -266,19 +266,17 @@ document.addEventListener('DOMContentLoaded', () => {
         handleFiles(e.dataTransfer.files); 
     });
 
-    // 🚀 X 버튼 눌렀을 때 삭제 로직 (기존 vs 신규 구분)
+    // X 버튼 눌렀을 때 삭제 로직
     previewContainer.addEventListener('click', (e) => {
         const btn = e.target.closest('.preview-remove-btn');
         if (btn) {
             const existingImg = btn.getAttribute('data-existing');
             
             if (existingImg) {
-                // (1) 기존에 있던 이미지를 지울 때: 서버로 날아갈 hidden input 삭제
                 const safeId = existingImg.replace('.', '_');
                 const hiddenInput = document.getElementById('retain_' + safeId);
                 if (hiddenInput) hiddenInput.remove();
             } else {
-                // (2) 새로 첨부한 이미지를 지울 때: DataTransfer에서 빼기
                 const fileNameToRemove = btn.getAttribute('data-name');
                 const newDataTransfer = new DataTransfer();
                 Array.from(dataTransfer.files).forEach(file => {
@@ -288,7 +286,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 fileInput.files = dataTransfer.files;
             }
             
-            // 화면에서 썸네일 날리기
             btn.closest('.preview-wrapper').remove();
         }
     });
