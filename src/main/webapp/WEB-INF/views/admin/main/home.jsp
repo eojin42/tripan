@@ -228,7 +228,7 @@ function renderChart(list) {
   if (dailyChart) { dailyChart.destroy(); dailyChart = null; }
 
   if (!list || list.length === 0) {
-    canvas.parentElement.innerHTML = '<div class="empty-row">최근 7일 예약 데이터가 없습니다.</div>';
+    canvas.parentElement.innerHTML = '<div class="empty-row">최근 15일 예약 데이터가 없습니다.</div>';
     return;
   }
 

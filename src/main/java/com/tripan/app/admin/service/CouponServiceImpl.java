@@ -54,10 +54,7 @@ public class CouponServiceImpl implements CouponService {
         return res;
     }
 
-    @Override
-    public List<CouponDto.ListItem> getPendingList() {
-        return couponMapper.selectPendingList();
-    }
+   
 
     @Override
     @Transactional
@@ -74,12 +71,7 @@ public class CouponServiceImpl implements CouponService {
         couponTargetMapper.deleteCouponTargets(couponId);
         saveTargets(couponId, req.getTargetList());
     }
-
-    @Override
-    public void reviewCoupon(Long couponId, CouponDto.ReviewRequest req) {
-        couponMapper.updateCouponStatus(couponId, req.getResult(), req.getMemo());
-    }
-
+    
     @Override
     @Transactional
     public void deleteCoupons(List<Long> couponIds) {
@@ -91,6 +83,16 @@ public class CouponServiceImpl implements CouponService {
             couponTargetMapper.deleteCouponTargets(id);
             couponMapper.deleteCoupons(id);
         }
+    }
+
+    @Override
+    public void reviewCoupon(Long couponId, CouponDto.ReviewRequest req) {
+        couponMapper.updateCouponStatus(couponId, req.getResult(), req.getMemo());
+    }
+    
+    @Override
+    public List<CouponDto.ListItem> getPendingList() {
+        return couponMapper.selectPendingList();
     }
 
     @Override
@@ -126,6 +128,20 @@ public class CouponServiceImpl implements CouponService {
             detail.setTargetList(couponTargetMapper.selectCouponTargets(couponId));
         }
         return detail;
+    }
+    
+    @Override
+    @Transactional
+    public void revokeCoupon(Long memberCouponId) {
+        couponMapper.revokeMemberCoupon(memberCouponId);
+    }
+    
+    @Override
+    @Transactional
+    public void grantCoupon(CouponDto.GrantRequest req) {
+        Long memberId = couponMapper.selectMemberIdByLoginId(req.getLoginId());
+        if (memberId == null) throw new ResponseStatusException(HttpStatus.NOT_FOUND, "존재하지 않는 회원입니다.");
+        couponMapper.insertMemberCoupon(memberId, req.getCouponId());
     }
 
     private void saveTargets(Long couponId, List<CouponTargetDto> targetList) {
@@ -185,19 +201,4 @@ public class CouponServiceImpl implements CouponService {
         info.setNextBlockPage(blockEnd + 1);
         return info;
     }
-    
-    @Override
-    @Transactional
-    public void revokeCoupon(Long memberCouponId) {
-        couponMapper.revokeMemberCoupon(memberCouponId);
-    }
-    
-    @Override
-    @Transactional
-    public void grantCoupon(CouponDto.GrantRequest req) {
-        Long memberId = couponMapper.selectMemberIdByLoginId(req.getLoginId());
-        if (memberId == null) throw new ResponseStatusException(HttpStatus.NOT_FOUND, "존재하지 않는 회원입니다.");
-        couponMapper.insertMemberCoupon(memberId, req.getCouponId());
-    }
-
 }

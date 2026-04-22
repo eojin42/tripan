@@ -24,28 +24,47 @@
         )
     </insert>
 
-    <select id="selectCouponTargets" parameterType="long"
-            resultType="com.tripan.app.admin.domain.dto.CouponTargetDto">
-        SELECT
-            target_id    AS targetId,
-            coupon_id    AS couponId,
-            partner_id   AS partnerId,
-            place_id     AS placeId,
-            target_type  AS targetType,
-            target_value AS targetValue,
-            is_exclude   AS isExclude
-        FROM coupon_target
-        WHERE coupon_id = #{couponId}
-        ORDER BY is_exclude, target_type, target_id
-    </select>
+    <select id="selectCouponTargets" parameterType="long" resultType="com.tripan.app.admin.domain.dto.CouponTargetDto">
+	    SELECT
+	        ct.target_id    AS targetId,
+	        ct.coupon_id    AS couponId,
+	        ct.partner_id   AS partnerId,
+	        ct.place_id     AS placeId,
+	        ct.target_type  AS targetType,
+	        ct.target_value AS targetValue,
+	        ct.is_exclude   AS isExclude,
+	        CASE
+	            WHEN ct.target_type = 'ACCOMMODATION'
+	                THEN p.place_name
+	            WHEN ct.target_type = 'ROOM'
+	                THEN r.room_name
+	            ELSE NULL
+	        END AS displayName,
+	        CASE
+	            WHEN ct.target_type = 'ROOM'
+	                THEN rp.place_name
+	            ELSE NULL
+	        END AS accName
+	    FROM coupon_target ct
+	    LEFT JOIN place p
+	        ON ct.target_type = 'ACCOMMODATION'
+	        AND TO_CHAR(p.place_id) = ct.target_value
+	    LEFT JOIN room r
+	        ON ct.target_type = 'ROOM'
+	        AND r.room_id = ct.target_value
+	    LEFT JOIN place rp
+	        ON ct.target_type = 'ROOM'
+	        AND rp.place_id = r.place_id
+	    WHERE ct.coupon_id = #{couponId}
+	    ORDER BY ct.is_exclude, ct.target_type, ct.target_id
+	</select>
 
     <delete id="deleteCouponTargets" parameterType="long">
         DELETE FROM coupon_target
         WHERE coupon_id = #{couponId}
     </delete>
 
-    <select id="searchAccommodations" parameterType="map"
-            resultType="com.tripan.app.domain.dto.AccommodationDto">
+    <select id="searchAccommodations" parameterType="map" resultType="com.tripan.app.domain.dto.AccommodationDto">
         SELECT
             a.place_id           AS placeId,
             p.place_name         AS name,

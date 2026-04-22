@@ -580,7 +580,11 @@
 		      <span style="color:var(--muted);font-size:11px;">
 		        {{ {ACC_TYPE:'숙소 타입', ACCOMMODATION:'숙소', ROOM:'객실'}[t.targetType] || t.targetType }}
 		      </span>
-		      <span>{{ t.targetValue }}</span>
+		      <span>
+				  <span v-if="t.targetType === 'ROOM' && t.accName" 
+				        style="color:var(--muted);margin-right:4px;">{{ t.accName }} ·</span>
+				  {{ t.displayName || t.targetValue }}
+			</span>
 		    </div>
 		  </div>
 		</div>
@@ -797,8 +801,14 @@
       let   memberSearchTimer   = null;
 
       const activeCouponOptions = computed(() =>
-        couponList.value.filter(c => c.status === 'ACTIVE')
-      );
+	      couponList.value.filter(c => {
+	        if (c.status === 'INACTIVE') return false;
+	        const now = new Date();
+	        const from  = c.validFrom  ? new Date(c.validFrom.replace('T', ' '))  : null;
+	        const until = c.validUntil ? new Date(c.validUntil.replace('T', ' ')) : null;
+	        return (!from || from <= now) && (!until || until >= now);
+	      })
+	    );
 
       const searchMembers = () => {
         memberSearched.value = false;

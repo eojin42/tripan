@@ -18,4 +18,6 @@ public class CouponTargetDto {
     private String targetType;   // ACC_TYPE / ACCOMMODATION / ROOM
     private String targetValue;  // accommodation_type / place_id / room_id
     private String isExclude;    // Y / N
+    private String displayName;
+    private String accName; 
 }

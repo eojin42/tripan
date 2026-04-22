@@ -67,16 +67,16 @@
             </if>
             <if test="status != null and status == 'ACTIVE'">
                 AND c.status != 'INACTIVE'
-                AND SYSDATE &gt;= c.valid_from
-                AND SYSDATE &lt;= c.valid_until
+                AND SYSDATE + INTERVAL '9' HOUR &gt;= c.valid_from
+                AND SYSDATE + INTERVAL '9' HOUR &lt;= c.valid_until
             </if>
             <if test="status != null and status == 'EXPIRED'">
                 AND c.status != 'INACTIVE'
-                AND c.valid_until &lt; SYSDATE
+                AND c.valid_until &lt; SYSDATE + INTERVAL '9' HOUR
             </if>
             <if test="status != null and status == 'SCHEDULED'">
                 AND c.status != 'INACTIVE'
-                AND c.valid_from &gt; SYSDATE
+                AND c.valid_from &gt; SYSDATE + INTERVAL '9' HOUR
             </if>
             <if test="keyword != null and keyword != ''">
                 AND c.coupon_name LIKE '%' || #{keyword} || '%'
@@ -104,8 +104,8 @@
                     c.valid_until         AS validUntil,
                     CASE
                         WHEN c.status = 'INACTIVE' THEN 'INACTIVE'
-                        WHEN SYSDATE &lt; c.valid_from  THEN 'SCHEDULED'
-                        WHEN SYSDATE &gt; c.valid_until THEN 'EXPIRED'
+                        WHEN SYSDATE + INTERVAL '9' HOUR &lt; c.valid_from  THEN 'SCHEDULED'
+                		WHEN SYSDATE +  INTERVAL '9' HOUR &gt; c.valid_until THEN 'EXPIRED'
                         ELSE 'ACTIVE'
                     END                   AS status,
                     c.created_at          AS createdAt,
@@ -173,10 +173,10 @@
             c.valid_until         AS validUntil,
             CASE
                 WHEN c.status = 'INACTIVE' THEN 'INACTIVE'
-                WHEN SYSDATE &lt; c.valid_from  THEN 'SCHEDULED'
-                WHEN SYSDATE &gt; c.valid_until THEN 'EXPIRED'
+                WHEN SYSDATE + INTERVAL '9' HOUR &lt; c.valid_from  THEN 'SCHEDULED'
+                WHEN SYSDATE +  INTERVAL '9' HOUR &gt; c.valid_until THEN 'EXPIRED'
                 ELSE 'ACTIVE'
-            END                   AS status,
+            END AS status,
             c.issue_condition_type  AS issueConditionType,
             c.issue_condition_value AS issueConditionValue,
             (SELECT COUNT(*) FROM member_coupon mc WHERE mc.coupon_id = c.coupon_id) AS issuedCount

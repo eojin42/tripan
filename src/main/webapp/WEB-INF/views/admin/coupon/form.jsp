@@ -264,9 +264,8 @@
           </div>
         </div>
 
-        <!-- ── 카드 4: 적용 대상 ── -->
+        <!-- 적용 대상 -->
         
-
         <div class="form-card fade-up">
           <div class="card-title">📋 기본 정보</div>
 
@@ -516,7 +515,7 @@
                   </div>
                 </template>
 
-                <!-- 제외객실 탭: 숙소 클릭 → 객실 펼침 (2단계) -->
+                <!-- 제외객실 탭 -->
                 <template v-else>
                   <template v-for="acc in modalAccResults" :key="acc.placeId">
                     <!-- 숙소 행 -->
@@ -566,7 +565,7 @@
           </div>
         </teleport>
 
-        <!-- ── 카드 3: 발급 조건 ── -->
+        <!-- 발급 조건 -->
         <div class="form-card fade-up">
           <div class="card-title">🎯 자동 발급 조건</div>
 
@@ -668,14 +667,14 @@ const contextPath = '${pageContext.request.contextPath}' === '/' ? '' : '${pageC
         maxDiscountAmount: '', minOrderAmount: '', platformShare: 100, partnerId: '',
         validFrom: '', validUntil: '',
         issueConditionType: 'NONE', issueConditionValue: '',
-        // ── 적용 대상 ──
+        // 적용 대상
         targetAccType: [],
         includeAccommodations: [],
         excludeAccommodations: [],
         excludeRooms: []          // [{roomId, roomName, placeId, accName}]
       });
 
-      /* ── 숙소 타입 옵션 ── */
+      // 숙소 타입 옵션 
       const accTypeOptions = ref([]);
 
       const fetchAccTypeOptions = async () => {
@@ -685,7 +684,7 @@ const contextPath = '${pageContext.request.contextPath}' === '/' ? '' : '${pageC
         } catch(e) { console.error('숙소타입 옵션 오류', e); }
       };
 
-      /* ── 적용/제외 태그 관리 ── */
+      // 적용/제외 태그 관리
       const includeSearchKeyword = ref('');
       const excludeSearchKeyword = ref('');
 
@@ -699,7 +698,7 @@ const contextPath = '${pageContext.request.contextPath}' === '/' ? '' : '${pageC
         form.excludeRooms = form.excludeRooms.filter(r => r.roomId !== roomId);
       };
 
-      /* ── 통합 모달 상태 ── */
+      // 통합 모달 상태
       const showAccModal    = ref(false);
       const modalTab        = ref('include');   // 'include' | 'excludeAcc' | 'excludeRoom'
       const modalKeyword    = ref('');
@@ -732,7 +731,7 @@ const contextPath = '${pageContext.request.contextPath}' === '/' ? '' : '${pageC
         expandedRooms.value = [];
       };
 
-      /* 숙소 검색 */
+      // 숙소 검색
       const runSearch = async () => {
         if (!modalKeyword.value.trim()) return;
         modalLoading.value  = true;
@@ -752,7 +751,7 @@ const contextPath = '${pageContext.request.contextPath}' === '/' ? '' : '${pageC
         }
       };
 
-      /* 적용/제외숙소 탭 — 숙소 체크박스 토글 */
+      // 적용/제외숙소 탭 — 숙소 체크박스 토글
       const isAccSelected = (placeId) => {
         if (modalTab.value === 'include')
           return form.includeAccommodations.some(a => a.placeId === placeId);
@@ -810,7 +809,7 @@ const contextPath = '${pageContext.request.contextPath}' === '/' ? '' : '${pageC
       };
 
 
-      /* ── 숫자 포맷 ── */
+      /* 숫자 포맷 */
       const formatNumber = (val) => {
         if (val === '' || val == null) return '';
         const num = Number(String(val).replace(/,/g, ''));
@@ -821,7 +820,7 @@ const contextPath = '${pageContext.request.contextPath}' === '/' ? '' : '${pageC
         return isNaN(num) ? '' : num;
       };
 
-      /* ── 파트너 검색 ── */
+      /* 파트너 검색 */
       const partnerOptions      = ref([]);
       const partnerSearch       = ref('');
       const showPartnerDropdown = ref(false);
@@ -847,7 +846,7 @@ const contextPath = '${pageContext.request.contextPath}' === '/' ? '' : '${pageC
         if (!partnerId) form.platformShare = 100;
       };
 
-      /* ── 기존 쿠폰 불러오기 (수정 모드) ── */
+      /* 기존 쿠폰 불러오기 (수정 모드) */
       const loadCoupon = async () => {
         if (!couponId) {
         console.log("등록 모드입니다. 데이터를 불러오지 않습니다.");
